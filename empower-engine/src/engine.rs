@@ -148,7 +148,52 @@ impl EmpowerEngine
     pub fn compile(&mut self)
     {
         // Remove this check later after adding start node behavior
-        if self.nodes.len() == 0
+        if self.nodes.is_empty()
+        {
+            println!("Has no start node, will not compile");
+            return;
+        }
+
+        let mut node_keys_to_compile_queue: Vec<i32> = Vec::new();
+        node_keys_to_compile_queue.push(0); // this will assume the first node is always the start node
+        let mut next_node_to_compile_index = 0; // This will avoid circulatory behavior
+        
+        while node_keys_to_compile_queue.len() > next_node_to_compile_index // this is to ensure no crashes
+        {
+            let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[next_node_to_compile_index];
+            let node_to_compile_type = self.nodes.get_mut(&node_to_compile_key).unwrap().node_type.clone();
+
+            // let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
+            match node_to_compile_type
+            {
+                NodeType::Integer =>
+                {
+                    compiler::execute_integer_node(node_to_compile_key, &mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+                },
+
+                _ =>
+                {
+                    println!("Asked to compile a not supported node type");
+                }
+            }
+
+
+            next_node_to_compile_index = node_keys_to_compile_queue.len(); // @TODO, change the node_key_queue to not grow infinitely
+
+            let new_nodes_to_compile = self.transfer_connected_port_values(node_to_compile_key);
+            node_keys_to_compile_queue.extend(new_nodes_to_compile);
+
+        }
+       
+        println!("Compiled nodes");
+    }
+
+    pub fn debug_compile(&mut self)
+    {
+        println!("Begin compiling nodes in debug node");
+
+        // Remove this check later after adding start node behavior
+        if self.nodes.is_empty()
         {
             println!("Has no start node, will not compile");
             return;
@@ -165,12 +210,12 @@ impl EmpowerEngine
             let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[next_node_to_compile_index];
             let node_to_compile_type = self.nodes.get_mut(&node_to_compile_key).unwrap().node_type.clone();
 
-            let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
+            // let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
             match node_to_compile_type
             {
                 NodeType::Integer =>
                 {
-                    compiler::execute_integer_node(node_to_compile_key, &mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+                    compiler::execute_debug_integer_node(node_to_compile_key, &mut self.nodes, &mut self.input_ports, &mut self.output_ports);
                 },
 
                 _ =>
@@ -179,30 +224,28 @@ impl EmpowerEngine
                 }
             }
 
-            node_keys_to_compile_queue.remove(compiled_nodes_counter);
+            println!(" --> ");
 
-            self.transfer_connected_port_values(node_to_compile_key);
-            
+            next_node_to_compile_index = node_keys_to_compile_queue.len(); // @TODO, change the node_key_queue to not grow infinitely
+
+            let new_nodes_to_compile = self.transfer_connected_port_values(node_to_compile_key);
+            node_keys_to_compile_queue.extend(new_nodes_to_compile);
+
             compiled_nodes_counter += 1;
-
         }
-
-
-        // for node in self.nodes.iter()
-        // {
-        //     let value = node.1.value;
-        //     println!("Value in node: {}", value);
-        // }
-        
-        println!("Compiled nodes");
+       
+        println!("Compiled {} nodes", compiled_nodes_counter);
+        println!("Finished compiling nodes in debug mode");
     }
 
-    fn transfer_connected_port_values(&mut self, node_key: EmpowerKey)
+    fn transfer_connected_port_values(&mut self, node_key: EmpowerKey) -> Vec<EmpowerKey>
     {
+        let mut new_nodes_to_compile = Vec::new();
+        
         if !self.nodes.contains_key(&node_key)
         {
             println!("Requested non-existing node in transfer connected port values");
-            return;
+            return new_nodes_to_compile;
         }
 
         let node = self.nodes.get(&node_key).unwrap();
@@ -234,7 +277,9 @@ impl EmpowerEngine
 
                 let connected_port = self.input_ports.get_mut(connected_port_key).unwrap();
                 connected_port.value = output_port.value;
+                new_nodes_to_compile.push(connected_port_key.clone());
             }
         }
+        return new_nodes_to_compile;
     }
 }
