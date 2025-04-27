@@ -27,6 +27,6 @@ fn main()
     engine.add_connection(input_port_key_3, output_port_key_2);
     engine.add_connection(input_port_key_4, output_port_key_2);
 
-    engine.set_input_port_value(input_port_key_1, 50);
+    engine.set_input_port_value(input_port_key_1, empower_engine::EmpowerData::Integer(50));
     engine.debug_compile();
 }

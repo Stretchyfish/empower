@@ -1,4 +1,4 @@
-#[derive(Default, Clone, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum NodeType
 {
     Start,

@@ -1,10 +1,11 @@
 use crate::EmpowerKey;
+use crate::EmpowerData;
 
 #[derive(Default, Clone)]
 pub struct OutputPort
 {
     pub key: EmpowerKey,
-    pub value: i32,
+    pub value: EmpowerData,
 }
 
 impl OutputPort
@@ -14,7 +15,7 @@ impl OutputPort
         Self
         {
             key,
-            value: 0,
+            value: EmpowerData::Integer(0),
         }
     }
 }

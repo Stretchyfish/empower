@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
+use crate::EmpowerData;
 use crate::EmpowerKey;
 use crate::Node;
 use crate::NodeType;
@@ -114,7 +115,7 @@ impl EmpowerEngine
         println!("Output port ({}) value: {}", output_port_key, output_port.value);
     }
 
-    pub fn set_input_port_value(&mut self, input_port_key: EmpowerKey, value: i32)
+    pub fn set_input_port_value(&mut self, input_port_key: EmpowerKey, value: EmpowerData)
     {
         if !self.input_ports.contains_key(&input_port_key)
         {
