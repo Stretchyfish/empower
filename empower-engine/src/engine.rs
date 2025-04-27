@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
 use crate::EmpowerKey;
 use crate::Node;
@@ -199,18 +200,20 @@ impl EmpowerEngine
             return;
         }
 
-        let mut node_keys_to_compile_queue: Vec<i32> = Vec::new();
-        node_keys_to_compile_queue.push(0); // this will assume the first node is always the start node
+        let mut node_keys_to_compile_queue: VecDeque<EmpowerKey> = VecDeque::new();
+        node_keys_to_compile_queue.push_back(0); // this will assume the first node is always the start node
 
         let mut compiled_nodes_counter = 0;
-        let mut next_node_to_compile_index = 0; // This will avoid circulatory behavior
         
-        while node_keys_to_compile_queue.len() > next_node_to_compile_index // this is to ensure no crashes
+        while !node_keys_to_compile_queue.is_empty() // this is to ensure no crashes
         {
-            let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[next_node_to_compile_index];
+            print!("Compiler queue: ");
+            node_keys_to_compile_queue.iter().for_each(|key| print!("{} ,", key));
+            print!("\n");
+
+            let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[0];
             let node_to_compile_type = self.nodes.get_mut(&node_to_compile_key).unwrap().node_type.clone();
 
-            // let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
             match node_to_compile_type
             {
                 NodeType::Integer =>
@@ -226,10 +229,9 @@ impl EmpowerEngine
 
             println!(" --> ");
 
-            next_node_to_compile_index = node_keys_to_compile_queue.len(); // @TODO, change the node_key_queue to not grow infinitely
-
             let new_nodes_to_compile = self.transfer_connected_port_values(node_to_compile_key);
             node_keys_to_compile_queue.extend(new_nodes_to_compile);
+            node_keys_to_compile_queue.pop_front();
 
             compiled_nodes_counter += 1;
         }
