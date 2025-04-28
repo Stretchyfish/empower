@@ -9,7 +9,7 @@ pub fn execute_integer_node(node_to_compile_key: EmpowerKey, nodes: &mut HashMap
 {
     let node_to_compile = nodes.get_mut(&node_to_compile_key).unwrap(); // @TODO, handle exception
 
-    if node_to_compile.node_type != NodeType::Integer
+    if node_to_compile.node_type != NodeType::IntegerVariable
     {
         println!("Asked to execute integer node, but its type does't match, request will be ignored");
         return;
@@ -37,7 +37,7 @@ pub fn execute_debug_integer_node(node_to_compile_key: EmpowerKey, nodes: &mut H
 {
     let node_to_compile = nodes.get_mut(&node_to_compile_key).unwrap(); // @TODO, handle exception
 
-    if node_to_compile.node_type != NodeType::Integer
+    if node_to_compile.node_type != NodeType::IntegerVariable
     {
         println!("Asked to execute integer node, but its type does't match, request will be ignored");
         return;

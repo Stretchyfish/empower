@@ -14,10 +14,10 @@ mod compiler;
 #[derive(Default)]
 pub struct EmpowerEngine
 {
-    nodes: HashMap<EmpowerKey, Node>,
-    input_ports: HashMap<EmpowerKey, InputPort>,
-    output_ports: HashMap<EmpowerKey, OutputPort>,
-    connections: HashMap<EmpowerKey, Vec<EmpowerKey>>,
+    pub nodes: HashMap<EmpowerKey, Node>,
+    pub input_ports: HashMap<EmpowerKey, InputPort>,
+    pub output_ports: HashMap<EmpowerKey, OutputPort>,
+    pub connections: HashMap<EmpowerKey, Vec<EmpowerKey>>,
 }
 
 impl EmpowerEngine
@@ -49,7 +49,7 @@ impl EmpowerEngine
             {
                 println!("Tried adding another start node, only one start node is allowed!");
             }
-            NodeType::Integer =>
+            NodeType::IntegerVariable =>
             {
                 new_node_key = node_creation::create_integer_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
             }
@@ -168,7 +168,7 @@ impl EmpowerEngine
             // let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
             match node_to_compile_type
             {
-                NodeType::Integer =>
+                NodeType::IntegerVariable =>
                 {
                     compiler::execute_integer_node(node_to_compile_key, &mut self.nodes, &mut self.input_ports, &mut self.output_ports);
                 },
@@ -213,11 +213,11 @@ impl EmpowerEngine
             print!("\n");
 
             let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[0];
-            let node_to_compile_type = self.nodes.get_mut(&node_to_compile_key).unwrap().node_type.clone();
+            let node_to_compile_type = self.nodes.get_mut(&node_to_compile_key).unwrap().node_type;
 
             match node_to_compile_type
             {
-                NodeType::Integer =>
+                NodeType::IntegerVariable =>
                 {
                     compiler::execute_debug_integer_node(node_to_compile_key, &mut self.nodes, &mut self.input_ports, &mut self.output_ports);
                 },

@@ -2,5 +2,5 @@
 pub enum NodeType
 {
     Start,
-    #[default] Integer,
+    #[default] IntegerVariable,
 }

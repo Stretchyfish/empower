@@ -4,7 +4,7 @@ fn main()
 {
     let mut engine = EmpowerEngine::new();
 
-    let new_node_type = empower_engine::node::NodeType::Integer;
+    let new_node_type = empower_engine::node::NodeType::IntegerVariable;
 
     let node_key_1 = engine.add_node(new_node_type.clone());
     let node_key_2 = engine.add_node(new_node_type.clone());

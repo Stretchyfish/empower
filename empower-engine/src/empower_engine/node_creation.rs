@@ -43,7 +43,7 @@ pub fn create_integer_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &
     let new_input_port_keys = Vec::from([new_input_port_key]);
     let new_output_port_keys = Vec::from([new_output_port_key]);
 
-    let new_node = Node::new(new_node_key, NodeType::Integer, new_input_port_keys, new_output_port_keys);
+    let new_node = Node::new(new_node_key, NodeType::IntegerVariable, new_input_port_keys, new_output_port_keys);
     nodes.insert(new_node_key, new_node);
 
     new_node_key
