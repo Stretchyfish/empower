@@ -45,7 +45,7 @@ pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelSta
             {
                 if ui.add(egui::Button::new("int variable").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {                                        
-                    node_graph.add_node();
+                    node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
                     // let new_node_type = empower_engine::nodes::NodeType::IntVariable;
                     // graph_state.add_node_at_position_in_canvas(new_node_type, &canvas_position);
                     //graph_state.add_node_at_position(new_node_type, &canvas_position);
@@ -61,7 +61,7 @@ pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelSta
                     println!("Newly placed node screen pos: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
                     println!("Newly placed node world pos: {}, {}", new_node_world_position.x, new_node_world_position.y);
                     
-                    node_graph.add_node_at_position(new_node_world_position);
+                    node_graph.add_node(new_node_world_position);
                     // let new_node_type = empower_engine::nodes::NodeType::IntAddValue;
                     //graph_state.add_node_at_mouse_position(new_node_type, &user_input.mouse_position);
 

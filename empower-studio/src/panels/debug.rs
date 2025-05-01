@@ -18,14 +18,16 @@ pub fn show_debug_panel(
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.heading("Engine state");
-                egui::CollapsingHeader::new(format!("Nodes: {}", 0))
+                egui::CollapsingHeader::new(format!("Nodes: {}", node_graph.engine.nodes.len()))
                     .default_open(false)
-                    .show(ui, |_ui| {
-                        // ui.label("| id | type |");
-                        // for engine_node in node_graph.engine.nodes.iter()
-                        // {
-                            // ui.label(format!("{}, {}", engine_node.0, "int"));
-                        // }
+                    .show(ui, |ui| 
+                    {
+
+                        ui.label("| id | type |");
+                        for engine_node in node_graph.engine.nodes.iter()
+                        {
+                         ui.label(format!("{}, {}", engine_node.0, "int"));
+                        }
                         
                     });
                 // ui.label(format!("Input ports: {}", node_graph.engine.input_ports.len()));

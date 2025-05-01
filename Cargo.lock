@@ -954,6 +954,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_dock",
+ "empower-engine",
 ]
 
 [[package]]

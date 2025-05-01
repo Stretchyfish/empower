@@ -1,11 +1,13 @@
-// use empower_engine::EmpowerEngine;
+use empower_engine::{EmpowerEngine, EmpowerKey};
 
 use std::collections::HashMap;
 
 pub struct NodeGraph
 {
-    pub display_nodes: HashMap<i32, DisplayNode>,
-    // pub engine: EmpowerEngine,
+    pub display_nodes: HashMap<EmpowerKey, DisplayNode>,
+    pub display_input_ports: HashMap<EmpowerKey, DisplayPort>,
+    pub display_output_ports: HashMap<EmpowerKey, DisplayPort>,
+    pub engine: EmpowerEngine,
 }
 
 impl NodeGraph
@@ -15,33 +17,52 @@ impl NodeGraph
         Self
         {
             display_nodes: HashMap::new(),
-            // engine: EmpowerEngine::new(),
+            display_input_ports: HashMap::new(),
+            display_output_ports: HashMap::new(),
+            engine: EmpowerEngine::new(),
         }
     }
 
-    pub fn add_node(&mut self)
+    pub fn add_node(&mut self, position: egui::Pos2)
     {
+        let new_node_type = empower_engine::NodeType::IntegerVariable;
         // let new_node_type = empower_engine::nodes::NodeType::IntVariable;
-        // let engine_node_key = self.engine.add_node(new_node_type); // @TODO, add this back
+        let engine_node_key: EmpowerKey = self.engine.add_node(new_node_type); 
 
-        let new_node_key = self.display_nodes.len() as i32; // @TODO, change this back to the engine
-        self.display_nodes.insert(new_node_key, DisplayNode::new_with_key(new_node_key));
-    }
+        if self.display_nodes.contains_key(&engine_node_key)
+        {
+            println!("ERROR, attempted to add engine node key already in node graph (denied)");
+            return;
+        }
 
-    pub fn add_node_at_position(&mut self, position: egui::Pos2)
-    {
-        // let new_node_type = empower_engine::nodes::NodeType::IntVariable;
-        // let engine_node_key = self.engine.add_node(new_node_type); // @TODO, add this back
+        let port_gap = 50.0;
+        let mut input_port_offset = 50.0;
 
-        let new_node_key = self.display_nodes.len() as i32; // @TODO, change this back to the engine
-        self.display_nodes.insert(new_node_key, DisplayNode::new_with_key_and_position(new_node_key, position));
+        for input_port_keys in self.engine.nodes.get(&engine_node_key).unwrap().input_port_keys.iter()
+        {
+            let new_display_port = DisplayPort { key: input_port_keys.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset) }; 
+            self.display_input_ports.insert(input_port_keys.clone(), new_display_port);
+
+            input_port_offset += port_gap;
+        }
+
+        let mut output_port_offset = 50.0;
+        for output_port_key in self.engine.nodes.get(&engine_node_key).unwrap().output_port_keys.iter()
+        {
+            let new_display_port = DisplayPort { key: output_port_key.clone(), relative_position: egui::Vec2::new(0.0, output_port_offset) }; 
+            self.display_output_ports.insert(output_port_key.clone(), new_display_port);
+
+            output_port_offset += port_gap;
+        }
         
+        // let new_node_key = self.display_nodes.len() as i32;
+        self.display_nodes.insert(engine_node_key, DisplayNode::new_with_key_and_position(engine_node_key, position));
     }
 }
 
 pub struct DisplayNode
 {
-    pub key: i32,
+    pub key: EmpowerKey,
     pub position: egui::Pos2,
 }
 
@@ -56,7 +77,7 @@ impl DisplayNode
         }
     }
 
-    pub fn new_with_key(new_key: i32) -> Self
+    pub fn new_with_key(new_key: EmpowerKey) -> Self
     {
         Self
         {
@@ -65,7 +86,7 @@ impl DisplayNode
         }
     }
 
-    pub fn new_with_key_and_position(new_key: i32, new_position: egui::Pos2) -> Self
+    pub fn new_with_key_and_position(new_key: EmpowerKey, new_position: egui::Pos2) -> Self
     {
         Self
         {
@@ -73,4 +94,10 @@ impl DisplayNode
             position: new_position,
         }
     }
+}
+
+pub struct DisplayPort
+{
+    pub key: EmpowerKey,
+    pub relative_position: egui::Vec2,
 }

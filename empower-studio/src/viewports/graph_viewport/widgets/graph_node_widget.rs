@@ -1,7 +1,9 @@
 use egui;
-use crate::node_graph::DisplayNode;
+use empower_engine::EmpowerKey;
+use crate::node_graph::{self, DisplayNode};
 use crate::viewports::graph_viewport::GraphViewportState;
 use crate::interactions::user::UserInputs;
+use crate::NodeGraph;
 
 pub struct NodeViewReponse
 {
@@ -16,10 +18,11 @@ pub enum NodeViewResponseType
     InsideSelectionArea,
 }
 
-pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node: &mut DisplayNode, graph_viewport_state: &GraphViewportState, user_input: &UserInputs) -> Option<NodeViewReponse>
+pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, user_input: &UserInputs) -> Option<NodeViewReponse>
 {
     let mut view_graph_node_reponse = Option::None;
     
+    let display_node = node_graph.display_nodes.get_mut(&display_node_key).unwrap();
     let pan_offset = graph_viewport_state.pan_zoom.pan_offset;
     let zoom_scale = graph_viewport_state.pan_zoom.zoom_scale;
 
@@ -61,6 +64,8 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node: &mut DisplayNode,
     {
         return view_graph_node_reponse;
     }
+
+    let engine_node = node_graph.engine.nodes.get_mut(&display_node.key).unwrap();
 
     let mut node_is_inside_node_selection_rect = false;
     if graph_viewport_state.node_select_rect.is_some() // @TODO, is it possible to not check this for every node?
@@ -191,26 +196,54 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node: &mut DisplayNode,
         egui::Stroke::NONE,
     );
 
-    ui.allocate_ui_at_rect(node_rect, |ui| {
-        ui.vertical(|ui| {
-            ui.add_space(title_box_rect.size().y);
+    for input_port_key in engine_node.input_port_keys.iter()
+    {
+        let display_input_port = node_graph.display_input_ports.get(input_port_key).unwrap();
+
+        let new_input_port_position = node_rect.min + display_input_port.relative_position * zoom_scale;
+
+       
+        ui.painter().circle(
+            new_input_port_position,
+            10.0 * zoom_scale ,
+            egui::Color32::YELLOW,
+            egui::Stroke::NONE,
+        );
+        
+    };
+
+    for output_port_key in engine_node.output_port_keys.iter()
+    {
+        let display_output_port = node_graph.display_output_ports.get(output_port_key).unwrap();
+        let new_output_port_position= egui::Pos2 { x: node_rect.max.x, y: node_rect.min.y } + display_output_port.relative_position * zoom_scale;
+        
+        ui.painter().circle(
+            new_output_port_position,
+            10.0 * zoom_scale ,
+            egui::Color32::YELLOW,
+            egui::Stroke::NONE,
+        );
+    }
+    // ui.allocate_ui_at_rect(node_rect, |ui| {
+    //     ui.vertical(|ui| {
+    //         ui.add_space(title_box_rect.size().y);
 
            
-            ui.horizontal(|ui| {
-                let input_port_position = ui.min_rect().max;
+    //         ui.horizontal(|ui| {
+    //             let input_port_position = ui.min_rect().max;
 
-                ui.painter().circle(
-                    input_port_position,
-                    5.0 * zoom_scale ,
-                    egui::Color32::YELLOW,
-                    egui::Stroke::NONE,
-                );
+    //             ui.painter().circle(
+    //                 input_port_position,
+    //                 5.0 * zoom_scale ,
+    //                 egui::Color32::YELLOW,
+    //                 egui::Stroke::NONE,
+    //             );
 
-                ui.label(egui::RichText::new("Test1").font(egui::FontId::proportional(8.0 * zoom_scale )));
-                // ui.label("Test 1");
-            });
-        });
-    });
+    //             ui.label(egui::RichText::new("Test1").font(egui::FontId::proportional(8.0 * zoom_scale )));
+    //             // ui.label("Test 1");
+    //         });
+    //     });
+    // });
 
     return view_graph_node_reponse;
 }

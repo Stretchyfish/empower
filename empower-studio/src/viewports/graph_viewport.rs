@@ -1,4 +1,5 @@
 use egui;
+use empower_engine::EmpowerKey;
 mod background;
 mod widgets;
 mod panels;
@@ -71,10 +72,20 @@ impl GraphViewport
         }
         // background::visualize_background(ui, &self.state);
 
+        let display_node_keys: Vec<EmpowerKey> = node_graph.display_nodes.keys().cloned().collect(); 
 
-        for (_display_node_key, display_node) in node_graph.display_nodes.iter_mut()
+        // for (_display_node_key, display_node) in node_graph.display_nodes.iter_mut()
+        // {
+        //     let reponse = widgets::graph_node_widget::view_graph_node_widget(ui, display_node, &node_graph, &self.state, &user_input);
+
+        //     if let Some(view_response) = reponse
+        //     {
+        //         nodes_view_responses.push(view_response);
+        //     }
+        // }
+        for display_node_key in display_node_keys        
         {
-            let reponse = widgets::graph_node_widget::view_graph_node_widget(ui, display_node, &self.state, &user_input);
+            let reponse = widgets::graph_node_widget::view_graph_node_widget(ui, display_node_key, node_graph, &self.state, &user_input);
 
             if let Some(view_response) = reponse
             {

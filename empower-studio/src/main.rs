@@ -40,7 +40,7 @@ impl EmpowerEditorApplication
         new_docking_state.push_to_focused_leaf(new_tab_name);
 
         let mut new_node_graph = NodeGraph::new();
-        new_node_graph.add_node();
+        new_node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
 
         Self {
             state: EmpowerEditorState::new(),

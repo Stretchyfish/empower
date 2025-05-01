@@ -14,7 +14,7 @@ pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditor
         {
             if ui.button("Add default node").clicked()
             {
-                node_graph.add_node();
+                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
             }
         });
 
