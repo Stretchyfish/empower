@@ -202,6 +202,12 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
 
         let new_input_port_position = node_rect.min + display_input_port.relative_position * zoom_scale;
 
+        let input_port_rect = egui::Rect::from_center_size(new_input_port_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+
+        if ui.interact(input_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
+        {
+            println!("input port id: {}", input_port_key);
+        }
        
         ui.painter().circle(
             new_input_port_position,
@@ -216,6 +222,13 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     {
         let display_output_port = node_graph.display_output_ports.get(output_port_key).unwrap();
         let new_output_port_position= egui::Pos2 { x: node_rect.max.x, y: node_rect.min.y } + display_output_port.relative_position * zoom_scale;
+
+        let output_port_rect= egui::Rect::from_center_size(new_output_port_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+
+        if ui.interact(output_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
+        {
+            println!("output port id: {}", output_port_key);
+        }
         
         ui.painter().circle(
             new_output_port_position,
