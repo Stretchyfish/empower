@@ -18,6 +18,19 @@ pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditor
             }
         });
 
+        ui.menu_button("test setups", |ui| 
+        {
+            if ui.button("setup one connection").clicked()
+            {
+                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                node_graph.add_connection(0,1);
+
+            }
+
+            
+        });
+
         if ui.button("Compile nodes").clicked()
         {
             //self.engine.compile();

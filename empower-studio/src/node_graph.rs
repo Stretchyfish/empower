@@ -23,7 +23,7 @@ impl NodeGraph
         }
     }
 
-    pub fn add_node(&mut self, position: egui::Pos2)
+    pub fn add_node(&mut self, position: egui::Pos2) -> EmpowerKey 
     {
         let new_node_type = empower_engine::NodeType::IntegerVariable;
         // let new_node_type = empower_engine::nodes::NodeType::IntVariable;
@@ -32,7 +32,7 @@ impl NodeGraph
         if self.display_nodes.contains_key(&engine_node_key)
         {
             println!("ERROR, attempted to add engine node key already in node graph (denied)");
-            return;
+            return engine_node_key;
         }
 
         let port_gap = 50.0;
@@ -40,7 +40,7 @@ impl NodeGraph
 
         for input_port_keys in self.engine.nodes.get(&engine_node_key).unwrap().input_port_keys.iter()
         {
-            let new_display_port = DisplayPort { key: input_port_keys.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset) }; 
+            let new_display_port = DisplayPort { key: input_port_keys.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset) }; 
             self.display_input_ports.insert(input_port_keys.clone(), new_display_port);
 
             input_port_offset += port_gap;
@@ -49,7 +49,7 @@ impl NodeGraph
         let mut output_port_offset = 50.0;
         for output_port_key in self.engine.nodes.get(&engine_node_key).unwrap().output_port_keys.iter()
         {
-            let new_display_port = DisplayPort { key: output_port_key.clone(), relative_position: egui::Vec2::new(0.0, output_port_offset) }; 
+            let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(0.0, output_port_offset) }; 
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
             output_port_offset += port_gap;
@@ -57,6 +57,13 @@ impl NodeGraph
         
         // let new_node_key = self.display_nodes.len() as i32;
         self.display_nodes.insert(engine_node_key, DisplayNode::new_with_key_and_position(engine_node_key, position));
+
+        engine_node_key
+    }
+
+    pub fn add_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey)
+    {
+        self.engine.add_connection(input_port_key, output_port_key);
     }
 }
 
@@ -99,5 +106,6 @@ impl DisplayNode
 pub struct DisplayPort
 {
     pub key: EmpowerKey,
+    pub node_key: EmpowerKey,
     pub relative_position: egui::Vec2,
 }

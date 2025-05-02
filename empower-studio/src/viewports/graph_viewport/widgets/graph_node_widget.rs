@@ -219,10 +219,36 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         
         ui.painter().circle(
             new_output_port_position,
-            10.0 * zoom_scale ,
+            10.0 * zoom_scale,
             egui::Color32::YELLOW,
             egui::Stroke::NONE,
         );
+
+
+        if !node_graph.engine.connections.contains_key(output_port_key)
+        {
+            continue;
+        }
+
+        let connected_port_keys = node_graph.engine.connections.get(output_port_key).unwrap();
+
+        for connected_port_key in connected_port_keys
+        {
+            if !node_graph.display_input_ports.contains_key(connected_port_key)
+            {
+                println!("ERROR, while trying to draw connection, key not in hashtable");
+                continue; 
+            }
+
+            let connected_display_port = node_graph.display_input_ports.get(connected_port_key).unwrap();
+            let connected_display_node = node_graph.display_nodes.get(&connected_display_port.node_key).unwrap();
+
+            let connected_node_draw_position= (connected_display_node.position + pan_offset) * zoom_scale + egui::Vec2 { x: -node_size.x / 2.0, y: 0.0 }; 
+            let connected_port_draw_position = connected_node_draw_position + rect_margin + connected_display_port.relative_position * zoom_scale;
+
+            ui.painter().line_segment([ new_output_port_position, connected_port_draw_position], egui::Stroke::new(5.0 * zoom_scale, egui::Color32::YELLOW));
+        }
+
     }
     // ui.allocate_ui_at_rect(node_rect, |ui| {
     //     ui.vertical(|ui| {
@@ -245,5 +271,6 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     //     });
     // });
 
+    
     return view_graph_node_reponse;
 }
