@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use egui;
 use empower_engine::EmpowerKey;
 mod background;
@@ -95,6 +97,39 @@ impl GraphViewport
 
         });
 
+        if self.state.port_search.is_some()
+        {
+            let port_search = self.state.port_search.unwrap();
+
+            let node_key;
+            let port_relative_position;
+            match port_search.port_kind
+            {
+                PortKind::InputPort => 
+                {
+                    let display_input_port = node_graph.display_input_ports.get(&port_search.port_key).unwrap();
+                    port_relative_position = display_input_port.relative_position;                   
+                    node_key = display_input_port.node_key;
+                }
+
+                PortKind::OutputPort =>
+                {
+                    let display_output_port= node_graph.display_output_ports.get(&port_search.port_key).unwrap();
+                    port_relative_position = display_output_port.relative_position;                   
+                    node_key = display_output_port.node_key;
+                }
+            }
+
+            // @TODO A crash can happen here if the node gets removed, needs to be fixed
+            let node_position = node_graph.display_nodes.get(&node_key).unwrap().position;
+
+            let port_position = node_position + port_relative_position;
+            // let port_position = node_position;
+
+            let port_draw_position = self.state.pan_zoom.world_to_screen(&port_position);
+
+            ui.painter().line_segment([ port_draw_position, user_input.mouse_position], egui::Stroke::new(5.0 * self.state.pan_zoom.zoom_scale, egui::Color32::YELLOW));
+        }
         // This code for scroll bars work, but needs tunning
         // ================================================================
         // egui::TopBottomPanel::bottom("horizontal_scroll_bar_panel".to_string() + self.state.title.as_str())
@@ -132,6 +167,7 @@ impl GraphViewport
     
         let mut node_was_clicked = false;
         let mut node_was_hovered = false;
+        let mut search_was_started = false;
         for node_reponse in nodes_view_responses.iter()
         {
             match node_reponse.kind
@@ -159,6 +195,18 @@ impl GraphViewport
                     {
                         self.state.selected_nodes.push(node_reponse.key);
                     }
+                }
+
+                widgets::graph_node_widget::NodeViewResponseType::ClickedInputPort(port_key) =>
+                {
+                    self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::InputPort });
+                    search_was_started = true;                    
+                }
+
+                widgets::graph_node_widget::NodeViewResponseType::ClickedOutputPort(port_key) =>
+                {
+                    self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::OutputPort });
+                    search_was_started = true;                    
                 }
 
             }
@@ -222,6 +270,11 @@ impl GraphViewport
         {
             self.state.node_select_rect = Option::None;
         }
+
+        if self.state.port_search.is_some() && user_input.left_clicked && search_was_started == false
+        { 
+            self.state.port_search = Option::None;
+        }
     
         self.state.pan_zoom.update_zoom(&user_input);
     }
@@ -237,6 +290,7 @@ pub struct GraphViewportState
     pub pan_zoom: PanZoom,
     pub dragging_background: bool,
     pub node_selection_panel_state: panels::NodeSelectionPanelState,
+    pub port_search: Option<PortSearcher>,
 }
 
 impl GraphViewportState
@@ -252,6 +306,7 @@ impl GraphViewportState
             pan_zoom: PanZoom::new(),
             dragging_background: false,
             node_selection_panel_state: panels::NodeSelectionPanelState::new(),
+            port_search: Option::None,
         }
     }    
 }
@@ -343,4 +398,18 @@ impl PanZoom
         // *screen_position / self.zoom_scale + self.pan_offset
         *screen_position / self.zoom_scale - self.pan_offset
     }
+}
+
+#[derive(Clone, Copy)]
+enum PortKind
+{
+    InputPort,
+    OutputPort,
+}
+
+#[derive(Clone, Copy)]
+struct PortSearcher
+{
+    port_key: EmpowerKey,
+    port_kind: PortKind,
 }

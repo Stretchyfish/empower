@@ -16,6 +16,8 @@ pub enum NodeViewResponseType
     Clicked,
     Hover,
     InsideSelectionArea,
+    ClickedInputPort(EmpowerKey),
+    ClickedOutputPort(EmpowerKey)
 }
 
 pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, user_input: &UserInputs) -> Option<NodeViewReponse>
@@ -206,6 +208,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
 
         if ui.interact(input_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
+            view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedInputPort(input_port_key.clone()) } );
             println!("input port id: {}", input_port_key);
         }
        
@@ -227,9 +230,10 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
 
         if ui.interact(output_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
+            view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedOutputPort(output_port_key.clone()) } );
             println!("output port id: {}", output_port_key);
         }
-        
+
         ui.painter().circle(
             new_output_port_position,
             10.0 * zoom_scale,
@@ -285,5 +289,5 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     // });
 
     
-    return view_graph_node_reponse;
+    view_graph_node_reponse
 }
