@@ -1,5 +1,3 @@
-use std::ops::DerefMut;
-
 use egui;
 use empower_engine::EmpowerKey;
 mod background;
@@ -200,14 +198,39 @@ impl GraphViewport
 
                 widgets::graph_node_widget::NodeViewResponseType::ClickedInputPort(port_key) =>
                 {
-                    self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::InputPort });
-                    search_was_started = true;                    
+                    if self.state.port_search.is_some() // @TODO, rewirte this check
+                    {
+                        let port_search = self.state.port_search.unwrap();
+                        if port_search.port_kind == PortKind::OutputPort
+                        {
+                            node_graph.add_connection(port_key, port_search.port_key);
+                            self.state.port_search = Option::None;
+                        }
+
+                    }
+                    else
+                    {
+                        self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::InputPort });
+                        search_was_started = true;                    
+                    }
                 }
 
                 widgets::graph_node_widget::NodeViewResponseType::ClickedOutputPort(port_key) =>
                 {
-                    self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::OutputPort });
-                    search_was_started = true;                    
+                    if self.state.port_search.is_some() // @TODO, rewrite this check
+                    {
+                        let port_search = self.state.port_search.unwrap();
+                        if port_search.port_kind == PortKind::InputPort
+                        {
+                            node_graph.add_connection( port_search.port_key, port_key);
+                            self.state.port_search = Option::None;
+                        }
+                    }
+                    else
+                    {
+                        self.state.port_search = Some( PortSearcher { port_key: port_key, port_kind: PortKind::OutputPort });
+                        search_was_started = true;                    
+                    }
                 }
 
             }
@@ -271,6 +294,7 @@ impl GraphViewport
         {
             self.state.node_select_rect = Option::None;
         }
+
 
         if self.state.port_search.is_some() && user_input.left_clicked && search_was_started == false
         { 
@@ -401,7 +425,7 @@ impl PanZoom
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum PortKind
 {
     InputPort,
