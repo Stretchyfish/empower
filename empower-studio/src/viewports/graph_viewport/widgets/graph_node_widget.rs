@@ -28,7 +28,8 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     let pan_offset = graph_viewport_state.pan_zoom.pan_offset;
     let zoom_scale = graph_viewport_state.pan_zoom.zoom_scale;
 
-    let node_size = egui::Vec2 { x: 200.0, y: 200.0 } * zoom_scale;
+    let node_size = display_node.size * zoom_scale;
+    // let node_size = egui::Vec2 { x: 200.0, y: 200.0 } * zoom_scale;
     
     let node_is_selected = graph_viewport_state.selected_nodes.iter().any(| selected_node_key | *selected_node_key == display_node.key );
     
@@ -40,19 +41,31 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     // let screen_center = ui.max_rect().center();
 
     // let node_position = (display_node.position + pan_offset + screen_center.to_vec2()) * zoom_scale; // This is working great!
-    let node_position = (display_node.position + pan_offset) * zoom_scale + egui::Vec2 { x: -node_size.x / 2.0, y: 0.0 }; // This fixes the new node creation problem
+
+    // This top one worked!
+    // let node_position = (display_node.position + pan_offset) * zoom_scale + egui::Vec2 { x: -node_size.x / 2.0, y: 0.0 }; // This fixes the new node creation problem
+    // let node_position = (display_node.position + pan_offset) * zoom_scale; // This fixes the new node creation problem
+    let node_position = graph_viewport_state.pan_zoom.world_to_screen(&(display_node.position + egui::Vec2{ x: -node_size.x / 2.0 , y: 0.0 }));
     // let node_position = node_position_uncentered + egui::Vec2{ x: -node_size.x / 2.0 , y: 0.0 };
 
     // but adds an offset problem
 
     let rect_margin = egui::Vec2 { x: 4.0, y: 4.0 } * zoom_scale;
-    let node_outline_rect = egui::Rect::from_min_size(
+    let node_rect= egui::Rect::from_min_size(
         node_position,
         node_size
     );
 
+    let node_outline_rect = node_rect.expand2(rect_margin);
+
+    // let node_outline_rect = egui::Rect::from_min_size(
+    //     node_position,
+    //     node_size
+    // );
+
     
-    let node_rect = node_outline_rect.shrink2(rect_margin);
+    // this worked
+    // let node_rect = node_outline_rect.shrink2(rect_margin);
 
     let node_top_left_corner_can_be_seen_in_viewport = ui.max_rect().contains( node_rect.min ); // consider changing it to be the highlight rect
     let node_top_right_corner_can_be_seen_in_viewport = ui.max_rect().contains( egui::Pos2 { x: node_rect.max.x, y: node_rect.min.y } );
@@ -131,7 +144,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
 
     let node_reponse = ui.interact(
         title_box_rect,
-        egui::Id::new( graph_viewport_state.title.clone() + "node_body_" + display_node.key.to_string().as_str()), // @TODO, find a way to move title out of state
+        egui::Id::new( graph_viewport_state.title.clone() + "_node_body_" + display_node.key.to_string().as_str()), // @TODO, find a way to move title out of state
         egui::Sense::click_and_drag(),
     );
 
@@ -224,7 +237,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     for output_port_key in engine_node.output_port_keys.iter()
     {
         let display_output_port = node_graph.display_output_ports.get(output_port_key).unwrap();
-        let new_output_port_position= egui::Pos2 { x: node_rect.max.x, y: node_rect.min.y } + display_output_port.relative_position * zoom_scale;
+        let new_output_port_position= node_position + display_output_port.relative_position * zoom_scale;
 
         let output_port_rect= egui::Rect::from_center_size(new_output_port_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
 
@@ -261,7 +274,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
             let connected_display_node = node_graph.display_nodes.get(&connected_display_port.node_key).unwrap();
 
             let connected_node_draw_position= (connected_display_node.position + pan_offset) * zoom_scale + egui::Vec2 { x: -node_size.x / 2.0, y: 0.0 }; 
-            let connected_port_draw_position = connected_node_draw_position + rect_margin + connected_display_port.relative_position * zoom_scale;
+            let connected_port_draw_position = connected_node_draw_position + connected_display_port.relative_position * zoom_scale;
 
             ui.painter().line_segment([ new_output_port_position, connected_port_draw_position], egui::Stroke::new(5.0 * zoom_scale, egui::Color32::YELLOW));
         }

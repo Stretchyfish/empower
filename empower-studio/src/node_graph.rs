@@ -35,6 +35,8 @@ impl NodeGraph
             return engine_node_key;
         }
 
+        let node_size = egui::Vec2 { x: 200.0, y: 100.0}; // @TODO, change this depending on node type
+
         let port_gap = 50.0;
         let mut input_port_offset = 50.0;
 
@@ -49,14 +51,14 @@ impl NodeGraph
         let mut output_port_offset = 50.0;
         for output_port_key in self.engine.nodes.get(&engine_node_key).unwrap().output_port_keys.iter()
         {
-            let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(0.0, output_port_offset) }; 
+            let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(node_size.x, output_port_offset) }; 
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
             output_port_offset += port_gap;
         }
         
         // let new_node_key = self.display_nodes.len() as i32;
-        self.display_nodes.insert(engine_node_key, DisplayNode::new_with_key_and_position(engine_node_key, position));
+        self.display_nodes.insert(engine_node_key, DisplayNode::new_with_key_and_position(engine_node_key, position, node_size));
 
         engine_node_key
     }
@@ -71,6 +73,7 @@ pub struct DisplayNode
 {
     pub key: EmpowerKey,
     pub position: egui::Pos2,
+    pub size: egui::Vec2,
 }
 
 impl DisplayNode
@@ -81,6 +84,7 @@ impl DisplayNode
         {
             key: 0,
             position: egui::Pos2::new(0.0, 0.0),
+            size: egui::Vec2 { x: 100.0, y: 100.0 }
         }
     }
 
@@ -90,15 +94,17 @@ impl DisplayNode
         {
             key: new_key,
             position: egui::Pos2::new(0.0, 0.0),
+            size: egui::Vec2 { x: 100.0, y: 100.0 }
         }
     }
 
-    pub fn new_with_key_and_position(new_key: EmpowerKey, new_position: egui::Pos2) -> Self
+    pub fn new_with_key_and_position(new_key: EmpowerKey, new_position: egui::Pos2, new_size: egui::Vec2) -> Self
     {
         Self
         {
             key: new_key,
             position: new_position,
+            size: new_size        
         }
     }
 }
