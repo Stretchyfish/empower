@@ -276,6 +276,11 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
             let connected_node_draw_position= (connected_display_node.position + pan_offset) * zoom_scale + egui::Vec2 { x: -node_size.x / 2.0, y: 0.0 }; 
             let connected_port_draw_position = connected_node_draw_position + connected_display_port.relative_position * zoom_scale;
 
+            if node_rect.contains(connected_port_draw_position)
+            {
+                continue;
+            }
+
             ui.painter().line_segment([ new_output_port_position, connected_port_draw_position], egui::Stroke::new(5.0 * zoom_scale, egui::Color32::YELLOW));
         }
 
