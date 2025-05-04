@@ -122,10 +122,11 @@ impl GraphViewport
             let display_node = node_graph.display_nodes.get(&node_key).unwrap();
             // let node_position = node_graph.display_nodes.get(&node_key).unwrap().position;
 
-            let port_position = display_node.position + port_relative_position;
+            let node_centering_offset = egui::Vec2{ x: -display_node.size.x / 2.0 , y: 0.0 }; // This value is used to center node around its middle, instead of around its top left corner
+            let port_position = display_node.position + port_relative_position + node_centering_offset;
             // let port_position = node_position;
 
-            let port_draw_position = self.state.pan_zoom.world_to_screen(&(port_position + egui::Vec2{ x: -display_node.size.x / 2.0 , y: 0.0 }));
+            let port_draw_position = self.state.pan_zoom.world_to_screen(&port_position);
 
             ui.painter().line_segment([ port_draw_position, user_input.mouse_position], egui::Stroke::new(5.0 * self.state.pan_zoom.zoom_scale, egui::Color32::YELLOW));
         }
