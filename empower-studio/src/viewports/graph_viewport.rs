@@ -3,6 +3,12 @@ use empower_engine::EmpowerKey;
 mod background;
 mod widgets;
 mod panels;
+mod utils;
+mod graph_viewport_state;
+use graph_viewport_state::GraphViewportState;
+
+use utils::PortKind;
+use utils::PortSearcher;
 
 use crate::interactions;
 use crate::NodeGraph;
@@ -306,136 +312,3 @@ impl GraphViewport
     }
 }
 
-#[derive(Default)]
-pub struct GraphViewportState
-{
-    pub title: String,
-    pub selected_nodes: Vec<i32>,
-    pub node_select_rect: Option<egui::Rect>, // Consider improving the naming
-    pub window_size: egui::Vec2,
-    pub pan_zoom: PanZoom,
-    pub dragging_background: bool,
-    pub node_selection_panel_state: panels::NodeSelectionPanelState,
-    port_search: Option<PortSearcher>,
-}
-
-impl GraphViewportState
-{
-    pub fn new(initial_title: String) -> Self
-    {
-        Self
-        {
-            title: initial_title,
-            selected_nodes: Vec::new(),
-            node_select_rect: Option::None,
-            window_size: egui::Vec2 { x: 0.0, y: 0.0 },
-            pan_zoom: PanZoom::new(),
-            dragging_background: false,
-            node_selection_panel_state: panels::NodeSelectionPanelState::new(),
-            port_search: Option::None,
-        }
-    }    
-}
-
-// struct NodeSelectRect
-// {
-//     pub rect: egui::Rect,
-// }
-
-pub struct PanZoom
-{
-    pub zoom_scale: f32,
-    pub pan_offset: egui::Vec2,
-    pub window_size_pan_offset: egui::Vec2,
-    zoom_speed: f32,
-}
-
-impl Default for PanZoom
-{
-    fn default() -> Self
-    {
-        Self
-        {
-            zoom_scale: 1.0,
-            pan_offset: egui::Vec2 { x: 0.0, y: 0.0 },
-            window_size_pan_offset: egui::Vec2 { x: 0.0, y: 0.0 },
-            zoom_speed: 0.01,
-        }
-    }
-}
-
-impl PanZoom
-{
-    pub fn new() -> Self
-    {
-        Self
-        {
-            zoom_scale: 1.0,
-            pan_offset: egui::Vec2 { x: 0.0, y: 0.0 },
-            window_size_pan_offset: egui::Vec2 { x: 0.0, y: 0.0 },
-            zoom_speed: 0.001,
-        }
-    }
-
-    // pub fn update_pan_zoom(&mut self, ui: &egui::Ui, user_input: &interactions::user::UserInputs, background_clicked: bool)
-    // {
-    //     if user_input.left_is_down && background_clicked
-    //     {
-    //         self.pan_offset += user_input.mouse_position_delta / self.zoom_scale;
-    //     }
-
-
-    //     let mouse_position_world_space_before_zoom = self.screen_to_world(&user_input.mouse_position);
-
-    //     self.zoom_scale += user_input.scroll_delta * self.zoom_speed;
-    //     self.zoom_scale = self.zoom_scale.clamp(0.1, 10.0);
-        
-    //     let mouse_position_world_space_after_zoom = self.screen_to_world(&user_input.mouse_position);
-
-    //     self.pan_offset -= mouse_position_world_space_before_zoom - mouse_position_world_space_after_zoom;
-      
-    // }
-
-    pub fn update_pan(&mut self, user_input: &interactions::user::UserInputs)
-    {
-        self.pan_offset += user_input.mouse_position_delta / self.zoom_scale;
-    }
-
-    pub fn update_zoom(&mut self, user_input: &interactions::user::UserInputs)
-    {
-        let mouse_position_world_space_before_zoom = self.screen_to_world(&user_input.mouse_position);
-
-        self.zoom_scale += user_input.scroll_delta * self.zoom_speed;
-        self.zoom_scale = self.zoom_scale.clamp(0.1, 10.0);
-        
-        let mouse_position_world_space_after_zoom = self.screen_to_world(&user_input.mouse_position);
-
-        self.pan_offset -= mouse_position_world_space_before_zoom - mouse_position_world_space_after_zoom;
-    }
-    
-    pub fn world_to_screen(&self, world_position: &egui::Pos2) -> egui::Pos2
-    {
-        (*world_position + self.pan_offset) * self.zoom_scale
-    }
-
-    pub fn screen_to_world(&self, screen_position: &egui::Pos2) -> egui::Pos2
-    {
-        // Should never happen, but make sure to add a divide by 0 check here
-        // *screen_position / self.zoom_scale + self.pan_offset
-        *screen_position / self.zoom_scale - self.pan_offset
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum PortKind
-{
-    InputPort,
-    OutputPort,
-}
-
-#[derive(Clone, Copy)]
-struct PortSearcher
-{
-    port_key: EmpowerKey,
-    port_kind: PortKind,
-}

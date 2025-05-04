@@ -2,6 +2,7 @@ use egui;
 use crate::viewports::graph_viewport;
 use crate::NodeGraph;
 use crate::interactions;
+use crate::viewports::graph_viewport::utils::PanZoom;
 
 #[derive(Default)]
 pub struct NodeSelectionPanelState
@@ -25,7 +26,7 @@ impl NodeSelectionPanelState
     }
 }
 
-pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelState, node_graph: &mut NodeGraph, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, pan_zoom: &mut graph_viewport::PanZoom)
+pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelState, node_graph: &mut NodeGraph, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, pan_zoom: &mut PanZoom)
 {
     let window_position = node_selection_panel_state.mouse_position_when_node_select_menu_was_activated.unwrap_or_else(|| user_input.mouse_position );
     
