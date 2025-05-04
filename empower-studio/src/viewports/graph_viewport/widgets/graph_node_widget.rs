@@ -1,6 +1,7 @@
 use egui;
 use empower_engine::EmpowerKey;
-use crate::node_graph::{self, DisplayNode};
+use crate::DisplayNode;
+use crate::DisplayPort;
 use crate::viewports::graph_viewport::GraphViewportState;
 use crate::interactions::user::UserInputs;
 use crate::NodeGraph;

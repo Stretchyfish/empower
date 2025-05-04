@@ -1,5 +1,11 @@
 use eframe;
 
+pub mod display_node;
+pub use display_node::DisplayNode;
+
+pub mod display_port;
+pub use display_port::DisplayPort;
+
 pub mod node_graph;
 pub use node_graph::NodeGraph;
 
