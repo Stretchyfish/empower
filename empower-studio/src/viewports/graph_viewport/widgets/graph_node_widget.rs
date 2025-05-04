@@ -29,7 +29,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     let zoom_scale = graph_viewport_state.pan_zoom.zoom_scale;
 
     let node_world_size= display_node.size;
-    let node_size= display_node.size * zoom_scale;
+    let node_screen_size= display_node.size * zoom_scale;
     // let node_centering_offset = 
     // let node_size = egui::Vec2 { x: 200.0, y: 200.0 } * zoom_scale;
     
@@ -51,15 +51,15 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     // let node_position = (display_node.position + pan_offset) * zoom_scale; // This fixes the new node creation problem
     let node_world_position = display_node.position;
     let node_centering_offset = egui::Vec2{ x: -node_world_size.x / 2.0 , y: 0.0 }; // This value is used to center node around its middle, instead of around its top left corner
-    let node_draw_position= graph_viewport_state.pan_zoom.world_to_screen(&(node_world_position + node_centering_offset));
+    let node_screen_position= graph_viewport_state.pan_zoom.world_to_screen(&(node_world_position + node_centering_offset));
     // let node_position = node_position_uncentered + egui::Vec2{ x: -node_size.x / 2.0 , y: 0.0 };
 
     // but adds an offset problem
 
     let rect_margin = egui::Vec2 { x: 4.0, y: 4.0 } * zoom_scale;
     let node_rect= egui::Rect::from_min_size(
-        node_draw_position,
-        node_size
+        node_screen_position,
+        node_screen_size
     );
 
     let node_outline_rect = node_rect.expand2(rect_margin);
@@ -222,11 +222,11 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         let display_input_port = node_graph.display_input_ports.get(input_port_key).unwrap();
 
         let input_port_position = node_world_position + display_input_port.relative_position;
-        let input_port_draw_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_position + node_centering_offset));
+        let input_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_position + node_centering_offset));
 
         // let new_input_port_position = node_rect.min + display_input_port.relative_position * zoom_scale;
 
-        let input_port_rect = egui::Rect::from_center_size(input_port_draw_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+        let input_port_rect = egui::Rect::from_center_size(input_port_screen_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
 
         if ui.interact(input_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
@@ -235,7 +235,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         }
        
         ui.painter().circle(
-            input_port_draw_position,
+            input_port_screen_position,
             10.0 * zoom_scale ,
             egui::Color32::YELLOW,
             egui::Stroke::NONE,
@@ -247,9 +247,9 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     {
         let display_output_port = node_graph.display_output_ports.get(output_port_key).unwrap();
         let output_port_world_position= node_world_position + display_output_port.relative_position;
-        let output_port_draw_position = graph_viewport_state.pan_zoom.world_to_screen(&(output_port_world_position + node_centering_offset));
+        let output_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(output_port_world_position + node_centering_offset));
 
-        let output_port_rect= egui::Rect::from_center_size(output_port_draw_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+        let output_port_rect= egui::Rect::from_center_size(output_port_screen_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
 
         if ui.interact(output_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
@@ -258,7 +258,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         }
 
         ui.painter().circle(
-            output_port_draw_position,
+            output_port_screen_position,
             10.0 * zoom_scale,
             egui::Color32::YELLOW,
             egui::Stroke::NONE,
@@ -284,17 +284,17 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
             let connected_display_node = node_graph.display_nodes.get(&connected_display_port.node_key).unwrap();
 
             let connected_port_world_position = connected_display_node.position + node_centering_offset + connected_display_port.relative_position;
-            let connected_port_draw_position = graph_viewport_state.pan_zoom.world_to_screen(&connected_port_world_position);
+            let connected_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&connected_port_world_position);
 
             //let connected_node_draw_position= (connected_display_node.position + pan_offset + node_centering_offset); 
             //let connected_port_draw_position = connected_node_draw_position + connected_display_port.relative_position * zoom_scale;
 
-            if node_rect.contains(connected_port_draw_position)
+            if node_rect.contains(connected_port_screen_position)
             {
                 continue;
             }
 
-            ui.painter().line_segment([ output_port_draw_position, connected_port_draw_position], egui::Stroke::new(5.0 * zoom_scale, egui::Color32::YELLOW));
+            ui.painter().line_segment([ output_port_screen_position, connected_port_screen_position], egui::Stroke::new(5.0 * zoom_scale, egui::Color32::YELLOW));
         }
 
     }
