@@ -21,6 +21,24 @@ pub enum NodeViewResponseType
     ClickedOutputPort(EmpowerKey)
 }
 
+pub fn view_nodes_and_connections(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, user_input: &UserInputs) -> Vec<NodeViewReponse>
+{
+    let mut nodes_view_responses = Vec::new(); // Change to an optional?
+    let display_node_keys: Vec<EmpowerKey> = node_graph.display_nodes.keys().cloned().collect(); 
+
+    for display_node_key in display_node_keys        
+    {
+        let reponse = view_graph_node_widget(ui, display_node_key, node_graph, &graph_viewport_state, &user_input);
+
+        if let Some(view_response) = reponse
+        {
+            nodes_view_responses.push(view_response);
+        }
+    }
+    nodes_view_responses
+    
+}
+
 pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, user_input: &UserInputs) -> Option<NodeViewReponse>
 {
     let mut view_graph_node_reponse = Option::None;

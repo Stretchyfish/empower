@@ -34,12 +34,5 @@ impl GraphViewportState
             port_search: Option::None,
         }
     }    
+
 }
-
-// struct NodeSelectRect
-// {
-//     pub rect: egui::Rect,
-// }
-
-
-

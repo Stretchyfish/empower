@@ -9,9 +9,11 @@ use graph_viewport_state::GraphViewportState;
 
 use utils::PortKind;
 use utils::PortSearcher;
+use widgets::graph_node_widget::NodeViewReponse;
 
 use crate::interactions;
 use crate::NodeGraph;
+
 
 #[derive(Default)]
 pub struct GraphViewport 
@@ -31,6 +33,29 @@ impl GraphViewport
 
     pub fn view(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph) 
     {
+        self.detect_and_handle_viewport_size_change(ui);
+
+        let user_input = interactions::user::inputs::detect_user_inputs(ui);
+
+        let mut nodes_view_responses = Vec::new(); 
+        egui::CentralPanel::default() // This extra central panel layer makes nodes out of viewport rect not spawn scrollbars, and also future proffs
+        .show_inside(ui, |ui| {
+
+            self.detect_background_interactions(ui, &user_input);
+            // background::visualize_background(ui, &self.state);
+
+            nodes_view_responses = widgets::graph_node_widget::view_nodes_and_connections(ui, node_graph, &self.state, &user_input);
+            widgets::graph_connection_widget::view_connection_search(ui, node_graph, &self.state, &user_input);
+        });
+
+        self.view_scrollbars(ui);
+    
+        self.update_state_and_ui(ui, &user_input, nodes_view_responses, node_graph);
+    
+    }
+
+    fn detect_and_handle_viewport_size_change(&mut self, ui: &mut egui::Ui)
+    {
         let viewport_rect = ui.max_rect();
         let viewport_size = viewport_rect.size();
 
@@ -45,28 +70,11 @@ impl GraphViewport
             self.state.pan_zoom.pan_offset += self.state.pan_zoom.window_size_pan_offset;
             self.state.window_size = viewport_size;
         }
+    }
 
-        let user_input = interactions::user::inputs::detect_user_inputs(ui);
-        // let viewport_bounds_rect = ui.available_rect_before_wrap();
-
-        // For this to work, no other element should depend on dragging
-
-        // egui::SidePanel::left("my left panel") // This is good code to save for later
-        // .show_inside(ui, |ui|
-        // {
-            
-        // });
-
-        let mut stopped_selecting_an_area_of_nodes = false;
-        if self.state.node_select_rect.is_some() && (!user_input.left_is_down || !user_input.left_shift_is_down)
-        {
-            stopped_selecting_an_area_of_nodes = true;
-        }
-
-        let mut nodes_view_responses = Vec::new();
-        egui::CentralPanel::default() // This extra central panel layer makes nodes out of viewport rect not spawn scrollbars, and also future proffs
-        .show_inside(ui, |ui| {
-
+    fn detect_background_interactions(&mut self, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs)
+    {
+        let viewport_rect = ui.max_rect();
         let background_reponse = ui.allocate_rect(viewport_rect, egui::Sense::drag());
         if background_reponse.drag_started() && user_input.left_is_down
         {
@@ -76,67 +84,11 @@ impl GraphViewport
         {
             self.state.dragging_background = false;
         }
-        // background::visualize_background(ui, &self.state);
-
-        let display_node_keys: Vec<EmpowerKey> = node_graph.display_nodes.keys().cloned().collect(); 
-
-        // for (_display_node_key, display_node) in node_graph.display_nodes.iter_mut()
-        // {
-        //     let reponse = widgets::graph_node_widget::view_graph_node_widget(ui, display_node, &node_graph, &self.state, &user_input);
-
-        //     if let Some(view_response) = reponse
-        //     {
-        //         nodes_view_responses.push(view_response);
-        //     }
-        // }
-        for display_node_key in display_node_keys        
-        {
-            let reponse = widgets::graph_node_widget::view_graph_node_widget(ui, display_node_key, node_graph, &self.state, &user_input);
-
-            if let Some(view_response) = reponse
-            {
-                nodes_view_responses.push(view_response);
-            }
-        }
-
-        });
-
-        if self.state.port_search.is_some()
-        {
-            let port_search = self.state.port_search.unwrap();
-
-            let node_key;
-            let port_relative_position;
-            match port_search.port_kind
-            {
-                PortKind::InputPort => 
-                {
-                    let display_input_port = node_graph.display_input_ports.get(&port_search.port_key).unwrap();
-                    port_relative_position = display_input_port.relative_position;                   
-                    node_key = display_input_port.node_key;
-                }
-
-                PortKind::OutputPort =>
-                {
-                    let display_output_port= node_graph.display_output_ports.get(&port_search.port_key).unwrap();
-                    port_relative_position = display_output_port.relative_position;                   
-                    node_key = display_output_port.node_key;
-                }
-            }
-
-            // @TODO A crash can happen here if the node gets removed, needs to be fixed
-            let display_node = node_graph.display_nodes.get(&node_key).unwrap();
-            // let node_position = node_graph.display_nodes.get(&node_key).unwrap().position;
-
-            let node_centering_offset = egui::Vec2{ x: -display_node.size.x / 2.0 , y: 0.0 }; // This value is used to center node around its middle, instead of around its top left corner
-            let port_position = display_node.position + port_relative_position + node_centering_offset;
-            // let port_position = node_position;
-
-            let port_draw_position = self.state.pan_zoom.world_to_screen(&port_position);
-
-            ui.painter().line_segment([ port_draw_position, user_input.mouse_position], egui::Stroke::new(5.0 * self.state.pan_zoom.zoom_scale, egui::Color32::YELLOW));
-        }
-        // This code for scroll bars work, but needs tunning
+    }
+    
+    fn view_scrollbars(&mut self, ui: &mut egui::Ui)
+    {
+                // This code for scroll bars work, but needs tunning
         // ================================================================
         // egui::TopBottomPanel::bottom("horizontal_scroll_bar_panel".to_string() + self.state.title.as_str())
         // .show_separator_line(false)
@@ -170,7 +122,16 @@ impl GraphViewport
         //     self.state.pan_zoom.pan_offset.y = pan_value_in_vertical_slider + self.state.pan_zoom.window_size_pan_offset.y;
         // });
         // ================================================================
-    
+      
+    }
+
+    pub fn update_state_and_ui(&mut self, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, nodes_view_responses: Vec<NodeViewReponse>, node_graph: &mut NodeGraph)
+    {
+        let mut stopped_selecting_an_area_of_nodes = false;
+        if self.state.node_select_rect.is_some() && (!user_input.left_is_down || !user_input.left_shift_is_down)
+        {
+            stopped_selecting_an_area_of_nodes = true;
+        }
         let mut node_was_clicked = false;
         let mut node_was_hovered = false;
         let mut search_was_started = false;
@@ -307,7 +268,7 @@ impl GraphViewport
         { 
             self.state.port_search = Option::None;
         }
-    
+        
         self.state.pan_zoom.update_zoom(&user_input);
     }
 }
