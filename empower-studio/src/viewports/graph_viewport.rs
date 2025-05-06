@@ -51,7 +51,6 @@ impl GraphViewport
         self.view_scrollbars(ui);
     
         self.update_state_and_ui(ui, &user_input, nodes_view_responses, node_graph);
-    
     }
 
     fn detect_and_handle_viewport_size_change(&mut self, ui: &mut egui::Ui)

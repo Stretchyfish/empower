@@ -244,8 +244,9 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         let input_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_position + node_centering_offset));
 
         // let new_input_port_position = node_rect.min + display_input_port.relative_position * zoom_scale;
+        let input_port_size = egui::Vec2 { x: 20.0, y: 20.0 }; 
 
-        let input_port_rect = egui::Rect::from_center_size(input_port_screen_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+        let input_port_rect = egui::Rect::from_center_size(input_port_screen_position, input_port_size * zoom_scale);
 
         if ui.interact(input_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
@@ -259,7 +260,47 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
             egui::Color32::YELLOW,
             egui::Stroke::NONE,
         );
-        
+
+        ui.painter().rect(input_port_rect, egui::Rounding::ZERO, egui::Color32::BLUE, egui::Stroke::NONE);
+
+        let input_port_text_offset = egui::Vec2 { x: 15.0, y: 0.0};
+        // let input_port_text_offset = egui::Vec2 { x: 15.0, y: 0.0 };
+        // let input_port_text_position = input_port_position + node_centering_offset + input_port_text_offset + egui::Vec2 { x: 0.0, y: input_port_rect.size().y / 2.0 } ;
+        let input_port_text_position = input_port_position + node_centering_offset + input_port_text_offset;
+        let input_port_text_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&input_port_text_position);
+
+        ui.painter().text(
+            input_port_text_screen_position,
+            // egui::Align2::LEFT_TOP,
+            egui::Align2::LEFT_CENTER,
+            "value",
+            egui::FontId::proportional(16.0 * zoom_scale ),
+            egui::Color32::WHITE,
+        );
+
+
+        let input_port_value_box_offset = egui::Vec2 { x: 45.0, y: -input_port_size.y / 2.0 }; // @TODO, change this to depend on the text
+        let input_port_value_box_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_text_position + input_port_value_box_offset));
+
+        let input_port_value_box_size = egui::Vec2{ x: 40.0, y: 20.0 } * zoom_scale;
+
+        let mut text_edit_color = egui::Color32::GRAY;
+
+        egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
+        .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
+        .show(ui.ctx(), |ui| 
+        {
+            let mut input_port_text = String::new();
+            let mut text_edit = egui::TextEdit::singleline(&mut input_port_text);
+            // text_edit = text_edit.text_color(text_edit_color);
+            text_edit = text_edit.text_color(text_edit_color);
+            text_edit = text_edit.desired_rows(1);
+            // text_edit = text_edit.min_size(egui::Vec2 { x: 0.001, y: 0.001 });
+            // text_edit = text_edit.interactive(false);
+            ui.add_sized(input_port_value_box_size, text_edit);
+        });    
+
+
     };
 
     for output_port_key in engine_node.output_port_keys.iter()
@@ -268,7 +309,8 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         let output_port_world_position= node_world_position + display_output_port.relative_position;
         let output_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(output_port_world_position + node_centering_offset));
 
-        let output_port_rect= egui::Rect::from_center_size(output_port_screen_position, egui::Vec2 { x: 5.0, y: 5.0} * zoom_scale);
+        let output_port_size = egui::Vec2 { x: 20.0, y: 20.0 }; 
+        let output_port_rect= egui::Rect::from_center_size(output_port_screen_position, output_port_size * zoom_scale);
 
         if ui.interact(output_port_rect, egui::Id::from(graph_viewport_state.title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
