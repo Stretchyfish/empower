@@ -44,7 +44,7 @@ impl NodeGraph
 
         for input_port_keys in self.engine.nodes.get(&engine_node_key).unwrap().input_port_keys.iter()
         {
-            let new_display_port = DisplayPort { key: input_port_keys.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset) }; 
+            let new_display_port = DisplayPort { key: input_port_keys.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: String::new() }; 
             self.display_input_ports.insert(input_port_keys.clone(), new_display_port);
 
             input_port_offset += port_gap;
@@ -53,7 +53,7 @@ impl NodeGraph
         let mut output_port_offset = 50.0;
         for output_port_key in self.engine.nodes.get(&engine_node_key).unwrap().output_port_keys.iter()
         {
-            let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(node_size.x, output_port_offset) }; 
+            let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(node_size.x, output_port_offset), value: String::new() }; 
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
             output_port_offset += port_gap;

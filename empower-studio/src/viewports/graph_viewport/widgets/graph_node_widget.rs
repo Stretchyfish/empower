@@ -1,4 +1,5 @@
 use egui;
+use egui::text_edit;
 use empower_engine::EmpowerKey;
 use crate::DisplayNode;
 use crate::DisplayPort;
@@ -236,9 +237,9 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         egui::Stroke::NONE,
     );
 
-    for input_port_key in engine_node.input_port_keys.iter()
+    for input_port_key in engine_node.input_port_keys.iter() 
     {
-        let display_input_port = node_graph.display_input_ports.get(input_port_key).unwrap();
+        let display_input_port = node_graph.display_input_ports.get_mut(input_port_key).unwrap();// @TODO, change this back to being borrowed once the value is read from engine instead of display port
 
         let input_port_position = node_world_position + display_input_port.relative_position;
         let input_port_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_position + node_centering_offset));
@@ -282,25 +283,74 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         let input_port_value_box_offset = egui::Vec2 { x: 45.0, y: -input_port_size.y / 2.0 }; // @TODO, change this to depend on the text
         let input_port_value_box_screen_position = graph_viewport_state.pan_zoom.world_to_screen(&(input_port_text_position + input_port_value_box_offset));
 
-        let input_port_value_box_size = egui::Vec2{ x: 40.0, y: 20.0 } * zoom_scale;
+        let input_port_value_box_size = egui::Vec2{ x: 60.0, y: 20.0 } * zoom_scale;
 
         let mut text_edit_color = egui::Color32::GRAY;
 
-        egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
-        .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
-        .show(ui.ctx(), |ui| 
+        let mut display_port_value_text = display_input_port.value.clone();
+
+        let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_screen_position, input_port_value_box_size);
+
+        // let mut text_edit = egui::TextEdit::singleline(&mut display_port_value_text)
+        // .clip_text(false)
+        // .desired_width(10.0)
+        // .margin(ui.spacing().item_spacing)
+        // .show(ui);
+
+        if zoom_scale >= 1.0
         {
-            let mut input_port_text = String::new();
-            let mut text_edit = egui::TextEdit::singleline(&mut input_port_text);
-            // text_edit = text_edit.text_color(text_edit_color);
-            text_edit = text_edit.text_color(text_edit_color);
-            text_edit = text_edit.desired_rows(1);
-            // text_edit = text_edit.min_size(egui::Vec2 { x: 0.001, y: 0.001 });
-            // text_edit = text_edit.interactive(false);
-            ui.add_sized(input_port_value_box_size, text_edit);
-        });    
+            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE);
+            egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
+            .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
+            .show(ui.ctx(), |ui| 
+            {
+                // ui.allocate_ui_at_rect(input_port_value_box_rect, |ui|
+                // {
+                // });
+                let mut text_edit = egui::TextEdit::singleline(&mut display_port_value_text)
+                .clip_text(false)
+                .desired_width(60.0)
+                .margin(ui.spacing().item_spacing)
+                .min_size(egui::Vec2 { x: 0.001, y: 0.001 })
+                .char_limit(5);
+
+                // .show(ui);
+                // text_edit = text_edit.text_color(text_edit_color);
+                // text_edit = text_edit.text_color(text_edit_color);
+                // text_edit = text_edit.desired_rows(1);
+                // text_edit = text_edit.char_limit(10);
+                // text_edit = text_edit.desired_width(10.0);
+                // text_edit.show(ui);
+                // text_edit = text_edit.frame(false);
+                // text_edit = text_edit.min_size(egui::Vec2 { x: 0.001, y: 0.001 });
+                // text_edit = text_edit.interactive(false);
+                ui.add_sized(input_port_value_box_size, text_edit);
+            });    
+        }
+        else
+        {
+            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE);
+            egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
+            .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
+            .show(ui.ctx(), |ui| 
+            {
+                let text_label = egui::Label::new("value");
+                ui.add_sized(input_port_value_box_size, text_label);
+            });
+            // ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE);
+            // let text_label = ui.label("value");
+            // ui.painter().text(
+            //     input_port_value_box_screen_position,
+            //     // egui::Align2::LEFT_TOP,
+            //     egui::Align2::LEFT_TOP,
+            //     "value",
+            //     egui::FontId::proportional(16.0 * zoom_scale ),
+            //     egui::Color32::WHITE,
+            // );
+        }
 
 
+        display_input_port.value = display_port_value_text.clone();
     };
 
     for output_port_key in engine_node.output_port_keys.iter()
