@@ -38,6 +38,7 @@ impl EmpowerEditorApplication
     pub fn new() -> Self
     {
         let mut new_docking_state = egui_dock::DockState::new(Vec::new());
+
         let mut new_workspace = panels::Workspace::new();
 
         let new_viewport_type = viewports::ViewportTypes::GraphViewport;
@@ -84,6 +85,8 @@ impl eframe::App for EmpowerEditorApplication
                     })
                     .show_close_buttons(true) // @TODO, add behavior here?
                     .show_add_popup(true)
+                    .show_leaf_close_all_buttons(false)
+                    .show_leaf_collapse_buttons(false)
                     .show_inside(
                         ui,
                         &mut panels::TabsViewer {
