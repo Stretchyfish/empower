@@ -18,6 +18,7 @@ use crate::user;
 pub struct Tabs // @TODO, decide on this name, it was named context before, should it be changed back?
 {
     pub graph_viewport_tabs: Vec<viewports::GraphViewport>,
+    pub new_graph_viewport_tabs: Vec<viewports::NewGraphViewport>,
     pub graph_state: graph::GraphState,
 }
 
@@ -28,6 +29,7 @@ impl Tabs
         Self
         {
             graph_viewport_tabs: Vec::new(), // @TODO, this should be a hashtable
+            new_graph_viewport_tabs: Vec::new(),
             graph_state: graph::GraphState::new(),
         }
     }
@@ -44,7 +46,8 @@ impl Tabs
             tab_name += ")";
         }
 
-        self.graph_viewport_tabs.push( viewports::GraphViewport::new(tab_name.clone()) );
+        // self.graph_viewport_tabs.push( viewports::GraphViewport::new(tab_name.clone()) );
+        self.new_graph_viewport_tabs.push( viewports::NewGraphViewport::new(tab_name.clone()) );
 
         println!("{}", tab_name);
         return tab_name;
@@ -64,7 +67,7 @@ impl egui_dock::TabViewer for Tabs
     {
         let tab_name: String = tab.clone().into();
         let user_inputs = user::inputs::detect_user_inputs(ui);        
-        
+
         // Leaving this code here, might be interesting later
         //let tab_top_left_corner_position = ui.cursor().min; // not 100% top left corner, build shouldn't matter?
         //ui.painter().circle(tab_top_left_corner_position, 5.0, egui::Color32::YELLOW, egui::Stroke::new(2.0, egui::Color32::YELLOW));
@@ -75,6 +78,14 @@ impl egui_dock::TabViewer for Tabs
             {
                 graph_viewport_tab.update_graph_viewport(ui, &mut self.graph_state, &user_inputs);
                 return;
+            }
+        }
+
+        for new_graph_viewport_tab in self.new_graph_viewport_tabs.iter_mut()
+        {
+            if tab_name == new_graph_viewport_tab.title
+            {
+                new_graph_viewport_tab.show(ui);
             }
         }
 

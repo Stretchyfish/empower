@@ -8,6 +8,7 @@ pub struct Workspace
 {
     pub empty_viewports: Vec<viewports::EmptyViewport>,
     pub graph_viewports: Vec<viewports::GraphViewport>,
+    pub new_graph_viewports: Vec<viewports::NewGraphViewport>,
 }
 
 impl Workspace
@@ -18,6 +19,7 @@ impl Workspace
         {   
             empty_viewports: Vec::new(),
             graph_viewports: Vec::new(),
+            new_graph_viewports: Vec::new(),
         }
     }
 
@@ -57,6 +59,22 @@ impl Workspace
                 let new_graph_viewport = viewports::GraphViewport::new(tab_name.clone());
                 self.graph_viewports.push(new_graph_viewport);
             }
+
+            viewports::ViewportTypes::NewGraphViewport =>
+            {
+                let tab_index = self.new_graph_viewports.len();
+                
+                let mut tab_affix = String::new();
+                if tab_index > 0
+                {
+                    tab_affix = format!("({})", tab_index);
+                }
+                
+                tab_name = String::from("New Graph Viewport") + &tab_affix;
+
+                let new_graph_viewport = viewports::NewGraphViewport::new(tab_name.clone());
+                self.new_graph_viewports.push(new_graph_viewport);
+            }
         }
 
         tab_name
@@ -78,6 +96,15 @@ impl Workspace
             if graph_viewport.state.title == viewport_title
             {
                 graph_viewport.view(ui, node_graph);                
+                return;
+            }
+        }
+
+        for new_graph_viewport in self.new_graph_viewports.iter_mut()
+        {
+            if new_graph_viewport.title == viewport_title
+            {
+                new_graph_viewport.show(ui);
                 return;
             }
         }

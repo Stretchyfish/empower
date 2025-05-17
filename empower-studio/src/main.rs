@@ -44,7 +44,14 @@ impl EmpowerEditorApplication
         let new_viewport_type = viewports::ViewportTypes::GraphViewport;
 
         let new_tab_name = new_workspace.create_viewport(new_viewport_type);
+        println!("Tab name: {}", new_tab_name.clone());
         new_docking_state.push_to_focused_leaf(new_tab_name);
+
+        let new_viewport_type_2 = viewports::ViewportTypes::NewGraphViewport;
+        
+        let new_tab_name_2 = new_workspace.create_viewport(new_viewport_type_2);
+        println!("Tab name: {}", new_tab_name_2.clone());
+        new_docking_state.push_to_focused_leaf(new_tab_name_2 );
 
         let mut new_node_graph = NodeGraph::new();
         new_node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
