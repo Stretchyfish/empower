@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use egui;
 use empower_engine::EmpowerKey;
 mod background;
@@ -245,7 +247,7 @@ impl GraphViewport
                 if self.state.node_select_rect != Option::None
                 {
                     self.state.node_select_rect = Option::Some( egui::Rect::from_min_max( self.state.node_select_rect.unwrap().min, user_input.mouse_position) );
-                    ui.painter().rect(self.state.node_select_rect.unwrap(), 0.0, egui::Color32::ORANGE.gamma_multiply(0.2), egui::Stroke::NONE);
+                    ui.painter().rect(self.state.node_select_rect.unwrap(), 0.0, egui::Color32::ORANGE.gamma_multiply(0.2), egui::Stroke::NONE, egui::StrokeKind::Inside);
                 }
 
                 if self.state.node_select_rect == Option::None

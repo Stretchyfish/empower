@@ -196,9 +196,10 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     {
         ui.painter().rect(
             node_outline_rect,
-            egui::Rounding::same(6.0),
+            6.0,
             egui::Color32::ORANGE,
             egui::Stroke::NONE,
+            egui::StrokeKind::Inside,
         );
     }
 
@@ -206,9 +207,10 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     // Show title
     ui.painter().rect(
         title_box_rect,
-        egui::Rounding::same(6.0),
+        6.0,
         title_rect_color,
         egui::Stroke::NONE,
+            egui::StrokeKind::Inside,
     );
 
     ui.painter().text(
@@ -223,18 +225,20 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
     // Show node body
     ui.painter().rect(
         node_rect_without_title_and_bottom,
-        egui::Rounding::same(0.0),
+        0.0,
         node_body_color,
         egui::Stroke::NONE,
+            egui::StrokeKind::Inside,
     );
     // let text_box_color = egui::Color32::BLACK;
 
     // Show node bottom
     ui.painter().rect(
         node_rect_round_bottom,
-        egui::Rounding::same(6.0),
+        6.0,
         node_body_color,
         egui::Stroke::NONE,
+            egui::StrokeKind::Inside,
     );
 
     for input_port_key in engine_node.input_port_keys.iter() 
@@ -262,7 +266,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
             egui::Stroke::NONE,
         );
 
-        ui.painter().rect(input_port_rect, egui::Rounding::ZERO, egui::Color32::BLUE, egui::Stroke::NONE);
+        ui.painter().rect(input_port_rect, 0.0, egui::Color32::BLUE, egui::Stroke::NONE, egui::StrokeKind::Inside);
 
         let input_port_text_offset = egui::Vec2 { x: 15.0, y: 0.0};
         // let input_port_text_offset = egui::Vec2 { x: 15.0, y: 0.0 };
@@ -299,7 +303,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
 
         if zoom_scale >= 1.0
         {
-            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE);
+            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE, egui::StrokeKind::Inside);
             egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
             .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
             .show(ui.ctx(), |ui| 
@@ -329,7 +333,7 @@ pub fn view_graph_node_widget(ui: &mut egui::Ui, display_node_key: EmpowerKey, n
         }
         else
         {
-            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE);
+            ui.painter().rect(input_port_value_box_rect, 0.0, egui::Color32::BLACK, egui::Stroke::NONE, egui::StrokeKind::Inside);
             egui::Area::new(egui::Id::new("input_port_data_".to_owned() + display_node_key.to_string().as_str() + graph_viewport_state.title.as_str()))
             .fixed_pos(egui::pos2(input_port_value_box_screen_position.x, input_port_value_box_screen_position.y)) // Set the desired position
             .show(ui.ctx(), |ui| 
