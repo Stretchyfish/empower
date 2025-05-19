@@ -104,7 +104,7 @@ impl Workspace
         {
             if new_graph_viewport.title == viewport_title
             {
-                new_graph_viewport.show(ui);
+                new_graph_viewport.show(ui, node_graph);
                 return;
             }
         }

@@ -37,10 +37,10 @@ impl NodeGraph
             return engine_node_key;
         }
 
-        let node_size = egui::Vec2 { x: 200.0, y: 100.0}; // @TODO, change this depending on node type
+        let node_size = egui::Vec2 { x: 450.0, y: 200.0}; // @TODO, change this depending on node type
 
         let port_gap = 50.0;
-        let mut input_port_offset = 50.0;
+        let mut input_port_offset = 135.0;
 
         for input_port_keys in self.engine.nodes.get(&engine_node_key).unwrap().input_port_keys.iter()
         {
@@ -50,7 +50,7 @@ impl NodeGraph
             input_port_offset += port_gap;
         }
 
-        let mut output_port_offset = 50.0;
+        let mut output_port_offset = 135.0;
         for output_port_key in self.engine.nodes.get(&engine_node_key).unwrap().output_port_keys.iter()
         {
             let new_display_port = DisplayPort { key: output_port_key.clone(), node_key: engine_node_key.clone(), relative_position: egui::Vec2::new(node_size.x, output_port_offset), value: String::new() }; 

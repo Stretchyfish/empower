@@ -15,7 +15,7 @@ impl DisplayNode
         {
             key: 0,
             position: egui::Pos2::new(0.0, 0.0),
-            size: egui::Vec2 { x: 100.0, y: 100.0 }
+            size: egui::Vec2 { x: 200.0, y: 200.0 }
         }
     }
 
@@ -25,7 +25,7 @@ impl DisplayNode
         {
             key: new_key,
             position: egui::Pos2::new(0.0, 0.0),
-            size: egui::Vec2 { x: 100.0, y: 100.0 }
+            size: egui::Vec2 { x: 200.0, y: 200.0 }
         }
     }
 
