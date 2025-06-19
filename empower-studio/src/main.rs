@@ -65,6 +65,12 @@ impl EmpowerEditorApplication
     }
 }
 
+// impl eframe::App for EmpowerEditorApplication {
+//     fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+//         todo!()
+//     }
+// }
+
 impl eframe::App for EmpowerEditorApplication
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
@@ -107,6 +113,7 @@ impl eframe::App for EmpowerEditorApplication
             panels::debug::show_debug_panel(ctx, &mut self.state, &mut self.workspace, &mut self.node_graph);
         }
     }
+
 }
 
 pub struct EmpowerEditorState
