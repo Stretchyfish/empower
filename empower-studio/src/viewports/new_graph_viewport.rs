@@ -17,6 +17,7 @@ use port_kind::PortKind;
 mod graph_node_widget;
 use graph_node_widget::{NodeViewReponse, NodeViewResponseType}; // @TODO, consider if these need better namespaces?
 
+mod node_selection_panel;
 mod graph_connection_widget;
 
 pub struct NewGraphViewport
@@ -63,6 +64,11 @@ impl NewGraphViewport
 
             graph_connection_widget::view_connection_search(scene_ui, node_graph, &self.state, &mouse_position_in_scene);
         });
+
+        if self.state.node_selection_panel.show
+        {
+            node_selection_panel::view_node_selector(&mut self.state.node_selection_panel, node_graph, ui, &user_inputs, &mouse_position_in_scene);
+        }
 
         let mouse_delta_position_in_scene = mouse_position_in_scene - self.state.mouse_scene_position_last_frame; 
         self.state.mouse_scene_position_last_frame = mouse_position_in_scene;
@@ -150,6 +156,16 @@ impl NewGraphViewport
         if self.state.port_search.is_some() && user_inputs.right_clicked
         {
             self.state.port_search = None;
+        }
+
+        if user_inputs.right_clicked
+        {
+            self.state.node_selection_panel.show = !self.state.node_selection_panel.show;
+
+            if self.state.node_selection_panel.show // @TODO, find a more elegant way of writting this
+            {
+                self.state.node_selection_panel.mouse_position_when_node_select_menu_was_activated = Some(user_inputs.mouse_position);
+            }
         }
     }
 }
