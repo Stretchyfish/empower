@@ -4,7 +4,7 @@ use empower_engine::EmpowerKey;
 use crate::DisplayNode;
 use crate::DisplayPort;
 // use crate::viewports::graph_viewport::GraphViewportState;
-use crate::viewports::new_graph_viewport::NewGraphViewportState;
+use crate::viewports::graph_viewport::GraphViewportState;
 use crate::interactions;
 use crate::NodeGraph;
 
@@ -23,7 +23,7 @@ pub enum NodeViewResponseType
     ClickedOutputPort(EmpowerKey)
 }
 
-pub fn show_nodes(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &mut NewGraphViewportState, graph_title: String) -> Vec<NodeViewReponse>
+pub fn show_nodes(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Vec<NodeViewReponse>
 {
     let mut user_input = interactions::user::inputs::detect_user_inputs(ui);
     // println!("A: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
@@ -44,7 +44,7 @@ pub fn show_nodes(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_
     nodes_view_responses
 }
 
-fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, node_graph: &mut NodeGraph, graph_viewport_state: &mut NewGraphViewportState, graph_title: String) -> Option<NodeViewReponse>
+fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, node_graph: &mut NodeGraph, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Option<NodeViewReponse>
 {
     let mut view_graph_node_reponse = Option::None;
 

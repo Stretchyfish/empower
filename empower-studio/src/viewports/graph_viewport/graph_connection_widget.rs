@@ -1,9 +1,9 @@
-use crate::viewports::new_graph_viewport::NewGraphViewportState;
+use crate::viewports::graph_viewport::GraphViewportState;
 use super::PortKind;
 use crate::NodeGraph;
 use crate::interactions::user::UserInputs;
 
-pub fn view_connection_search(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &NewGraphViewportState, mouse_scene_position: &egui::Pos2)
+pub fn view_connection_search(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, mouse_scene_position: &egui::Pos2)
 {
     if graph_viewport_state.port_search.is_none()
     {

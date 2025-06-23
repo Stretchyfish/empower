@@ -52,12 +52,6 @@ pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditor
                 let new_viewport_name = workspace.create_viewport(new_viewport_type);
                 docking_state.push_to_focused_leaf(new_viewport_name); 
             };
-            if ui.button("New graph viewport").clicked()
-            {
-                let new_viewport_type = viewports::ViewportTypes::NewGraphViewport;
-                let new_viewport_name = workspace.create_viewport(new_viewport_type);
-                docking_state.push_to_focused_leaf(new_viewport_name); 
-            }
             if ui.button("Add empty viewport").clicked()
             {
                 let new_viewport_type = viewports::ViewportTypes::Empty;

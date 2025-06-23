@@ -47,12 +47,6 @@ impl EmpowerEditorApplication
         println!("Tab name: {}", new_tab_name.clone());
         new_docking_state.push_to_focused_leaf(new_tab_name);
 
-        let new_viewport_type_2 = viewports::ViewportTypes::NewGraphViewport;
-        
-        let new_tab_name_2 = new_workspace.create_viewport(new_viewport_type_2);
-        println!("Tab name: {}", new_tab_name_2.clone());
-        new_docking_state.push_to_focused_leaf(new_tab_name_2 );
-
         let mut new_node_graph = NodeGraph::new();
         new_node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
 
@@ -64,12 +58,6 @@ impl EmpowerEditorApplication
         }
     }
 }
-
-// impl eframe::App for EmpowerEditorApplication {
-//     fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
-//         todo!()
-//     }
-// }
 
 impl eframe::App for EmpowerEditorApplication
 {
@@ -88,7 +76,6 @@ impl eframe::App for EmpowerEditorApplication
         egui::CentralPanel::default()
             .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
             // .frame(egui::Frame::none())
-            // .show_inside(ctx, |ui| {
             .show(ctx, |ui| {
                 egui_dock::DockArea::new(&mut self.docking_state)
                     .style({
@@ -113,7 +100,6 @@ impl eframe::App for EmpowerEditorApplication
             panels::debug::show_debug_panel(ctx, &mut self.state, &mut self.workspace, &mut self.node_graph);
         }
     }
-
 }
 
 pub struct EmpowerEditorState
