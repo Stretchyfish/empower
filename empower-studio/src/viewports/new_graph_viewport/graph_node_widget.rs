@@ -207,7 +207,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
         if ui.interact(input_port_rect, egui::Id::from( graph_title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
             // view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedInputPort(input_port_key.clone()) } );
-            println!("input port id from view function: {}", input_port_key);
+            // println!("input port id from view function: {}", input_port_key);
             view_graph_node_reponse = Some( NodeViewReponse { key: display_node.key, kind: NodeViewResponseType::ClickedInputPort(*input_port_key)} );
         }
 
@@ -254,7 +254,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
         if ui.interact(output_port_rect, egui::Id::from( graph_title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
         {
             view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedOutputPort(output_port_key.clone()) } );
-            println!("output port id in view function: {}", output_port_key);
+            // println!("output port id in view function: {}", output_port_key);
         }
 
         ui.painter().circle(
