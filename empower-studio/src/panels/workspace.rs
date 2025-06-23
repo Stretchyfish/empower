@@ -75,13 +75,12 @@ impl Workspace
 
         for graph_viewport in self.graph_viewports.iter_mut()
         {
-            if graph_viewport.state.title == viewport_title
+            if graph_viewport.title == viewport_title
             {
-                graph_viewport.view(ui, node_graph);                
+                graph_viewport.show(ui, node_graph);                
                 return;
             }
         }
-        
     }
 }
 

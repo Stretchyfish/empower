@@ -7,6 +7,8 @@ edition = "2024"
 
 [dependencies]
 empower-engine = { path = "../empower-engine" }
-eframe = "0.29"
-egui = "0.29"
-egui_dock = "0.14"
+eframe = "0.31"
+# eframe = { git = "https://github.com/Stretchyfish/egui.git", package = "eframe", branch = "feature/scene_mouse_position" }
+egui = "0.31"
+# egui = { git = "https://github.com/Stretchyfish/egui.git", branch = "feature/scene_mouse_position" }
+egui_dock = "0.16"

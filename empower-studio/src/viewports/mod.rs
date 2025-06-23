@@ -6,4 +6,3 @@ pub use empty_viewport::EmptyViewport;
 
 pub mod viewport_types;
 pub use viewport_types::ViewportTypes;
-

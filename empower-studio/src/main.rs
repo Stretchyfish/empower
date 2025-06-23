@@ -38,11 +38,13 @@ impl EmpowerEditorApplication
     pub fn new() -> Self
     {
         let mut new_docking_state = egui_dock::DockState::new(Vec::new());
+
         let mut new_workspace = panels::Workspace::new();
 
         let new_viewport_type = viewports::ViewportTypes::GraphViewport;
 
         let new_tab_name = new_workspace.create_viewport(new_viewport_type);
+        println!("Tab name: {}", new_tab_name.clone());
         new_docking_state.push_to_focused_leaf(new_tab_name);
 
         let mut new_node_graph = NodeGraph::new();
@@ -74,7 +76,6 @@ impl eframe::App for EmpowerEditorApplication
         egui::CentralPanel::default()
             .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
             // .frame(egui::Frame::none())
-            // .show_inside(ctx, |ui| {
             .show(ctx, |ui| {
                 egui_dock::DockArea::new(&mut self.docking_state)
                     .style({
@@ -84,6 +85,8 @@ impl eframe::App for EmpowerEditorApplication
                     })
                     .show_close_buttons(true) // @TODO, add behavior here?
                     .show_add_popup(true)
+                    .show_leaf_close_all_buttons(false)
+                    .show_leaf_collapse_buttons(false)
                     .show_inside(
                         ui,
                         &mut panels::TabsViewer {

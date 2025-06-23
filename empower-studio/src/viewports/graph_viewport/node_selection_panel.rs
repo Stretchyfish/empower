@@ -2,7 +2,6 @@ use egui;
 use crate::viewports::graph_viewport;
 use crate::NodeGraph;
 use crate::interactions;
-use crate::viewports::graph_viewport::utils::PanZoom;
 
 #[derive(Default)]
 pub struct NodeSelectionPanelState
@@ -26,7 +25,7 @@ impl NodeSelectionPanelState
     }
 }
 
-pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelState, node_graph: &mut NodeGraph, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, pan_zoom: &mut PanZoom)
+pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelState, node_graph: &mut NodeGraph, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, mouse_position_in_scene: &egui::Pos2)
 {
     let window_position = node_selection_panel_state.mouse_position_when_node_select_menu_was_activated.unwrap_or_else(|| user_input.mouse_position );
     
@@ -46,7 +45,7 @@ pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelSta
             {
                 if ui.add(egui::Button::new("int variable").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {                                        
-                    node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                    node_graph.add_node( egui::Pos2::new(mouse_position_in_scene.x, mouse_position_in_scene.y) );
                     // let new_node_type = empower_engine::nodes::NodeType::IntVariable;
                     // graph_state.add_node_at_position_in_canvas(new_node_type, &canvas_position);
                     //graph_state.add_node_at_position(new_node_type, &canvas_position);
@@ -57,7 +56,8 @@ pub fn view_node_selector(node_selection_panel_state: &mut NodeSelectionPanelSta
     
                 if ui.add(egui::Button::new("int add value").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
-                    let new_node_world_position = pan_zoom.screen_to_world(&user_input.mouse_position); // Write this better
+                    // let new_node_world_position = pan_zoom.screen_to_world(&user_input.mouse_position); // Write this better
+                    let new_node_world_position = egui::Pos2::default();
 
                     println!("Newly placed node screen pos: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
                     println!("Newly placed node world pos: {}, {}", new_node_world_position.x, new_node_world_position.y);

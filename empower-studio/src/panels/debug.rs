@@ -56,14 +56,14 @@ pub fn show_debug_panel(
 
                     for graph_viewport in workspace.graph_viewports.iter()
                     {
-                        egui::CollapsingHeader::new(graph_viewport.state.title.clone())
+                        egui::CollapsingHeader::new(graph_viewport.title.clone())
                             .default_open(false)
                             .show(ui, |ui| {
                                 
                                 ui.label("Selected nodes: ".to_string() + graph_viewport.state.selected_nodes.len().to_string().as_str());
-                                ui.label("Pan zoom");
-                                ui.label(format!(" - Pan offset: {},{}", graph_viewport.state.pan_zoom.pan_offset.x, graph_viewport.state.pan_zoom.pan_offset.y));
-                                ui.label(format!(" - Zoom scale: {}", graph_viewport.state.pan_zoom.zoom_scale));
+                                // ui.label("Pan zoom");
+                                // ui.label(format!(" - Pan offset: {},{}", graph_viewport.state.pan_zoom.pan_offset.x, graph_viewport.state.pan_zoom.pan_offset.y));
+                                // ui.label(format!(" - Zoom scale: {}", graph_viewport.state.pan_zoom.zoom_scale));
                             });
                     } 
                     for empty_viewport in workspace.empty_viewports.iter()
