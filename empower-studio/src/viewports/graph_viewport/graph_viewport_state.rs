@@ -1,4 +1,4 @@
-use empower_engine::EmpowerKey;
+use empower_node_graph::EmpowerKey;
 use egui;
 
 use super::node_selection_panel::NodeSelectionPanelState;

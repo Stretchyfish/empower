@@ -953,6 +953,7 @@ dependencies = [
  "egui",
  "egui_dock",
  "empower-engine",
+ "empower-node-graph",
 ]
 
 [[package]]

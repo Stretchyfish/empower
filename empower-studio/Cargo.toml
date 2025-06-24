@@ -7,6 +7,7 @@ edition = "2024"
 
 [dependencies]
 empower-engine = { path = "../empower-engine" }
+empower-node-graph = { path = "../empower-node-graph" }
 eframe = "0.31"
 # eframe = { git = "https://github.com/Stretchyfish/egui.git", package = "eframe", branch = "feature/scene_mouse_position" }
 egui = "0.31"

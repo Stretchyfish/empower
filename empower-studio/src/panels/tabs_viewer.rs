@@ -1,11 +1,11 @@
 use egui_dock;
 
-use crate::NodeGraph;
+use crate::StudioContext;
 use crate::panels;
 
 pub struct TabsViewer<'a>
 {
-    pub node_graph: &'a mut NodeGraph,
+    pub studio_context: &'a mut StudioContext,
     pub workspace: &'a mut panels::Workspace, 
 }
 
@@ -21,6 +21,6 @@ impl egui_dock::TabViewer for TabsViewer<'_>
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) 
     {
         let tab_name: String = tab.clone().into();
-        self.workspace.view_single_viewport(ui, tab_name, self.node_graph);
+        self.workspace.view_single_viewport(ui, tab_name, self.studio_context);
     }
 }

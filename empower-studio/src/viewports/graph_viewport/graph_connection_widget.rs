@@ -1,9 +1,9 @@
 use crate::viewports::graph_viewport::GraphViewportState;
 use super::PortKind;
-use crate::NodeGraph;
-use crate::interactions::user::UserInputs;
+use crate::{studio_context, StudioContext};
+use crate::interactions::user::UserInputs; // @TODO, clean up this inputs
 
-pub fn view_connection_search(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &GraphViewportState, mouse_scene_position: &egui::Pos2)
+pub fn view_connection_search(ui: &mut egui::Ui, studio_context: &mut StudioContext, graph_viewport_state: &GraphViewportState, mouse_scene_position: &egui::Pos2)
 {
     if graph_viewport_state.port_search.is_none()
     {
@@ -19,21 +19,21 @@ pub fn view_connection_search(ui: &mut egui::Ui, node_graph: &mut NodeGraph, gra
     {
         PortKind::InputPort => 
         {
-            let display_input_port = node_graph.display_input_ports.get(&port_search.port_key).unwrap();
+            let display_input_port = studio_context.display_node_graph.display_input_ports.get(&port_search.port_key).unwrap(); // @TODO, simplify this call
             port_relative_position = display_input_port.relative_position;                   
             node_key = display_input_port.node_key;
         }
 
         PortKind::OutputPort =>
         {
-            let display_output_port= node_graph.display_output_ports.get(&port_search.port_key).unwrap();
+            let display_output_port= studio_context.display_node_graph.display_output_ports.get(&port_search.port_key).unwrap(); // @TODO, simplify this call
             port_relative_position = display_output_port.relative_position;                   
             node_key = display_output_port.node_key;
         }
     }
 
     // @TODO A crash can happen here if the node gets removed, needs to be fixed
-    let display_node = node_graph.display_nodes.get(&node_key).unwrap();
+    let display_node = studio_context.display_node_graph.display_nodes.get(&node_key).unwrap(); // @TODO, simplify this call
     // let node_position = node_graph.display_nodes.get(&node_key).unwrap().position;
 
     let node_centering_offset = egui::Vec2{ x: -display_node.size.x / 2.0 , y: 0.0 }; // This value is used to center node around its middle, instead of around its top left corner

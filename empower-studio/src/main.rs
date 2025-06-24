@@ -1,17 +1,12 @@
 use eframe;
 
-pub mod display_node;
-pub use display_node::DisplayNode;
-
-pub mod display_port;
-pub use display_port::DisplayPort;
-
-pub mod node_graph;
-pub use node_graph::NodeGraph;
-
 pub mod interactions;
 pub mod panels;
 pub mod viewports;
+
+pub mod studio_context;
+use empower_node_graph::NodeType;
+pub use studio_context::StudioContext;
 
 fn main() -> Result<(), eframe::Error>
 {
@@ -28,7 +23,7 @@ fn main() -> Result<(), eframe::Error>
 pub struct EmpowerEditorApplication
 {
     pub state: EmpowerEditorState,
-    pub node_graph: NodeGraph,
+    pub studio_context: StudioContext,
     pub workspace: panels::Workspace,
     pub docking_state: egui_dock::DockState<String>,
 }
@@ -47,12 +42,17 @@ impl EmpowerEditorApplication
         println!("Tab name: {}", new_tab_name.clone());
         new_docking_state.push_to_focused_leaf(new_tab_name);
 
-        let mut new_node_graph = NodeGraph::new();
-        new_node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+        // let mut new_node_graph = NodeGraph::new();
+        let mut new_studio_context = StudioContext::new();
+
+        let start_node_type = NodeType::IntegerVariable; // @TODO, change to start node
+        
+        new_studio_context.add_node(start_node_type,egui::Pos2::new(0.0, 0.0) );
 
         Self {
             state: EmpowerEditorState::new(),
-            node_graph: new_node_graph,
+            studio_context: new_studio_context,
+            // node_graph: new_node_graph,
             workspace: new_workspace,
             docking_state: new_docking_state,
         }
@@ -69,7 +69,7 @@ impl eframe::App for EmpowerEditorApplication
                 &mut self.state,
                 &mut self.workspace,
                 &mut self.docking_state,
-                &mut self.node_graph,
+                &mut self.studio_context,
             );
         });
 
@@ -90,14 +90,14 @@ impl eframe::App for EmpowerEditorApplication
                     .show_inside(
                         ui,
                         &mut panels::TabsViewer {
-                            node_graph: &mut self.node_graph,
+                            studio_context: &mut self.studio_context,
                             workspace: &mut self.workspace,
                         },
                     );
             });
 
         if self.state.debug_panel_active {
-            panels::debug::show_debug_panel(ctx, &mut self.state, &mut self.workspace, &mut self.node_graph);
+            panels::debug::show_debug_panel(ctx, &mut self.state, &mut self.workspace, &mut self.studio_context);
         }
     }
 }

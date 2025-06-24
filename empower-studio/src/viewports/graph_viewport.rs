@@ -1,9 +1,7 @@
-use std::{any::Any, borrow::BorrowMut, ops::Deref};
-
 use egui;
-use crate::{interactions::user::inputs::detect_user_inputs, node_graph, NodeGraph};
-use empower_engine::EmpowerKey;
-use crate::interactions;
+use empower_node_graph::EmpowerKey;
+use crate::interactions::user::{inputs::detect_user_inputs, UserInputs};
+use crate::StudioContext;
 
 mod graph_viewport_state;
 use graph_viewport_state::GraphViewportState;
@@ -39,7 +37,7 @@ impl GraphViewport
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph)
+    pub fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         let user_inputs = detect_user_inputs(ui);
         
@@ -60,26 +58,36 @@ impl GraphViewport
                 mouse_position_in_scene = scene_transform.unwrap() * scene_latest_pos.unwrap();
             }
           
-            nodes_view_responses = graph_node_widget::show_nodes( scene_ui,  node_graph, &mut self.state, self.title.clone());
+            // let mut user_input = detect_user_inputs(ui);
+            // println!("A: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
 
-            graph_connection_widget::view_connection_search(scene_ui, node_graph, &self.state, &mouse_position_in_scene);
+            // let mut nodes_view_responses = Vec::new(); // Change to an optional?
+            let display_node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+
+            for display_node_key  in display_node_keys
+            {
+                studio_context.show_node(scene_ui, &display_node_key);
+            }
+            // nodes_view_responses = graph_node_widget::show_nodes( scene_ui,  studio_context, &mut self.state, self.title.clone());
+
+            graph_connection_widget::view_connection_search(scene_ui, studio_context, &self.state, &mouse_position_in_scene);
         });
 
         if self.state.node_selection_panel.show
         {
-            node_selection_panel::view_node_selector(&mut self.state.node_selection_panel, node_graph, ui, &user_inputs, &mouse_position_in_scene);
+            node_selection_panel::view_node_selector(&mut self.state.node_selection_panel, studio_context, ui, &user_inputs, &mouse_position_in_scene);
         }
 
         let mouse_delta_position_in_scene = mouse_position_in_scene - self.state.mouse_scene_position_last_frame; 
         self.state.mouse_scene_position_last_frame = mouse_position_in_scene;
 
-        self.update_state_based_on_node_responses(&nodes_view_responses, node_graph);
+        self.update_state_based_on_node_responses(&nodes_view_responses, studio_context);
         // update nodes based on state
-        self.update_nodes_based_on_state_and_user_actions(node_graph, mouse_delta_position_in_scene, user_inputs);
+        self.update_nodes_based_on_state_and_user_actions(studio_context, mouse_delta_position_in_scene, user_inputs);
         // Update state based on user
     }
 
-    fn update_state_based_on_node_responses(&mut self, nodes_view_responses: &Vec<NodeViewReponse>, node_graph: &mut NodeGraph)
+    fn update_state_based_on_node_responses(&mut self, nodes_view_responses: &Vec<NodeViewReponse>, studio_context: &mut StudioContext)
     {
         for node_reponse in nodes_view_responses
         {
@@ -104,7 +112,8 @@ impl GraphViewport
                         let port_search = self.state.port_search.unwrap();
                         if port_search.port_kind == PortKind::OutputPort
                         {
-                            node_graph.add_connection(node_reponse.key, port_search.port_key);
+                            studio_context.add_connection(node_reponse.key, port_search.port_key );
+                            // node_graph.add_connection(node_reponse.key, port_search.port_key); // @TODO, add connections back
                             self.state.port_search = Option::None;
                         }
 
@@ -124,7 +133,8 @@ impl GraphViewport
                         let port_search = self.state.port_search.unwrap();
                         if port_search.port_kind == PortKind::InputPort
                         {
-                            node_graph.add_connection( port_search.port_key, port_key);
+                            studio_context.add_connection(port_search.port_key, port_key );
+                            // node_graph.add_connection( port_search.port_key, port_key); // @TODO, add connections back
                             self.state.port_search = Option::None;
                         }
                     }
@@ -143,12 +153,11 @@ impl GraphViewport
         }
     }
 
-    fn update_nodes_based_on_state_and_user_actions(&mut self,node_graph: &mut NodeGraph, mouse_delta_position_in_scene: egui::Vec2, user_inputs: interactions::user::UserInputs)
+    fn update_nodes_based_on_state_and_user_actions(&mut self, studio_context: &mut StudioContext, mouse_delta_position_in_scene: egui::Vec2, user_inputs: UserInputs)
     {
         for selected_nodes_key in self.state.selected_nodes.iter()
         {
-            let display_node = node_graph.display_nodes.get_mut(&selected_nodes_key).unwrap();
-           println!("Node position: {},{}", display_node.position.x, display_node.position.y);
+            let display_node = studio_context.display_node_graph.display_nodes.get_mut(&selected_nodes_key).unwrap(); // @TODO, simplify this call
             // display_node.position = self.state.mouse_scene_position_last_frame - self.state.grap_vector.unwrap();
             display_node.position += mouse_delta_position_in_scene;
         }

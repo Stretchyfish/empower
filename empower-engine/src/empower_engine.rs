@@ -100,6 +100,35 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
     println!("Finished compiling nodes in debug mode");
 }
 
+fn compile_node(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey)
+{
+    println!("Begin compiling nodes in debug node");
+
+    // Remove this check later after adding start node behavior
+    if node_graph.nodes.contains_key(&node_key)
+    {
+        println!("Node graph does not have the node requested to compile.");
+        return;
+    }
+
+    let node_to_compile_type = node_graph.nodes.get_mut(&node_key).unwrap().node_type;
+
+    match node_to_compile_type
+    {
+        NodeType::IntegerVariable =>
+        {
+            compiler::execute_debug_integer_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+        },
+
+        _ =>
+        {
+            println!("Asked to compile a not supported node type");
+        }
+    }
+    transfer_connected_port_values(node_graph, node_key);
+    println!("Compiled {} node", node_key);
+}
+
 fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey) -> Vec<EmpowerKey>
 {
     let mut new_nodes_to_compile = Vec::new();
@@ -142,5 +171,5 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
             new_nodes_to_compile.push(connected_port_key.clone());
         }
     }
-    return new_nodes_to_compile;
+    new_nodes_to_compile
 }

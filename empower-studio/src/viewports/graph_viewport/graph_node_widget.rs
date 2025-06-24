@@ -1,12 +1,9 @@
 use egui;
-use egui::text_edit;
-use empower_engine::EmpowerKey;
-use crate::DisplayNode;
-use crate::DisplayPort;
-// use crate::viewports::graph_viewport::GraphViewportState;
+use empower_node_graph::EmpowerKey;
+use crate::studio_context;
 use crate::viewports::graph_viewport::GraphViewportState;
 use crate::interactions;
-use crate::NodeGraph;
+use crate::StudioContext;
 
 pub struct NodeViewReponse
 {
@@ -23,17 +20,17 @@ pub enum NodeViewResponseType
     ClickedOutputPort(EmpowerKey)
 }
 
-pub fn show_nodes(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Vec<NodeViewReponse>
+pub fn show_nodes(ui: &mut egui::Ui, studio_context: &mut StudioContext, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Vec<NodeViewReponse>
 {
     let mut user_input = interactions::user::inputs::detect_user_inputs(ui);
     // println!("A: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
 
     let mut nodes_view_responses = Vec::new(); // Change to an optional?
-    let display_node_keys: Vec<EmpowerKey> = node_graph.display_nodes.keys().cloned().collect(); 
+    let display_node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
     
     for display_node_key  in display_node_keys
     {
-        let response= show_node(display_node_key, ui, &user_input, node_graph, graph_viewport_state, graph_title.clone());
+        let response= show_node(display_node_key, ui, &user_input, studio_context, graph_viewport_state, graph_title.clone());
 
         if let Some(view_response) = response
         {
@@ -44,11 +41,11 @@ pub fn show_nodes(ui: &mut egui::Ui, node_graph: &mut NodeGraph, graph_viewport_
     nodes_view_responses
 }
 
-fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, node_graph: &mut NodeGraph, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Option<NodeViewReponse>
+fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &interactions::user::UserInputs, studio_context: &mut StudioContext, graph_viewport_state: &mut GraphViewportState, graph_title: String) -> Option<NodeViewReponse>
 {
     let mut view_graph_node_reponse = Option::None;
 
-    let display_node = node_graph.display_nodes.get_mut(&display_node_key).unwrap();
+    let display_node = studio_context.display_node_graph.display_nodes.get_mut(&display_node_key).unwrap(); // @TODO, simplify this call
 
     let node_position = display_node.position;
     let node_screen_size= display_node.size;
@@ -63,7 +60,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
 
     let node_outline_rect = node_rect.expand2(rect_margin);
 
-    let node_is_selected = graph_viewport_state.selected_nodes.iter().any(| selected_node_key | *selected_node_key == display_node.key );
+    let node_is_selected = graph_viewport_state.selected_nodes.iter().any(| selected_node_key | *selected_node_key == display_node_key ); // @TODO, find a reduce the computation of this check
 
     // if node_is_selected
     // {
@@ -72,7 +69,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
     // }
 
     let title_text_font_size = 40.0;
-    let node_title = "Centered Text";
+    let node_title = display_node.title.clone();
     let text_size = ui
         .painter()
         .layout_no_wrap(
@@ -127,7 +124,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
 
     let node_reponse = ui.interact(
         title_box_rect,
-        egui::Id::new( graph_title.clone() + "_node_body_" + display_node.key.to_string().as_str()), // @TODO, find a way to move title out of state
+        egui::Id::new( graph_title.clone() + "_node_body_" + display_node_key.to_string().as_str()), // @TODO, find a way to move title out of state
         egui::Sense::click_and_drag(),
     );
 
@@ -139,7 +136,7 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
 
     if node_reponse.clicked()
     {
-        view_graph_node_reponse = Some( NodeViewReponse { key: display_node.key, kind: NodeViewResponseType::Clicked } );
+        view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::Clicked } );
     }
 
     // Show orange outline arund selected nodes
@@ -193,11 +190,12 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
     );
 
 
-    let engine_node = node_graph.engine.nodes.get_mut(&display_node.key).unwrap();
+    let empower_node = studio_context.empower_node_graph.nodes.get_mut(&display_node_key).unwrap();
 
-    for input_port_key in engine_node.input_port_keys.iter() 
+    for input_port_key in empower_node.input_port_keys.iter() // @TODO, find a better way to approach this?
     {
-        let display_input_port = node_graph.display_input_ports.get_mut(input_port_key).unwrap();// @TODO, change this back to being borrowed once the value is read from engine instead of display port
+        let display_input_port = studio_context.display_node_graph.display_input_ports.get_mut(input_port_key).unwrap();// @TODO, change this back to being borrowed once the value is read from engine instead of display port
+        // @TODO, change the method of this call
 
         let input_port_position = node_position + display_input_port.relative_position;
         let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
@@ -208,9 +206,8 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
         {
             // view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedInputPort(input_port_key.clone()) } );
             // println!("input port id from view function: {}", input_port_key);
-            view_graph_node_reponse = Some( NodeViewReponse { key: display_node.key, kind: NodeViewResponseType::ClickedInputPort(*input_port_key)} );
+            view_graph_node_reponse = Some( NodeViewReponse { key: display_node_key, kind: NodeViewResponseType::ClickedInputPort(*input_port_key)} );
         }
-
 
         ui.painter().circle(
             input_port_position,
@@ -243,9 +240,9 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
         ui.put(input_port_value_box_rect, text_edit);
     }
 
-    for output_port_key in engine_node.output_port_keys.iter()
+    for output_port_key in empower_node.output_port_keys.iter()
     {
-        let display_output_port = node_graph.display_output_ports.get(output_port_key).unwrap();
+        let display_output_port = studio_context.display_node_graph.display_output_ports.get(output_port_key).unwrap();
         let output_port_position = node_position + display_output_port.relative_position;
 
         let output_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
@@ -264,23 +261,24 @@ fn show_node(display_node_key: EmpowerKey, ui: &mut egui::Ui, user_input: &inter
             egui::Stroke::NONE,
         );
 
-        if !node_graph.engine.connections.contains_key(output_port_key)
+        if !studio_context.empower_node_graph.connections.contains_key(output_port_key) // @TODO, simplify this call
+        // if !node_graph.engine.connections.contains_key(output_port_key)
         {
             continue;
         }
 
-        let connected_port_keys = node_graph.engine.connections.get(output_port_key).unwrap();
+        let connected_port_keys = studio_context.empower_node_graph.connections.get(output_port_key).unwrap(); // @TODO, simplify this call
 
         for connected_port_key in connected_port_keys
         {
-            if !node_graph.display_input_ports.contains_key(connected_port_key)
+            if !studio_context.display_node_graph.display_input_ports.contains_key(connected_port_key) // @TODO, simplify this call
             {
                 println!("ERROR, while trying to draw connection, key not in hashtable");
                 continue; 
             }
 
-            let connected_display_port = node_graph.display_input_ports.get(connected_port_key).unwrap();
-            let connected_display_node = node_graph.display_nodes.get(&connected_display_port.node_key).unwrap();
+            let connected_display_port = studio_context.display_node_graph.display_input_ports.get(connected_port_key).unwrap(); // @TODO simplify these calls
+            let connected_display_node = studio_context.display_node_graph.display_nodes.get(&connected_display_port.node_key).unwrap();
 
             // let connected_port_world_position = connected_display_node.position + node_centering_offset + connected_display_port.relative_position;
             let connected_port_position = connected_display_node.position + connected_display_port.relative_position;

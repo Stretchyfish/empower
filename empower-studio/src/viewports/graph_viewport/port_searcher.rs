@@ -1,4 +1,4 @@
-use empower_engine::EmpowerKey;
+use empower_node_graph::EmpowerKey;
 use super::PortKind;
 
 #[derive(Clone, Copy)]

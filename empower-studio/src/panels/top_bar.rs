@@ -4,9 +4,9 @@ use egui_dock;
 use crate::panels;
 use crate::viewports;
 use crate::EmpowerEditorState;
-use crate::NodeGraph;
+use crate::StudioContext;
 
-pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditorState, workspace: &mut panels::Workspace, docking_state: &mut egui_dock::DockState<String>, node_graph: &mut NodeGraph)
+pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditorState, workspace: &mut panels::Workspace, docking_state: &mut egui_dock::DockState<String>, studio_context: &mut StudioContext)
 {
     egui::menu::bar(ui, |ui|
     {
@@ -14,7 +14,7 @@ pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditor
         {
             if ui.button("Add default node").clicked()
             {
-                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                // node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
             }
         });
 
@@ -22,9 +22,9 @@ pub fn view_menu_bar(ui: &mut egui::Ui, empower_editor_state: &mut EmpowerEditor
         {
             if ui.button("setup one connection").clicked()
             {
-                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
-                node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
-                node_graph.add_connection(0,1);
+                // node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                // node_graph.add_node( egui::Pos2::new(0.0, 0.0) );
+                // node_graph.add_connection(0,1);
 
             }
 

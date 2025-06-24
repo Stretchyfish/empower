@@ -1,11 +1,9 @@
 use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::NodeType;
 use empower_node_graph::EmpowerData;
-use empower_engine;
 
 fn main()
 {
-    // let mut engine = EmpowerEngine::new();
     let mut node_graph = EmpowerNodeGraph::default();
 
     let new_node_type = NodeType::IntegerVariable;

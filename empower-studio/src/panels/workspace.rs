@@ -1,7 +1,7 @@
 use egui;
 
 use crate::viewports;
-use crate::NodeGraph;
+use crate::StudioContext;
 
 #[derive(Default)]
 pub struct Workspace
@@ -62,7 +62,7 @@ impl Workspace
         tab_name
     }
 
-    pub fn view_single_viewport(&mut self, ui: &mut egui::Ui, viewport_title: String, node_graph: &mut NodeGraph)
+    pub fn view_single_viewport(&mut self, ui: &mut egui::Ui, viewport_title: String, studio_context: &mut StudioContext)
     {
         for empty_viewport in self.empty_viewports.iter_mut()
         {
@@ -77,7 +77,7 @@ impl Workspace
         {
             if graph_viewport.title == viewport_title
             {
-                graph_viewport.show(ui, node_graph);                
+                graph_viewport.show(ui, studio_context);                
                 return;
             }
         }

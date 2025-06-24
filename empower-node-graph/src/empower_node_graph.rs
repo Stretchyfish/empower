@@ -20,6 +20,18 @@ pub struct EmpowerNodeGraph
 
 impl EmpowerNodeGraph
 {
+    pub fn new() -> Self
+    {
+        Self
+        {
+            nodes: HashMap::new(),
+            input_ports: HashMap::new(),
+            output_ports: HashMap::new(),
+            connections: HashMap::new(),
+        }
+    }
+
+    
     pub fn add_node(&mut self, node_type: NodeType) -> EmpowerKey
     {
         let mut new_node_key = 0;

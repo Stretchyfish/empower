@@ -1,13 +1,13 @@
 use crate::panels;
 use crate::EmpowerEditorState;
-use crate::NodeGraph;
+use crate::StudioContext;
 use egui;
 
 pub fn show_debug_panel(
     ctx: &egui::Context,
     empower_editor_state: &mut EmpowerEditorState,
     workspace: &mut panels::Workspace,
-    node_graph: &mut NodeGraph
+    studio_context: &mut StudioContext
 ) {
     egui::Window::new("Debug Panel")
     .collapsible(true)
@@ -18,31 +18,31 @@ pub fn show_debug_panel(
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.heading("Engine state");
-                egui::CollapsingHeader::new(format!("Nodes: {}", node_graph.engine.nodes.len()))
+                egui::CollapsingHeader::new(format!("Nodes: {}", studio_context.empower_node_graph.nodes.len()))
                     .default_open(false)
                     .show(ui, |ui| 
                     {
 
                         ui.label("| id | type |");
-                        for engine_node in node_graph.engine.nodes.iter()
+                        for empower_node in studio_context.empower_node_graph.nodes.iter() // @TODO, simplify this call
                         {
-                         ui.label(format!("{}, {}", engine_node.0, "int"));
+                         ui.label(format!("{}, {}", empower_node.0, "int"));
                         }
                         
                     });
-                // ui.label(format!("Input ports: {}", node_graph.engine.input_ports.len()));
-                // ui.label(format!("Output ports: {}", node_graph.engine.output_ports.len()));
+                // ui.label(format!("Input ports: {}", studio_context.empower_node_graph.input_ports.len()));
+                // ui.label(format!("Output ports: {}", studio_context.empower_node_graph.output_ports.len()));
             });
                 ui.add_space(0.5);
 
                 ui.vertical(|ui| {
                     ui.heading("Display Graph");
-                    egui::CollapsingHeader::new(format!("Display Nodes: {}", node_graph.display_nodes.len()))
+                    egui::CollapsingHeader::new(format!("Display Nodes: {}", studio_context.display_node_graph.display_nodes.len()))
                         .default_open(false)
                         .show(ui, |ui| {
                             
                             ui.label("| id | type |");
-                            for (display_node_key, _) in node_graph.display_nodes.iter()
+                            for (display_node_key, _) in studio_context.display_node_graph.display_nodes.iter()
                             {
                                 ui.label(format!("{}, {}", display_node_key, "int"));
                             }
