@@ -937,6 +937,9 @@ dependencies = [
 [[package]]
 name = "empower-engine"
 version = "0.1.0"
+dependencies = [
+ "empower-node-graph",
+]
 
 [[package]]
 name = "empower-node-graph"
