@@ -939,6 +939,10 @@ name = "empower-engine"
 version = "0.1.0"
 
 [[package]]
+name = "empower-node-graph"
+version = "0.1.0"
+
+[[package]]
 name = "empower-studio"
 version = "0.1.0"
 dependencies = [
