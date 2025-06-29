@@ -3,11 +3,11 @@ use empower_node_graph::EmpowerKey;
 use empower_node_graph::Node;
 use std::collections::HashMap;
 
-mod display_node;
-use display_node::DisplayNode;
+pub mod display_node;
+pub use display_node::DisplayNode;
 
-mod display_port;
-use display_port::DisplayPort;
+pub mod display_port;
+pub use display_port::DisplayPort;
 
 pub struct DisplayNodeGraph
 {

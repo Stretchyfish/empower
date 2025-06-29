@@ -18,6 +18,8 @@ use graph_node_widget::{NodeViewReponse, NodeViewResponseType}; // @TODO, consid
 mod node_selection_panel;
 mod graph_connection_widget;
 
+mod node_widget;
+
 pub struct GraphViewport
 {
     pub title: String,
@@ -62,13 +64,15 @@ impl GraphViewport
             // println!("A: {}, {}", user_input.mouse_position.x, user_input.mouse_position.y);
 
             // let mut nodes_view_responses = Vec::new(); // Change to an optional?
-            let display_node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+            // let display_node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
 
-            for display_node_key  in display_node_keys
-            {
-                studio_context.show_node(scene_ui, &display_node_key);
-            }
+            // for display_node_key  in display_node_keys
+            // {
+            //     studio_context.show_node(scene_ui, &display_node_key);
+            // }
             // nodes_view_responses = graph_node_widget::show_nodes( scene_ui,  studio_context, &mut self.state, self.title.clone());
+
+            show_nodes(scene_ui, studio_context, &self.title);
 
             graph_connection_widget::view_connection_search(scene_ui, studio_context, &self.state, &mouse_position_in_scene);
         });
@@ -86,6 +90,12 @@ impl GraphViewport
         self.update_nodes_based_on_state_and_user_actions(studio_context, mouse_delta_position_in_scene, user_inputs);
         // Update state based on user
     }
+
+    fn show_connections(&mut self)
+    {
+        
+    }
+
 
     fn update_state_based_on_node_responses(&mut self, nodes_view_responses: &Vec<NodeViewReponse>, studio_context: &mut StudioContext)
     {
@@ -177,4 +187,25 @@ impl GraphViewport
             }
         }
     }
+}
+
+fn show_nodes(ui: &mut egui::Ui, studio_context: &mut StudioContext, graph_viewport_title: &String)
+{
+
+    // let display_node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+    let node_keys: Vec<EmpowerKey> = studio_context.display_node_graph.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+    // let node_keys: Vec<EmpowerKey> = studio_context.empower_node_graph.nodes.keys().cloned().collect();
+
+    // let mut node_responses = Vec::new();
+
+    for node_key in node_keys
+    {
+        node_widget::show_node_widget(ui, studio_context, &node_key, graph_viewport_title);
+
+        // if let Some(node_response) = response
+        // {
+        //     node_responses.push(node_response);
+        // }
+    }
+
 }

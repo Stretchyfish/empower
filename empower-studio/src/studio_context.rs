@@ -5,8 +5,8 @@ use empower_node_graph::EmpowerKey;
 use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::NodeType;
 
-mod display_node_graph;
-use display_node_graph::DisplayNodeGraph;
+pub mod display_node_graph;
+pub use display_node_graph::DisplayNodeGraph;
 
 pub struct StudioContext
 {
@@ -63,7 +63,7 @@ impl StudioContext
             }
 
             let display_output_port = self.display_node_graph.display_output_ports.get(output_port_key).unwrap();
-            let display_node_position = self.display_node_graph.display_nodes.get(output_port_key).unwrap().position.clone();
+            let display_node_position = self.display_node_graph.display_nodes.get(output_port_key).unwrap().position.clone(); // needed to avoid borrow problems
 
             let connected_port_keys = self.empower_node_graph.connections.get(output_port_key).unwrap(); // @TODO, simplify this call
             for connected_port_key in connected_port_keys
