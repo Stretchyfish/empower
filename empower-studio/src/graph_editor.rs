@@ -1,36 +1,59 @@
-use egui;
 use empower_node_graph::EmpowerKey;
+use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::Node;
+use empower_node_graph::NodeType;
+
 use std::collections::HashMap;
 
 pub mod display_node;
-pub use display_node::DisplayNode;
+use display_node::DisplayNode;
 
 pub mod display_port;
-pub use display_port::DisplayPort;
+use display_port::DisplayPort;
 
-pub struct DisplayNodeGraph
+#[derive(Default, Clone)]
+pub struct GraphEditor
 {
-    pub display_nodes: HashMap<EmpowerKey, DisplayNode>,
+    pub display_nodes: HashMap<EmpowerKey, DisplayNode>, // @TODO, consider simplifying this to be a display node graph instead of seperate hash tables
     pub display_input_ports: HashMap<EmpowerKey, DisplayPort>,
     pub display_output_ports: HashMap<EmpowerKey, DisplayPort>,
+    pub empower_node_graph: EmpowerNodeGraph, // @TODO, should make these private
+    pub selected_nodes: Vec<EmpowerKey>,
 }
 
-impl DisplayNodeGraph
+impl GraphEditor
 {
     pub fn new() -> Self
     {
-        Self
+        let mut graph_editor = Self
         {
             display_nodes: HashMap::new(),
             display_input_ports: HashMap::new(),
             display_output_ports: HashMap::new(),
-        }
+            empower_node_graph: EmpowerNodeGraph::new(),
+            selected_nodes: Vec::new(),
+        };
+
+
+        let new_node_type = NodeType::IntegerVariable;
+        graph_editor.add_node(new_node_type, egui::Pos2 { x: 0.0, y: 0.0 });
+
+        graph_editor
     }
 
-    pub fn add_display_node(&mut self, empower_node: &Node, position: egui::Pos2)
+    pub fn add_node(&mut self, new_node_type: NodeType, position: egui::Pos2)
     {
-        let display_node_title = empower_node.node_type.to_string();
+        let empower_node_key: EmpowerKey = self.empower_node_graph.add_node(new_node_type); 
+
+        if self.display_nodes.contains_key(&empower_node_key) // @TODO, simplify these calls
+        {
+            println!("ERROR, attempted to add engine node key already in node graph (denied)"); // This should never happen, only if something wrongly implemented
+            return;
+        }
+
+        let empower_node = self.empower_node_graph.nodes.get(&empower_node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
+
+         let display_node_title = empower_node.node_type.to_string();
         let display_node_size = egui::Vec2 { x: 450.0, y: 200.0}; // @TODO, change this depending on node type
         
         let port_gap = 50.0;

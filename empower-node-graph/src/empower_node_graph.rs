@@ -9,7 +9,7 @@ use crate::OutputPort;
 
 mod node_creation;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct EmpowerNodeGraph
 {
     pub nodes: HashMap<EmpowerKey, Node>,
