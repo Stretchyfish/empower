@@ -18,4 +18,31 @@ impl InputPort
             value: EmpowerData::Integer(0),
         }
     }
+
+    // @TODO, determine if these should be somewhere different
+    pub fn get_value_as_string(&mut self) -> String
+    {
+        self.value.to_string()
+    }
+
+    pub fn set_value_with_text(&mut self, value_text: &String) -> bool
+    {
+        match self.value 
+        {
+            EmpowerData::Integer(_) => 
+            {
+                self.value = match value_text.parse::<i32>()
+                {
+                   Ok(integer) => EmpowerData::Integer(integer),
+                   Err(e) => return false,
+                };
+            },
+            EmpowerData::Unknown =>
+            {
+                println!("ERROR, tried to set value with text of an unknown type");
+            },
+        }
+
+        true
+    }
 }

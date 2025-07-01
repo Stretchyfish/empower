@@ -22,6 +22,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         if ui.button("Compile nodes").clicked()
         {
+            empower_engine::debug_compile(&mut studio_context.graph_editor.empower_node_graph);
             println!("compiling");
         }
 

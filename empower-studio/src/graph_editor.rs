@@ -53,16 +53,19 @@ impl GraphEditor
 
         let empower_node = self.empower_node_graph.nodes.get(&empower_node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
 
-         let display_node_title = empower_node.node_type.to_string();
+        let display_node_title = empower_node.node_type.to_string();
         let display_node_size = egui::Vec2 { x: 450.0, y: 200.0}; // @TODO, change this depending on node type
         
+       
         let port_gap = 50.0;
         let mut input_port_offset = 135.0;
 
-        for input_port_keys in empower_node.input_port_keys.iter()
+
+        for input_port_key in empower_node.input_port_keys.iter()
         {
-            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: String::new() }; 
-            self.display_input_ports.insert(input_port_keys.clone(), new_display_port);
+            let display_port_value = self.empower_node_graph.input_ports.get(input_port_key).unwrap().value.to_string();
+            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: display_port_value }; 
+            self.display_input_ports.insert(input_port_key.clone(), new_display_port);
 
             input_port_offset += port_gap;
         }
@@ -70,6 +73,7 @@ impl GraphEditor
         let mut output_port_offset = 135.0;
         for output_port_key in empower_node.output_port_keys.iter()
         {
+            // @TODO, figure out if setting display port values is needed for output
             let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), value: String::new() }; 
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
@@ -78,5 +82,21 @@ impl GraphEditor
 
         let new_display_node = DisplayNode::new( display_node_title, position, display_node_size );
         self.display_nodes.insert(empower_node.key.clone(), new_display_node );
+    }
+
+    // @TODO, figure out where the best place to put these functions are
+    // This will very likely need to be removed!
+    pub fn get_input_port_value(&mut self, port_key: EmpowerKey) -> String
+    {
+        // @TODO, make a check here
+        let input_port = self.empower_node_graph.input_ports.get(&port_key).unwrap();
+        let input_port_data = input_port.value;
+
+        input_port_data.to_string()
+    }
+
+    pub fn set_input_port_value() -> bool
+    {
+        false
     }
 }

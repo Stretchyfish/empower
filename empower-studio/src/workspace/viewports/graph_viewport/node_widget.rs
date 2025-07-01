@@ -204,7 +204,6 @@ fn show_input_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_view
         input_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key);
     }
 
-    let empower_port = graph_editor.empower_node_graph.input_ports.get_mut(&display_port.node_key).unwrap();
 
     ui.painter().circle(
         input_port_position,
@@ -231,9 +230,31 @@ fn show_input_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_view
 
     // let input_port_value_box_screen_position = input_port_text_position + input_port_value_box_offset;
 
-    let mut text_edit = egui::TextEdit::singleline(&mut display_port.value)
+    let mut text_edit_color = egui::Color32::WHITE;
+
+    let empower_port = graph_editor.empower_node_graph.input_ports.get_mut(&display_port.node_key).unwrap();
+
+
+    let port_has_connection = graph_editor.empower_node_graph.connections_in.contains_key(port_key);
+
+    if port_has_connection
+    {
+        display_port.value = empower_port.get_value_as_string();
+        text_edit_color = egui::Color32::GRAY;
+    }
+
+    let successfully_set_port_value = empower_port.set_value_with_text(&display_port.value);
+    if !successfully_set_port_value
+    {
+        text_edit_color = egui::Color32::RED;
+    }
+
+    let text_edit = egui::TextEdit::singleline(&mut display_port.value)
     .char_limit(6)
-    .font(egui::FontId::proportional(35.0));
+    .font(egui::FontId::proportional(35.0))
+    .interactive(!port_has_connection)
+    .text_color(text_edit_color);
+    
     ui.put(input_port_value_box_rect, text_edit);
 }
 
