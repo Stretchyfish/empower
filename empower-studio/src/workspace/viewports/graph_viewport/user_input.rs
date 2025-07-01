@@ -1,5 +1,3 @@
-use egui;
-
 #[derive(Default)]
 pub struct UserInputs
 {

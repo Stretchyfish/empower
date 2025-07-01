@@ -1,4 +1,4 @@
-use std::{any::Any, fmt::{self, write, Write}, sync::Arc};
+use std::fmt;
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum EmpowerData
@@ -6,7 +6,6 @@ pub enum EmpowerData
     Integer(i32),
     #[default] Unknown
 }
-
 
 impl fmt::Display for EmpowerData
 {

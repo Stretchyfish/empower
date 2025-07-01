@@ -1,0 +1,21 @@
+use empower_node_graph::EmpowerNodeGraph;
+
+fn main()
+{
+    let mut node_graph = EmpowerNodeGraph::default();
+
+    let new_node_type = empower_node_graph::NodeType::IntegerVariable;
+
+    let node1_key = node_graph.add_node(new_node_type);
+    let node2_key = node_graph.add_node(new_node_type);
+
+    let node_1_output_port_keys = node_graph.get_node_output_port_keys(node1_key);
+    let node_2_input_port_keys = node_graph.get_node_input_port_keys(node2_key);
+
+    node_graph.add_connection(node_1_output_port_keys.unwrap()[0], node_2_input_port_keys.unwrap()[0]);
+
+    println!("Nodes: {}", node_graph.nodes.len());
+    println!("Ports IN: {}", node_graph.input_ports.len());
+    println!("Ports OUT: {}", node_graph.output_ports.len());
+    println!("Connections: {}", node_graph.connections.len());
+}

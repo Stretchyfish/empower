@@ -1,9 +1,11 @@
-use crate::EmpowerKey;
-use crate::Node;
-use crate::NodeType;
-use crate::InputPort;
-use crate::OutputPort;
+use empower_node_graph::EmpowerKey;
+use empower_node_graph::EmpowerData;
+use empower_node_graph::Node;
+use empower_node_graph::NodeType;
+use empower_node_graph::InputPort;
+use empower_node_graph::OutputPort;
 use std::collections::HashMap;
+
 
 pub fn execute_integer_node(node_to_compile_key: EmpowerKey, nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>, output_ports: &mut HashMap<EmpowerKey, OutputPort>)
 {
