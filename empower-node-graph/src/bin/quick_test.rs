@@ -17,5 +17,6 @@ fn main()
     println!("Nodes: {}", node_graph.nodes.len());
     println!("Ports IN: {}", node_graph.input_ports.len());
     println!("Ports OUT: {}", node_graph.output_ports.len());
-    println!("Connections: {}", node_graph.connections.len());
+    println!("Connections out: {}", node_graph.connections_out.len());
+    println!("Connections in: {}", node_graph.connections_in.len());
 }

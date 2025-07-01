@@ -129,6 +129,7 @@ fn compile_node(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey)
     println!("Compiled {} node", node_key);
 }
 
+// @TODO, this function should probably be in the node graph? Not the engine
 fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey) -> Vec<EmpowerKey>
 {
     let mut new_nodes_to_compile = Vec::new();
@@ -151,12 +152,12 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
 
         let output_port = node_graph.output_ports.get(output_port_key).unwrap();
         
-        if !node_graph.connections.contains_key(&output_port_key)
+        if !node_graph.connections_out.contains_key(&output_port_key)
         {
             continue;
         }
 
-        let connected_input_ports = node_graph.connections.get(&output_port_key).unwrap();
+        let connected_input_ports = node_graph.connections_out.get(&output_port_key).unwrap();
 
         for connected_port_key in connected_input_ports.iter()
         {

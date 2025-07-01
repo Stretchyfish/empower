@@ -15,7 +15,8 @@ pub struct EmpowerNodeGraph
     pub nodes: HashMap<EmpowerKey, Node>,
     pub input_ports: HashMap<EmpowerKey, InputPort>,
     pub output_ports: HashMap<EmpowerKey, OutputPort>,
-    pub connections: HashMap<EmpowerKey, Vec<EmpowerKey>>,
+    pub connections_out: HashMap<EmpowerKey, Vec<EmpowerKey>>,
+    pub connections_in: HashMap<EmpowerKey, EmpowerKey>,
 }
 
 impl EmpowerNodeGraph
@@ -27,7 +28,8 @@ impl EmpowerNodeGraph
             nodes: HashMap::new(),
             input_ports: HashMap::new(),
             output_ports: HashMap::new(),
-            connections: HashMap::new(),
+            connections_out: HashMap::new(),
+            connections_in: HashMap::new(),
         }
     }
 
@@ -121,9 +123,9 @@ impl EmpowerNodeGraph
 
     pub fn add_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey)
     {
-        if self.connections.contains_key(&output_port_key)
+        if self.connections_out.contains_key(&output_port_key)
         {
-            let existing_connection = self.connections.get_mut(&output_port_key).unwrap();
+            let existing_connection = self.connections_out.get_mut(&output_port_key).unwrap();
 
             if existing_connection.contains(&input_port_key)
             {
@@ -131,10 +133,11 @@ impl EmpowerNodeGraph
                 return;
             }
 
-            existing_connection.push(input_port_key);
+            existing_connection.push(input_port_key); // @TODO, investigate what is happening here
             return;
         }
 
-        self.connections.insert(output_port_key, Vec::from([input_port_key]));
+        self.connections_out.insert(output_port_key, Vec::from([input_port_key]));
+        self.connections_in.insert(input_port_key, output_port_key);
     }
 }

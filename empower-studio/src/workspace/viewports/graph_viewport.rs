@@ -55,7 +55,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         let mouse_scene_delta = mouse_position_in_scene - graph_viewport.mouse_scene_position_last_frame; 
 
         // @TODO, find a more computationally effecient way of doing this
-        let connection_keys = graph_editor.empower_node_graph.connections.clone();
+        let connection_keys = graph_editor.empower_node_graph.connections_out.clone();
         for connection_key in connection_keys.keys()
         {
             connection_widget::show(scene_ui, graph_editor, graph_viewport, &connection_key);

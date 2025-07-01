@@ -6,7 +6,7 @@ use super::port_searcher::{PortSearcher, PortKind};
 
 pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, connection_key: &EmpowerKey)
 {
-    let connection = graph_editor.empower_node_graph.connections.get(connection_key).unwrap();
+    let connection = graph_editor.empower_node_graph.connections_out.get(connection_key).unwrap();
 
     let display_output_port = graph_editor.display_output_ports.get(connection_key).unwrap();
     let display_node_from = graph_editor.display_nodes.get(&display_output_port.node_key).unwrap();
