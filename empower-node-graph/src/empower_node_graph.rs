@@ -134,6 +134,7 @@ impl EmpowerNodeGraph
             }
 
             existing_connection.push(input_port_key); // @TODO, investigate what is happening here
+            self.connections_in.insert(input_port_key, output_port_key);
             return;
         }
 
