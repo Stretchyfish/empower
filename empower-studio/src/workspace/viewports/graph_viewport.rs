@@ -29,7 +29,7 @@ impl GraphViewport
             node_selection_panel: NodeSelectionPanel::new(),
             mouse_scene_position_last_frame: egui::Pos2 { x: 0.0, y: 0.0 },
             port_searcher: None,
-            scene_rect: egui::Rect { min: egui::Pos2 { x: -500.0, y: -500.0 }, max: egui::Pos2 { x: 500.0, y: 500.0 }},
+            scene_rect: egui::Rect { min: egui::Pos2 { x: -600.0, y: -600.0 }, max: egui::Pos2 { x: 600.0, y: 600.0 }},
         }
    } 
 }
@@ -96,6 +96,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     let user_inputs = user_input::detect_user_inputs(ui);
     node_selection_panel::show(ui, &mut graph_viewport.node_selection_panel, graph_editor, &user_inputs, &mouse_position_in_scene);
 
+    let mut port_was_clicked = false; // @TODO, find a better way to approach this
     for node_widget_response in node_widgets_responses
     {
       match node_widget_response.kind 
@@ -108,12 +109,14 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         NodeWidgetResponseType::ClickedInputPort(port_key) =>
         {
             input_port_interaction(graph_editor, graph_viewport, &port_key);
+            port_was_clicked = true;
         }
 
         NodeWidgetResponseType::ClickedOutputPort(port_key) =>
         {
             output_port_interaction(graph_editor, graph_viewport, &port_key);
-        }
+            port_was_clicked = true;
+       }
 
         // @TODO, prepare for multiple kinds of input ports
         NodeWidgetResponseType::ChangedInputPortValueText(port_key, new_value_text) =>
@@ -135,6 +138,10 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         display_node.position += mouse_scene_delta;
     }
 
+    if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false
+    {
+        graph_viewport.port_searcher = None;
+    }
 
     // @TODO, find a permanent fix for this
     //  if user_inputs.right_clicked && graph_viewport.port_searcher.is_some() 
