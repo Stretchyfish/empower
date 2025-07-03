@@ -1,7 +1,5 @@
-use egui::accesskit::Node;
-use egui_dock::node;
 use empower_node_graph::EmpowerKey;
-use crate::{graph_editor::{self, display_port, GraphEditor}, workspace::viewports::graph_viewport::{self, node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+use crate::{graph_editor::{GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
 
 mod node_widget;
 mod connection_widget;
@@ -76,15 +74,6 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
                 node_widgets_responses.push(node_widget_response.unwrap());
             }
         }
-        // for node_key in node_keys
-        // {
-        //     let node_widget_response = node_widget::show(scene_ui, graph_editor, mouse_scene_delta, graph_viewport, &node_key);
-
-        //     if node_widget_response.is_some() // @TODO, find a better way of writting this
-        //     {
-        //         node_widgets_responses.push(node_widget_response.unwrap());
-        //     }
-        // }
 
         connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 
@@ -94,7 +83,6 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     graph_viewport.scene_rect = scene_rect;
 
     let user_inputs = user_input::detect_user_inputs(ui);
-    node_selection_panel::show(ui, &mut graph_viewport.node_selection_panel, graph_editor, &user_inputs, &mouse_position_in_scene);
 
     let mut port_was_clicked = false; // @TODO, find a better way to approach this
     for node_widget_response in node_widgets_responses
@@ -138,17 +126,14 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         display_node.position += mouse_scene_delta;
     }
 
-    if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false
+    if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false && graph_viewport.node_selection_panel.visible == false
     {
         graph_viewport.port_searcher = None;
     }
 
-    // @TODO, find a permanent fix for this
-    //  if user_inputs.right_clicked && graph_viewport.port_searcher.is_some() 
-    // if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && node_widgets_response.is_none()
-    // {
-    //     graph_viewport.port_searcher = None;
-    // }
+    // This needs to be this low to avoid problems with the if statement above, consider a better approach for this?
+    node_selection_panel::show(ui, &mut graph_viewport.node_selection_panel, graph_editor, &user_inputs, &mouse_position_in_scene);
+
 }
 
 // @TODO, consider where this function should be 
