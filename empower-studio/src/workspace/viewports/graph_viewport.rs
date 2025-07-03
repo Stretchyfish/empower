@@ -168,6 +168,23 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
 {
     if graph_editor.input_port_has_connection(port_key)
     {
+        // @TODO, simplify the code in here
+        if graph_viewport.port_searcher.is_some()
+        {
+            let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
+            let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+
+            if successfully_removed_connection
+            {
+                graph_editor.empower_node_graph.add_connection(*port_key, graph_viewport.port_searcher.unwrap().port_key);
+                graph_viewport.port_searcher = None;
+                return;
+            }
+
+            println!("Failed to to replace input port connection");
+            return; 
+        }
+
         let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
         let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
 

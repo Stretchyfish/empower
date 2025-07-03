@@ -15,8 +15,7 @@ egui::Window::new("Debug Panel")
                     .default_open(false)
                     .show(ui, |ui| 
                     {
-
-                        ui.label("| id | type |");
+                        ui.label("| id | type |"); // @TODO, find way of doing horizontal setup
                         for node in studio_context.graph_editor.empower_node_graph.nodes.iter()
                         {
                          ui.label(format!("{}, {}", node.0, "int"));
