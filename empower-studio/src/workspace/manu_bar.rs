@@ -32,6 +32,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         if ui.button("turn on debug mode").clicked()
         {
+            studio_context.workspace.debug_window_active = !studio_context.workspace.debug_window_active;
         }
 
         ui.menu_button("add panel", |ui|

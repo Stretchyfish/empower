@@ -1,6 +1,7 @@
 mod manu_bar;
 pub mod viewports;
 mod tab_viewer;
+mod debug_window;
 use tab_viewer::TabsViewer;
 use viewports::Viewports;
 use viewports::viewport_type::ViewportType;
@@ -10,7 +11,8 @@ use crate::studio_context::StudioContext;
 pub struct Workspace
 {
     docking_state: egui_dock::DockState<String>,
-    viewports: Viewports,
+    pub viewports: Viewports, // @TODO, find a way to make these private?
+    debug_window_active: bool
 }
 
 impl Workspace
@@ -21,6 +23,7 @@ impl Workspace
         { 
             docking_state: egui_dock::DockState::new(Vec::new()), 
             viewports: Viewports::new(), 
+            debug_window_active: false,
         };
 
         let startup_viewport_type = ViewportType::GraphViewport;
@@ -38,6 +41,8 @@ impl Workspace
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
+    debug_window::show(ctx, studio_context);
+
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
         manu_bar::show(ui, studio_context);

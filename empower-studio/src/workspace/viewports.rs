@@ -11,8 +11,8 @@ use crate::graph_editor::GraphEditor;
 
 pub struct Viewports
 {
-    empty_viewports: Vec<EmptyViewport>, // @TODO, consider using hash tables instead
-    graph_viewports: Vec<GraphViewport>,
+    pub empty_viewports: Vec<EmptyViewport>, // @TODO, consider using hash tables instead
+    pub graph_viewports: Vec<GraphViewport>, // @TODO, consider if these should be private
 }
 
 impl Viewports
