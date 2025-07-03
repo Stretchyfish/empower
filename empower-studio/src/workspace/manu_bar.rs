@@ -1,4 +1,4 @@
-use crate::{studio_context::StudioContext, workspace::viewports::viewport_type::ViewportType};
+use crate::{graph_editor, studio_context::StudioContext, workspace::viewports::viewport_type::ViewportType};
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
@@ -22,8 +22,12 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         if ui.button("Compile nodes").clicked()
         {
+            // @TODO, condier adding a check, that all display port values are valid?
+
             empower_engine::debug_compile(&mut studio_context.graph_editor.empower_node_graph);
             println!("compiling");
+
+            studio_context.graph_editor.refresh_display_port_values();
         }
 
         if ui.button("turn on debug mode").clicked()

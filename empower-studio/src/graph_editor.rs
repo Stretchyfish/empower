@@ -64,7 +64,7 @@ impl GraphEditor
         for input_port_key in empower_node.input_port_keys.iter()
         {
             let display_port_value = self.empower_node_graph.input_ports.get(input_port_key).unwrap().value.to_string();
-            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: display_port_value }; 
+            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: display_port_value, value_text_valid: true }; 
             self.display_input_ports.insert(input_port_key.clone(), new_display_port);
 
             input_port_offset += port_gap;
@@ -74,7 +74,7 @@ impl GraphEditor
         for output_port_key in empower_node.output_port_keys.iter()
         {
             // @TODO, figure out if setting display port values is needed for output
-            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), value: String::new() }; 
+            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), value: String::new(), value_text_valid: false }; 
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
             output_port_offset += port_gap;
@@ -98,5 +98,17 @@ impl GraphEditor
     pub fn set_input_port_value() -> bool
     {
         false
+    }
+
+    pub fn refresh_display_port_values(&mut self)
+    {
+        for input_port_key in self.empower_node_graph.input_ports.keys()
+        {
+            let input_port = self.empower_node_graph.input_ports.get(input_port_key).unwrap();
+            let input_port_value_as_text = input_port.get_value_as_string();
+
+            let display_port = self.display_input_ports.get_mut(input_port_key).unwrap();
+            display_port.value = input_port_value_as_text;
+        }
     }
 }

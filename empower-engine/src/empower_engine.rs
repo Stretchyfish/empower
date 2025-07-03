@@ -6,6 +6,8 @@ use empower_node_graph::NodeType;
 
 mod compiler;
 
+// @TODO, add a struct for stepwise debug compile
+
 pub fn compile(node_graph: &mut EmpowerNodeGraph)
 {
     // Remove this check later after adding start node behavior

@@ -1,44 +1,61 @@
-use empower_node_graph::port;
 use empower_node_graph::EmpowerKey;
-use empower_node_graph::EmpowerNodeGraph;
-use empower_node_graph::Node;
-use empower_node_graph::InputPort;
-use empower_node_graph::OutputPort;
-use std::collections::HashMap;
 
-use crate::graph_editor;
-use crate::graph_editor::display_node;
 use crate::graph_editor::GraphEditor;
 use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
 use super::GraphViewport;
-use super::port_searcher::{PortSearcher, PortKind};
 
-pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, mouse_delta: egui::Vec2, graph_viewport: &mut GraphViewport, node_key: &EmpowerKey)
+pub struct NodeWidgetResponse
 {
-    show_node_body(ui, graph_editor, graph_viewport, mouse_delta, node_key); // @TODO, consider changing this back to graph_viewport_title for clarity
-
-    // @TODO find a more effecient way of getting the nodes list
-    let empower_node = graph_editor.empower_node_graph.nodes.get(node_key).unwrap().clone();
-    let input_port_keys = empower_node.input_port_keys.iter().cloned();
-    for input_port_key in input_port_keys
-    {
-        show_input_port(ui, graph_editor, graph_viewport, &input_port_key);
-    }
-    
-    let output_port_keys= empower_node.output_port_keys.iter().cloned();
-    for output_port_key in output_port_keys
-    {
-        show_output_port(ui, graph_editor, graph_viewport, &output_port_key);
-    }
+    pub key: EmpowerKey,
+    pub kind: NodeWidgetResponseType
 }
 
-fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, mouse_delta: egui::Vec2, node_key: &EmpowerKey)
+pub enum NodeWidgetResponseType
 {
-    // @TODO, improve this call
-    let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
+    ClickedTitle,
+    ClickedInputPort(i32), // @TODO, change this to empowerkeys
+    ClickedOutputPort(i32),
+    ChangedInputPortValueText(i32, String),
+}
 
-    let node_key = node_key;
+pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &GraphViewport, node_key: &EmpowerKey) -> Option<NodeWidgetResponse>
+{
+    let mut node_widget_response = None;
+
+    let display_node = graph_editor.display_nodes.get(&node_key).unwrap();
+
+    let graph_viewport_title = &graph_viewport.title;
+
+    // @TODO, consider changing this to return a node reponse instead of taking it as input?
+    show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response);
+
+    let empower_node = graph_editor.empower_node_graph.nodes.get(&node_key).unwrap();
+    let input_port_keys = &empower_node.input_port_keys;
+    for input_port_key in input_port_keys
+    {
+        // let input_port = graph_editor.empower_node_graph.input_ports.get(input_port_key).unwrap(); 
+        let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
+
+        let port_has_connection = graph_editor.empower_node_graph.connections_in.contains_key(input_port_key);
+
+        show_input_port(ui, display_node, display_input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response);
+    }
+
+    let output_port_keys = &empower_node.input_port_keys;
+    for output_port_key in output_port_keys
+    {
+        // let output_port = graph_editor.empower_node_graph.input_ports.get(&output_port_key).unwrap(); 
+        let display_output_port = graph_editor.display_output_ports.get(&output_port_key).unwrap();
+        show_output_port(ui, display_node, display_output_port, graph_viewport_title, node_key, output_port_key, &mut node_widget_response);
+    }
+
+    node_widget_response
+
+}
+
+pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
+{
     let node_position = display_node.position;
     let node_screen_size= display_node.size;
 
@@ -52,13 +69,9 @@ fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewp
 
     let node_outline_rect = node_rect.expand2(rect_margin);
 
-    let node_is_selected = graph_editor.selected_nodes.iter().any(| selected_node_key | *selected_node_key == *node_key ); // @TODO, find a reduce the computation of this check
-
-    if node_is_selected // @TODO, find a better place to put this
-    {
-        display_node.position += mouse_delta;
-    }
-    
+    // @TODO, consider making this a bool that is taken as input to the function instead
+    let node_is_selected = selected_nodes.iter().any(| selected_node_key | *selected_node_key == *node_key ); // @TODO, find a reduce the computation of this check
+  
     let title_text_font_size = 40.0;
     let node_title = display_node.title.clone();
     let text_size = ui
@@ -112,14 +125,13 @@ fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewp
 
     let mut title_rect_color= egui::Color32::from_rgb(50, 50, 50);
 
+    // @TODO, change the name
     let node_reponse = ui.interact(
         title_box_rect,
-        // egui::Id::new( graph_title.clone() + "_node_body_" + display_node_key.to_string().as_str()), // @TODO, find a way to move title out of state
-        egui::Id::new(graph_viewport.title.to_owned() + "_node_body_" + node_key.to_string().as_str()), // @TODO, find a way to move title out of state
+        egui::Id::new(graph_viewport_title.to_owned() + "_node_body_" + node_key.to_string().as_str()), // @TODO, find a way to move title out of state
         egui::Sense::click_and_drag(),
     );
-
-    
+  
     if node_reponse.hovered() // Important that this is done before clicked
     {
         title_rect_color= egui::Color32::from_rgb(40, 40, 40);
@@ -127,16 +139,8 @@ fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewp
 
     if node_reponse.clicked()
     {
-        if graph_editor.selected_nodes.contains(&node_key) // @TODO, figure out if this is the most performance apporaach.
-        {
-            graph_editor.selected_nodes.retain(|x| x != node_key );
-        }
-        else // @TODO, rewrite this
-        {
-            graph_editor.selected_nodes.push(*node_key);
-        }
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
     }
-
 
     if node_is_selected
     {
@@ -148,7 +152,6 @@ fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewp
             egui::StrokeKind::Inside,
         );
     }
-
 
     ui.painter().rect(
         title_box_rect,
@@ -185,25 +188,21 @@ fn show_node_body(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewp
         egui::Stroke::NONE,
             egui::StrokeKind::Inside,
     );
+
 }
 
-fn show_input_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey)
+// @TODO, find a way to reduce the number of inputs in this function?
+fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, graph_viewport_title: &String, port_has_coonection: bool, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
 {
-    // @TODO, simplify these calls
-    let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-    let display_node = graph_editor.display_nodes.get(&display_port.node_key).unwrap();
-
     let input_port_position = display_node.position + display_port.relative_position;
     let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
 
     let input_port_rect = egui::Rect::from_center_size(input_port_position, input_port_size);
 
-    // if ui.interact(input_port_rect, egui::Id::from( graph_title.clone() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click()).clicked()
-    if ui.interact(input_port_rect, egui::Id::from( graph_viewport.title.to_owned() + "_input_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
+    if ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
     {
-        input_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key);
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedInputPort(*port_key) })
     }
-
 
     ui.painter().circle(
         input_port_position,
@@ -228,50 +227,49 @@ fn show_input_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_view
     let input_port_value_box_size = egui::Vec2{ x: 120.0, y: 40.0 };
     let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_value_box_size);
 
-    // let input_port_value_box_screen_position = input_port_text_position + input_port_value_box_offset;
-
     let mut text_edit_color = egui::Color32::WHITE;
+    let mut text_background_color = egui::Color32::BLACK;
 
-    let empower_port = graph_editor.empower_node_graph.input_ports.get_mut(&display_port.node_key).unwrap();
-
-
-    let port_has_connection = graph_editor.empower_node_graph.connections_in.contains_key(port_key);
-
-    if port_has_connection
+    if port_has_coonection
     {
-        display_port.value = empower_port.get_value_as_string();
         text_edit_color = egui::Color32::GRAY;
+        text_background_color = egui::Color32::TRANSPARENT;
     }
 
-    let successfully_set_port_value = empower_port.set_value_with_text(&display_port.value);
-    if !successfully_set_port_value
+    if !display_port.value_text_valid
     {
         text_edit_color = egui::Color32::RED;
     }
 
-    let text_edit = egui::TextEdit::singleline(&mut display_port.value)
+    let mut display_port_text = display_port.value.clone();
+    let text_edit = egui::TextEdit::singleline(&mut display_port_text)
     .char_limit(6)
     .font(egui::FontId::proportional(35.0))
-    .interactive(!port_has_connection)
-    .text_color(text_edit_color);
+    .interactive(!port_has_coonection)
+    .text_color(text_edit_color)
+    .background_color(text_background_color);
     
     ui.put(input_port_value_box_rect, text_edit);
+
+    if display_port_text != display_port.value
+    {
+        // @TODO, consider how to change this for other than text
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueText(*port_key, display_port_text) } );
+    }
 }
 
-fn show_output_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey)
+fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, graph_viewport_title: &String, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
 {
-    let display_port = graph_editor.display_output_ports.get_mut(port_key).unwrap();
-    let display_node = graph_editor.display_nodes.get(&display_port.node_key).unwrap();
-
     let output_port_position = display_node.position + display_port.relative_position;
 
     let output_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
     let output_port_rect= egui::Rect::from_center_size(output_port_position, output_port_size);
 
     // if ui.interact(output_port_rect, egui::Id::from( graph_title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
-    if ui.interact(output_port_rect, egui::Id::from( graph_viewport.title.to_owned() + "_output_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
+    if ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
     {
-        output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key);
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedOutputPort(*port_key) });
+        // output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key, node_widget_response);
     }
 
     ui.painter().circle(
@@ -280,81 +278,4 @@ fn show_output_port(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_vie
         egui::Color32::YELLOW,
         egui::Stroke::NONE,
     );
-}
-
-fn input_port_interaction(empower_node_graph: &mut EmpowerNodeGraph, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name
-{
-    if graph_viewport.port_searcher.is_none()
-    {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });
-        return;
-    }
-
-    let port_searcher = graph_viewport.port_searcher.unwrap();
-
-    match  port_searcher.port_kind 
-    {
-        PortKind::InputPort =>
-        {
-            if port_searcher.port_key == *port_key
-            {
-                graph_viewport.port_searcher = None; // @TODO, expand this functionality to be more complex
-                return;
-            } 
-        },
-
-        PortKind::OutputPort =>
-        {
-            // let port_connection = connections.iter().map(|(key, vec)|
-            // {
-            //     if vec.contains(&empower_input_port.key)
-            //     {
-            //         Some(key)
-            //     }
-            //     else // @TODO, find a better way to write
-            //     {
-            //         None
-            //     }
-            // });
-
-            // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
-            empower_node_graph.add_connection(*port_key, port_searcher.port_key);
-            graph_viewport.port_searcher = None;
-            return;
-        }
-    }
-
-    println!("input port id from show function: {}", *port_key);
-}
-
-fn output_port_interaction(empower_node_graph: &mut EmpowerNodeGraph, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name
-{
-    if graph_viewport.port_searcher.is_none()
-    {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::OutputPort });
-        return;
-    }
-
-    let port_searcher = graph_viewport.port_searcher.unwrap();
-
-    match  port_searcher.port_kind 
-    {
-        PortKind::InputPort =>
-        {
-            empower_node_graph.add_connection(port_searcher.port_key, *port_key);
-            graph_viewport.port_searcher = None;
-            return;
-        },
-
-        PortKind::OutputPort =>
-        {
-            if port_searcher.port_key == *port_key
-            {
-                graph_viewport.port_searcher = None;
-            }
-        }
-    }
-
-    println!("output port id from show function: {}", port_key);
-   
 }

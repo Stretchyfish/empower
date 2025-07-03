@@ -20,7 +20,7 @@ impl InputPort
     }
 
     // @TODO, determine if these should be somewhere different
-    pub fn get_value_as_string(&mut self) -> String
+    pub fn get_value_as_string(&self) -> String
     {
         self.value.to_string()
     }
