@@ -111,4 +111,16 @@ impl GraphEditor
             display_port.value = input_port_value_as_text;
         }
     }
+
+    pub fn input_port_has_connection(&self, port_key: &EmpowerKey) -> bool
+    {
+        self.empower_node_graph.connections_in.contains_key(port_key)
+    }
+
+    pub fn get_input_port_connection_key(&self, input_port_key: &EmpowerKey) -> EmpowerKey
+    {
+        // @TODO, make safe
+        let connected_output_port_key = self.empower_node_graph.connections_in.get(input_port_key).unwrap();
+        *connected_output_port_key
+    }
 }

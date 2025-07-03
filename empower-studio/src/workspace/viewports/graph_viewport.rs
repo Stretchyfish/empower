@@ -166,6 +166,22 @@ fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &EmpowerKey)
 
 fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
 {
+    if graph_editor.input_port_has_connection(port_key)
+    {
+        let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
+        let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+
+        if successfully_removed_connection
+        {
+            graph_viewport.port_searcher = Some( PortSearcher { port_key: connect_output_port_key, port_kind: PortKind::OutputPort });
+            return;
+        }
+
+        println!("Failed to handle input port port search transfer");
+        return; 
+    }
+
+
     if graph_viewport.port_searcher.is_none()
     {
         graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });

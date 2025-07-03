@@ -140,4 +140,42 @@ impl EmpowerNodeGraph
         self.connections_out.insert(output_port_key, Vec::from([input_port_key]));
         self.connections_in.insert(input_port_key, output_port_key);
     }
+
+    pub fn remove_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey) -> bool
+    {
+        if !self.connections_in.contains_key(&input_port_key)
+        {
+           return false
+        }
+
+        if !self.connections_out.contains_key(&output_port_key)
+        {
+            return false
+        }
+
+        self.connections_in.remove(&input_port_key);
+
+        let mut should_delete_connection = false;
+
+        { // this scope is needed to deal with borrowing
+            let connection_from_output_port = self.connections_out.get_mut(&output_port_key).unwrap();
+
+            if let Some(index) = connection_from_output_port.iter().position(|value| *value == input_port_key) 
+            {
+                connection_from_output_port.swap_remove(index);
+            }
+
+            if connection_from_output_port.len() == 0
+            {
+                should_delete_connection = true;
+            }
+        }
+
+        if should_delete_connection
+        {
+           self.connections_out.remove(&output_port_key); 
+        }
+
+        true
+    }
 }
