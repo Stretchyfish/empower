@@ -51,6 +51,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         if scene_transform.is_some() && scene_latest_pos.is_some()
         {
             mouse_position_in_scene = scene_transform.unwrap() * scene_latest_pos.unwrap();
+            println!("{},{}", mouse_position_in_scene.x, mouse_position_in_scene.y);
         }
 
         mouse_scene_delta = mouse_position_in_scene - graph_viewport.mouse_scene_position_last_frame; 

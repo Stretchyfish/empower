@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use empower_node_graph::node;
 use empower_node_graph::EmpowerKey;
 use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::NodeType;
@@ -32,6 +33,11 @@ pub fn compile(node_graph: &mut EmpowerNodeGraph)
             NodeType::IntegerVariable =>
             {
                 compiler::execute_integer_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+            },
+
+            NodeType::Addition =>
+            {
+                compiler::execute_debug_addition_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
             },
 
             _ =>
@@ -74,6 +80,13 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
         print!("\n");
 
         let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[0];
+
+        if !node_graph.nodes.contains_key(&node_to_compile_key)
+        {
+            println!("Requested to compile node [{}] but node does not exist", node_to_compile_key);
+            return;
+        };
+
         let node_to_compile_type = node_graph.nodes.get_mut(&node_to_compile_key).unwrap().node_type;
 
         match node_to_compile_type
@@ -81,6 +94,11 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
             NodeType::IntegerVariable =>
             {
                 compiler::execute_debug_integer_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+            },
+
+            NodeType::Addition =>
+            {
+                compiler::execute_debug_addition_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
             },
 
             _ =>
@@ -92,6 +110,7 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
         println!(" --> ");
 
         let new_nodes_to_compile = transfer_connected_port_values(node_graph, node_to_compile_key);
+        println!("Next nodes to compile: {:?}", new_nodes_to_compile);
         node_keys_to_compile_queue.extend(new_nodes_to_compile);
         node_keys_to_compile_queue.pop_front();
 
@@ -149,6 +168,7 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
     {
         if !node_graph.output_ports.contains_key(output_port_key)
         {
+            println!("Node has no output ports in value transfer");
             continue;
         }
 
@@ -156,6 +176,7 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
         
         if !node_graph.connections_out.contains_key(&output_port_key)
         {
+            println!("(tmp) Node has no connection in value transfer");
             continue;
         }
 
@@ -171,7 +192,8 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
 
             let connected_port = node_graph.input_ports.get_mut(connected_port_key).unwrap();
             connected_port.value = output_port.value;
-            new_nodes_to_compile.push(connected_port_key.clone());
+            new_nodes_to_compile.push(connected_port.node_key);
+            // new_nodes_to_compile.push(connected_port_key.clone());
         }
     }
     new_nodes_to_compile

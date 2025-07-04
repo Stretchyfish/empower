@@ -47,6 +47,10 @@ impl EmpowerNodeGraph
             {
                 new_node_key = node_creation::create_integer_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
             }
+            NodeType::Addition =>
+            {
+                new_node_key = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+            }
         }
 
         new_node_key
@@ -121,6 +125,7 @@ impl EmpowerNodeGraph
     }
 
 
+    // @TODO, change this function to be the other way around
     pub fn add_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey)
     {
         if self.connections_out.contains_key(&output_port_key)

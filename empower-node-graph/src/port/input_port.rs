@@ -5,16 +5,18 @@ use crate::EmpowerData;
 pub struct InputPort
 {
     pub key: EmpowerKey,
+    pub node_key: EmpowerKey,
     pub value: EmpowerData,
 }
 
 impl InputPort
 {
-    pub fn new(key: EmpowerKey) -> Self
+    pub fn new(port_key: EmpowerKey, node_key: EmpowerKey) -> Self
     {
         Self
         {
-            key,
+            key: port_key,
+            node_key,
             value: EmpowerData::Integer(0),
         }
     }
