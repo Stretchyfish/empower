@@ -42,7 +42,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
         show_input_port(ui, display_node, display_input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response);
     }
 
-    let output_port_keys = &empower_node.input_port_keys;
+    let output_port_keys = &empower_node.output_port_keys;
     for output_port_key in output_port_keys
     {
         // let output_port = graph_editor.empower_node_graph.input_ports.get(&output_port_key).unwrap(); 

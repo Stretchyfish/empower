@@ -20,7 +20,7 @@ fn main()
     node_graph.set_input_port_value(node_2_input_port_keys[0], EmpowerData::Integer(5));
 
     // node_graph.add_connection(node_1_output_port_keys[1], node_2_input_port_keys[0]);
-    node_graph.add_connection(node_1_output_port_keys[0], node_2_input_port_keys[1]);
+    node_graph.add_connection(node_2_input_port_keys[1], node_1_output_port_keys[0]);
 
     println!("Nodes: {}", node_graph.nodes.len());
     println!("Ports IN: {}", node_graph.input_ports.len());

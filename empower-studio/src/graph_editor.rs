@@ -1,3 +1,4 @@
+use empower_node_graph::node::node_type;
 use empower_node_graph::EmpowerKey;
 use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::Node;
@@ -54,12 +55,18 @@ impl GraphEditor
         let empower_node = self.empower_node_graph.nodes.get(&empower_node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
 
         let display_node_title = empower_node.node_type.to_string();
-        let display_node_size = egui::Vec2 { x: 450.0, y: 200.0}; // @TODO, change this depending on node type
-        
-       
-        let port_gap = 50.0;
-        let mut input_port_offset = 135.0;
 
+        let display_node_size;
+        match new_node_type 
+        {
+            NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
+            NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 250.0 },
+            _ => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
+        }
+               
+        let port_gap = 60.0;
+        let mut input_port_offset = 150.0;
+        let mut output_port_offset = input_port_offset.clone();
 
         for input_port_key in empower_node.input_port_keys.iter()
         {
@@ -70,7 +77,6 @@ impl GraphEditor
             input_port_offset += port_gap;
         }
 
-        let mut output_port_offset = 135.0;
         for output_port_key in empower_node.output_port_keys.iter()
         {
             // @TODO, figure out if setting display port values is needed for output
