@@ -1,4 +1,4 @@
-use empower_node_graph::EmpowerKey;
+use empower_node_graph::{EmpowerData, EmpowerKey};
 
 #[derive(Clone, Copy)]
 pub struct PortSearcher

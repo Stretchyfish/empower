@@ -41,6 +41,7 @@ impl EmpowerNodeGraph
         {
             NodeType::Start =>
             {
+                node_creation::create_start_node(&mut self.nodes, &mut self.output_ports);
                 println!("Tried adding another start node, only one start node is allowed!");
             }
             NodeType::IntegerVariable =>
@@ -50,6 +51,10 @@ impl EmpowerNodeGraph
             NodeType::Addition =>
             {
                 new_node_key = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+            }
+            NodeType::Print =>
+            {
+                new_node_key = node_creation::create_print_node(&mut self.nodes, &mut self.input_ports);
             }
         }
 
@@ -128,6 +133,14 @@ impl EmpowerNodeGraph
     // @TODO, change this function to be the other way around
     pub fn add_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey)
     {
+        let input_port_data = self.input_ports.get(&input_port_key).unwrap().value; // @TODO, find a consistency in the naming
+        let output_port_data = self.output_ports.get(&output_port_key).unwrap().value;
+
+        if input_port_data != output_port_data
+        {
+            return;
+        }
+       
         if self.connections_out.contains_key(&output_port_key)
         {
             let existing_connection = self.connections_out.get_mut(&output_port_key).unwrap();

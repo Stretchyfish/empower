@@ -1,4 +1,9 @@
+use empower_node_graph::port::input_port;
+use empower_node_graph::EmpowerData;
 use empower_node_graph::EmpowerKey;
+use empower_node_graph::InputPort;
+use empower_node_graph::Node;
+use empower_node_graph::OutputPort;
 
 use crate::graph_editor::GraphEditor;
 use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
@@ -25,36 +30,38 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
 
     let display_node = graph_editor.display_nodes.get(&node_key).unwrap();
 
+    let debug_mode = true;
+
     let graph_viewport_title = &graph_viewport.title;
 
     // @TODO, consider changing this to return a node reponse instead of taking it as input?
-    show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response);
+    show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode);
 
     let empower_node = graph_editor.empower_node_graph.nodes.get(&node_key).unwrap();
     let input_port_keys = &empower_node.input_port_keys;
     for input_port_key in input_port_keys
     {
-        // let input_port = graph_editor.empower_node_graph.input_ports.get(input_port_key).unwrap(); 
+        let input_port = graph_editor.empower_node_graph.input_ports.get(input_port_key).unwrap(); 
         let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
 
         let port_has_connection = graph_editor.empower_node_graph.connections_in.contains_key(input_port_key);
 
-        show_input_port(ui, display_node, display_input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response);
+        show_input_port(ui, display_node, display_input_port, input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
     }
 
     let output_port_keys = &empower_node.output_port_keys;
     for output_port_key in output_port_keys
     {
-        // let output_port = graph_editor.empower_node_graph.input_ports.get(&output_port_key).unwrap(); 
+        let output_port = graph_editor.empower_node_graph.output_ports.get(&output_port_key).unwrap(); 
         let display_output_port = graph_editor.display_output_ports.get(&output_port_key).unwrap();
-        show_output_port(ui, display_node, display_output_port, graph_viewport_title, node_key, output_port_key, &mut node_widget_response);
+        show_output_port(ui, display_node, display_output_port, output_port, graph_viewport_title, node_key, output_port_key, &mut node_widget_response, &debug_mode);
     }
 
     node_widget_response
 
 }
 
-pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
+pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
 {
     let node_position = display_node.position;
     let node_screen_size= display_node.size;
@@ -73,7 +80,13 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
     let node_is_selected = selected_nodes.iter().any(| selected_node_key | *selected_node_key == *node_key ); // @TODO, find a reduce the computation of this check
   
     let title_text_font_size = 40.0;
-    let node_title = display_node.title.clone();
+    let mut node_title = display_node.title.clone();
+
+    if *debug_mode
+    {
+       node_title = format!("{} [{}]", node_title, node_key.to_string());
+    }
+
     let text_size = ui
         .painter()
         .layout_no_wrap(
@@ -192,7 +205,7 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
 }
 
 // @TODO, find a way to reduce the number of inputs in this function?
-fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, graph_viewport_title: &String, port_has_coonection: bool, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
+fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, input_port: &InputPort, graph_viewport_title: &String, port_has_coonection: bool, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
 {
     let input_port_position = display_node.position + display_port.relative_position;
     let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
@@ -204,12 +217,46 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedInputPort(*port_key) })
     }
 
+    let port_color;
+    let port_text;
+    match input_port.value 
+    {
+        EmpowerData::Trigger =>
+        {
+            port_text = "";
+            port_color = egui::Color32::WHITE;
+        }
+        EmpowerData::Integer(_) =>
+        {
+
+            port_text = "value";
+            port_color = egui::Color32::YELLOW;
+        }
+        _ =>
+        {
+            port_text = "unknown";
+            port_color = egui::Color32::YELLOW; 
+        }
+        
+    }
+
     ui.painter().circle(
         input_port_position,
         25.0,
-        egui::Color32::YELLOW,
+        port_color,
         egui::Stroke::NONE,
     );
+
+    if *debug_mode
+    {
+        ui.painter().text(
+            input_port_position,
+            egui::Align2::CENTER_CENTER,
+            port_key.to_string(),
+            egui::FontId::proportional(25.0),
+            egui::Color32::BLACK,
+        );
+    }
 
     let input_port_text_offset = egui::Vec2 { x: 40.0, y: 0.0};
     let input_port_text_position = input_port_position + input_port_text_offset;
@@ -218,47 +265,62 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
         input_port_text_position,
         // egui::Align2::LEFT_TOP,
         egui::Align2::LEFT_CENTER,
-        "value",
+        port_text,
         egui::FontId::proportional(35.0),
         egui::Color32::WHITE,
     );
 
-    let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
-    let input_port_value_box_size = egui::Vec2{ x: 120.0, y: 40.0 };
-    let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_value_box_size);
-
-    let mut text_edit_color = egui::Color32::WHITE;
-    let mut text_background_color = egui::Color32::BLACK;
-
-    if port_has_coonection
+    match input_port.value // @TODO, find a way to reduce it to one match statement?
     {
-        text_edit_color = egui::Color32::GRAY;
-        text_background_color = egui::Color32::TRANSPARENT;
-    }
+        EmpowerData::Trigger =>
+        {
 
-    if !display_port.value_text_valid
-    {
-        text_edit_color = egui::Color32::RED;
-    }
+        },
+        EmpowerData::Integer(_) =>
+        {
+            let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
+            let input_port_value_box_size = egui::Vec2{ x: 120.0, y: 40.0 };
+            let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_value_box_size);
 
-    let mut display_port_text = display_port.value.clone();
-    let text_edit = egui::TextEdit::singleline(&mut display_port_text)
-    .char_limit(6)
-    .font(egui::FontId::proportional(35.0))
-    .interactive(!port_has_coonection)
-    .text_color(text_edit_color)
-    .background_color(text_background_color);
-    
-    ui.put(input_port_value_box_rect, text_edit);
+            let mut text_edit_color = egui::Color32::WHITE;
+            let mut text_background_color = egui::Color32::BLACK;
 
-    if display_port_text != display_port.value
-    {
-        // @TODO, consider how to change this for other than text
-        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueText(*port_key, display_port_text) } );
+            if port_has_coonection
+            {
+                text_edit_color = egui::Color32::GRAY;
+                text_background_color = egui::Color32::TRANSPARENT;
+            }
+
+            if !display_port.value_text_valid
+            {
+                text_edit_color = egui::Color32::RED;
+            }
+
+            let mut display_port_text = display_port.value.clone();
+            let text_edit = egui::TextEdit::singleline(&mut display_port_text)
+            .char_limit(6)
+            .font(egui::FontId::proportional(35.0))
+            .interactive(!port_has_coonection)
+            .text_color(text_edit_color)
+            .background_color(text_background_color);
+            
+            ui.put(input_port_value_box_rect, text_edit);
+
+            if display_port_text != display_port.value
+            {
+                // @TODO, consider how to change this for other than text
+                *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueText(*port_key, display_port_text) } );
+            }
+
+        },
+        _ =>
+        {
+
+        } 
     }
 }
 
-fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, graph_viewport_title: &String, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>)
+fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, output_port: &OutputPort, graph_viewport_title: &String, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
 {
     let output_port_position = display_node.position + display_port.relative_position;
 
@@ -272,10 +334,34 @@ fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port:
         // output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key, node_widget_response);
     }
 
+    let port_color;
+    match output_port.value 
+    {
+        EmpowerData::Trigger =>
+        {
+            port_color = egui::Color32::WHITE;
+        }
+        _ =>
+        {
+            port_color = egui::Color32::YELLOW;
+        }
+    }
+
     ui.painter().circle(
         output_port_position,
         25.0,
-        egui::Color32::YELLOW,
+        port_color,
         egui::Stroke::NONE,
     );
+
+    if *debug_mode
+    {
+        ui.painter().text(
+            output_port_position,
+            egui::Align2::CENTER_CENTER,
+            port_key.to_string(),
+            egui::FontId::proportional(25.0),
+            egui::Color32::BLACK,
+        );
+    }
 }

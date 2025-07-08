@@ -10,12 +10,12 @@ pub struct OutputPort
 
 impl OutputPort
 {
-    pub fn new(key: EmpowerKey) -> Self
+    pub fn new(key: EmpowerKey, value: EmpowerData) -> Self
     {
         Self
         {
             key,
-            value: EmpowerData::Integer(0),
+            value,
         }
     }
 }

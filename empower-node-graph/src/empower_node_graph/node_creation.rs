@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::EmpowerKey;
+use crate::EmpowerData;
 use crate::NodeType;
 use crate::InputPort;
 use crate::OutputPort;
@@ -16,7 +17,7 @@ pub fn create_start_node(nodes: &mut HashMap<EmpowerKey, Node>, output_ports: &m
     }
 
     let new_output_port_key = output_ports.len() as EmpowerKey;
-    let new_output_port = OutputPort::new(new_output_port_key);
+    let new_output_port = OutputPort::new(new_output_port_key, EmpowerData::Trigger);
 
     output_ports.insert(new_output_port_key, new_output_port);
 
@@ -31,12 +32,12 @@ pub fn create_integer_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &
     let new_node_key = nodes.len() as EmpowerKey;
 
     let new_input_port_key = input_ports.len() as EmpowerKey;
-    let new_input_port = InputPort::new(new_input_port_key, new_node_key);
+    let new_input_port = InputPort::new(new_input_port_key, new_node_key, EmpowerData::Integer(0));
 
     input_ports.insert(new_input_port_key, new_input_port);
 
     let new_output_port_key = output_ports.len() as EmpowerKey;
-    let new_output_port = OutputPort::new(new_output_port_key);
+    let new_output_port = OutputPort::new(new_output_port_key, EmpowerData::Integer(0));
 
     output_ports.insert(new_output_port_key, new_output_port);
 
@@ -54,17 +55,17 @@ pub fn create_addition_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: 
     let new_node_key = nodes.len() as EmpowerKey;
 
     let new_input_port_addition_key = input_ports.len() as EmpowerKey;
-    let new_input_port_addition = InputPort::new(new_input_port_addition_key, new_node_key);
+    let new_input_port_addition = InputPort::new(new_input_port_addition_key, new_node_key, EmpowerData::Integer(0));
 
     input_ports.insert(new_input_port_addition_key, new_input_port_addition);
 
     let new_input_port_value_key = input_ports.len() as EmpowerKey;
-    let new_input_port_value = InputPort::new(new_input_port_value_key, new_node_key);
+    let new_input_port_value = InputPort::new(new_input_port_value_key, new_node_key, EmpowerData::Integer(0));
 
     input_ports.insert(new_input_port_value_key, new_input_port_value);
 
     let new_output_port_key = output_ports.len() as EmpowerKey;
-    let new_output_port = OutputPort::new(new_output_port_key);
+    let new_output_port = OutputPort::new(new_output_port_key, EmpowerData::Integer(0));
 
     output_ports.insert(new_output_port_key, new_output_port);
 
@@ -72,6 +73,28 @@ pub fn create_addition_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: 
     let new_output_port_keys = Vec::from([new_output_port_key]);
 
     let new_node = Node::new(new_node_key, NodeType::Addition, new_input_port_keys, new_output_port_keys);
+    nodes.insert(new_node_key, new_node);
+
+    new_node_key
+}
+
+pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>) -> EmpowerKey
+{
+    let new_node_key = nodes.len() as EmpowerKey;
+
+    let new_input_port_trigger_key = input_ports.len() as EmpowerKey;
+    let new_input_port_trigger = InputPort::new(new_input_port_trigger_key, new_node_key, EmpowerData::Trigger);
+
+    input_ports.insert(new_input_port_trigger_key, new_input_port_trigger);
+
+    let new_input_port_value_key = input_ports.len() as EmpowerKey;
+    let new_input_port_value = InputPort::new(new_input_port_value_key, new_node_key, EmpowerData::Integer(0));
+
+    input_ports.insert(new_input_port_value_key, new_input_port_value);
+
+    let new_input_port_keys = Vec::from([new_input_port_trigger_key, new_input_port_value_key]);
+
+    let new_node = Node::new(new_node_key, NodeType::Print, new_input_port_keys, Vec::new());
     nodes.insert(new_node_key, new_node);
 
     new_node_key

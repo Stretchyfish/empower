@@ -11,13 +11,13 @@ pub struct InputPort
 
 impl InputPort
 {
-    pub fn new(port_key: EmpowerKey, node_key: EmpowerKey) -> Self
+    pub fn new(port_key: EmpowerKey, node_key: EmpowerKey, value: EmpowerData) -> Self
     {
         Self
         {
             key: port_key,
             node_key,
-            value: EmpowerData::Integer(0),
+            value,
         }
     }
 
@@ -39,6 +39,10 @@ impl InputPort
                    Err(e) => return false,
                 };
             },
+            EmpowerData::Trigger =>
+            {
+                
+            }
             EmpowerData::Unknown =>
             {
                 println!("ERROR, tried to set value with text of an unknown type");

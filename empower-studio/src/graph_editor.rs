@@ -35,9 +35,12 @@ impl GraphEditor
             selected_nodes: Vec::new(),
         };
 
+        let new_node_type = NodeType::Start;
 
-        let new_node_type = NodeType::IntegerVariable;
-        graph_editor.add_node(new_node_type, egui::Pos2 { x: 0.0, y: 0.0 });
+        // let start_node_left_offset = egui::Pos2 { x: -1500.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
+        let start_node_left_offset = egui::Pos2 { x: -1000.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
+
+        graph_editor.add_node(new_node_type, start_node_left_offset);
 
         graph_editor
     }
@@ -59,13 +62,15 @@ impl GraphEditor
         let display_node_size;
         match new_node_type 
         {
-            NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
-            NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 250.0 },
+            NodeType::Start => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
+            NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
+            NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 220.0 },
+            NodeType::Print => display_node_size = egui::Vec2 { x: 300.0, y: 300.0 },
             _ => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
         }
                
         let port_gap = 60.0;
-        let mut input_port_offset = 150.0;
+        let mut input_port_offset = 120.0;
         let mut output_port_offset = input_port_offset.clone();
 
         for input_port_key in empower_node.input_port_keys.iter()

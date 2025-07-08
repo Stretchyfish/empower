@@ -5,7 +5,8 @@ pub enum NodeType
 {
     Start,
     #[default] IntegerVariable,
-    Addition
+    Addition,
+    Print,
 }
 
 impl fmt::Display for NodeType
@@ -16,6 +17,7 @@ impl fmt::Display for NodeType
         {
             NodeType::IntegerVariable => write!(f, "Integer Variable"),
             NodeType::Addition => write!(f, "Addition"),
+            NodeType::Print => write!(f, "Print"),
             NodeType::Start => write!(f, "Start"),
         }
     }

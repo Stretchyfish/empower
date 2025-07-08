@@ -12,7 +12,8 @@ pub struct GraphViewport
 {
     pub title: String,
     node_selection_panel: NodeSelectionPanel,
-    mouse_scene_position_last_frame: egui::Pos2,
+    pub mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
+    pub mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
     port_searcher: Option<PortSearcher>, 
     scene_rect: egui::Rect,
 }
@@ -26,9 +27,11 @@ impl GraphViewport
             title, 
             node_selection_panel: NodeSelectionPanel::new(),
             mouse_scene_position_last_frame: egui::Pos2 { x: 0.0, y: 0.0 },
+            mouse_delta_last_frame: egui::Vec2 { x: 0.0, y: 0.0 },
             port_searcher: None,
-            scene_rect: egui::Rect { min: egui::Pos2 { x: -600.0, y: -600.0 }, max: egui::Pos2 { x: 600.0, y: 600.0 }},
-        }
+            // scene_rect: egui::Rect { min: egui::Pos2 { x: -1000.0, y: -1000.0 }, max: egui::Pos2 { x: 1000.0, y: 1000.0 }},
+             scene_rect: egui::Rect { min: egui::Pos2 { x: -800.0, y: -800.0 }, max: egui::Pos2 { x: 800.0, y: 800.0 }},
+       }
    } 
 }
 
@@ -40,21 +43,29 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     let mut mouse_scene_delta = egui::Vec2::ZERO; // @TODO, take another look at this placement
     let mut node_widgets_responses = Vec::new();
 
+    // println!("Contains pointer: {}", ui.rect_contains_pointer(ui.min_rect()));
+
+    let mouse_pointer_inside_viewport = ui.rect_contains_pointer(ui.min_rect());
+
     egui::Scene::new()
     .zoom_range(0.01..=2.0)
-    .max_inner_size(egui::Vec2 { x: 8.0, y: 8.0 })
+    .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
     .show(ui, &mut scene_rect, |scene_ui|
     {
-        let scene_transform = scene_ui.ctx().layer_transform_from_global(scene_ui.painter().layer_id());
-        let scene_latest_pos = scene_ui.input(|i| i.pointer.latest_pos());
-
-        if scene_transform.is_some() && scene_latest_pos.is_some()
+        if mouse_pointer_inside_viewport // Is needed to avoid applying double delta position to selected nodes
         {
-            mouse_position_in_scene = scene_transform.unwrap() * scene_latest_pos.unwrap();
-            println!("{},{}", mouse_position_in_scene.x, mouse_position_in_scene.y);
-        }
+            let scene_transform = scene_ui.ctx().layer_transform_from_global(scene_ui.painter().layer_id());
+            let scene_latest_pos = scene_ui.input(|i| i.pointer.latest_pos());
 
+            
+            if scene_transform.is_some() && scene_latest_pos.is_some()
+            {
+                mouse_position_in_scene = scene_transform.unwrap() * scene_latest_pos.unwrap();
+                // println!("{},{}", mouse_position_in_scene.x, mouse_position_in_scene.y);
+            }
+        }
         mouse_scene_delta = mouse_position_in_scene - graph_viewport.mouse_scene_position_last_frame; 
+        graph_viewport.mouse_delta_last_frame = mouse_scene_delta;
 
         // @TODO, find a more computationally effecient way of doing this
         // @TODO, conder going the other way around this, looking at connection_in instead?
@@ -130,6 +141,11 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false && graph_viewport.node_selection_panel.visible == false
     {
         graph_viewport.port_searcher = None;
+    }
+
+    if user_inputs.right_clicked && graph_viewport.node_selection_panel.visible == false
+    {
+        graph_editor.selected_nodes = Vec::new();
     }
 
     // This needs to be this low to avoid problems with the if statement above, consider a better approach for this?

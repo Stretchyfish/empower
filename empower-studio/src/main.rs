@@ -7,8 +7,14 @@ mod workspace;
 
 fn main() -> Result<(), eframe::Error>
 {
-    let native_options = eframe::NativeOptions { vsync: false, ..Default::default()};
+    let viewport_builder = egui::ViewportBuilder::default();
+    // .with_maximized(true); // @TODO, wait for this to get fixed
 
+    let native_options = eframe::NativeOptions { 
+                                                    vsync: false, 
+                                                    viewport: viewport_builder,
+                                                    ..Default::default()};
+    
     eframe::run_native(
         "empower studio",
         native_options,
