@@ -29,3 +29,16 @@ impl PartialEq for EmpowerData
         discriminant(self) == discriminant(other)
     }
 }
+
+impl EmpowerData
+{
+    pub fn get_type(&self) -> String
+    {
+        match *self
+        {
+            EmpowerData::Trigger => String::from("trigger"),
+            EmpowerData::Integer(_) => String::from("int"),
+            _ => String::from("unknown"),
+        }
+    }
+}
