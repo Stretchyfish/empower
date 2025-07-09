@@ -24,8 +24,17 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             // @TODO, condier adding a check, that all display port values are valid?
 
-            empower_engine::debug_compile(&mut studio_context.graph_editor.empower_node_graph);
-            println!("compiling");
+            let empower_result = empower_engine::debug_compile(&mut studio_context.graph_editor.empower_node_graph);
+
+            // @TODO, find a better way to do this!
+            for terminal_viewport in studio_context.workspace.viewports.terminal_viewports.iter_mut()
+            {
+                for line in empower_result.get_lines()
+                {
+                    terminal_viewport.add_line(line);
+                }
+                terminal_viewport.add_line(String::from("Compilation Finished"));
+            }
 
             studio_context.graph_editor.refresh_display_port_values();
         }
@@ -47,6 +56,11 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 let new_viewport_type = ViewportType::EmptyViewport;
                 studio_context.workspace.add_viewport(new_viewport_type);
             };
+            if ui.button("Add terminal viewport").clicked()
+            {
+                let new_viewport_type = ViewportType::TerminalViewport;
+                studio_context.workspace.add_viewport(new_viewport_type);
+            }
         });
     });
 }

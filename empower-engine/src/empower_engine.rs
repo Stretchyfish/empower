@@ -7,71 +7,21 @@ use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::NodeType;
 
 mod compiler;
+mod empower_result;
+use empower_result::EmpowerResult;
 
 // @TODO, add a struct for stepwise debug compile
 
-pub fn compile(node_graph: &mut EmpowerNodeGraph)
+pub fn debug_compile(node_graph: &mut EmpowerNodeGraph) -> EmpowerResult
 {
-    // Remove this check later after adding start node behavior
-    if node_graph.nodes.is_empty()
-    {
-        println!("Has no start node, will not compile");
-        return;
-    }
-
-    let mut node_keys_to_compile_queue: Vec<i32> = Vec::new();
-    node_keys_to_compile_queue.push(0); // this will assume the first node is always the start node
-    let mut next_node_to_compile_index = 0; // This will avoid circulatory behavior
-    
-    while node_keys_to_compile_queue.len() > next_node_to_compile_index // this is to ensure no crashes
-    {
-        let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[next_node_to_compile_index];
-        let node_to_compile_type = node_graph.nodes.get_mut(&node_to_compile_key).unwrap().node_type.clone();
-
-        // let new_nodes_to_compile: Vec<EmpowerKey> = Vec::new();
-        match node_to_compile_type
-        {
-            NodeType::IntegerVariable =>
-            {
-                compiler::execute_integer_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
-            },
-
-            NodeType::Addition =>
-            {
-                compiler::execute_debug_addition_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
-            },
-
-            NodeType::Print =>
-            {
-                compiler::execute_debug_print_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
-            }
-
-            _ =>
-            {
-                println!("Asked to compile a not supported node type");
-            }
-        }
-
-
-        next_node_to_compile_index = node_keys_to_compile_queue.len(); // @TODO, change the node_key_queue to not grow infinitely
-
-        let new_nodes_to_compile = transfer_connected_port_values(node_graph,node_to_compile_key);
-        node_keys_to_compile_queue.extend(new_nodes_to_compile);
-
-    }
-   
-    println!("Compiled nodes");
-}
-
-pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
-{
+    let mut empower_result = EmpowerResult::default(); // @TODO, make a new function
     println!("Begin compiling nodes in debug node");
 
     // Remove this check later after adding start node behavior
     if node_graph.nodes.is_empty()
     {
         println!("Has no start node, will not compile");
-        return;
+        return empower_result; // @TODO, expand empower result with usefull information here
     }
 
     debug_compile_global_variables(node_graph);
@@ -90,7 +40,7 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
         let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[0];
 
         // let new_nodes_to_compile = debug_compile_node(node_graph, node_to_compile_key);
-        debug_compile_node(node_graph, node_to_compile_key);
+        debug_compile_node(&mut empower_result, node_graph, node_to_compile_key);
 
         let new_nodes_to_compile = get_connected_trigger_ports(node_graph, &node_to_compile_key);
         
@@ -133,9 +83,11 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph)
    
     println!("Compiled {} nodes", compiled_nodes_counter);
     println!("Finished compiling nodes in debug mode");
+
+    empower_result
 }
 
-fn debug_compile_node(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey) -> Vec<EmpowerKey>
+fn debug_compile_node(empower_result: &mut EmpowerResult, node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey) -> Vec<EmpowerKey>
 {
     if !node_graph.nodes.contains_key(&node_key)
     {
@@ -164,7 +116,7 @@ fn debug_compile_node(node_graph: &mut EmpowerNodeGraph, node_key: EmpowerKey) -
 
         NodeType::Print =>
         {
-            compiler::execute_debug_print_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+            compiler::execute_debug_print_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports, empower_result);
         },
 
         _ =>
@@ -183,9 +135,11 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
     println!("Compiling global variables");
     let mut global_variables_keys: VecDeque<EmpowerKey> = VecDeque::new();
 //    let mut global_variables_keys = Vec::new();
+
+    // Find all rouge math variables
     for (node_key, node) in node_graph.nodes.iter_mut()
     {
-        if node.node_type != NodeType::IntegerVariable
+        if node.node_type != NodeType::IntegerVariable && node.node_type != NodeType::Addition // @TODO, could also be an addition variable
         {
             continue;
         }
@@ -200,7 +154,7 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
         }
     }
 
-    println!("Global variables list: {:?}", global_variables_keys);
+    // println!("Global variables list: {:?}", global_variables_keys);
     
     // Compile connected math nodes
     while !global_variables_keys.is_empty() // this is to ensure no crashes
@@ -208,24 +162,26 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
         let node_key = global_variables_keys[0];
         // debug_compile_node(node_graph, node_key); 
 
-        let all_connected_ports = debug_compile_node(node_graph, node_key);
+        // @TODO, find a better way to approach EmpowerResult in this function
+        let all_connected_nodes = debug_compile_node(&mut EmpowerResult::default(), node_graph, node_key);
 
         let mut more_nodes_to_compile = Vec::new();
-        for connected_input_port in all_connected_ports
+
+        // @TODO, During compilation of global variables, make a check that it has not been compiled before
+        for connected_node_key in all_connected_nodes
         {
-           let input_port = node_graph.input_ports.get(&connected_input_port).unwrap(); 
-           let connected_node = node_graph.nodes.get(&input_port.node_key).unwrap();
+           let connected_node = node_graph.nodes.get(&connected_node_key).unwrap();
 
             match connected_node.node_type 
             {
                 NodeType::IntegerVariable =>
                 {
-                    more_nodes_to_compile.push(input_port.node_key);
+                    more_nodes_to_compile.push(connected_node_key);
                 },
 
                 NodeType::Addition =>
                 {
-                    more_nodes_to_compile.push(input_port.node_key);
+                    more_nodes_to_compile.push(connected_node_key);
                 },
 
                 _ =>
@@ -234,6 +190,8 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
                 },
             }
         }
+
+        println!("Added more nodes to compile: {:?}", more_nodes_to_compile);
 
         global_variables_keys.extend(more_nodes_to_compile);
         global_variables_keys.pop_front();
@@ -335,7 +293,14 @@ fn get_connected_trigger_ports(node_graph: &mut EmpowerNodeGraph, node_key: &Emp
         return Vec::new();
     }
 
-    let first_output_port = node_graph.output_ports.get(&node.output_port_keys[0]).unwrap();
+    let trigger_output_port_key = node.output_port_keys[0];
+
+    if !node_graph.connections_out.contains_key(&trigger_output_port_key)
+    {
+        return Vec::new();
+    } 
+
+    let first_output_port = node_graph.output_ports.get(&trigger_output_port_key).unwrap();
 
     if first_output_port.value != EmpowerData::Trigger
     {

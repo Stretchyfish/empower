@@ -30,7 +30,7 @@ impl GraphViewport
             mouse_delta_last_frame: egui::Vec2 { x: 0.0, y: 0.0 },
             port_searcher: None,
             // scene_rect: egui::Rect { min: egui::Pos2 { x: -1000.0, y: -1000.0 }, max: egui::Pos2 { x: 1000.0, y: 1000.0 }},
-             scene_rect: egui::Rect { min: egui::Pos2 { x: -800.0, y: -800.0 }, max: egui::Pos2 { x: 800.0, y: 800.0 }},
+             scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
        }
    } 
 }

@@ -37,8 +37,7 @@ impl GraphEditor
 
         let new_node_type = NodeType::Start;
 
-        // let start_node_left_offset = egui::Pos2 { x: -1500.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
-        let start_node_left_offset = egui::Pos2 { x: -1000.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
+        let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
 
         graph_editor.add_node(new_node_type, start_node_left_offset);
 
@@ -62,10 +61,10 @@ impl GraphEditor
         let display_node_size;
         match new_node_type 
         {
-            NodeType::Start => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
+            NodeType::Start => display_node_size = egui::Vec2 { x: 250.0, y: 165.0 },
             NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
             NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 220.0 },
-            NodeType::Print => display_node_size = egui::Vec2 { x: 300.0, y: 300.0 },
+            NodeType::Print => display_node_size = egui::Vec2 { x: 300.0, y: 220.0 },
             _ => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
         }
                

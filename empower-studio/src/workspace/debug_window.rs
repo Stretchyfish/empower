@@ -71,15 +71,17 @@ egui::Window::new("Debug Panel")
                         {
                             ui.label("id");
                             ui.label("type");
-                        });
+                            ui.label("value");
+                       });
                 
                         for (key, port) in studio_context.graph_editor.empower_node_graph.input_ports.iter()
                         {
                             ui.horizontal(|ui|
                             {
                                 ui.label(key.to_string());
+                                ui.label(port.value.get_type());
                                 ui.label(port.value.to_string());
-                            });
+                           });
 
                         }
                     });
@@ -91,13 +93,15 @@ egui::Window::new("Debug Panel")
                         {
                             ui.label("id");
                             ui.label("type");
-                        });
+                            ui.label("value");
+                       });
                 
                         for (key, port) in studio_context.graph_editor.empower_node_graph.output_ports.iter()
                         {
                             ui.horizontal(|ui|
                             {
                                 ui.label(key.to_string());
+                                ui.label(port.value.get_type());
                                 ui.label(port.value.to_string());
                             });
                         }
