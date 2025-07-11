@@ -63,7 +63,24 @@ impl EmpowerNodeGraph
 
     pub fn remove_node(&mut self, key: EmpowerKey)
     {
-        self.nodes.remove(&key); // @TODO, remove input and output ports aswell
+        let node = self.nodes.get(&key).expect("Tried to delete a node not in the empower node graph");
+
+        let input_port_keys = node.input_port_keys.clone();
+        let output_port_keys = node.output_port_keys.clone();
+
+        for input_port_key in input_port_keys
+        {
+            self.input_ports.remove(&input_port_key);
+            self.remove_connections_to_input_port(&input_port_key);
+        }
+
+        for output_port_key in output_port_keys
+        {
+            self.output_ports.remove(&output_port_key);
+            self.remove_connection_to_output_port(&output_port_key);
+        }
+
+        self.nodes.remove(&key);
     }
 
     pub fn get_node_input_port_keys(&mut self, node_key: EmpowerKey) -> Option<Vec<EmpowerKey>>
@@ -197,4 +214,32 @@ impl EmpowerNodeGraph
 
         true
     }
+
+    pub fn remove_connections_to_input_port(&mut self, input_port_key: &EmpowerKey) // Untested
+    {
+        if !self.connections_in.contains_key(input_port_key)
+        {
+            return;
+        }
+
+        let output_port_key = self.connections_in.get(input_port_key).unwrap();
+
+        self.remove_connection(*input_port_key, *output_port_key);
+    }
+
+    pub fn remove_connection_to_output_port(&mut self, output_port_key: &EmpowerKey)
+    {
+        if !self.connections_out.contains_key(output_port_key)
+        {
+            return;
+        }
+
+        let input_port_keys = self.connections_out.get(output_port_key).unwrap();
+        for input_port_key in input_port_keys
+        {
+            self.connections_in.remove(input_port_key);
+        }
+        self.connections_out.remove(output_port_key);
+    }
+
 }

@@ -155,6 +155,7 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
     }
 
+
     if node_is_selected
     {
         ui.painter().rect(
@@ -192,6 +193,16 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         egui::Stroke::NONE,
             egui::StrokeKind::Inside,
     );
+
+    // let close_button_widget = egui::Button::new(egui::RichText::new("x").size(14.0));
+
+    // let close_button_position = egui::Pos2 { x: title_box_rect.max.x - 30.0, y: title_box_rect.min.y };
+    // let close_button_size = egui::Vec2 { x: 28.0, y: 28.0 };
+
+    // if ui.put(egui::Rect::from_min_size(close_button_position, close_button_size), close_button_widget).clicked()
+    // {
+
+    // }
 
     // Show node bottom
     ui.painter().rect(

@@ -82,5 +82,22 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                     viewports: &mut studio_context.workspace.viewports,
                 },
             );
-     });
+
+        let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
+        if clicked_backspace
+        {
+            let mut nodes_to_delete = Vec::new();
+            for node_key in studio_context.graph_editor.selected_nodes.iter() // @TODO, find a more effecient way of writting this
+            {
+            nodes_to_delete.push(node_key.clone()); 
+            }
+
+            for node_key in nodes_to_delete
+            {
+                studio_context.graph_editor.remove_node(&node_key);
+                studio_context.graph_editor.selected_nodes = Vec::new();
+            }
+        }
+
+    });
 }

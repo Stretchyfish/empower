@@ -1,4 +1,4 @@
-use empower_node_graph::EmpowerKey;
+use empower_node_graph::{node, EmpowerKey};
 use crate::{graph_editor::{GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
 
 mod node_widget;
@@ -147,6 +147,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     {
         graph_editor.selected_nodes = Vec::new();
     }
+
 
     // This needs to be this low to avoid problems with the if statement above, consider a better approach for this?
     node_selection_panel::show(ui, &mut graph_viewport.node_selection_panel, graph_editor, &user_inputs, &mouse_position_in_scene);

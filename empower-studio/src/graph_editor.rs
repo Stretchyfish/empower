@@ -46,6 +46,7 @@ impl GraphEditor
 
     pub fn add_node(&mut self, new_node_type: NodeType, position: egui::Pos2)
     {
+        // @TODO, find a better way of assigning keys
         let empower_node_key: EmpowerKey = self.empower_node_graph.add_node(new_node_type); 
 
         if self.display_nodes.contains_key(&empower_node_key) // @TODO, simplify these calls
@@ -94,6 +95,26 @@ impl GraphEditor
         self.display_nodes.insert(empower_node.key.clone(), new_display_node );
     }
 
+    pub fn remove_node(&mut self, node_key: &EmpowerKey)
+    {
+        let node = self.empower_node_graph.nodes.get(node_key).unwrap().clone();
+        let input_port_keys = node.input_port_keys;
+        let output_port_keys = node.output_port_keys;
+
+        self.empower_node_graph.remove_node(*node_key); // @TODO, remove connections
+
+        for input_port_key in input_port_keys
+        {
+            self.display_input_ports.remove(&input_port_key);
+        }
+
+        for output_port_key in output_port_keys
+        {
+            self.display_output_ports.remove(&output_port_key);
+        }
+
+        self.display_nodes.remove(node_key);
+    }
     // @TODO, figure out where the best place to put these functions are
     // This will very likely need to be removed!
     pub fn get_input_port_value(&mut self, port_key: EmpowerKey) -> String
