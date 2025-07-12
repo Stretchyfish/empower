@@ -88,7 +88,7 @@ pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mu
 
     input_ports.insert(new_input_port_trigger_key, new_input_port_trigger);
 
-    let new_input_port_value_key = input_ports.len() as EmpowerKey;
+    let new_input_port_value_key = input_ports.keys().copied().max().unwrap_or(0) + 1;
     let new_input_port_value = InputPort::new(new_input_port_value_key, new_node_key, EmpowerData::Integer(0));
 
     input_ports.insert(new_input_port_value_key, new_input_port_value);
