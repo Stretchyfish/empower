@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::time;
 
 use empower_node_graph::node;
 use empower_node_graph::EmpowerData;
@@ -14,6 +15,8 @@ use empower_result::EmpowerResult;
 
 pub fn debug_compile(node_graph: &mut EmpowerNodeGraph) -> EmpowerResult
 {
+    let time_now = time::Instant::now();
+
     let mut empower_result = EmpowerResult::default(); // @TODO, make a new function
     println!("Begin compiling nodes in debug node");
 
@@ -83,6 +86,9 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph) -> EmpowerResult
    
     println!("Compiled {} nodes", compiled_nodes_counter);
     println!("Finished compiling nodes in debug mode");
+
+    let time_passed = time_now.elapsed().as_secs_f32();
+    empower_result.compilation_duration = time_passed;
 
     empower_result
 }

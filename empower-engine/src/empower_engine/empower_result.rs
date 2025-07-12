@@ -2,11 +2,20 @@
 pub struct EmpowerResult
 {
     text_output: Vec<String>,
-    // @TODO, add compile time to empower result
+    pub compilation_duration: f32, // Time to compile // @TODO, make this private
 }
 
 impl EmpowerResult
 {
+    pub fn new() -> Self
+    {
+        Self
+        {
+           text_output: Vec::new(),
+           compilation_duration: 0.0, 
+        }
+    }
+
     pub fn add_line(&mut self, line: String)
     {
         self.text_output.push(line);

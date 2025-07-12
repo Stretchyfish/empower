@@ -33,7 +33,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 {
                     terminal_viewport.add_line(line);
                 }
-                terminal_viewport.add_line(String::from("Compilation Finished"));
+                terminal_viewport.add_line(String::from(format!("Compilation time: {} sec", empower_result.compilation_duration)));
             }
 
             studio_context.graph_editor.refresh_display_port_values();
