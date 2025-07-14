@@ -1,27 +1,16 @@
-use empower_node_graph::{EmpowerData, EmpowerNodeGraph};
+use empower_node_graph::{node, EmpowerData, EmpowerNodeGraph, NodeType};
 
 fn main()
 {
     let mut node_graph = EmpowerNodeGraph::default();
 
-    let new_node_type = empower_node_graph::NodeType::IntegerVariable;
-    let node1_key = node_graph.add_node(new_node_type);
-    println!("Node 1 key: {}", node1_key);
+    let int_node = node_graph.add_node(NodeType::IntegerVariable);
+    let add_node = node_graph.add_node(NodeType::Addition);
 
-    let new_addition_node_type= empower_node_graph::NodeType::Addition;
-    let node2_key = node_graph.add_node(new_addition_node_type);
-    println!("Node 2 key: {}", node2_key);
+    node_graph.set_input_port_value(int_node.input_port_keys[0], EmpowerData::Integer(10));
+    node_graph.set_input_port_value(add_node.input_port_keys[0], EmpowerData::Integer(33));
 
-    let node_1_input_port_keys = node_graph.get_node_input_port_keys(node1_key).unwrap();
-    let node_1_output_port_keys = node_graph.get_node_output_port_keys(node1_key).unwrap();
-
-    let node_2_input_port_keys = node_graph.get_node_input_port_keys(node2_key).unwrap();
-
-    node_graph.set_input_port_value(node_1_input_port_keys[0], EmpowerData::Integer(10));
-    node_graph.set_input_port_value(node_2_input_port_keys[0], EmpowerData::Integer(33));
-
-    // node_graph.add_connection(node_1_output_port_keys[1], node_2_input_port_keys[0]);
-    node_graph.add_connection(node_2_input_port_keys[1], node_1_output_port_keys[0]);
+    node_graph.add_connection(int_node.output_port_keys[0], add_node.input_port_keys[1]);
 
     empower_engine::debug_compile(&mut node_graph);
 

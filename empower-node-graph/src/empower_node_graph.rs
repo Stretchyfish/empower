@@ -8,6 +8,8 @@ use crate::InputPort;
 use crate::OutputPort;
 
 mod node_creation;
+mod node_handle;
+use node_handle::NodeHandle;
 
 #[derive(Default, Clone)]
 pub struct EmpowerNodeGraph
@@ -34,31 +36,33 @@ impl EmpowerNodeGraph
     }
 
     
-    pub fn add_node(&mut self, node_type: NodeType) -> EmpowerKey
+    pub fn add_node(&mut self, node_type: NodeType) -> NodeHandle
     {
-        let mut new_node_key = 0;
+        let new_node_key;
+        let new_input_port_keys;
+        let new_output_port_keys;
         match node_type
         {
             NodeType::Start =>
             {
-                node_creation::create_start_node(&mut self.nodes, &mut self.output_ports);
-                println!("Tried adding another start node, only one start node is allowed!");
+                // @TODO, convert these to optionals?
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_start_node(&mut self.nodes, &mut self.output_ports);
             }
             NodeType::IntegerVariable =>
             {
-                new_node_key = node_creation::create_integer_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_integer_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
             }
             NodeType::Addition =>
             {
-                new_node_key = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
             }
             NodeType::Print =>
             {
-                new_node_key = node_creation::create_print_node(&mut self.nodes, &mut self.input_ports);
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_print_node(&mut self.nodes, &mut self.input_ports);
             }
         }
 
-        new_node_key
+        NodeHandle { node_key: new_node_key,  input_port_keys: new_input_port_keys, output_port_keys: new_output_port_keys}
     }
 
     pub fn remove_node(&mut self, key: EmpowerKey)
@@ -83,15 +87,16 @@ impl EmpowerNodeGraph
         self.nodes.remove(&key);
     }
 
-    pub fn get_node_input_port_keys(&mut self, node_key: EmpowerKey) -> Option<Vec<EmpowerKey>>
+    // @TODO, consider removing the option?
+    pub fn get_node_input_port_keys(&mut self, node_key: &EmpowerKey) -> Option<Vec<EmpowerKey>>
     {
-        if !self.nodes.contains_key(&node_key)
+        if !self.nodes.contains_key(node_key)
         {
             println!("Tried to get input port of node key not in nodes");
             return None;
         }
 
-        let node = self.nodes.get(&node_key).unwrap();
+        let node = self.nodes.get(node_key).unwrap();
 
         Some( node.input_port_keys.clone() )
     }
@@ -106,6 +111,28 @@ impl EmpowerNodeGraph
         let node = self.nodes.get(&node_key).unwrap();
 
         Some( node.output_port_keys.clone() )
+    }
+
+    pub fn set_node_input_port_value(&mut self, node_key: &EmpowerKey, index: usize, value: EmpowerData) -> bool
+    {
+        if !self.nodes.contains_key(node_key)
+        {
+            println!("Tried to set input ports value with node key {}, but node key is not in the graph.", node_key);
+            return false;
+        }
+
+        let input_port_keys = self.get_node_input_port_keys(node_key).unwrap();
+        
+        if input_port_keys.len() - 1 > index
+        {
+            return false;
+        }
+
+        let input_port_to_change_key = input_port_keys[index];
+
+        self.set_input_port_value(input_port_to_change_key, value);
+
+        true
     }
 
     pub fn get_input_port_value(&mut self, input_port_key: EmpowerKey)
@@ -148,10 +175,10 @@ impl EmpowerNodeGraph
 
 
     // @TODO, change this function to be the other way around
-    pub fn add_connection(&mut self, input_port_key: EmpowerKey, output_port_key: EmpowerKey)
+    pub fn add_connection(&mut self, output_port_key: EmpowerKey, input_port_key: EmpowerKey)
     {
-        let input_port_data = self.input_ports.get(&input_port_key).unwrap().value; // @TODO, find a consistency in the naming
         let output_port_data = self.output_ports.get(&output_port_key).unwrap().value;
+        let input_port_data = self.input_ports.get(&input_port_key).unwrap().value; // @TODO, find a consistency in the naming
 
         if input_port_data != output_port_data
         {

@@ -47,15 +47,15 @@ impl GraphEditor
     pub fn add_node(&mut self, new_node_type: NodeType, position: egui::Pos2)
     {
         // @TODO, find a better way of assigning keys
-        let empower_node_key: EmpowerKey = self.empower_node_graph.add_node(new_node_type); 
+        let empower_node= self.empower_node_graph.add_node(new_node_type); 
 
-        if self.display_nodes.contains_key(&empower_node_key) // @TODO, simplify these calls
+        if self.display_nodes.contains_key(&empower_node.node_key) // @TODO, simplify these calls
         {
             println!("ERROR, attempted to add engine node key already in node graph (denied)"); // This should never happen, only if something wrongly implemented
             return;
         }
 
-        let empower_node = self.empower_node_graph.nodes.get(&empower_node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
+        let empower_node = self.empower_node_graph.nodes.get(&empower_node.node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
 
         let display_node_title = empower_node.node_type.to_string();
 

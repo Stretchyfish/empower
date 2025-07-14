@@ -7,7 +7,7 @@ use crate::InputPort;
 use crate::OutputPort;
 use crate::Node;
 
-pub fn create_start_node(nodes: &mut HashMap<EmpowerKey, Node>, output_ports: &mut HashMap<EmpowerKey, OutputPort>)
+pub fn create_start_node(nodes: &mut HashMap<EmpowerKey, Node>, output_ports: &mut HashMap<EmpowerKey, OutputPort>) -> (EmpowerKey, Vec<EmpowerKey>, Vec<EmpowerKey>)
 {
     let new_node_key = nodes.len() as EmpowerKey;
     
@@ -22,12 +22,14 @@ pub fn create_start_node(nodes: &mut HashMap<EmpowerKey, Node>, output_ports: &m
     output_ports.insert(new_output_port_key, new_output_port);
 
     let new_output_port_keys = Vec::from([new_output_port_key]);
-    let new_node = Node::new(new_node_key, NodeType::Start, Vec::new(), new_output_port_keys);
+    let new_node = Node::new(new_node_key, NodeType::Start, Vec::new(), new_output_port_keys.clone());
 
     nodes.insert(new_node_key, new_node);
+
+    (new_node_key, Vec::new(), new_output_port_keys)
 }
 
-pub fn create_integer_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>, output_ports: &mut HashMap<EmpowerKey, OutputPort>) -> EmpowerKey
+pub fn create_integer_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>, output_ports: &mut HashMap<EmpowerKey, OutputPort>) -> (EmpowerKey, Vec<EmpowerKey>, Vec<EmpowerKey>)
 {
     // @TODO, find a way of reusing values between max
     let new_node_key = nodes.keys().copied().max().unwrap_or(0) + 1;
@@ -45,13 +47,13 @@ pub fn create_integer_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &
     let new_input_port_keys = Vec::from([new_input_port_key]);
     let new_output_port_keys = Vec::from([new_output_port_key]);
 
-    let new_node = Node::new(new_node_key, NodeType::IntegerVariable, new_input_port_keys, new_output_port_keys);
+    let new_node = Node::new(new_node_key, NodeType::IntegerVariable, new_input_port_keys.clone(), new_output_port_keys.clone());
     nodes.insert(new_node_key, new_node);
 
-    new_node_key
+    (new_node_key, new_input_port_keys, new_output_port_keys)
 }
 
-pub fn create_addition_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>, output_ports: &mut HashMap<EmpowerKey, OutputPort>) -> EmpowerKey
+pub fn create_addition_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>, output_ports: &mut HashMap<EmpowerKey, OutputPort>) -> (EmpowerKey, Vec<EmpowerKey>, Vec<EmpowerKey>)
 {
     let new_node_key = nodes.keys().copied().max().unwrap_or(0) + 1;
 
@@ -73,13 +75,13 @@ pub fn create_addition_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: 
     let new_input_port_keys = Vec::from([new_input_port_addition_key, new_input_port_value_key]);
     let new_output_port_keys = Vec::from([new_output_port_key]);
 
-    let new_node = Node::new(new_node_key, NodeType::Addition, new_input_port_keys, new_output_port_keys);
+    let new_node = Node::new(new_node_key, NodeType::Addition, new_input_port_keys.clone(), new_output_port_keys.clone());
     nodes.insert(new_node_key, new_node);
 
-    new_node_key
+    (new_node_key, new_input_port_keys, new_output_port_keys)
 }
 
-pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>) -> EmpowerKey
+pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mut HashMap<EmpowerKey, InputPort>) -> (EmpowerKey, Vec<EmpowerKey>, Vec<EmpowerKey>)
 {
     let new_node_key = nodes.keys().copied().max().unwrap_or(0) + 1;
 
@@ -95,8 +97,8 @@ pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mu
 
     let new_input_port_keys = Vec::from([new_input_port_trigger_key, new_input_port_value_key]);
 
-    let new_node = Node::new(new_node_key, NodeType::Print, new_input_port_keys, Vec::new());
+    let new_node = Node::new(new_node_key, NodeType::Print, new_input_port_keys.clone(), Vec::new());
     nodes.insert(new_node_key, new_node);
 
-    new_node_key
+    (new_node_key, new_input_port_keys, Vec::new())
 }

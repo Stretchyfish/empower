@@ -179,7 +179,7 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
 
             if successfully_removed_connection
             {
-                graph_editor.empower_node_graph.add_connection(*port_key, graph_viewport.port_searcher.unwrap().port_key);
+                graph_editor.empower_node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
                 graph_viewport.port_searcher = None;
                 return;
             }
@@ -236,7 +236,7 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
             // });
 
             // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
-            graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key);
+            graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
 
             // @TODO, simplify this
             let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();

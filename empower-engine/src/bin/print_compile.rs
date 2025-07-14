@@ -6,19 +6,14 @@ fn main()
 {
     let mut node_graph = EmpowerNodeGraph::default();
 
-    let new_node_type_1 = NodeType::IntegerVariable;
-    let new_node_type_2 = NodeType::Print;
+    let start_node = node_graph.add_node(NodeType::Start);
+    let int_node = node_graph.add_node(NodeType::IntegerVariable);
+    let print_node = node_graph.add_node(NodeType::Print);
 
-    let node_key_1 = node_graph.add_node(new_node_type_1.clone());
-    let node_key_2 = node_graph.add_node(new_node_type_2.clone());
+    node_graph.set_input_port_value(int_node.input_port_keys[0], EmpowerData::Integer(50));
 
-    let input_port_key_1= node_graph.get_node_input_port_keys(node_key_1).unwrap()[0];
-    let output_port_key_1= node_graph.get_node_output_port_keys(node_key_1).unwrap()[0];
+    node_graph.add_connection(int_node.output_port_keys[0], print_node.input_port_keys[1]);
+    node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);
 
-    let input_port_key_2= node_graph.get_node_input_port_keys(node_key_2).unwrap()[1];
-
-    node_graph.add_connection(input_port_key_2, output_port_key_1);
-
-    node_graph.set_input_port_value(input_port_key_1, EmpowerData::Integer(50));
     empower_engine::debug_compile(&mut node_graph);
 }
