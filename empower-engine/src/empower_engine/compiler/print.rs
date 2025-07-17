@@ -33,10 +33,13 @@ pub fn execute_debug_print_node(node_to_compile_key: EmpowerKey, nodes: &mut Has
     let input_port = input_ports.get_mut(&node_to_compile.input_port_keys[1]).unwrap(); // @TODO, handle exception
 
     // @TODO, make a better implementation of this
-    let printing_output = format!("PRINTING: {}", input_port.get_value_as_string());
+    //
+    //
+    //
+    let printing_output = format!("PRINTING: {}", input_port.value.to_string());
 
     println!("{}", printing_output);
-    empower_result.add_line(input_port.get_value_as_string());
+    empower_result.add_line(input_port.value.to_string());
 
     print!("print node ({}) : [{}] ", node_to_compile_key, input_port.value);
 }

@@ -47,19 +47,23 @@ impl EmpowerNodeGraph
             {
                 // @TODO, convert these to optionals?
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_start_node(&mut self.nodes, &mut self.output_ports);
-            }
+            },
             NodeType::IntegerVariable =>
             {
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_integer_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
-            }
+            },
+            NodeType::Number =>
+            {
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_number_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+            },
             NodeType::Addition =>
             {
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
-            }
+            },
             NodeType::Print =>
             {
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_print_node(&mut self.nodes, &mut self.input_ports);
-            }
+            },
         }
 
         NodeHandle { node_key: new_node_key,  input_port_keys: new_input_port_keys, output_port_keys: new_output_port_keys}
@@ -177,11 +181,17 @@ impl EmpowerNodeGraph
     // @TODO, change this function to be the other way around
     pub fn add_connection(&mut self, output_port_key: EmpowerKey, input_port_key: EmpowerKey)
     {
-        let output_port_data = self.output_ports.get(&output_port_key).unwrap().value;
-        let input_port_data = self.input_ports.get(&input_port_key).unwrap().value; // @TODO, find a consistency in the naming
+        let output_port = self.output_ports.get(&output_port_key).unwrap();
+        let input_port = self.input_ports.get(&input_port_key).unwrap();
 
-        if input_port_data != output_port_data
+        let output_port_data = output_port.value.clone();
+        let input_port_data = input_port.value.clone();
+
+        let input_port_type = &input_port.port_type;
+
+        if !input_port_type.is_compatible_with(&output_port_data)
         {
+            println!("Tried to add connection between two incompatable ports (out: {}) & (in: {})", output_port_key, input_port_key);
             return;
         }
        
@@ -238,6 +248,8 @@ impl EmpowerNodeGraph
         {
            self.connections_out.remove(&output_port_key); 
         }
+
+        self.input_ports.get_mut(&input_port_key).unwrap().reset(); // @TODO, find a better way of doing this
 
         true
     }

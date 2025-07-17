@@ -21,7 +21,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         let input_port_position = display_node_to.position + display_input_port.relative_position;
 
         // @TODO, find a better way to do this
-        let input_port_data = graph_editor.empower_node_graph.input_ports.get(&input_port_key).unwrap().value;
+        let input_port_data = graph_editor.empower_node_graph.input_ports.get(&input_port_key).unwrap().value.clone();
 
         let connection_color;
         match input_port_data
@@ -57,11 +57,11 @@ pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &mut GraphEditor,
        PortKind::InputPort =>
        {
         display_port = graph_editor.display_input_ports.get(&port_searcher.port_key).unwrap(); // @Consider simplifying this call
-        port_searcher_data = graph_editor.empower_node_graph.input_ports.get(&port_searcher.port_key).unwrap().value;
+        port_searcher_data = graph_editor.empower_node_graph.input_ports.get(&port_searcher.port_key).unwrap().value.clone();
        },
        PortKind::OutputPort =>
        {
-        port_searcher_data = graph_editor.empower_node_graph.output_ports.get(&port_searcher.port_key).unwrap().value;
+        port_searcher_data = graph_editor.empower_node_graph.output_ports.get(&port_searcher.port_key).unwrap().value.clone();
         display_port = graph_editor.display_output_ports.get(&port_searcher.port_key).unwrap(); // @Consider simplifying this call
         // @TODO, check that this unwrap is safe
        }, 

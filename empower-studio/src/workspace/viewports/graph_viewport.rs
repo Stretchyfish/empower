@@ -1,5 +1,5 @@
 use empower_node_graph::{node, EmpowerKey};
-use crate::{graph_editor::{GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
 
 mod node_widget;
 mod connection_widget;
@@ -119,9 +119,10 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
        }
 
         // @TODO, prepare for multiple kinds of input ports
-        NodeWidgetResponseType::ChangedInputPortValueText(port_key, new_value_text) =>
+        NodeWidgetResponseType::ChangedInputPortValueRepresentation(port_key, new_value_representation) =>
         {
-            input_port_text_interaction(graph_editor, &port_key, &new_value_text);
+            // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
+            input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
         }
       
         _ =>
@@ -237,13 +238,18 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
 
             // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
             graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
+            println!("Tried to connect: {}, {}", port_searcher.port_key, *port_key);
 
             // @TODO, simplify this
-            let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
+            // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
+
+            let value_representation = graph_editor.get_input_port_value_representation(port_key);
             let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
 
-            display_port.value = empower_port.get_value_as_string();
-            display_port.value_text_valid = true;
+            display_port.value_representation = value_representation;
+            // display_port.value = empower_port.get_value_as_string();
+            // display_port.value_text_valid = true;
+            display_port.value_representation_valid = true;
 
             graph_viewport.port_searcher = None;
             return;
@@ -267,7 +273,7 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     {
         PortKind::InputPort =>
         {
-            graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key); // @TODO, consider changing this API
+            graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
             graph_viewport.port_searcher = None;
             return;
         },
@@ -284,19 +290,19 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     println!("output port id from show function: {}", port_key);
 }
 
-fn input_port_text_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_text: &String)
+fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
 {
-    // @TODO, improve this interface
-    let empower_port = graph_editor.empower_node_graph.input_ports.get_mut(port_key).unwrap();
+    // let display_port_value_representation = graph_editor.display_input_ports.get(port_key).unwrap().value_representation.clone();
+
+    let succesfully_set_value = graph_editor.set_input_port_value_from_representation(port_key, new_value_representation.clone());
+
+   // @TODO, this can be written better
     let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
+    display_port.value_representation = new_value_representation;
 
-    display_port.value = new_value_text.to_string(); // @TODO, figure out why this to_string is needed
-
-    let succesfully_set_value = empower_port.set_value_with_text(new_value_text);
-
-    display_port.value_text_valid = false; // @TODO, this should work no problem, but keep an eye on it
-    if succesfully_set_value
-    {
-        display_port.value_text_valid = true;
-    }
+    display_port.value_representation_valid = succesfully_set_value; // @TODO, this should work no problem, but keep an eye on it
+    // if succesfully_set_value
+    // {
+    //     display_port.value_representation_valid = true;
+    // }
 }

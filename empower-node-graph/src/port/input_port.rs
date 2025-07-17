@@ -1,54 +1,40 @@
+use crate::port::port_type;
+use crate::port::port_type::PortType;
 use crate::EmpowerKey;
 use crate::EmpowerData;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone)]
 pub struct InputPort
 {
     pub key: EmpowerKey,
     pub node_key: EmpowerKey,
+    pub port_type: PortType,
     pub value: EmpowerData,
 }
 
 impl InputPort
 {
-    pub fn new(port_key: EmpowerKey, node_key: EmpowerKey, value: EmpowerData) -> Self
+    pub fn new(port_key: EmpowerKey, node_key: EmpowerKey, port_type: PortType, value: EmpowerData) -> Self
     {
         Self
         {
             key: port_key,
             node_key,
+            port_type,
             value,
         }
     }
 
-    // @TODO, determine if these should be somewhere different
-    pub fn get_value_as_string(&self) -> String
+    pub fn reset(&mut self)
     {
-        self.value.to_string()
-    }
+        let compatability_list = self.port_type.get_compatability_list();
 
-    pub fn set_value_with_text(&mut self, value_text: &String) -> bool
-    {
-        match self.value 
+        if compatability_list.len() < 1
         {
-            EmpowerData::Integer(_) => 
-            {
-                self.value = match value_text.parse::<i32>()
-                {
-                   Ok(integer) => EmpowerData::Integer(integer),
-                   Err(e) => return false,
-                };
-            },
-            EmpowerData::Trigger =>
-            {
-                
-            }
-            EmpowerData::Unknown =>
-            {
-                println!("ERROR, tried to set value with text of an unknown type");
-            },
+            println!("tried to reset an input port without any compatability"); // This should never happen
+            return;
         }
 
-        true
+        self.value = compatability_list[0].clone();
     }
 }

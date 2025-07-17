@@ -1,4 +1,6 @@
 use empower_node_graph::node::node_type;
+use empower_node_graph::port::PortType;
+use empower_node_graph::EmpowerData;
 use empower_node_graph::EmpowerKey;
 use empower_node_graph::EmpowerNodeGraph;
 use empower_node_graph::Node;
@@ -11,6 +13,7 @@ use display_node::DisplayNode;
 
 pub mod display_port;
 use display_port::DisplayPort;
+use display_port::DisplayPortValueRepresentation;
 
 #[derive(Default, Clone)]
 pub struct GraphEditor
@@ -66,7 +69,7 @@ impl GraphEditor
             NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
             NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 220.0 },
             NodeType::Print => display_node_size = egui::Vec2 { x: 300.0, y: 220.0 },
-            _ => display_node_size = egui::Vec2 { x: 450.0, y: 200.0 },
+            NodeType::Number => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
         }
                
         let port_gap = 60.0;
@@ -75,8 +78,12 @@ impl GraphEditor
 
         for input_port_key in empower_node.input_port_keys.iter()
         {
-            let display_port_value = self.empower_node_graph.input_ports.get(input_port_key).unwrap().value.to_string();
-            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(0.0, input_port_offset), value: display_port_value, value_text_valid: true }; 
+            let display_port_value_representation = self.get_input_port_value_representation(input_port_key);
+            let new_display_port = DisplayPort { 
+                                                        node_key: empower_node.key.clone(), 
+                                                        relative_position: egui::Vec2::new(0.0, input_port_offset), 
+                                                        value_representation: display_port_value_representation, 
+                                                        value_representation_valid: true }; 
             self.display_input_ports.insert(input_port_key.clone(), new_display_port);
 
             input_port_offset += port_gap;
@@ -85,7 +92,11 @@ impl GraphEditor
         for output_port_key in empower_node.output_port_keys.iter()
         {
             // @TODO, figure out if setting display port values is needed for output
-            let new_display_port = DisplayPort { node_key: empower_node.key.clone(), relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), value: String::new(), value_text_valid: false }; 
+            let new_display_port = DisplayPort { 
+                                                    node_key: empower_node.key.clone(), 
+                                                    relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), 
+                                                    value_representation: DisplayPortValueRepresentation::Text( String::new() ), 
+                                                    value_representation_valid: false }; // @TODO, decide if this should be true?
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);
 
             output_port_offset += port_gap;
@@ -121,25 +132,110 @@ impl GraphEditor
     {
         // @TODO, make a check here
         let input_port = self.empower_node_graph.input_ports.get(&port_key).unwrap();
-        let input_port_data = input_port.value;
+        let input_port_data = input_port.value.clone();
 
         input_port_data.to_string()
     }
 
-    pub fn set_input_port_value() -> bool
+    pub fn set_input_port_value_from_representation(&mut self, input_port_key: &EmpowerKey, value_representation: DisplayPortValueRepresentation) -> bool
     {
+        let input_port = self.empower_node_graph.input_ports.get_mut(input_port_key).unwrap();
+
+        match value_representation
+        {
+            DisplayPortValueRepresentation::Text( value_text ) =>
+            {
+                match input_port.value
+                {
+                    EmpowerData::Undefined(_) =>
+                    {
+                        input_port.value = EmpowerData::Undefined( value_text );
+                        return true;
+                    },
+                    EmpowerData::Integer(_) => 
+                    {
+                        let parsed_integer = value_text.parse::<i32>();
+
+                        if parsed_integer.is_ok()
+                        {
+                            println!("was successfull");
+                            input_port.value = EmpowerData::Integer( parsed_integer.unwrap() );
+                            return true;
+                        }
+                    },
+                    EmpowerData::Float(_) =>
+                    {
+                        let parsed_float = value_text.parse::<f32>();
+
+                        if parsed_float.is_ok()
+                        {
+                            println!("was successfull 2");
+                        input_port.value = EmpowerData::Float( parsed_float.unwrap() );
+                            return true;
+                        }
+                    },
+                    _ =>
+                    {
+
+                    },
+                }
+            },
+
+            DisplayPortValueRepresentation::Checkbox( _ ) =>
+            {
+
+            },
+
+            DisplayPortValueRepresentation::None =>
+            {
+
+            },
+        }
+
         false
+    }
+
+    pub fn get_input_port_value_representation(&self, input_port_key: &EmpowerKey) -> DisplayPortValueRepresentation
+    {
+        let input_port_value = self.empower_node_graph.input_ports.get(input_port_key).unwrap().value.clone();
+
+        match input_port_value
+        {
+            EmpowerData::Integer(integer) =>
+            {
+                DisplayPortValueRepresentation::Text( integer.to_string() )
+            },
+
+            EmpowerData::Float(float) =>
+            {
+                DisplayPortValueRepresentation::Text( float.to_string() )
+            },
+
+            EmpowerData::Trigger =>
+            {
+                DisplayPortValueRepresentation::None
+            },
+
+            EmpowerData::Undefined(ref text) =>
+            {
+                DisplayPortValueRepresentation::Text( text.clone() )
+            }
+
+            EmpowerData::Unknown =>
+            {
+                DisplayPortValueRepresentation::None
+            },
+        }
     }
 
     pub fn refresh_display_port_values(&mut self)
     {
         for input_port_key in self.empower_node_graph.input_ports.keys()
         {
-            let input_port = self.empower_node_graph.input_ports.get(input_port_key).unwrap();
-            let input_port_value_as_text = input_port.get_value_as_string();
+            let display_port_representation = self.get_input_port_value_representation(input_port_key);
 
             let display_port = self.display_input_ports.get_mut(input_port_key).unwrap();
-            display_port.value = input_port_value_as_text;
+            display_port.value_representation = display_port_representation;
         }
     }
 

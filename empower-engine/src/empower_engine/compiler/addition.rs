@@ -29,26 +29,65 @@ pub fn execute_debug_addition_node(node_to_compile_key: EmpowerKey, nodes: &mut 
         return;
     }
 
-    let input_port_addition = input_ports.get(&node_to_compile.input_port_keys[0]).unwrap(); // @TODO, handle exception
-    let input_port_value = input_ports.get(&node_to_compile.input_port_keys[1]).unwrap(); // @TODO, handle exception
+    let input_port_1 = input_ports.get(&node_to_compile.input_port_keys[0]).unwrap(); // @TODO, handle exception
+    let input_port_2 = input_ports.get(&node_to_compile.input_port_keys[1]).unwrap(); // @TODO, handle exception
 
-    // @TODO, make this code look better
-    let mut addition_value = 0;
-    if let EmpowerData::Integer(int_value) = input_port_addition.value
+    // if input_port_1.value != input_port_2.value
+    // {
+    //     println!("Addition node has two different incompatable numbers");
+    //     return;
+    // }
+
+    let mut added_value = EmpowerData::Unknown; // @TODO, consider making this not mut?
+    match input_port_1.value // @TODO, replace this with operator overloading?
     {
-        addition_value = int_value;
-    }
+        EmpowerData::Integer( integer ) => // @TODO, simplify this whole chain
+        {
+            match input_port_2.value
+            {
+                EmpowerData::Integer( integer2 ) =>
+                {
+                    added_value = EmpowerData::Integer( integer + integer2);
+                },
+                EmpowerData::Float( float2 ) =>
+                {
+                    added_value = EmpowerData::Float( integer as f32 + float2 ); // @TODO, consider if this is a bad appraoch?
+                },
+                _ =>
+                {
 
-    let mut value = 0;
-    if let EmpowerData::Integer(int_value) = input_port_value.value
-    {
-        value = int_value;
-    }
+                }
+            }
+        },
 
-    let added_value = value + addition_value;
+        EmpowerData::Float( float ) =>
+        {
+            match input_port_2.value
+            {
+                EmpowerData::Integer( integer2 ) =>
+                {
+                    added_value = EmpowerData::Float( float + integer2 as f32 );
+                },
+                EmpowerData::Float( float2 ) =>
+                {
+                    added_value = EmpowerData::Float( float + float2 );
+                },
+                _ =>
+                {
+
+                },
+            }
+        }
+        
+        _ =>
+        {
+            
+        }
+       
+    }
 
     let output_port = output_ports.get_mut(&node_to_compile.output_port_keys[0]).unwrap();
-    output_port.value = EmpowerData::Integer(added_value);
+    output_port.value = added_value;
 
-    print!("addition node ({}) : [{}] [{}], [{}]", node_to_compile_key, addition_value, value, output_port.value);
+    print!("addition node ({}) : [{}] [{}], [{}]", node_to_compile_key, input_port_1.value, input_port_2.value, output_port.value);
 }

@@ -5,6 +5,7 @@ use empower_node_graph::InputPort;
 use empower_node_graph::Node;
 use empower_node_graph::OutputPort;
 
+use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 use crate::graph_editor::GraphEditor;
 use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
@@ -21,7 +22,7 @@ pub enum NodeWidgetResponseType
     ClickedTitle,
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
-    ChangedInputPortValueText(i32, String),
+    ChangedInputPortValueRepresentation(i32, DisplayPortValueRepresentation),
 }
 
 pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &GraphViewport, node_key: &EmpowerKey) -> Option<NodeWidgetResponse>
@@ -223,10 +224,13 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
 
     let input_port_rect = egui::Rect::from_center_size(input_port_position, input_port_size);
 
-    if ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
+    let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + port_key.to_string().as_str()), egui::Sense::click());
+    if input_port_response.clicked()
     {
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedInputPort(*port_key) })
     }
+
+    input_port_response.on_hover_text( format!("{}, {:?}", input_port.value.get_type(), input_port.port_type.get_compatability_list() ));
 
     let port_color;
     let port_text;
@@ -240,15 +244,19 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
         EmpowerData::Integer(_) =>
         {
 
-            port_text = "value";
+            port_text = "int";
+            port_color = egui::Color32::YELLOW;
+        }
+        EmpowerData::Undefined(_) =>
+        {
+            port_text = ""; // @TODO, consider getting rid of the port text
             port_color = egui::Color32::YELLOW;
         }
         _ =>
         {
-            port_text = "unknown";
+            port_text = "float";
             port_color = egui::Color32::YELLOW; 
         }
-        
     }
 
     ui.painter().circle(
@@ -281,13 +289,9 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
         egui::Color32::WHITE,
     );
 
-    match input_port.value // @TODO, find a way to reduce it to one match statement?
+    match &display_port.value_representation
     {
-        EmpowerData::Trigger =>
-        {
-
-        },
-        EmpowerData::Integer(_) =>
+        DisplayPortValueRepresentation::Text( value_text) =>
         {
             let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
             let input_port_value_box_size = egui::Vec2{ x: 120.0, y: 40.0 };
@@ -302,14 +306,15 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
                 text_background_color = egui::Color32::TRANSPARENT;
             }
 
-            if !display_port.value_text_valid
+            if !display_port.value_representation_valid
             {
                 text_edit_color = egui::Color32::RED;
             }
 
-            let mut display_port_text = display_port.value.clone();
+            let mut display_port_text = value_text.clone();
+
             let text_edit = egui::TextEdit::singleline(&mut display_port_text)
-            .char_limit(6)
+            .char_limit(5)
             .font(egui::FontId::proportional(35.0))
             .interactive(!port_has_coonection)
             .text_color(text_edit_color)
@@ -317,17 +322,22 @@ fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: 
             
             ui.put(input_port_value_box_rect, text_edit);
 
-            if display_port_text != display_port.value
+            if display_port_text != *value_text
             {
                 // @TODO, consider how to change this for other than text
-                *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueText(*port_key, display_port_text) } );
+                *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueRepresentation(*port_key, DisplayPortValueRepresentation::Text( display_port_text )) } );
             }
-
         },
-        _ =>
+
+        DisplayPortValueRepresentation::Checkbox( _ ) =>
         {
 
-        } 
+        },
+
+        DisplayPortValueRepresentation::None =>
+        {
+
+        },
     }
 }
 
@@ -339,11 +349,14 @@ fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port:
     let output_port_rect= egui::Rect::from_center_size(output_port_position, output_port_size);
 
     // if ui.interact(output_port_rect, egui::Id::from( graph_title.clone() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click()).clicked()
-    if ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + port_key.to_string().as_str()), egui::Sense::click()).clicked()
+
+    let output_port_response = ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + port_key.to_string().as_str()), egui::Sense::click());
+    if output_port_response.clicked()
     {
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedOutputPort(*port_key) });
         // output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key, node_widget_response);
     }
+    output_port_response.on_hover_text( format!("{}", output_port.value.get_type()) );
 
     let port_color;
     match output_port.value 

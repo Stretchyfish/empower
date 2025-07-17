@@ -42,41 +42,10 @@ pub fn debug_compile(node_graph: &mut EmpowerNodeGraph) -> EmpowerResult
 
         let node_to_compile_key: EmpowerKey = node_keys_to_compile_queue[0];
 
-        // let new_nodes_to_compile = debug_compile_node(node_graph, node_to_compile_key);
         debug_compile_node(&mut empower_result, node_graph, node_to_compile_key);
 
         let new_nodes_to_compile = get_connected_trigger_ports(node_graph, &node_to_compile_key);
         
-
-        // if !node_graph.nodes.contains_key(&node_to_compile_key)
-        // {
-        //     println!("Requested to compile node [{}] but node does not exist", node_to_compile_key);
-        //     return;
-        // };
-
-        // let node_to_compile_type = node_graph.nodes.get_mut(&node_to_compile_key).unwrap().node_type;
-
-        // match node_to_compile_type
-        // {
-        //     NodeType::IntegerVariable =>
-        //     {
-        //         compiler::execute_debug_integer_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
-        //     },
-
-        //     NodeType::Addition =>
-        //     {
-        //         compiler::execute_debug_addition_node(node_to_compile_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
-        //     },
-
-        //     _ =>
-        //     {
-        //         println!("Asked to compile a not supported node type");
-        //     }
-        // }
-
-        // println!(" --> ");
-
-        // let new_nodes_to_compile = transfer_connected_port_values(node_graph, node_to_compile_key);
         println!("Next nodes to compile: {:?}", new_nodes_to_compile);
         node_keys_to_compile_queue.extend(new_nodes_to_compile);
         node_keys_to_compile_queue.pop_front();
@@ -115,6 +84,11 @@ fn debug_compile_node(empower_result: &mut EmpowerResult, node_graph: &mut Empow
             compiler::execute_debug_integer_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
         },
 
+        NodeType::Number =>
+        {
+            compiler::execute_debug_number_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+        },
+
         NodeType::Addition =>
         {
             compiler::execute_debug_addition_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
@@ -124,11 +98,6 @@ fn debug_compile_node(empower_result: &mut EmpowerResult, node_graph: &mut Empow
         {
             compiler::execute_debug_print_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports, empower_result);
         },
-
-        _ =>
-        {
-            println!("Asked to compile a not supported node type {}", node_key);
-        }
     }
 
     println!(" --> ");
@@ -145,7 +114,7 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
     // Find all rouge math variables
     for (node_key, node) in node_graph.nodes.iter_mut()
     {
-        if node.node_type != NodeType::IntegerVariable && node.node_type != NodeType::Addition // @TODO, could also be an addition variable
+        if node.node_type != NodeType::IntegerVariable && node.node_type != NodeType::Addition && node.node_type != NodeType::Number // @TODO, could also be an addition variable
         {
             continue;
         }
@@ -160,7 +129,7 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
         }
     }
 
-    // println!("Global variables list: {:?}", global_variables_keys);
+    println!("Global variables list: {:?}", global_variables_keys);
     
     // Compile connected math nodes
     while !global_variables_keys.is_empty() // this is to ensure no crashes
@@ -186,6 +155,11 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
                 },
 
                 NodeType::Addition =>
+                {
+                    more_nodes_to_compile.push(connected_node_key);
+                },
+
+                NodeType::Number =>
                 {
                     more_nodes_to_compile.push(connected_node_key);
                 },
@@ -282,7 +256,15 @@ fn transfer_connected_port_values(node_graph: &mut EmpowerNodeGraph, node_key: E
             }
 
             let connected_port = node_graph.input_ports.get_mut(connected_port_key).unwrap();
-            connected_port.value = output_port.value;
+            
+
+            // if connected_port.value != output_port.value
+            // {
+            //     println!("Tried to transfer between two incompatable ports");
+            //     continue;
+            // }
+
+            connected_port.value = output_port.value.clone();
             new_nodes_to_compile.push(connected_port.node_key);
             // new_nodes_to_compile.push(connected_port_key.clone());
         }
