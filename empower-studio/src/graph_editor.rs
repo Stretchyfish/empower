@@ -126,16 +126,6 @@ impl GraphEditor
 
         self.display_nodes.remove(node_key);
     }
-    // @TODO, figure out where the best place to put these functions are
-    // This will very likely need to be removed!
-    pub fn get_input_port_value(&mut self, port_key: EmpowerKey) -> String
-    {
-        // @TODO, make a check here
-        let input_port = self.empower_node_graph.input_ports.get(&port_key).unwrap();
-        let input_port_data = input_port.value.clone();
-
-        input_port_data.to_string()
-    }
 
     pub fn set_input_port_value_from_representation(&mut self, input_port_key: &EmpowerKey, value_representation: DisplayPortValueRepresentation) -> bool
     {
@@ -228,7 +218,7 @@ impl GraphEditor
         }
     }
 
-    pub fn refresh_display_port_values(&mut self)
+    pub fn refresh_display_port_values(&mut self) // @TODO, create one that only refreshed a single node?
     {
         for input_port_key in self.empower_node_graph.input_ports.keys()
         {
