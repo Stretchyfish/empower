@@ -63,17 +63,38 @@ impl GraphEditor
         let display_node_title = empower_node.node_type.to_string();
 
         let display_node_size;
+        let extra_input_port_offset; // @TODO, consider if this is the correct approach
         match new_node_type 
         {
-            NodeType::Start => display_node_size = egui::Vec2 { x: 250.0, y: 165.0 },
-            NodeType::IntegerVariable => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
-            NodeType::Addition => display_node_size = egui::Vec2 { x: 450.0, y: 220.0 },
-            NodeType::Print => display_node_size = egui::Vec2 { x: 300.0, y: 220.0 },
-            NodeType::Number => display_node_size = egui::Vec2 { x: 450.0, y: 165.0 },
+            NodeType::Start => 
+            {
+                display_node_size = egui::Vec2 { x: 250.0, y: 165.0 };
+                extra_input_port_offset = 0.0;
+            },
+            NodeType::IntegerVariable => 
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 165.0 };
+                extra_input_port_offset = 0.0;
+            },
+            NodeType::Addition => 
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 220.0 };
+                extra_input_port_offset = 0.0;
+            },
+            NodeType::Print => 
+            {
+                display_node_size = egui::Vec2 { x: 300.0, y: 220.0 };
+                extra_input_port_offset = 0.0;
+            },
+            NodeType::Number => 
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 205.0 };
+                extra_input_port_offset = 45.0;
+            },
         }
                
         let port_gap = 60.0;
-        let mut input_port_offset = 120.0;
+        let mut input_port_offset = 120.0 + extra_input_port_offset;
         let mut output_port_offset = input_port_offset.clone();
 
         for input_port_key in empower_node.input_port_keys.iter()

@@ -5,6 +5,7 @@ pub use node_type::NodeType;
 
 pub mod node_state;
 pub use node_state::NodeState;
+pub use node_state::NumberNodeState; // @TODO, consider where to place this
 
 #[derive(Default, Clone)]
 pub struct Node
@@ -20,7 +21,6 @@ impl Node
 {
     pub fn new(key: EmpowerKey, node_type: NodeType, input_port_keys: Vec<EmpowerKey>, output_port_keys: Vec<EmpowerKey>) -> Self
     {
-
         let state = match node_type
         {
             NodeType::Start =>
@@ -29,7 +29,7 @@ impl Node
             }
             NodeType::Number =>
             {
-                NodeState::NumberState
+                NodeState::NumberState( NumberNodeState::new() )
             }
             NodeType::Addition =>
             {

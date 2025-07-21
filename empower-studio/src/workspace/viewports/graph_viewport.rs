@@ -99,6 +99,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     let mut port_was_clicked = false; // @TODO, find a better way to approach this
     for node_widget_response in node_widgets_responses
     {
+        let node_with_response_key = node_widget_response.key;
       match node_widget_response.kind 
       {
         NodeWidgetResponseType::ClickedTitle =>
@@ -124,11 +125,12 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
             input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
         }
-      
-        _ =>
-        {
 
-        },
+        NodeWidgetResponseType::ChangedState( new_state ) =>
+        {
+            let node_with_changed_state = graph_editor.empower_node_graph.nodes.get_mut(&node_with_response_key).unwrap();
+            node_with_changed_state.state = new_state;
+        }
       }  
     }
 

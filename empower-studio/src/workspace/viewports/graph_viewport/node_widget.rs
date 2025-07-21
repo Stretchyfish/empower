@@ -1,3 +1,4 @@
+use empower_node_graph::node::NodeState;
 use empower_node_graph::EmpowerKey;
 
 use crate::graph_editor::display_port::DisplayPortValueRepresentation;
@@ -5,6 +6,7 @@ use crate::graph_editor::GraphEditor;
 use super::GraphViewport;
 
 mod node_widget_body;
+mod node_widget_state;
 mod node_widget_input_ports;
 mod node_widget_output_ports;
 
@@ -20,6 +22,7 @@ pub enum NodeWidgetResponseType
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
     ChangedInputPortValueRepresentation(i32, DisplayPortValueRepresentation),
+    ChangedState(NodeState),
 }
 
 pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &GraphViewport, node_key: &EmpowerKey) -> Option<NodeWidgetResponse>
@@ -36,6 +39,10 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
     node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode);
 
     let empower_node = graph_editor.empower_node_graph.nodes.get(&node_key).unwrap();
+
+    // @TODO, add state to show node body?
+    node_widget_state::show_node_widget_state(ui, empower_node, display_node, &mut node_widget_response);
+
     let input_port_keys = &empower_node.input_port_keys;
     for input_port_key in input_port_keys
     {

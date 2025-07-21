@@ -1,6 +1,9 @@
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
+pub mod number_node_state;
+pub use number_node_state::NumberNodeState;
+
+#[derive(Default, Clone)]
 pub enum NodeState
 {
-    NumberState,
+    NumberState(NumberNodeState),
     #[default] None,
 }
