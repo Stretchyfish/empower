@@ -1,4 +1,6 @@
+use empower_node_graph::node::node_state::number_node_state::ConvertionApproach;
 use empower_node_graph::node::node_type;
+use empower_node_graph::node::NodeState;
 use empower_node_graph::port::PortType;
 use empower_node_graph::EmpowerData;
 use empower_node_graph::EmpowerKey;
@@ -260,5 +262,17 @@ impl GraphEditor
         // @TODO, make safe
         let connected_output_port_key = self.empower_node_graph.connections_in.get(input_port_key).unwrap();
         *connected_output_port_key
+    }
+
+    pub fn change_node_state(&mut self, node_key: &EmpowerKey, new_node_state: &NodeState)
+    {
+        let successfully_set_state = self.empower_node_graph.set_node_state(node_key, new_node_state);
+
+        if !successfully_set_state
+        {
+            return;
+        }
+
+        self.refresh_display_port_values();
     }
 }

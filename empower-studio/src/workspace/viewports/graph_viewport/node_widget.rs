@@ -41,7 +41,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
     let empower_node = graph_editor.empower_node_graph.nodes.get(&node_key).unwrap();
 
     // @TODO, add state to show node body?
-    node_widget_state::show_node_widget_state(ui, empower_node, display_node, &mut node_widget_response);
+    node_widget_state::show_node_widget_state(ui, empower_node, display_node, graph_viewport_title, &mut node_widget_response);
 
     let input_port_keys = &empower_node.input_port_keys;
     for input_port_key in input_port_keys

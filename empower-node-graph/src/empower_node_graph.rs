@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::node::node_state::number_node_state::ConvertionApproach;
+use crate::node::NodeState;
 use crate::EmpowerData;
 use crate::EmpowerKey;
 use crate::Node;
@@ -281,4 +283,46 @@ impl EmpowerNodeGraph
         self.connections_out.remove(output_port_key);
     }
 
+    pub fn set_node_state(&mut self, node_key: &EmpowerKey, new_node_state: &NodeState) -> bool
+    {
+        if !self.nodes.contains_key(&node_key)
+        {
+            return false;
+        }
+
+        let node = self.nodes.get_mut(&node_key).unwrap();
+        node.state = new_node_state.clone();
+
+        match new_node_state
+        {
+            NodeState::None =>
+            {
+                true
+            },
+
+            NodeState::NumberState( state ) =>
+            {
+                let input_port_key = node.input_port_keys[0];
+                let number_input_port = self.input_ports.get_mut( &input_port_key ).unwrap();
+
+                match state.current_convertion_approach
+                {
+                    ConvertionApproach::Automatic =>
+                    {
+                        number_input_port.value = EmpowerData::Undefined( String::new() );
+                    },
+                    ConvertionApproach::Int =>
+                    {
+                        number_input_port.value = EmpowerData::Integer(0);
+                    },
+                    ConvertionApproach::Float =>
+                    {
+                        number_input_port.value = EmpowerData::Float(0.0);
+                    },
+                }
+
+                true
+            },
+        }
+    }
 }

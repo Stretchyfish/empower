@@ -128,8 +128,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         NodeWidgetResponseType::ChangedState( new_state ) =>
         {
-            let node_with_changed_state = graph_editor.empower_node_graph.nodes.get_mut(&node_with_response_key).unwrap();
-            node_with_changed_state.state = new_state;
+            graph_editor.change_node_state(&node_with_response_key, &new_state);
         }
       }  
     }
