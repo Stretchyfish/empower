@@ -88,13 +88,13 @@ impl EmpowerNodeGraph
 
         for input_port_key in input_port_keys
         {
-            self.input_ports.remove(&input_port_key);
+            self.input_ports.remove(&input_port_key); // @TODO, consider if remove input ports should be done after removing connections
             self.remove_connections_to_input_port(&input_port_key);
         }
 
         for output_port_key in output_port_keys
         {
-            self.output_ports.remove(&output_port_key);
+            self.output_ports.remove(&output_port_key); // @TODO, consider if remove output ports should be done after removing connections
             self.remove_connection_to_output_port(&output_port_key);
         }
 
@@ -259,7 +259,10 @@ impl EmpowerNodeGraph
            self.connections_out.remove(&output_port_key); 
         }
 
-        self.input_ports.get_mut(&input_port_key).unwrap().reset(); // @TODO, find a better way of doing this
+        if self.input_ports.contains_key(&input_port_key)
+        {
+            self.input_ports.get_mut(&input_port_key).expect("Failed to reset input port upon connection removal").reset(); // @TODO, find a better way of doing this
+        }
 
         true
     }
