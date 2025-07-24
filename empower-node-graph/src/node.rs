@@ -35,6 +35,10 @@ impl Node
             {
                 NodeState::None
             }
+            NodeType::Multiply =>
+            {
+                NodeState::None 
+            }
             NodeType::IntegerVariable =>
             {
                 NodeState::None

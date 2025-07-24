@@ -10,3 +10,6 @@ pub use compile_number::execute_debug_number_node;
 
 pub mod compile_print;
 pub use compile_print::execute_debug_print_node;
+
+pub mod compile_multiply;
+pub use compile_multiply::execute_debug_multiply_node;

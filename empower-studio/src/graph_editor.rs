@@ -91,6 +91,13 @@ impl GraphEditor
                 input_port_names = vec![ "A".to_string(), "B".to_string() ];
                 output_port_names = vec![ "".to_string() ];
             },
+            NodeType::Multiply =>
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 220.0 };
+                extra_input_port_offset = 0.0;
+                input_port_names = vec![ "A".to_string(), "B".to_string() ];
+                output_port_names = vec![ "".to_string() ];
+            },
             NodeType::Print => 
             {
                 display_node_size = egui::Vec2 { x: 300.0, y: 220.0 };

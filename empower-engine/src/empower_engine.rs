@@ -94,6 +94,11 @@ fn debug_compile_node(empower_result: &mut EmpowerResult, node_graph: &mut Empow
             compiler::execute_debug_addition_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
         },
 
+        NodeType::Multiply =>
+        {
+            compiler::execute_debug_multiply_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+        },
+
         NodeType::Print =>
         {
             compiler::execute_debug_print_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports, empower_result);
@@ -114,7 +119,10 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
     // Find all rouge math variables
     for (node_key, node) in node_graph.nodes.iter_mut()
     {
-        if node.node_type != NodeType::IntegerVariable && node.node_type != NodeType::Addition && node.node_type != NodeType::Number // @TODO, could also be an addition variable
+        if node.node_type != NodeType::IntegerVariable && 
+            node.node_type != NodeType::Addition && 
+            node.node_type != NodeType::Number && 
+            node.node_type != NodeType::Multiply // @TOOD, find a better way of handling this
         {
             continue;
         }
@@ -160,6 +168,11 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
                 },
 
                 NodeType::Number =>
+                {
+                    more_nodes_to_compile.push(connected_node_key);
+                },
+
+                NodeType::Multiply =>
                 {
                     more_nodes_to_compile.push(connected_node_key);
                 },
