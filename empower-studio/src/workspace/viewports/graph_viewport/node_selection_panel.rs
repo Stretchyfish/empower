@@ -59,15 +59,15 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
         {
             ui.group(|ui|
             {
-                if ui.add(egui::Button::new("int variable").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
-                {                                        
-                    let new_node_type = NodeType::IntegerVariable;
-                    graph_editor.add_node(new_node_type, *mouse_position_in_scene );
+                if ui.add(egui::Button::new("Number").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                {
+                    let new_node_type = NodeType::Number;
+                    graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
                 }
-    
-                if ui.add(egui::Button::new("int add value").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+
+                if ui.add(egui::Button::new("Addition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     let new_node_type = NodeType::Addition;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
@@ -75,7 +75,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                     node_selection_panel.visible = false;
                 }
 
-                if ui.add(egui::Button::new("print value").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                if ui.add(egui::Button::new("Print").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     let new_node_type = NodeType::Print;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
@@ -83,16 +83,13 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                     node_selection_panel.visible = false;
                 }
 
-                if ui.add(egui::Button::new("number value").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
-                {
-                    let new_node_type = NodeType::Number;
-                    graph_editor.add_node(new_node_type, *mouse_position_in_scene);
+                if ui.add(egui::Button::new("int variable").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                {                                        
+                    let new_node_type = NodeType::IntegerVariable;
+                    graph_editor.add_node(new_node_type, *mouse_position_in_scene );
 
                     node_selection_panel.visible = false;
                 }
-  
-                ui.add(egui::Button::new("test (no function)").min_size(egui::Vec2 {x: 190.0, y: 20.0}));
-                ui.add(egui::Button::new("test (no function)").min_size(egui::Vec2 {x: 190.0, y: 20.0}));
             });
         });
     });   
