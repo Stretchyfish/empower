@@ -49,7 +49,7 @@ impl GraphEditor
         graph_editor
     }
 
-    pub fn add_node(&mut self, new_node_type: NodeType, position: egui::Pos2)
+    pub fn add_node(&mut self, new_node_type: NodeType, position: egui::Pos2) -> bool
     {
         // @TODO, find a better way of assigning keys
         let empower_node= self.empower_node_graph.add_node(new_node_type); 
@@ -57,7 +57,7 @@ impl GraphEditor
         if self.display_nodes.contains_key(&empower_node.node_key) // @TODO, simplify these calls
         {
             println!("ERROR, attempted to add engine node key already in node graph (denied)"); // This should never happen, only if something wrongly implemented
-            return;
+            return false;
         }
 
         let empower_node = self.empower_node_graph.nodes.get(&empower_node.node_key).unwrap(); // This should never fail @TODO, consider simplifying this call
@@ -75,42 +75,43 @@ impl GraphEditor
                 display_node_size = egui::Vec2 { x: 250.0, y: 165.0 };
                 extra_input_port_offset = 0.0;
                 input_port_names = Vec::new();
-                output_port_names = vec![ "out".to_string() ]
+                output_port_names = vec![ "".to_string() ]
             },
             NodeType::IntegerVariable => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 165.0 };
                 extra_input_port_offset = 0.0;
-                input_port_names = vec![ "A".to_string() ];
-                output_port_names = vec![ "A".to_string()];
+                input_port_names = vec![ "int".to_string() ];
+                output_port_names = vec![ "".to_string()];
             },
             NodeType::Addition => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 220.0 };
                 extra_input_port_offset = 0.0;
-                input_port_names = vec![ String::from("A"), String::from("B") ];
-                output_port_names = vec![ "A".to_string() ];
+                input_port_names = vec![ "A".to_string(), "B".to_string() ];
+                output_port_names = vec![ "".to_string() ];
             },
             NodeType::Print => 
             {
                 display_node_size = egui::Vec2 { x: 300.0, y: 220.0 };
                 extra_input_port_offset = 0.0;
-                input_port_names = vec![ "A".to_string(), "B".to_string() ];
-                output_port_names = vec![ "A".to_string() ];
+                input_port_names = vec![ "".to_string(), "print".to_string() ];
+                output_port_names = Vec::new();
             },
             NodeType::Number => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 205.0 };
                 extra_input_port_offset = 45.0;
-                input_port_names = vec![ "A".to_string() ];
-                output_port_names = vec![ "A".to_string() ];
+                input_port_names = vec![ "value".to_string() ];
+                output_port_names = vec![ "out".to_string() ];
             },
         }
 
         if input_port_names.len() != empower_node.input_port_keys.len()
+            || output_port_names.len() != empower_node.output_port_keys.len()
         {
-            println!("ERROR, the size of input port names does not match");
-            return;
+            println!("ERROR, the size of input port or output names does not match");
+            return false;
         }
               
         let port_gap = 60.0;
@@ -147,6 +148,8 @@ impl GraphEditor
 
         let new_display_node = DisplayNode::new( display_node_title, position, display_node_size );
         self.display_nodes.insert(empower_node.key.clone(), new_display_node );
+
+        true
     }
 
     pub fn remove_node(&mut self, node_key: &EmpowerKey)
