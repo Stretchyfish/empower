@@ -13,3 +13,6 @@ pub use compile_print::execute_debug_print_node;
 
 pub mod compile_multiply;
 pub use compile_multiply::execute_debug_multiply_node;
+
+pub mod compile_text;
+pub use compile_text::execute_debug_text_node;

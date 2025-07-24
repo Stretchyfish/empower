@@ -112,6 +112,13 @@ impl GraphEditor
                 input_port_names = vec![ "value".to_string() ];
                 output_port_names = vec![ "out".to_string() ];
             },
+            NodeType::Text =>
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 165.0 };
+                extra_input_port_offset = 0.0;
+                input_port_names = vec![ "text".to_string() ];
+                output_port_names = vec![ "out".to_string() ];
+            },
         }
 
         if input_port_names.len() != empower_node.input_port_keys.len()
@@ -213,13 +220,18 @@ impl GraphEditor
                         if parsed_float.is_ok()
                         {
                             println!("was successfull 2");
-                        input_port.value = EmpowerData::Float( parsed_float.unwrap() );
+                            input_port.value = EmpowerData::Float( parsed_float.unwrap() );
                             return true;
                         }
                     },
+                    EmpowerData::Text(_) =>
+                    {
+                        input_port.value = EmpowerData::Text( value_text );
+                        return true;
+                    },
                     _ =>
                     {
-
+                        println!("ERROR, trying to add value representation text to invalid in graph editor");
                     },
                 }
             },
@@ -260,6 +272,11 @@ impl GraphEditor
             },
 
             EmpowerData::Undefined(ref text) =>
+            {
+                DisplayPortValueRepresentation::Text( text.clone() )
+            }
+
+            EmpowerData::Text(ref text) =>
             {
                 DisplayPortValueRepresentation::Text( text.clone() )
             }

@@ -7,6 +7,7 @@ pub enum EmpowerData
     Trigger,
     Integer(i32),
     Float(f32),
+    Text(String),
     Undefined(String),
     #[default] Unknown
 }
@@ -20,8 +21,9 @@ impl EmpowerData
             EmpowerData::Trigger => String::from("trigger"),
             EmpowerData::Integer(_) => String::from("int"),
             EmpowerData::Float(_) => String::from("float"),
+            EmpowerData::Text(_) => String::from("text"),
             EmpowerData::Undefined(_) => String::from("undefined"),
-            _ => String::from("unknown"),
+            EmpowerData::Unknown => String::from("Unknown"),
         }
     }
 }
@@ -33,9 +35,10 @@ impl fmt::Debug for EmpowerData
         match *self
         {
             EmpowerData::Trigger => write!(f, "trigger"),
-            EmpowerData::Integer(value) => write!(f, "{}", "int"),
-            EmpowerData::Float(value) => write!(f, "{}", "float"),
-            EmpowerData::Undefined(ref value) => write!(f, "{}", "undefined"),
+            EmpowerData::Integer(_) => write!(f, "{}", "int"),
+            EmpowerData::Float(_) => write!(f, "{}", "float"),
+            EmpowerData::Text(_) => write!(f, "{}", "text"),
+            EmpowerData::Undefined(_) => write!(f, "{}", "undefined"),
             EmpowerData::Unknown => write!(f, "unknown"),
         }
     }
@@ -50,7 +53,8 @@ impl fmt::Display for EmpowerData
             EmpowerData::Trigger => write!(f, "trigger"),
             EmpowerData::Integer(value) => write!(f, "{}", value),
             EmpowerData::Float(value) => write!(f, "{}", value),
-            EmpowerData::Undefined(ref value) => write!(f, "{}", value.clone()),
+            EmpowerData::Text(ref value) => write!(f, "{}", value),
+            EmpowerData::Undefined(ref value) => write!(f, "{}", value),
             EmpowerData::Unknown => write!(f, "unknown"),
         }
     }

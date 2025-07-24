@@ -67,6 +67,14 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                     node_selection_panel.visible = false;
                 }
 
+                if ui.add(egui::Button::new("Text").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                {
+                    let new_node_type = NodeType::Text;
+                    graph_editor.add_node(new_node_type, *mouse_position_in_scene);
+
+                    node_selection_panel.visible = false;
+                }
+
                 if ui.add(egui::Button::new("Addition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     let new_node_type = NodeType::Addition;

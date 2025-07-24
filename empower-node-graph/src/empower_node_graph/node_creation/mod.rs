@@ -15,3 +15,6 @@ pub use create_print_node::create_print_node;
 
 pub mod create_multiply_node;
 pub use create_multiply_node::create_multiply_node;
+
+pub mod create_text_node;
+pub use create_text_node::create_text_node;

@@ -31,6 +31,10 @@ impl Node
             {
                 NodeState::NumberState( NumberNodeState::new() )
             }
+            NodeType::Text =>
+            {
+                NodeState::None
+            }
             NodeType::Addition =>
             {
                 NodeState::None
