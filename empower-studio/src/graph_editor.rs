@@ -66,45 +66,64 @@ impl GraphEditor
 
         let display_node_size;
         let extra_input_port_offset; // @TODO, consider if this is the correct approach
+        let input_port_names; // @TODO, find out if its needed to use string
+        let output_port_names;
         match new_node_type 
         {
             NodeType::Start => 
             {
                 display_node_size = egui::Vec2 { x: 250.0, y: 165.0 };
                 extra_input_port_offset = 0.0;
+                input_port_names = Vec::new();
+                output_port_names = vec![ "out".to_string() ]
             },
             NodeType::IntegerVariable => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 165.0 };
                 extra_input_port_offset = 0.0;
+                input_port_names = vec![ "A".to_string() ];
+                output_port_names = vec![ "A".to_string()];
             },
             NodeType::Addition => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 220.0 };
                 extra_input_port_offset = 0.0;
+                input_port_names = vec![ String::from("A"), String::from("B") ];
+                output_port_names = vec![ "A".to_string() ];
             },
             NodeType::Print => 
             {
                 display_node_size = egui::Vec2 { x: 300.0, y: 220.0 };
                 extra_input_port_offset = 0.0;
+                input_port_names = vec![ "A".to_string(), "B".to_string() ];
+                output_port_names = vec![ "A".to_string() ];
             },
             NodeType::Number => 
             {
                 display_node_size = egui::Vec2 { x: 450.0, y: 205.0 };
                 extra_input_port_offset = 45.0;
+                input_port_names = vec![ "A".to_string() ];
+                output_port_names = vec![ "A".to_string() ];
             },
         }
-               
+
+        if input_port_names.len() != empower_node.input_port_keys.len()
+        {
+            println!("ERROR, the size of input port names does not match");
+            return;
+        }
+              
         let port_gap = 60.0;
         let mut input_port_offset = 120.0 + extra_input_port_offset;
         let mut output_port_offset = input_port_offset.clone();
 
-        for input_port_key in empower_node.input_port_keys.iter()
+        for (input_port_key_index, input_port_key) in empower_node.input_port_keys.iter().enumerate()
         {
             let display_port_value_representation = self.get_input_port_value_representation(input_port_key);
             let new_display_port = DisplayPort { 
                                                         node_key: empower_node.key.clone(), 
                                                         relative_position: egui::Vec2::new(0.0, input_port_offset), 
+                                                        text: input_port_names[input_port_key_index].clone(),
                                                         value_representation: display_port_value_representation, 
                                                         value_representation_valid: true }; 
             self.display_input_ports.insert(input_port_key.clone(), new_display_port);
@@ -112,12 +131,13 @@ impl GraphEditor
             input_port_offset += port_gap;
         }
 
-        for output_port_key in empower_node.output_port_keys.iter()
+        for (output_port_key_index, output_port_key) in empower_node.output_port_keys.iter().enumerate()
         {
             // @TODO, figure out if setting display port values is needed for output
             let new_display_port = DisplayPort { 
                                                     node_key: empower_node.key.clone(), 
                                                     relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), 
+                                                    text: output_port_names[output_port_key_index].clone(),
                                                     value_representation: DisplayPortValueRepresentation::Text( String::new() ), 
                                                     value_representation_valid: false }; // @TODO, decide if this should be true?
             self.display_output_ports.insert(output_port_key.clone(), new_display_port);

@@ -28,28 +28,28 @@ pub fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_po
     input_port_response.on_hover_text( format!("{}, {:?}", input_port.value.get_type(), input_port.port_type.get_compatability_list() ));
 
     let port_color;
-    let port_text;
+    let port_text = &display_port.text;
     match input_port.value 
     {
         EmpowerData::Trigger =>
         {
-            port_text = "";
+            // port_text = "";
             port_color = egui::Color32::WHITE;
         }
         EmpowerData::Integer(_) =>
         {
 
-            port_text = "int";
+            // port_text = "int";
             port_color = egui::Color32::YELLOW;
         }
         EmpowerData::Undefined(_) =>
         {
-            port_text = ""; // @TODO, consider getting rid of the port text
+            // port_text = ""; // @TODO, consider getting rid of the port text
             port_color = egui::Color32::YELLOW;
         }
         _ =>
         {
-            port_text = "float";
+            // port_text = "float";
             port_color = egui::Color32::YELLOW; 
         }
     }

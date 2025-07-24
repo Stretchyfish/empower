@@ -38,12 +38,25 @@ pub fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_p
         }
     }
 
+    let output_port_text_offset = egui::Vec2 { x: -40.0, y: 0.0};
+    let output_port_text_position = output_port_position + output_port_text_offset;
+    let port_text = &display_port.text;
+
+    ui.painter().text(
+        output_port_text_position,
+        egui::Align2::RIGHT_CENTER,
+        port_text,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
     ui.painter().circle(
         output_port_position,
         25.0,
         port_color,
         egui::Stroke::NONE,
     );
+
 
     if *debug_mode
     {
