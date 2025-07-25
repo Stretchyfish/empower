@@ -23,6 +23,7 @@ pub enum NodeWidgetResponseType
     ClickedOutputPort(i32),
     ChangedInputPortValueRepresentation(i32, DisplayPortValueRepresentation),
     ChangedState(NodeState),
+    InsideSelectionRect,
 }
 
 pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &GraphViewport, node_key: &EmpowerKey) -> Option<NodeWidgetResponse>
@@ -36,7 +37,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
     let graph_viewport_title = &graph_viewport.title;
 
     // @TODO, consider changing this to return a node reponse instead of taking it as input?
-    node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode);
+    node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &graph_viewport.node_selection_rect);
 
     let empower_node = graph_editor.empower_node_graph.nodes.get(&node_key).unwrap();
 

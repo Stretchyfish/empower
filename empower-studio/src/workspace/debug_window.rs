@@ -199,6 +199,26 @@ egui::Window::new("Debug Panel")
                             }
                     });
 
+                    egui::CollapsingHeader::new(format!("Selected nodes: {}", studio_context.graph_editor.selected_nodes.len()))
+                    .default_open(false)
+                    .show(ui, |ui|
+                    {
+                            ui.horizontal(|ui|
+                            {
+                                ui.label("id");
+                            });
+                            for key in studio_context.graph_editor.selected_nodes.iter()
+                            {
+                                ui.horizontal(|ui|
+                                {
+                                    ui.vertical(|ui|
+                                    {
+                                        ui.label(key.to_string());
+                                    });
+                                });
+                            }
+                    });
+
                 });
  
                 ui.add_space(0.5);

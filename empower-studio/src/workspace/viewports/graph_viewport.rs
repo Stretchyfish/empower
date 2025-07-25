@@ -12,6 +12,7 @@ pub struct GraphViewport
 {
     pub title: String,
     node_selection_panel: NodeSelectionPanel,
+    node_selection_rect: Option<egui::Rect>,
     pub mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     pub mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
     port_searcher: Option<PortSearcher>, 
@@ -26,6 +27,7 @@ impl GraphViewport
         { 
             title, 
             node_selection_panel: NodeSelectionPanel::new(),
+            node_selection_rect: None,
             mouse_scene_position_last_frame: egui::Pos2 { x: 0.0, y: 0.0 },
             mouse_delta_last_frame: egui::Vec2 { x: 0.0, y: 0.0 },
             port_searcher: None,
@@ -47,9 +49,18 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
     let mouse_pointer_inside_viewport = ui.rect_contains_pointer(ui.min_rect());
 
+    let user_inputs = user_input::detect_user_inputs(ui);
+
+    let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
+    if user_inputs.left_shift_is_down
+    {
+        drag_pan_button = egui::DragPanButtons::empty();
+    }
+
     egui::Scene::new()
     .zoom_range(0.01..=2.0)
     .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
+    .drag_pan_buttons(drag_pan_button)
     .show(ui, &mut scene_rect, |scene_ui|
     {
         if mouse_pointer_inside_viewport // Is needed to avoid applying double delta position to selected nodes
@@ -89,19 +100,25 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 
+        if graph_viewport.node_selection_rect.is_some()
+        {
+            scene_ui.painter().rect_filled(graph_viewport.node_selection_rect.unwrap(), 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
+        }
+
         graph_viewport.mouse_scene_position_last_frame = mouse_position_in_scene;
     });
 
     graph_viewport.scene_rect = scene_rect;
 
-    let user_inputs = user_input::detect_user_inputs(ui);
-
+    let mut interaction_happened_this_loop = false; // @TODO, find a better way of doing this
+    let mut nodes_inside_selection_rect = Vec::new();
     let mut port_was_clicked = false; // @TODO, find a better way to approach this
     for node_widget_response in node_widgets_responses
     {
+        interaction_happened_this_loop = true;
         let node_with_response_key = node_widget_response.key;
-      match node_widget_response.kind 
-      {
+        match node_widget_response.kind 
+        {
         NodeWidgetResponseType::ClickedTitle =>
         {
             add_selected_node(graph_editor, &node_widget_response.key);
@@ -130,7 +147,29 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         {
             graph_editor.change_node_state(&node_with_response_key, &new_state);
         }
+
+        NodeWidgetResponseType::InsideSelectionRect =>
+        {
+            nodes_inside_selection_rect.push(node_with_response_key);
+            println!("Id inside: {}", node_with_response_key);
+        }
       }  
+    }
+
+    if user_inputs.left_is_down && user_inputs.left_shift_is_down && graph_viewport.node_selection_rect.is_none()
+    {
+        graph_viewport.node_selection_rect = Some( egui::Rect::from_min_max(mouse_position_in_scene, mouse_position_in_scene) );
+    }
+
+    if graph_viewport.node_selection_rect.is_some()
+    {
+        graph_viewport.node_selection_rect = Some( egui::Rect::from_two_pos(graph_viewport.node_selection_rect.unwrap().min, mouse_position_in_scene) );
+    }
+
+    if graph_viewport.node_selection_rect.is_some() && (!user_inputs.left_is_down || !user_inputs.left_shift_is_down)
+    {
+        graph_editor.selected_nodes = nodes_inside_selection_rect;
+        graph_viewport.node_selection_rect = None;
     }
 
     for selected_node_key in graph_editor.selected_nodes.iter()
@@ -143,6 +182,12 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false && graph_viewport.node_selection_panel.visible == false
     {
         graph_viewport.port_searcher = None;
+    }
+
+    // @TODO, look into combining these two if statements, and consider if node_selection_panel check is needed in the first one
+    if !interaction_happened_this_loop && user_inputs.left_clicked && !graph_editor.selected_nodes.is_empty() && graph_viewport.node_selection_panel.visible == false 
+    {
+        graph_editor.selected_nodes = Vec::new();
     }
 
     if user_inputs.right_clicked && graph_viewport.node_selection_panel.visible == false

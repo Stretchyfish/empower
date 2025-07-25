@@ -4,7 +4,7 @@ use empower_node_graph::EmpowerKey;
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
+pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool, node_selection_rect: &Option<egui::Rect>)
 {
     let node_position = display_node.position;
     let node_screen_size= display_node.size;
@@ -13,6 +13,17 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         node_position,
         node_screen_size
     );
+
+    let mut node_is_inside_selection_rect = false;
+    if node_selection_rect.is_some()
+    {
+        node_is_inside_selection_rect = node_selection_rect.unwrap().contains_rect(node_rect);
+        
+        if node_is_inside_selection_rect
+        {
+            *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::InsideSelectionRect });
+        }
+    }
 
     let node_body_color = egui::Color32::from_rgb(63, 63, 63);
     let rect_margin = egui::Vec2 { x: 10.0, y: 10.0 };
@@ -99,7 +110,7 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
     }
 
 
-    if node_is_selected
+    if node_is_selected || node_is_inside_selection_rect
     {
         ui.painter().rect(
             node_outline_rect,
