@@ -7,6 +7,7 @@ pub enum EmpowerData
     Trigger,
     Integer(i32),
     Float(f32),
+    Bool(bool),
     Text(String),
     Undefined(String),
     #[default] Unknown
@@ -22,6 +23,7 @@ impl EmpowerData
             EmpowerData::Integer(_) => String::from("int"),
             EmpowerData::Float(_) => String::from("float"),
             EmpowerData::Text(_) => String::from("text"),
+            EmpowerData::Bool(_) => String::from("bool"),
             EmpowerData::Undefined(_) => String::from("undefined"),
             EmpowerData::Unknown => String::from("Unknown"),
         }
@@ -38,6 +40,7 @@ impl fmt::Debug for EmpowerData
             EmpowerData::Integer(_) => write!(f, "{}", "int"),
             EmpowerData::Float(_) => write!(f, "{}", "float"),
             EmpowerData::Text(_) => write!(f, "{}", "text"),
+            EmpowerData::Bool(_) => write!(f, "{}", "bool"),
             EmpowerData::Undefined(_) => write!(f, "{}", "undefined"),
             EmpowerData::Unknown => write!(f, "unknown"),
         }
@@ -54,6 +57,7 @@ impl fmt::Display for EmpowerData
             EmpowerData::Integer(value) => write!(f, "{}", value),
             EmpowerData::Float(value) => write!(f, "{}", value),
             EmpowerData::Text(ref value) => write!(f, "{}", value),
+            EmpowerData::Bool(value) => write!(f, "{}", value), 
             EmpowerData::Undefined(ref value) => write!(f, "{}", value),
             EmpowerData::Unknown => write!(f, "unknown"),
         }

@@ -18,3 +18,6 @@ pub use create_multiply_node::create_multiply_node;
 
 pub mod create_text_node;
 pub use create_text_node::create_text_node;
+
+pub mod create_bool_node;
+pub use create_bool_node::create_bool_node;

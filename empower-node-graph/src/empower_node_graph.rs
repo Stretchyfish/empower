@@ -62,6 +62,10 @@ impl EmpowerNodeGraph
             {
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_text_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
             },
+            NodeType::Bool =>
+            {
+                (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_bool_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);
+            },
             NodeType::Addition =>
             {
                 (new_node_key, new_input_port_keys, new_output_port_keys) = node_creation::create_addition_node(&mut self.nodes, &mut self.input_ports, &mut self.output_ports);

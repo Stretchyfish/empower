@@ -35,6 +35,10 @@ impl Node
             {
                 NodeState::None
             }
+            NodeType::Bool =>
+            {
+                NodeState::None
+            }
             NodeType::Addition =>
             {
                 NodeState::None

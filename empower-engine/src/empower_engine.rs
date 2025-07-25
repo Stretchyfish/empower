@@ -104,6 +104,11 @@ fn debug_compile_node(empower_result: &mut EmpowerResult, node_graph: &mut Empow
             compiler::execute_debug_text_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
         },
 
+        NodeType::Bool =>
+        {
+            compiler::execute_debug_bool_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports);
+        },
+
         NodeType::Print =>
         {
             compiler::execute_debug_print_node(node_key, &mut node_graph.nodes, &mut node_graph.input_ports, &mut node_graph.output_ports, empower_result);
@@ -128,7 +133,8 @@ fn debug_compile_global_variables(node_graph: &mut EmpowerNodeGraph)
             node.node_type != NodeType::Addition && 
             node.node_type != NodeType::Number && 
             node.node_type != NodeType::Multiply && // @TOOD, find a better way of handling this
-            node.node_type != NodeType::Text
+            node.node_type != NodeType::Text &&
+            node.node_type != NodeType::Bool
         {
             continue;
         }

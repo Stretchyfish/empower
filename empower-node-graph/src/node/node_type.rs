@@ -9,6 +9,7 @@ pub enum NodeType
     Addition,
     Multiply,
     Text,
+    Bool,
     Print,
 }
 
@@ -23,6 +24,7 @@ impl fmt::Display for NodeType
             NodeType::Multiply => write!(f, "Multiply"),
             NodeType::Text => write!(f, "Text"),
             NodeType::Number => write!(f, "Number"),
+            NodeType::Bool => write!(f, "Bool"),
             NodeType::Print => write!(f, "Print"),
             NodeType::Start => write!(f, "Start"),
         }

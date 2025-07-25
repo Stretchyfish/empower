@@ -1,3 +1,4 @@
+use egui::FontId;
 use empower_node_graph::EmpowerData;
 use empower_node_graph::InputPort;
 use empower_node_graph::EmpowerKey;
@@ -124,9 +125,21 @@ pub fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_po
             }
         },
 
-        DisplayPortValueRepresentation::Checkbox( _ ) =>
+        DisplayPortValueRepresentation::Checkbox( boolean ) =>
         {
+            let input_port_checkbox_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
+            let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
+            let input_port_checkbox_rect = egui::Rect::from_min_size(input_port_checkbox_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_checkbox_size);
 
+            let mut check = boolean.clone();
+            
+            let checkbox = egui::Checkbox::new(&mut check, egui::RichText::new("check").font(egui::FontId::proportional(35.0)));
+            ui.put(input_port_checkbox_rect, checkbox);
+
+            if check != *boolean
+            {
+                *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueRepresentation( *port_key, DisplayPortValueRepresentation::Checkbox( check ) ) });
+            }
         },
 
         DisplayPortValueRepresentation::None =>

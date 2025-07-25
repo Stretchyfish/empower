@@ -119,6 +119,13 @@ impl GraphEditor
                 input_port_names = vec![ "text".to_string() ];
                 output_port_names = vec![ "out".to_string() ];
             },
+            NodeType::Bool =>
+            {
+                display_node_size = egui::Vec2 { x: 450.0, y: 165.0 };
+                extra_input_port_offset = 0.0;
+                input_port_names = vec![ "".to_string() ];
+                output_port_names = vec![ "out".to_string() ];
+            }
         }
 
         if input_port_names.len() != empower_node.input_port_keys.len()
@@ -236,9 +243,20 @@ impl GraphEditor
                 }
             },
 
-            DisplayPortValueRepresentation::Checkbox( _ ) =>
+            DisplayPortValueRepresentation::Checkbox( value_bool ) =>
             {
+                match input_port.value
+                {
+                    EmpowerData::Bool(_) =>
+                    {
+                        input_port.value = EmpowerData::Bool( value_bool );
+                        return true;
+                    },
+                    _ =>
+                    {
 
+                    }
+                }
             },
 
             DisplayPortValueRepresentation::None =>
@@ -279,6 +297,11 @@ impl GraphEditor
             EmpowerData::Text(ref text) =>
             {
                 DisplayPortValueRepresentation::Text( text.clone() )
+            }
+
+            EmpowerData::Bool(boolean) =>
+            {
+                DisplayPortValueRepresentation::Checkbox( boolean )
             }
 
             EmpowerData::Unknown =>

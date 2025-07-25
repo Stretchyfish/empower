@@ -25,7 +25,7 @@ pub fn create_print_node(nodes: &mut HashMap<EmpowerKey, Node>, input_ports: &mu
     let new_input_port_value = InputPort::new(
                                             new_input_port_value_key, 
                                             new_node_key, 
-                                            PortType::OneOf( vec![EmpowerData::Integer(0), EmpowerData::Float(0.0), EmpowerData::Text( String::new() )]),
+                                            PortType::OneOf( vec![EmpowerData::Integer(0), EmpowerData::Float(0.0), EmpowerData::Text( String::new() ), EmpowerData::Bool( false ) ]),
                                             EmpowerData::Integer(0));
 
     input_ports.insert(new_input_port_value_key, new_input_port_value);
