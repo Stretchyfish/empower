@@ -6,6 +6,6 @@ edition = "2024"
 [dependencies]
 empower-engine = { path = "../empower-engine" }
 empower-node-graph = { path = "../empower-node-graph" }
-eframe = "0.31"
-egui = "0.31"
-egui_dock = "0.16"
+eframe = "0.32.0"
+egui = "0.32.0"
+egui_dock = "0.17"
