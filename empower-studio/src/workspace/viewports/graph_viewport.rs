@@ -1,3 +1,4 @@
+use egui::{menu, Vec2};
 use empower_node_graph::{node, EmpowerKey};
 use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
 
@@ -16,6 +17,7 @@ pub struct GraphViewport
     pub mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     pub mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
     port_searcher: Option<PortSearcher>, 
+    quick_menu: Option<(EmpowerKey, egui::Pos2)>,
     scene_rect: egui::Rect,
 }
 
@@ -31,6 +33,7 @@ impl GraphViewport
             mouse_scene_position_last_frame: egui::Pos2 { x: 0.0, y: 0.0 },
             mouse_delta_last_frame: egui::Vec2 { x: 0.0, y: 0.0 },
             port_searcher: None,
+            quick_menu: None,
             // scene_rect: egui::Rect { min: egui::Pos2 { x: -1000.0, y: -1000.0 }, max: egui::Pos2 { x: 1000.0, y: 1000.0 }},
              scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
        }
@@ -105,6 +108,19 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             scene_ui.painter().rect_filled(graph_viewport.node_selection_rect.unwrap(), 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
         }
 
+        if graph_viewport.quick_menu.is_some()
+        {
+            let quick_menu = graph_viewport.quick_menu.unwrap();
+
+            // @TODO, change from tuple to struct
+            let clicked_quick_menu_button = show_quick_menu(scene_ui, graph_editor, quick_menu.0, quick_menu.1);
+
+            if clicked_quick_menu_button
+            {
+                graph_viewport.quick_menu = None;
+            }
+        }
+
         graph_viewport.mouse_scene_position_last_frame = mouse_position_in_scene;
     });
 
@@ -148,10 +164,24 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             graph_editor.change_node_state(&node_with_response_key, &new_state);
         }
 
+        NodeWidgetResponseType::ClickedQuickMenuButton( quick_menu_button_position ) =>
+        {
+            if graph_viewport.quick_menu.is_some()
+            {
+                // @TODO, change from a tuple to a struct
+                if graph_viewport.quick_menu.unwrap().0 == node_with_response_key
+                {
+                    graph_viewport.quick_menu = None;
+                    break;
+                }
+            }
+
+            graph_viewport.quick_menu = Some( (node_with_response_key, quick_menu_button_position) );
+        }
+
         NodeWidgetResponseType::InsideSelectionRect =>
         {
             nodes_inside_selection_rect.push(node_with_response_key);
-            println!("Id inside: {}", node_with_response_key);
         }
       }  
     }
@@ -351,4 +381,34 @@ fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_ke
     // {
     //     display_port.value_representation_valid = true;
     // }
+}
+
+fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, node_key: EmpowerKey, menu_position: egui::Pos2) -> bool
+{
+    // let node_selection_window = egui::Window::new("").current_pos(egui::Pos2 {x: window_position.x - 100.0, y: window_position.y - 15.0}).collapsible(false).max_size(egui::Vec2 {x: 200.0, y: 200.0}).title_bar(false);
+
+    let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
+
+    let mut button_clicked = false;
+    ui.allocate_ui_at_rect(quick_menu_rect, |ui|
+    {
+        egui::Frame::popup(ui.style()).show(ui, |ui| 
+        {
+
+            if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+            {
+                button_clicked = true;
+            }
+
+            if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+            {
+                graph_editor.remove_node(&node_key);
+                button_clicked = true;
+
+            }
+
+        });
+    });
+
+    button_clicked
 }

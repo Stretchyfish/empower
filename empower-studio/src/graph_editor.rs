@@ -334,6 +334,11 @@ impl GraphEditor
         *connected_output_port_key
     }
 
+    pub fn compile_individual_node(&self, node_key: &EmpowerKey)
+    {
+
+    }
+
     pub fn change_node_state(&mut self, node_key: &EmpowerKey, new_node_state: &NodeState)
     {
         let successfully_set_state = self.empower_node_graph.set_node_state(node_key, new_node_state);

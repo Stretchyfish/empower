@@ -1,4 +1,5 @@
-use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
+use crate::graph_editor::display_node::DisplayNode; use egui::Vec2;
+// @TODO, simplify this include
 use empower_node_graph::EmpowerKey;
 
 use super::NodeWidgetResponse;
@@ -109,6 +110,29 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
     }
 
+    // @TODO, simplify this a bit by having the sizes saves seperate to avoid uneeded size call? 
+    let node_quick_menu_button_position = node_position + egui::Vec2 { x: title_box_rect.size().x - 30.0, y: (title_box_rect.size().y - node_body_title_area_overlap) / 2.0 } ; 
+    let node_quick_menu_button_size = 15.0;
+    let node_quick_menu_button_rect = egui::Rect::from_center_size(
+        node_quick_menu_button_position, 
+        Vec2::splat(node_quick_menu_button_size * 2.0));
+
+    let node_quick_menu_button_response = ui.interact(
+        node_quick_menu_button_rect, 
+        egui::Id::new(graph_viewport_title.to_owned() + "_node_quick_menu_button_" + node_key.to_string().as_str()), 
+        egui::Sense::click()
+    );
+
+    let mut node_quick_menu_button_color = egui::Color32::DARK_GRAY;
+    if node_quick_menu_button_response.hovered()
+    {
+        node_quick_menu_button_color = egui::Color32::BLACK;
+    }
+
+    if node_quick_menu_button_response.clicked()
+    {
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedQuickMenuButton( node_quick_menu_button_position ) });
+    }
 
     if node_is_selected || node_is_inside_selection_rect
     {
@@ -137,6 +161,13 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         // egui::FontId::monospace(40.0),
         egui::FontId::proportional(title_text_font_size),
         egui::Color32::WHITE,
+    );
+
+    ui.painter().circle(
+        node_quick_menu_button_position, 
+        node_quick_menu_button_size, 
+        node_quick_menu_button_color, 
+        egui::Stroke::NONE
     );
 
     // Show node body

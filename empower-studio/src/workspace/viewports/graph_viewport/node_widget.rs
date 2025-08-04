@@ -23,6 +23,7 @@ pub enum NodeWidgetResponseType
     ClickedOutputPort(i32),
     ChangedInputPortValueRepresentation(i32, DisplayPortValueRepresentation),
     ChangedState(NodeState),
+    ClickedQuickMenuButton(egui::Pos2),
     InsideSelectionRect,
 }
 
@@ -32,7 +33,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
 
     let display_node = graph_editor.display_nodes.get(&node_key).unwrap();
 
-    let debug_mode = true;
+    let debug_mode = false;
 
     let graph_viewport_title = &graph_viewport.title;
 
