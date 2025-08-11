@@ -16,11 +16,11 @@ use node_handle::NodeHandle;
 #[derive(Default, Clone)]
 pub struct EmpowerNodeGraph
 {
-    pub nodes: HashMap<EmpowerKey, Node>,
-    pub input_ports: HashMap<EmpowerKey, InputPort>,
-    pub output_ports: HashMap<EmpowerKey, OutputPort>,
-    pub connections_out: HashMap<EmpowerKey, Vec<EmpowerKey>>,
-    pub connections_in: HashMap<EmpowerKey, EmpowerKey>,
+    nodes: HashMap<EmpowerKey, Node>,
+    input_ports: HashMap<EmpowerKey, InputPort>,
+    output_ports: HashMap<EmpowerKey, OutputPort>,
+    connections_out: HashMap<EmpowerKey, Vec<EmpowerKey>>,
+    connections_in: HashMap<EmpowerKey, EmpowerKey>,
 }
 
 impl EmpowerNodeGraph
