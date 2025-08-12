@@ -28,33 +28,43 @@ impl NodeGraph
 {
     pub fn new() -> Self
     {
-        let mut new_node_graph = Self
+        Self
         {
             nodes: HashMap::new(),
             input_ports: HashMap::new(),
             output_ports: HashMap::new(),
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
-        };
-
-        new_node_graph.add_node(NodeType::Start);
-
-        new_node_graph
+        }
     }
 
-    pub fn add_node(&mut self,  node_type: NodeType)
+    pub fn add_node(&mut self,  node_type: NodeType) -> NodeHandle
     {
         match node_type
         {
-            NodeType::Start =>
-            {
-                creator::create_start_node(self);
-            }
-
-            _ =>
-            {
-
-            }
+            NodeType::Start => creator::create_start_node(self),
+            _ => NodeHandle::empty(),
         }
+    }
+
+
+    pub fn node_count(&self) -> usize
+    {
+        self.nodes.len()
+    }
+
+    pub fn input_port_count(&self) -> usize
+    {
+        self.input_ports.len()
+    }
+
+    pub fn output_port_count(&self) -> usize
+    {
+        self.output_ports.len()
+    }
+
+    fn get_available_node_key(&self) -> NodeGraphKey
+    {
+        self.nodes.keys().max().unwrap_or(&0) + 1
     }
 }
