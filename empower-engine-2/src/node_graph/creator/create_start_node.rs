@@ -4,7 +4,7 @@ pub fn create_start_node(node_graph: &mut NodeGraph) -> NodeHandle
 {
     let new_node_key = node_graph.get_available_node_key();
 
-    let new_output_port_key = node_graph.output_port_count() as NodeGraphKey;
+    let new_output_port_key = node_graph.get_available_output_port_key();
     let new_output_port = OutputPort::new();
 
     node_graph.output_ports.insert(new_output_port_key, new_output_port);

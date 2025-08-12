@@ -43,7 +43,12 @@ impl NodeGraph
         match node_type
         {
             NodeType::Start => creator::create_start_node(self),
-            _ => NodeHandle::empty(),
+            NodeType::Number => NodeHandle::empty(),
+            NodeType::Bool => NodeHandle::empty(),
+            NodeType::Text => NodeHandle::empty(),
+            NodeType::Print => NodeHandle::empty(),
+            NodeType::Addition => NodeHandle::empty(),
+            NodeType::Multiply => NodeHandle::empty(),
         }
     }
 
@@ -66,5 +71,15 @@ impl NodeGraph
     fn get_available_node_key(&self) -> NodeGraphKey
     {
         self.nodes.keys().max().unwrap_or(&0) + 1
+    }
+
+    fn get_available_input_port_key(&self) -> NodeGraphKey
+    {
+        self.input_ports.keys().max().unwrap_or(&0) + 1
+    }
+
+    fn get_available_output_port_key(&self) -> NodeGraphKey
+    {
+        self.output_ports.keys().max().unwrap_or(&0) + 1
     }
 }
