@@ -1,12 +1,13 @@
 use crate::node_graph::NodeGraphKey;
 
 #[derive(Default, Clone)]
-pub struct OutputPort
+pub struct Port
 {
     pub key: NodeGraphKey, 
+
 }
 
-impl OutputPort
+impl Port
 {
     pub fn new(key: NodeGraphKey) -> Self
     {

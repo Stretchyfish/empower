@@ -13,13 +13,16 @@ use input_port::InputPort;
 mod output_port;
 use output_port::OutputPort;
 
+mod port;
+use port::Port;
+
 mod creator;
 
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,
-    input_ports: HashMap<NodeGraphKey, InputPort>,
-    output_ports: HashMap<NodeGraphKey, OutputPort>,
+    input_ports: HashMap<NodeGraphKey, Port>,
+    output_ports: HashMap<NodeGraphKey, Port>,
     connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
     connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
 }

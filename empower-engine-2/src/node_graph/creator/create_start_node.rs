@@ -1,11 +1,11 @@
-use crate::node_graph::{Node, NodeGraph, NodeGraphKey, NodeType, OutputPort, NodeHandle};
+use crate::node_graph::{Node, NodeGraph, NodeGraphKey, NodeType, Port, NodeHandle};
 
 pub fn create_start_node(node_graph: &mut NodeGraph) -> NodeHandle
 {
     let new_node_key = node_graph.get_available_node_key();
 
     let new_output_port_key = node_graph.get_available_output_port_key();
-    let new_output_port = OutputPort::new();
+    let new_output_port = Port::new( new_output_port_key );
 
     node_graph.output_ports.insert(new_output_port_key, new_output_port);
 
