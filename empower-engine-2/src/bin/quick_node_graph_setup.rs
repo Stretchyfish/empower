@@ -10,12 +10,21 @@ fn main()
     let number_node = node_graph.add_node(empower_engine_2::NodeType::Number);
     let number_node_2 = node_graph.add_node(empower_engine_2::NodeType::Number);
 
-    let add_result = node_graph.add_connection(number_node.output_port_keys[0], number_node_2.input_port_keys[0]);
+    let print_node = node_graph.add_node(empower_engine_2::NodeType::Print);
 
-    match add_result 
+    let number_node_connection_result = node_graph.add_connection(number_node.output_port_keys[0], number_node_2.input_port_keys[0]);
+    let print_connection_result = node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);
+
+    match number_node_connection_result 
     {
         Ok(()) => println!("Added succesffully"),
-        Err(E) => println!("{}", E ),
+        Err(e) => println!("{}", e ),
+    }
+
+    match print_connection_result 
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
     }
 
     empower_engine_2::analyser::graph_overview::node_graph_quick_overview(&node_graph);
