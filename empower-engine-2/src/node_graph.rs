@@ -7,14 +7,10 @@ use node::Node;
 use node::NodeHandle;
 pub use node::NodeType;
 
-mod input_port;
-use input_port::InputPort;
-
-mod output_port;
-use output_port::OutputPort;
-
 mod port;
 use port::Port;
+use port::PortCompatability;
+use port::PortValue;
 
 mod creator;
 
@@ -46,15 +42,29 @@ impl NodeGraph
         match node_type
         {
             NodeType::Start => creator::create_start_node(self),
-            NodeType::Number => NodeHandle::empty(),
+            NodeType::Number => creator::create_number_node(self),
             NodeType::Bool => NodeHandle::empty(),
             NodeType::Text => NodeHandle::empty(),
-            NodeType::Print => NodeHandle::empty(),
+            NodeType::Print => creator::create_print_node(self),
             NodeType::Addition => NodeHandle::empty(),
             NodeType::Multiply => NodeHandle::empty(),
         }
     }
 
+    pub fn get_all_nodes(&self) -> Vec<&Node>
+    {
+        self.nodes.values().collect()
+    }
+
+    pub fn get_all_input_ports(&self) -> Vec<&Port>
+    {
+        self.input_ports.values().collect()
+    }
+
+    pub fn get_all_output_ports(&self) -> Vec<&Port>
+    {
+        self.output_ports.values().collect()
+    }
 
     pub fn node_count(&self) -> usize
     {
