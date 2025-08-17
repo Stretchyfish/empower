@@ -1,5 +1,3 @@
-use core::num;
-
 use empower_engine_2;
 
 fn main()
@@ -10,10 +8,60 @@ fn main()
     let number_node = node_graph.add_node(empower_engine_2::NodeType::Number);
     let number_node_2 = node_graph.add_node(empower_engine_2::NodeType::Number);
 
+    let bool_node = node_graph.add_node(empower_engine_2::NodeType::Bool);
+    let text_node = node_graph.add_node(empower_engine_2::NodeType::Text);
+    
     let print_node = node_graph.add_node(empower_engine_2::NodeType::Print);
+    let print_node_2 = node_graph.add_node(empower_engine_2::NodeType::Print);
+    let print_node_3 = node_graph.add_node(empower_engine_2::NodeType::Print);
+    let addition_node = node_graph.add_node(empower_engine_2::NodeType::Addition);
+    let multiply_node = node_graph.add_node(empower_engine_2::NodeType::Multiply);
 
     let number_node_connection_result = node_graph.add_connection(number_node.output_port_keys[0], number_node_2.input_port_keys[0]);
     let print_connection_result = node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);
+
+    let print_2_result = node_graph.add_connection(bool_node.output_port_keys[0], print_node_2.input_port_keys[1]);
+
+    let a = node_graph.add_connection(start_node.output_port_keys[0], print_node_3.input_port_keys[0]);
+    let b = node_graph.add_connection(text_node.output_port_keys[0], print_node_3.input_port_keys[1]);
+
+    match a
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
+
+    }
+
+    match b
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
+
+    }
+
+    let c = node_graph.add_connection(number_node.output_port_keys[0], addition_node.input_port_keys[0]);
+
+    match c
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
+
+    }
+
+    let d = node_graph.add_connection(number_node.output_port_keys[0], multiply_node.input_port_keys[0]);
+
+    match d
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
+
+    }
+
+    match print_2_result
+    {
+        Ok(()) => println!("Added succesffully"),
+        Err(e) => println!("{}", e ),
+    }
 
     match number_node_connection_result 
     {

@@ -43,11 +43,11 @@ impl NodeGraph
         {
             NodeType::Start => creator::create_start_node(self),
             NodeType::Number => creator::create_number_node(self),
-            NodeType::Bool => NodeHandle::empty(),
-            NodeType::Text => NodeHandle::empty(),
+            NodeType::Bool => creator::create_bool_node(self),
+            NodeType::Text => creator::create_text_node(self),
             NodeType::Print => creator::create_print_node(self),
-            NodeType::Addition => NodeHandle::empty(),
-            NodeType::Multiply => NodeHandle::empty(),
+            NodeType::Addition => creator::create_addition_node(self),
+            NodeType::Multiply => creator::create_multiply_node(self),
         }
     }
 
