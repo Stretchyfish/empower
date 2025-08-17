@@ -1,4 +1,5 @@
 // use std::convert::From;
+use std::mem::discriminant;
 
 #[derive(Default, Clone, Debug)]
 pub enum PortValue
@@ -10,6 +11,14 @@ pub enum PortValue
     Bool(bool),
     Undefined(String),
     #[default] None,
+}
+
+impl PortValue
+{
+    pub fn is_same_type_as(&self, value: &PortValue) -> bool
+    {
+        discriminant(self) == discriminant(value)
+    }
 }
 
 // impl From<i32> for PortValue

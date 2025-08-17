@@ -43,7 +43,42 @@ impl PortCompatability
         }
     }
 
+    pub fn contains_port_value_type(&self, value_to_find: &PortValue) -> bool
+    {
+        match self
+        {
+            PortCompatability::Exatch( value ) => value.is_same_type_as(value_to_find),
+            PortCompatability::OneOf( values ) =>
+            {
+                for value in values
+                {
+                    if value.is_same_type_as(value_to_find)
+                    {
+                        return true
+                    }
+                }
 
+                false
+            },
+            PortCompatability::Any => true,
+            PortCompatability::None => false, 
+        }
+    }
+
+    pub fn is_compatible_with(&self, compatability_to_check: &PortCompatability) -> bool
+    {
+        let port_values_compatible = compatability_to_check.get_compatability_list();
+
+        for port_value_to_check in port_values_compatible
+        {
+            if self.contains_port_value_type(&port_value_to_check)
+            {
+                return true;
+            }
+        }
+
+        false
+    }
 }
 
 impl fmt::Display for PortCompatability

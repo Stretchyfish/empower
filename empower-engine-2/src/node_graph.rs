@@ -51,6 +51,54 @@ impl NodeGraph
         }
     }
 
+    pub fn add_connection(&mut self, output_port_key: NodeGraphKey, input_port_key: NodeGraphKey) -> Result<(), String>
+    {
+        let output_port;
+
+        match self.output_ports.get(&output_port_key)
+        {
+            Some(value) => output_port = value,
+            None => return Err( format!("Output port (key: {}) requested not in node graph", output_port_key) ),
+        }
+
+        let input_port;
+
+        match self.input_ports.get(&input_port_key)
+        {
+            Some(value) => input_port = value,
+            None => return Err( format!("Input port (key: {}) requested not in node graph", input_port_key) ),
+        }
+
+        if output_port.node_key == input_port.node_key
+        {
+            return Err( "Cannot connect port to another port on the same node".to_string() );
+        }
+
+        if !input_port.compatability.is_compatible_with(&output_port.compatability)
+        {
+            return Err( format!( "Cannot connect two incompatible ports (key out: {}, key in: {})", output_port_key, input_port_key) );
+        }
+       
+        if self.connections_out.contains_key(&output_port_key)
+        {
+            let existing_connection = self.connections_out.get_mut(&output_port_key).unwrap(); // This is a safe call due to the check above
+
+            if existing_connection.contains(&input_port_key)
+            {
+                return Err( "Could not add connection, as it already exists".to_string() );
+            }
+
+            existing_connection.push(input_port_key); // @TODO, investigate what is happening here
+            self.connections_in.insert(input_port_key, output_port_key);
+            return Ok(());
+        }
+
+        self.connections_out.insert(output_port_key, Vec::from([input_port_key]));
+        self.connections_in.insert(input_port_key, output_port_key);
+
+        Ok(())
+    }
+
     pub fn get_all_nodes(&self) -> Vec<&Node>
     {
         self.nodes.values().collect()
@@ -66,9 +114,29 @@ impl NodeGraph
         self.output_ports.values().collect()
     }
 
+    pub fn get_all_connections(&self) -> Vec<(NodeGraphKey, NodeGraphKey)>
+    {
+        let mut all_connections= Vec::new();
+        
+        for connection in self.connections_out.iter()
+        {
+            for port_in in connection.1
+            {
+                all_connections.push( (connection.0.clone(), port_in.clone()) );
+            } 
+        }
+
+        all_connections
+    }
+
     pub fn node_count(&self) -> usize
     {
         self.nodes.len()
+    }
+
+    pub fn connections_count(&self) -> usize
+    {
+        self.connections_in.len()
     }
 
     pub fn input_port_count(&self) -> usize

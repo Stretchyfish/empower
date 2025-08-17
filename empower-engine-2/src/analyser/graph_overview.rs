@@ -24,5 +24,12 @@ pub fn node_graph_quick_overview(node_graph: &NodeGraph)
         println!("--- key: {}, node_key: {}, value: {:?}, compatability: {}", port.key, port.node_key, port.value, port.compatability);
     }
 
+    println!("Connections: {}", node_graph.connections_count());
+
+    for connection in node_graph.get_all_connections()
+    {
+        println!("--- connection: {}, {}", connection.0, connection.1);
+    }
+
     println!("--------------------------------");
 }
