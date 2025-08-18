@@ -1,7 +1,7 @@
 use crate::node_graph::NodeGraphKey;
 
-pub mod node_type;
-pub use node_type::NodeType;
+pub mod node_kind;
+pub use node_kind::NodeKind;
 
 pub mod node_handle;
 pub use node_handle::NodeHandle;
@@ -12,7 +12,7 @@ use node_value::NodeValue;
 pub struct Node
 {
     pub key: NodeGraphKey,
-    pub node_type: NodeType,
+    pub kind: NodeKind,
     pub value: NodeValue,
     pub input_port_keys: Vec<NodeGraphKey>,
     pub output_port_keys: Vec<NodeGraphKey>,
@@ -20,18 +20,18 @@ pub struct Node
 
 impl Node
 {
-    pub fn new(key: NodeGraphKey, node_type: NodeType, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>) -> Self
+    pub fn new(key: NodeGraphKey, kind: NodeKind, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>) -> Self
     {
-        let value = match node_type
+        let value = match kind
         {
-            NodeType::Number => NodeValue::NumberState,
+            NodeKind::Number => NodeValue::NumberState,
             _ => NodeValue::None,
         };
 
         Self 
         { 
             key, 
-            node_type, 
+            kind, 
             value,
             input_port_keys, 
             output_port_keys 

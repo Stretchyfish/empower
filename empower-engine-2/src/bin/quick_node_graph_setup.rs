@@ -4,18 +4,18 @@ fn main()
 {
     let mut node_graph = empower_engine_2::NodeGraph::new();
 
-    let start_node = node_graph.add_node(empower_engine_2::NodeType::Start);
-    let number_node = node_graph.add_node(empower_engine_2::NodeType::Number);
-    let number_node_2 = node_graph.add_node(empower_engine_2::NodeType::Number);
+    let start_node = node_graph.add_node(empower_engine_2::NodeKind::Start);
+    let number_node = node_graph.add_node(empower_engine_2::NodeKind::Number);
+    let number_node_2 = node_graph.add_node(empower_engine_2::NodeKind::Number);
 
-    let bool_node = node_graph.add_node(empower_engine_2::NodeType::Bool);
-    let text_node = node_graph.add_node(empower_engine_2::NodeType::Text);
+    let bool_node = node_graph.add_node(empower_engine_2::NodeKind::Bool);
+    let text_node = node_graph.add_node(empower_engine_2::NodeKind::Text);
     
-    let print_node = node_graph.add_node(empower_engine_2::NodeType::Print);
-    let print_node_2 = node_graph.add_node(empower_engine_2::NodeType::Print);
-    let print_node_3 = node_graph.add_node(empower_engine_2::NodeType::Print);
-    let addition_node = node_graph.add_node(empower_engine_2::NodeType::Addition);
-    let multiply_node = node_graph.add_node(empower_engine_2::NodeType::Multiply);
+    let print_node = node_graph.add_node(empower_engine_2::NodeKind::Print);
+    let print_node_2 = node_graph.add_node(empower_engine_2::NodeKind::Print);
+    let print_node_3 = node_graph.add_node(empower_engine_2::NodeKind::Print);
+    let addition_node = node_graph.add_node(empower_engine_2::NodeKind::Addition);
+    let multiply_node = node_graph.add_node(empower_engine_2::NodeKind::Multiply);
 
     let number_node_connection_result = node_graph.add_connection(number_node.output_port_keys[0], number_node_2.input_port_keys[0]);
     let print_connection_result = node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);

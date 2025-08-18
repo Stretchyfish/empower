@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-type NodeGraphKey = i32;
+pub type NodeGraphKey = i32;
 
 mod node;
 use node::Node;
 use node::NodeHandle;
-pub use node::NodeType;
+pub use node::NodeKind;
 
 mod port;
 use port::Port;
@@ -37,17 +37,17 @@ impl NodeGraph
         }
     }
 
-    pub fn add_node(&mut self,  node_type: NodeType) -> NodeHandle
+    pub fn add_node(&mut self,  node_kind: NodeKind) -> NodeHandle
     {
-        match node_type
+        match node_kind
         {
-            NodeType::Start => creator::create_start_node(self),
-            NodeType::Number => creator::create_number_node(self),
-            NodeType::Bool => creator::create_bool_node(self),
-            NodeType::Text => creator::create_text_node(self),
-            NodeType::Print => creator::create_print_node(self),
-            NodeType::Addition => creator::create_addition_node(self),
-            NodeType::Multiply => creator::create_multiply_node(self),
+            NodeKind::Start => creator::create_start_node(self),
+            NodeKind::Number => creator::create_number_node(self),
+            NodeKind::Bool => creator::create_bool_node(self),
+            NodeKind::Text => creator::create_text_node(self),
+            NodeKind::Print => creator::create_print_node(self),
+            NodeKind::Addition => creator::create_addition_node(self),
+            NodeKind::Multiply => creator::create_multiply_node(self),
         }
     }
 
@@ -147,6 +147,16 @@ impl NodeGraph
     pub fn output_port_count(&self) -> usize
     {
         self.output_ports.len()
+    }
+
+    pub fn contains_node(&self, node_key: &NodeGraphKey) -> bool
+    {
+        self.nodes.contains_key(node_key)
+    }
+
+    pub fn get_node(&self, node_key: &NodeGraphKey) -> Option<&Node>
+    {
+        self.nodes.get(node_key)
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey

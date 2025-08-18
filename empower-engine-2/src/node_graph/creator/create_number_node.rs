@@ -1,4 +1,4 @@
-use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeType, Port, PortCompatability, PortValue};
+use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeKind, Port, PortCompatability, PortValue};
 
 pub fn create_number_node(node_graph: &mut NodeGraph) -> NodeHandle
 {
@@ -21,7 +21,7 @@ pub fn create_number_node(node_graph: &mut NodeGraph) -> NodeHandle
 
     let new_node = Node::new(
                                     new_node_key, 
-                                    NodeType::Number, 
+                                    NodeKind::Number, 
                                     new_input_port_keys.clone(),
                                     new_output_port_keys.clone(),
                                 );

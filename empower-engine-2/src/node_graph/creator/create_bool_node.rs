@@ -1,4 +1,4 @@
-use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeType, Port, PortCompatability, PortValue};
+use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeKind, Port, PortCompatability, PortValue};
 
 pub fn create_bool_node(node_graph: &mut NodeGraph) -> NodeHandle
 {
@@ -27,7 +27,7 @@ pub fn create_bool_node(node_graph: &mut NodeGraph) -> NodeHandle
 
     let new_node = Node::new(
                                     new_node_key, 
-                                    NodeType::Bool, 
+                                    NodeKind::Bool, 
                                     new_input_port_keys.clone(),
                                     new_output_port_keys.clone(),
                                 );

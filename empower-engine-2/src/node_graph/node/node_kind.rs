@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
-pub enum NodeType
+pub enum NodeKind
 {
     #[default] Start,
     Number,
@@ -12,7 +12,7 @@ pub enum NodeType
     Print,
 }
 
-impl fmt::Display for NodeType
+impl fmt::Display for NodeKind
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
     {

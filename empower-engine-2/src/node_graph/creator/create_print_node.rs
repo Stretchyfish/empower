@@ -1,4 +1,4 @@
-use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeType, Port, PortCompatability, PortValue};
+use crate::node_graph::{Node, NodeGraph, NodeHandle, NodeKind, Port, PortCompatability, PortValue};
 
 pub fn create_print_node(node_graph: &mut NodeGraph) -> NodeHandle
 {
@@ -24,7 +24,7 @@ pub fn create_print_node(node_graph: &mut NodeGraph) -> NodeHandle
 
     let new_input_port_keys = Vec::from([new_input_port_trigger_key, new_input_port_value_key]);
 
-    let new_node = Node::new(new_node_key, NodeType::Print, new_input_port_keys.clone(), Vec::new());
+    let new_node = Node::new(new_node_key, NodeKind::Print, new_input_port_keys.clone(), Vec::new());
     node_graph.nodes.insert(new_node_key, new_node);
 
     NodeHandle::new(new_node_key, new_input_port_keys, Vec::new())
