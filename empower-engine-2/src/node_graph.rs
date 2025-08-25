@@ -12,8 +12,6 @@ use port::Port;
 use port::PortCompatability;
 use port::PortValue;
 
-mod creator;
-
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,
@@ -39,16 +37,7 @@ impl NodeGraph
 
     pub fn add_node(&mut self,  node_kind: NodeKind) -> NodeHandle
     {
-        match node_kind
-        {
-            NodeKind::Start => creator::create_start_node(self),
-            NodeKind::Number => creator::create_number_node(self),
-            NodeKind::Bool => creator::create_bool_node(self),
-            NodeKind::Text => creator::create_text_node(self),
-            NodeKind::Print => creator::create_print_node(self),
-            NodeKind::Addition => creator::create_addition_node(self),
-            NodeKind::Multiply => creator::create_multiply_node(self),
-        }
+        node::node_kind::create_node(&node_kind, self)
     }
 
     pub fn add_connection(&mut self, output_port_key: NodeGraphKey, input_port_key: NodeGraphKey) -> Result<(), String>
@@ -157,6 +146,15 @@ impl NodeGraph
     pub fn get_node(&self, node_key: &NodeGraphKey) -> Option<&Node>
     {
         self.nodes.get(node_key)
+    }
+
+    pub fn execute_node_graph(&mut self) -> bool
+    {
+        
+
+
+        true
+
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey
