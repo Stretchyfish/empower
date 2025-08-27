@@ -12,6 +12,8 @@ use port::Port;
 use port::PortCompatability;
 use port::PortValue;
 
+mod execution;
+
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,
@@ -150,11 +152,9 @@ impl NodeGraph
 
     pub fn execute_node_graph(&mut self) -> bool
     {
-        
-
+        execution::execute_node_graph(self);
 
         true
-
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey
@@ -170,5 +170,10 @@ impl NodeGraph
     fn get_available_output_port_key(&self) -> NodeGraphKey
     {
         self.output_ports.keys().max().unwrap_or(&0) + 1
+    }
+
+    fn distribute_outputs(&mut self, node_key: &NodeGraphKey)
+    {
+        
     }
 }

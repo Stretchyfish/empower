@@ -76,4 +76,7 @@ fn main()
     }
 
     empower_engine_2::analyser::graph_overview::node_graph_quick_overview(&node_graph);
+
+    node_graph.execute_node_graph();
+
 }

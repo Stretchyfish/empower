@@ -57,8 +57,16 @@ pub fn execute_node(node_key: &NodeGraphKey, node_graph: &mut NodeGraph) -> bool
 
     match node_to_execute.kind
     {
-        NodeKind::Start => todo!(), 
+        NodeKind::Start =>  
+        {
+            println!("Start node");
+            true
+        }
         NodeKind::Print => execution::execute_print_node(node_key, node_graph),
-        _ => todo!(),
+        _ =>
+        {
+            println!("Not supported yet");
+            true
+        }
     }
 }
