@@ -1,21 +1,21 @@
-use empower_engine_2;
+use empower_engine;
 
 fn main()
 {
-    let mut node_graph = empower_engine_2::NodeGraph::new();
+    let mut node_graph = empower_engine::NodeGraph::new();
 
-    let start_node = node_graph.add_node(empower_engine_2::NodeKind::Start);
-    let number_node = node_graph.add_node(empower_engine_2::NodeKind::Number);
-    let number_node_2 = node_graph.add_node(empower_engine_2::NodeKind::Number);
+    let start_node = node_graph.add_node(empower_engine::NodeKind::Start);
+    let number_node = node_graph.add_node(empower_engine::NodeKind::Number);
+    let number_node_2 = node_graph.add_node(empower_engine::NodeKind::Number);
 
-    let bool_node = node_graph.add_node(empower_engine_2::NodeKind::Bool);
-    let text_node = node_graph.add_node(empower_engine_2::NodeKind::Text);
+    let bool_node = node_graph.add_node(empower_engine::NodeKind::Bool);
+    let text_node = node_graph.add_node(empower_engine::NodeKind::Text);
     
-    let print_node = node_graph.add_node(empower_engine_2::NodeKind::Print);
-    let print_node_2 = node_graph.add_node(empower_engine_2::NodeKind::Print);
-    let print_node_3 = node_graph.add_node(empower_engine_2::NodeKind::Print);
-    let addition_node = node_graph.add_node(empower_engine_2::NodeKind::Addition);
-    let multiply_node = node_graph.add_node(empower_engine_2::NodeKind::Multiply);
+    let print_node = node_graph.add_node(empower_engine::NodeKind::Print);
+    let print_node_2 = node_graph.add_node(empower_engine::NodeKind::Print);
+    let print_node_3 = node_graph.add_node(empower_engine::NodeKind::Print);
+    let addition_node = node_graph.add_node(empower_engine::NodeKind::Addition);
+    let multiply_node = node_graph.add_node(empower_engine::NodeKind::Multiply);
 
     let number_node_connection_result = node_graph.add_connection(number_node.output_port_keys[0], number_node_2.input_port_keys[0]);
     let print_connection_result = node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);
@@ -75,7 +75,7 @@ fn main()
         Err(e) => println!("{}", e ),
     }
 
-    empower_engine_2::analyser::graph_overview::node_graph_quick_overview(&node_graph);
+    empower_engine::analyser::graph_overview::node_graph_quick_overview(&node_graph);
 
     node_graph.execute_node_graph();
 
