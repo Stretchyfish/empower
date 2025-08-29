@@ -14,6 +14,7 @@ use port::PortValue;
 
 mod analysis;
 
+#[derive(Default, Clone)]
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,

@@ -9,6 +9,7 @@ pub use node_handle::NodeHandle;
 mod node_value;
 use node_value::NodeValue;
 
+#[derive(Default, Clone)]
 pub struct Node
 {
     pub key: NodeGraphKey,
