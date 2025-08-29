@@ -27,6 +27,5 @@ pub fn execute_number_node(node: &mut NodeValue, inputs: Vec<&PortValue>) -> Vec
     }
 
     let output_port_value = inputs[0].clone();
-
     Vec::from( [ output_port_value ] )
 }

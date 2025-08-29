@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use crate::node_graph::port::{PortCompatability, PortValue};
 
 pub fn get_addition_node_input_ports_compatabilities() -> Vec<PortCompatability>
@@ -21,5 +23,6 @@ pub fn get_addition_node_output_ports_compatabilities() -> Vec<PortCompatability
 
 pub fn execute_addition_node(inputs: Vec<&PortValue>) -> Vec<PortValue>
 {
-    Vec::new() // @TODO, this is not finished and require more thought
+    let output_value = inputs[0].clone() + inputs[1].clone();
+    Vec::from( [ output_value ] )
 }

@@ -12,6 +12,8 @@ mod port;
 use port::Port;
 use port::PortValue;
 
+mod analysis;
+
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,
@@ -36,8 +38,49 @@ impl NodeGraph
     }
 
     pub fn add_node(&mut self,  node_kind: NodeKind) -> NodeHandle
-    {
-        node::node_kind::create_node(&node_kind, self)
+    {    
+        let input_ports_compatabilities = node::node_kind::get_node_input_port_compatabilities(&node_kind);
+        let output_ports_compatabilities = node::node_kind::get_node_output_port_compatabilities(&node_kind);
+
+        let new_node_key = self.get_available_node_key();
+
+        let mut new_input_port_keys = Vec::with_capacity(input_ports_compatabilities.len());
+        for input_port_compatability in input_ports_compatabilities
+        {
+            let new_input_port_key = self.get_available_input_port_key();
+            let new_input_port = Port::new_input_port(
+                                                    new_input_port_key, 
+                                                    new_node_key, 
+                                                    input_port_compatability,
+            );
+            self.input_ports.insert(new_input_port_key, new_input_port);
+
+            new_input_port_keys.push(new_input_port_key);
+        }
+
+        let mut new_output_port_keys = Vec::with_capacity(output_ports_compatabilities.len());
+        for output_port_compatability in output_ports_compatabilities
+        {
+            let new_output_port_key = self.get_available_output_port_key();
+            let new_output_port = Port::new_input_port(
+                                                    new_output_port_key, 
+                                                    new_node_key, 
+                                                    output_port_compatability,
+            );
+            self.output_ports.insert(new_output_port_key, new_output_port);
+
+            new_output_port_keys.push(new_output_port_key);
+        }
+
+        let new_node = Node::new(
+                                new_node_key, 
+                                node_kind, 
+                                new_input_port_keys.clone(), 
+                                new_output_port_keys.clone()
+        );
+        self.nodes.insert(new_node_key, new_node);
+
+        NodeHandle::new(new_node_key, new_input_port_keys, new_output_port_keys)
     }
 
     pub fn add_connection(&mut self, output_port_key: NodeGraphKey, input_port_key: NodeGraphKey) -> Result<(), String>
@@ -161,6 +204,13 @@ impl NodeGraph
         if !self.nodes.contains_key(node_key) { return false; }
 
         let mut node_keys_to_execute_queue: VecDeque<NodeGraphKey> = VecDeque::new();
+
+        // @TODO, find a better place for these, consider making a execute_node_graphies_entries for list of nodes
+        let rouge_nodes = analysis::detect_rouge_nodes(self);
+        println!("Rouge nodes: {:?}", rouge_nodes);
+ 
+        node_keys_to_execute_queue.extend(rouge_nodes);
+
         node_keys_to_execute_queue.push_back( *node_key );
     
         while !node_keys_to_execute_queue.is_empty()
@@ -180,7 +230,56 @@ impl NodeGraph
 
     pub fn execute_node(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey>
     {
-        node::node_kind::execute_node(node_key, self);
+        let node_to_execute;
+        match self.nodes.get_mut(node_key)
+        {
+            Some( value ) => node_to_execute = value,
+            None => return Vec::new(),
+        }
+        
+        let mut input_port_values = Vec::with_capacity(node_to_execute.input_port_keys.len());
+        for input_port_key in &node_to_execute.input_port_keys
+        {
+            let input_port;
+            match self.input_ports.get(input_port_key)
+            {
+                Some( value ) => input_port = value,
+                None => return Vec::new(),
+            }
+
+            input_port_values.push(&input_port.value);
+        } 
+
+        let executed_output_values = node::node_kind::execute_node(
+                                                                                &node_to_execute.kind,
+                                                                                &mut node_to_execute.value,
+                                                                                input_port_values
+        );
+
+        if executed_output_values.len() != node_to_execute.output_port_keys.len()
+        {
+            println!("Executed output and node output does not match");
+            return Vec::new();
+        }
+
+        for (output_port_index, output_port_key) in node_to_execute.output_port_keys.iter().enumerate()
+        {
+            let output_port;
+            match self.output_ports.get_mut(output_port_key)
+            {
+                Some( value ) => output_port = value,
+                None => return Vec::new(),
+            }
+
+            let executed_output_value = &executed_output_values[output_port_index];
+
+            if !output_port.compatability.contains_port_value_type(executed_output_value)
+            {
+                return Vec::new();
+            }
+
+            output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
+        }
 
         let distribution_result = self.distribute_outputs(node_key); 
         match distribution_result
@@ -253,13 +352,14 @@ impl NodeGraph
                 }
 
                 // @TODO, find a way of detecting math / immediate nodes 
-                match input_port.value
-                {
-                    PortValue::Trigger => next_nodes_to_execute.push(input_port.node_key),
-                    _ => {},
-                }
+                // match input_port.value
+                // {
+                //     PortValue::Trigger => next_nodes_to_execute.push(input_port.node_key),
+                //     _ => {},
+                // }
 
                 input_port.value = output_port.value.clone();
+                next_nodes_to_execute.push(input_port.node_key);
             }
         }
 
