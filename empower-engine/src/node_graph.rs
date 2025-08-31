@@ -3,12 +3,12 @@ use std::collections::VecDeque;
 
 pub type NodeGraphKey = i32;
 
-mod node;
+pub mod node;
 use node::Node;
 use node::NodeHandle;
 pub use node::NodeKind;
 
-mod port;
+pub mod port;
 use port::Port;
 use port::PortValue;
 
@@ -190,6 +190,32 @@ impl NodeGraph
     pub fn get_node(&self, node_key: &NodeGraphKey) -> Option<&Node>
     {
         self.nodes.get(node_key)
+    }
+
+    pub fn get_input_port(&self, port_key: &NodeGraphKey) -> Option<&Port>
+    {
+        self.input_ports.get(port_key)
+    }
+
+    pub fn input_port_has_connection(&self, port_key: &NodeGraphKey) -> bool
+    {
+        self.connections_in.contains_key(port_key)
+    }
+
+    pub fn get_output_port(&self, port_key: &NodeGraphKey) -> Option<&Port>
+    {
+        self.output_ports.get(port_key)
+    }
+
+    pub fn get_node_handle(&self, node_key: &NodeGraphKey) -> NodeHandle
+    {
+        let node = match self.nodes.get(node_key)
+        {
+            Some( node ) => node,
+            None => panic!("Requested node that does not exist"),
+        };
+
+        NodeHandle { node_key: *node_key, input_port_keys: node.input_port_keys.clone(), output_port_keys: node.output_port_keys.clone() }
     }
 
     pub fn execute_node_graph(&mut self) -> bool

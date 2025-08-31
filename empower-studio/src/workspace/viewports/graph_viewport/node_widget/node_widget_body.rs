@@ -1,11 +1,12 @@
 use crate::graph_editor::display_node::DisplayNode; use egui::Vec2;
 // @TODO, simplify this include
-use empower_node_graph::EmpowerKey;
+// use empower_node_graph::EmpowerKey;
+use empower_engine::NodeGraphKey;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool, node_selection_rect: &Option<egui::Rect>)
+pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<NodeGraphKey>, graph_viewport_title: &String, node_key: &NodeGraphKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool, node_selection_rect: &Option<egui::Rect>)
 {
     let node_position = display_node.position;
     let node_screen_size= display_node.size;

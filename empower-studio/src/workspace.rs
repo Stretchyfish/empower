@@ -1,8 +1,7 @@
 mod manu_bar;
 pub mod viewports;
 mod tab_viewer;
-mod debug_window;
-use egui_dock::NodeIndex;
+// mod debug_window;
 use tab_viewer::TabsViewer;
 use viewports::Viewports;
 use viewports::viewport_type::ViewportType;
@@ -54,7 +53,7 @@ impl Workspace
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
-    debug_window::show(ctx, studio_context);
+    // debug_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
@@ -83,21 +82,21 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 },
             );
 
-        let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
-        if clicked_backspace
-        {
-            let mut nodes_to_delete = Vec::new();
-            for node_key in studio_context.graph_editor.selected_nodes.iter() // @TODO, find a more effecient way of writting this
-            {
-            nodes_to_delete.push(node_key.clone()); 
-            }
+        // let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
+        // if clicked_backspace
+        // {
+        //     let mut nodes_to_delete = Vec::new();
+        //     for node_key in studio_context.graph_editor.selected_nodes.iter() // @TODO, find a more effecient way of writting this
+        //     {
+        //         nodes_to_delete.push(node_key.clone()); 
+        //     }
 
-            for node_key in nodes_to_delete
-            {
-                studio_context.graph_editor.remove_node(&node_key);
-                studio_context.graph_editor.selected_nodes = Vec::new();
-            }
-        }
+        //     for node_key in nodes_to_delete
+        //     {
+        //         studio_context.graph_editor.remove_node(&node_key);
+        //         studio_context.graph_editor.selected_nodes = Vec::new();
+        //     }
+        // }
 
     });
 }

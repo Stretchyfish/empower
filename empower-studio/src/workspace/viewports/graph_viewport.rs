@@ -1,11 +1,14 @@
-use egui::{menu, Vec2};
-use empower_node_graph::{node, EmpowerKey};
-use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+use empower_engine::NodeGraphKey;
+
+// use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+
+use crate::{graph_editor::GraphEditor, workspace::viewports::graph_viewport::node_widget::NodeWidgetResponseType};
 
 mod node_widget;
-mod connection_widget;
+// mod connection_widget;
 mod user_input; // @TODO, find a better structure for this
 mod port_searcher;
+use port_searcher::PortSearcher;
 mod node_selection_panel;
 use node_selection_panel::NodeSelectionPanel;
 
@@ -14,10 +17,10 @@ pub struct GraphViewport
     pub title: String,
     node_selection_panel: NodeSelectionPanel,
     node_selection_rect: Option<egui::Rect>,
-    pub mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
-    pub mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
+    mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
+    mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
     port_searcher: Option<PortSearcher>, 
-    quick_menu: Option<(EmpowerKey, egui::Pos2)>,
+    quick_menu: Option<(NodeGraphKey, egui::Pos2)>,
     scene_rect: egui::Rect,
 }
 
@@ -83,13 +86,13 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         // @TODO, find a more computationally effecient way of doing this
         // @TODO, conder going the other way around this, looking at connection_in instead?
-        let connection_keys = graph_editor.empower_node_graph.connections_out.clone();
-        for connection_key in connection_keys.keys()
-        {
-            connection_widget::show(scene_ui, graph_editor, graph_viewport, &connection_key);
-        }
+        // let connection_keys = graph_editor.empower_node_graph.connections_out.clone();
+        // for connection_key in connection_keys.keys()
+        // {
+        //     connection_widget::show(scene_ui, graph_editor, graph_viewport, &connection_key);
+        // }
 
-        let node_keys: Vec<EmpowerKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+        let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
         for node_key in node_keys
         {
             // @TODO, consider if the naming should be changed so, show functions include changes to the values, and view functions is purely rendering?
@@ -101,7 +104,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             }
         }
 
-        connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
+        // connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 
         if graph_viewport.node_selection_rect.is_some()
         {
@@ -113,12 +116,12 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             let quick_menu = graph_viewport.quick_menu.unwrap();
 
             // @TODO, change from tuple to struct
-            let clicked_quick_menu_button = show_quick_menu(scene_ui, graph_editor, quick_menu.0, quick_menu.1);
+            // let clicked_quick_menu_button = show_quick_menu(scene_ui, graph_editor, quick_menu.0, quick_menu.1);
 
-            if clicked_quick_menu_button
-            {
-                graph_viewport.quick_menu = None;
-            }
+            // if clicked_quick_menu_button
+            // {
+            //     graph_viewport.quick_menu = None;
+            // }
         }
 
         graph_viewport.mouse_scene_position_last_frame = mouse_position_in_scene;
@@ -142,27 +145,27 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         NodeWidgetResponseType::ClickedInputPort(port_key) =>
         {
-            input_port_interaction(graph_editor, graph_viewport, &port_key);
+            // input_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
         }
 
         NodeWidgetResponseType::ClickedOutputPort(port_key) =>
         {
-            output_port_interaction(graph_editor, graph_viewport, &port_key);
+            // output_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
        }
 
         // @TODO, prepare for multiple kinds of input ports
-        NodeWidgetResponseType::ChangedInputPortValueRepresentation(port_key, new_value_representation) =>
-        {
-            // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
-            input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
-        }
+        // NodeWidgetResponseType::ChangedInputPortValueRepresentation(port_key, new_value_representation) =>
+        // {
+        //     // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
+        //     input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
+        // }
 
-        NodeWidgetResponseType::ChangedState( new_state ) =>
-        {
-            graph_editor.change_node_state(&node_with_response_key, &new_state);
-        }
+        // NodeWidgetResponseType::ChangedState( new_state ) =>
+        // {
+        //     graph_editor.change_node_state(&node_with_response_key, &new_state);
+        // }
 
         NodeWidgetResponseType::ClickedQuickMenuButton( quick_menu_button_position ) =>
         {
@@ -232,7 +235,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 }
 
 // @TODO, consider where this function should be 
-fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &EmpowerKey)
+fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &NodeGraphKey)
 {
     if graph_editor.selected_nodes.contains(node_key) // @TODO, figure out if this is the most performance apporaach.
     {
@@ -244,171 +247,171 @@ fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &EmpowerKey)
     }
 }
 
-fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
-{
-    if graph_editor.input_port_has_connection(port_key)
-    {
-        // @TODO, simplify the code in here
-        if graph_viewport.port_searcher.is_some()
-        {
-            let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-            let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+// fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
+// {
+//     if graph_editor.input_port_has_connection(port_key)
+//     {
+//         // @TODO, simplify the code in here
+//         if graph_viewport.port_searcher.is_some()
+//         {
+//             let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
+//             let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
 
-            if successfully_removed_connection
-            {
-                graph_editor.empower_node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
-                graph_viewport.port_searcher = None;
-                return;
-            }
+//             if successfully_removed_connection
+//             {
+//                 graph_editor.empower_node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
+//                 graph_viewport.port_searcher = None;
+//                 return;
+//             }
 
-            println!("Failed to to replace input port connection");
-            return; 
-        }
+//             println!("Failed to to replace input port connection");
+//             return; 
+//         }
 
-        let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-        let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+//         let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
+//         let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
 
-        if successfully_removed_connection
-        {
-            graph_viewport.port_searcher = Some( PortSearcher { port_key: connect_output_port_key, port_kind: PortKind::OutputPort });
-            return;
-        }
+//         if successfully_removed_connection
+//         {
+//             graph_viewport.port_searcher = Some( PortSearcher { port_key: connect_output_port_key, port_kind: PortKind::OutputPort });
+//             return;
+//         }
 
-        println!("Failed to handle input port port search transfer");
-        return; 
-    }
+//         println!("Failed to handle input port port search transfer");
+//         return; 
+//     }
 
 
-    if graph_viewport.port_searcher.is_none()
-    {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });
-        return;
-    }
+//     if graph_viewport.port_searcher.is_none()
+//     {
+//         graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });
+//         return;
+//     }
 
-    let port_searcher = graph_viewport.port_searcher.unwrap();
+//     let port_searcher = graph_viewport.port_searcher.unwrap();
 
-    match  port_searcher.port_kind 
-    {
-        PortKind::InputPort =>
-        {
-            if port_searcher.port_key == *port_key
-            {
-                graph_viewport.port_searcher = None; // @TODO, expand this functionality to be more complex
-                return;
-            } 
-        },
+//     match  port_searcher.port_kind 
+//     {
+//         PortKind::InputPort =>
+//         {
+//             if port_searcher.port_key == *port_key
+//             {
+//                 graph_viewport.port_searcher = None; // @TODO, expand this functionality to be more complex
+//                 return;
+//             } 
+//         },
 
-        PortKind::OutputPort =>
-        {
-            // let port_connection = connections.iter().map(|(key, vec)|
-            // {
-            //     if vec.contains(&empower_input_port.key)
-            //     {
-            //         Some(key)
-            //     }
-            //     else // @TODO, find a better way to write
-            //     {
-            //         None
-            //     }
-            // });
+//         PortKind::OutputPort =>
+//         {
+//             // let port_connection = connections.iter().map(|(key, vec)|
+//             // {
+//             //     if vec.contains(&empower_input_port.key)
+//             //     {
+//             //         Some(key)
+//             //     }
+//             //     else // @TODO, find a better way to write
+//             //     {
+//             //         None
+//             //     }
+//             // });
 
-            // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
-            graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
-            println!("Tried to connect: {}, {}", port_searcher.port_key, *port_key);
+//             // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
+//             graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
+//             println!("Tried to connect: {}, {}", port_searcher.port_key, *port_key);
 
-            // @TODO, simplify this
-            // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
+//             // @TODO, simplify this
+//             // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
 
-            let value_representation = graph_editor.get_input_port_value_representation(port_key);
-            let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
+//             let value_representation = graph_editor.get_input_port_value_representation(port_key);
+//             let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
 
-            display_port.value_representation = value_representation;
-            // display_port.value = empower_port.get_value_as_string();
-            // display_port.value_text_valid = true;
-            display_port.value_representation_valid = true;
+//             display_port.value_representation = value_representation;
+//             // display_port.value = empower_port.get_value_as_string();
+//             // display_port.value_text_valid = true;
+//             display_port.value_representation_valid = true;
 
-            graph_viewport.port_searcher = None;
-            return;
-        }
-    }
+//             graph_viewport.port_searcher = None;
+//             return;
+//         }
+//     }
 
-    println!("input port id from show function: {}", *port_key);
-}
+//     println!("input port id from show function: {}", *port_key);
+// }
 
-fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
-{
-    if graph_viewport.port_searcher.is_none()
-    {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::OutputPort });
-        return;
-    }
+// fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
+// {
+//     if graph_viewport.port_searcher.is_none()
+//     {
+//         graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::OutputPort });
+//         return;
+//     }
 
-    let port_searcher = graph_viewport.port_searcher.unwrap();
+//     let port_searcher = graph_viewport.port_searcher.unwrap();
 
-    match  port_searcher.port_kind 
-    {
-        PortKind::InputPort =>
-        {
-            graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
-            graph_viewport.port_searcher = None;
-            return;
-        },
+//     match  port_searcher.port_kind 
+//     {
+//         PortKind::InputPort =>
+//         {
+//             graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
+//             graph_viewport.port_searcher = None;
+//             return;
+//         },
 
-        PortKind::OutputPort =>
-        {
-            if port_searcher.port_key == *port_key
-            {
-                graph_viewport.port_searcher = None;
-            }
-        }
-    }
+//         PortKind::OutputPort =>
+//         {
+//             if port_searcher.port_key == *port_key
+//             {
+//                 graph_viewport.port_searcher = None;
+//             }
+//         }
+//     }
 
-    println!("output port id from show function: {}", port_key);
-}
+//     println!("output port id from show function: {}", port_key);
+// }
 
-fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
-{
-    // let display_port_value_representation = graph_editor.display_input_ports.get(port_key).unwrap().value_representation.clone();
+// fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
+// {
+//     // let display_port_value_representation = graph_editor.display_input_ports.get(port_key).unwrap().value_representation.clone();
 
-    let succesfully_set_value = graph_editor.set_input_port_value_from_representation(port_key, new_value_representation.clone());
+//     let succesfully_set_value = graph_editor.set_input_port_value_from_representation(port_key, new_value_representation.clone());
 
-   // @TODO, this can be written better
-    let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-    display_port.value_representation = new_value_representation;
+//    // @TODO, this can be written better
+//     let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
+//     display_port.value_representation = new_value_representation;
 
-    display_port.value_representation_valid = succesfully_set_value; // @TODO, this should work no problem, but keep an eye on it
-    // if succesfully_set_value
-    // {
-    //     display_port.value_representation_valid = true;
-    // }
-}
+//     display_port.value_representation_valid = succesfully_set_value; // @TODO, this should work no problem, but keep an eye on it
+//     // if succesfully_set_value
+//     // {
+//     //     display_port.value_representation_valid = true;
+//     // }
+// }
 
-fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, node_key: EmpowerKey, menu_position: egui::Pos2) -> bool
-{
-    // let node_selection_window = egui::Window::new("").current_pos(egui::Pos2 {x: window_position.x - 100.0, y: window_position.y - 15.0}).collapsible(false).max_size(egui::Vec2 {x: 200.0, y: 200.0}).title_bar(false);
+// fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, node_key: EmpowerKey, menu_position: egui::Pos2) -> bool
+// {
+//     // let node_selection_window = egui::Window::new("").current_pos(egui::Pos2 {x: window_position.x - 100.0, y: window_position.y - 15.0}).collapsible(false).max_size(egui::Vec2 {x: 200.0, y: 200.0}).title_bar(false);
 
-    let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
+//     let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
 
-    let mut button_clicked = false;
-    ui.allocate_ui_at_rect(quick_menu_rect, |ui|
-    {
-        egui::Frame::popup(ui.style()).show(ui, |ui| 
-        {
+//     let mut button_clicked = false;
+//     ui.allocate_ui_at_rect(quick_menu_rect, |ui|
+//     {
+//         egui::Frame::popup(ui.style()).show(ui, |ui| 
+//         {
 
-            if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-            {
-                button_clicked = true;
-            }
+//             if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+//             {
+//                 button_clicked = true;
+//             }
 
-            if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-            {
-                graph_editor.remove_node(&node_key);
-                button_clicked = true;
+//             if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+//             {
+//                 graph_editor.remove_node(&node_key);
+//                 button_clicked = true;
 
-            }
+//             }
 
-        });
-    });
+//         });
+//     });
 
-    button_clicked
-}
+//     button_clicked
+// }
