@@ -6,16 +6,29 @@
 use empower_engine::node_graph::port::Port;
 use empower_engine::NodeGraphKey;
 // use empower_engine::node_graph::
-use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
+use crate::graph_editor::display_node::DisplayNode; use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
+// @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
+use crate::graph_editor::display_port::display_port_value;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
 
 // @TODO, find a way to reduce the number of inputs in this function?
-pub fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, input_port: &Port, graph_viewport_title: &String, port_has_coonection: bool, node_key: &NodeGraphKey, port_key: &NodeGraphKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
+pub fn show_input_port(
+                        ui: &mut egui::Ui, 
+                        display_node: &DisplayNode, 
+                        display_port: &DisplayPort, 
+                        input_port: &Port, 
+                        graph_viewport_title: &String, 
+                        port_has_coonection: bool, 
+                        node_key: &NodeGraphKey, 
+                        port_key: &NodeGraphKey, 
+                        node_widget_response: &mut Option<NodeWidgetResponse>, 
+                        debug_mode: &bool
+                    )
 {
     let input_port_position = display_node.position + display_port.relative_position;
     let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
@@ -28,11 +41,11 @@ pub fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_po
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedInputPort(*port_key) })
     }
 
-    input_port_response.on_hover_text( format!("{}, {:?}", input_port.value.get_type(), input_port.port_type.get_compatability_list() ));
+    input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
 
     // let port_color;
-    let port_color = egui::Color32::YELLOW;
-    let port_text = &display_port.text;
+    let port_color = display_port_value::get_display_port_value_color(&display_port.display_value);
+    
     // match input_port.value 
     // {
     //     EmpowerData::Trigger =>
@@ -75,18 +88,13 @@ pub fn show_input_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_po
             egui::Color32::BLACK,
         );
     }
+    // display_port_value::show_display_port_value_type(&display_port.display_value.value_type, &input_port_text_position, port_has_coonection);
+    let potentially_modified_display_value = display_port_value::show_display_port_value(&display_port.display_value, &input_port_position, port_has_coonection, ui);
 
-    let input_port_text_offset = egui::Vec2 { x: 40.0, y: 0.0};
-    let input_port_text_position = input_port_position + input_port_text_offset;
-
-    ui.painter().text(
-        input_port_text_position,
-        // egui::Align2::LEFT_TOP,
-        egui::Align2::LEFT_CENTER,
-        port_text,
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
+    if potentially_modified_display_value != display_port.display_value
+    {
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortDisplayValue(*port_key, potentially_modified_display_value ) } );
+    }
 
     // match &display_port.value_representation
     // {

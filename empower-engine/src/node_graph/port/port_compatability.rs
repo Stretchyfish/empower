@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::PortValue;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub enum PortCompatability
 {
     Exatch(PortValue),

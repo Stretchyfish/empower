@@ -8,6 +8,7 @@
 // use empower_node_graph::Node;
 // use empower_node_graph::NodeType;
 
+use empower_engine::node_graph::port::port_value;
 use empower_engine::NodeGraph;
 use empower_engine::NodeGraphKey;
 use empower_engine::NodeKind;
@@ -19,6 +20,8 @@ use display_node::DisplayNode;
 
 pub mod display_port;
 use display_port::DisplayPort;
+
+use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 // use display_port::DisplayPortValueRepresentation;
@@ -79,10 +82,12 @@ impl GraphEditor
 
         let display_node_title = node.kind.to_string();
 
+        let input_port_values = self.node_graph.get_node_input_port_values(&node_handle.node_key);
+
         let display_node_size = display_node::display_node_kind::get_display_node_size(&node_kind);
         let display_node_value_offset = display_node::display_node_kind::get_display_node_value_offset(&node_kind);
-        let input_port_names = display_node::display_node_kind::get_display_input_port_names(&node_kind);
-        let output_port_names = display_node::display_node_kind::get_display_output_port_names(&node_kind);
+        let input_port_display_values = display_node::display_node_kind::get_display_input_ports(&node_kind, input_port_values);
+        let output_port_display_values = display_node::display_node_kind::get_display_output_ports(&node_kind);
 
         // let extra_input_port_offset; // @TODO, consider if this is the correct approach
         // match new_node_type 
@@ -145,8 +150,8 @@ impl GraphEditor
         //     }
         // }
 
-        if input_port_names.len() != node.input_port_keys.len()
-            || output_port_names.len() != node.output_port_keys.len()
+        if input_port_display_values.len() != node.input_port_keys.len()
+            || output_port_display_values.len() != node.output_port_keys.len()
         {
             println!("ERROR, the size of input port or output names does not match");
             return false;
@@ -162,7 +167,8 @@ impl GraphEditor
             let new_display_port = DisplayPort { 
                                                         node_key: node.key.clone(), 
                                                         relative_position: egui::Vec2::new(0.0, input_port_offset), 
-                                                        text: input_port_names[input_port_key_index].clone(),
+                                                        display_value: input_port_display_values[input_port_key_index].clone(),
+                                                        // text: input_port_names[input_port_key_index].clone(),
                                                         // value_representation: DisplayPortValueRepresentation::None, 
                                                         // value_representation_valid: true 
                                                         }; 
@@ -177,7 +183,7 @@ impl GraphEditor
             let new_display_port = DisplayPort { 
                                                     node_key: node.key.clone(), 
                                                     relative_position: egui::Vec2::new(display_node_size.x, output_port_offset), 
-                                                    text: output_port_names[output_port_key_index].clone(),
+                                                    display_value: output_port_display_values[output_port_key_index].clone(),
                                                     // value_representation: DisplayPortValueRepresentation::Text( String::new() ), 
                                                     // value_representation: DisplayPortValueRepresentation::None, 
                                                     // value_representation_valid: false // @TODO, decide if this should be true?
@@ -214,6 +220,39 @@ impl GraphEditor
     //     self.display_nodes.remove(node_key);
     // }
 
+    pub fn set_input_port_value(&mut self, input_port_key: &NodeGraphKey, display_port_value: DisplayPortValue)
+    {
+        let input_port = match self.node_graph.get_mut_input_port(input_port_key)
+        {
+            Some( port ) => port,
+            None => panic!("ERROR, tried to set display input port in set input port value, but input port doesn't exist."),
+        };
+
+        let display_input_port = match self.display_input_ports.get_mut(input_port_key)
+        {
+            Some( port ) => port,
+            None => panic!("ERROR, tried to get display input port in set input port value, but input port doesn't exist."),
+        };
+
+        display_input_port.display_value = display_port_value.clone();
+
+        // @TODO, consider if this should be a result instead of an optional
+        let new_input_port_value = match display_port_value.to(&input_port.compatability)
+        {
+            Some( input_port_value) => 
+            {
+                display_input_port.display_value.display_value_valid = true;
+                input_port_value
+            }
+            None => 
+            {
+                display_input_port.display_value.display_value_valid = false;
+                return
+            }
+        };
+
+        input_port.value = new_input_port_value;
+    }
     // pub fn set_input_port_value_from_representation(&mut self, input_port_key: &EmpowerKey, value_representation: DisplayPortValueRepresentation) -> bool
     // {
     //     let input_port = self.empower_node_graph.input_ports.get_mut(input_port_key).unwrap();

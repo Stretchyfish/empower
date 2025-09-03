@@ -197,6 +197,11 @@ impl NodeGraph
         self.input_ports.get(port_key)
     }
 
+    pub fn get_mut_input_port(&mut self, port_key: &NodeGraphKey) -> Option<&mut Port>
+    {
+        self.input_ports.get_mut(port_key)
+    }
+
     pub fn input_port_has_connection(&self, port_key: &NodeGraphKey) -> bool
     {
         self.connections_in.contains_key(port_key)
@@ -318,6 +323,30 @@ impl NodeGraph
                 Vec::new()
             },
         }
+    }
+
+    pub fn get_node_input_port_values(&self, node_key: &NodeGraphKey) -> Vec<&PortValue>
+    {
+        let node = match self.nodes.get(node_key)
+        {
+            Some( node ) => node,
+            None => return Vec::new(),
+        };
+
+        let mut input_port_values = Vec::with_capacity(node.input_port_keys.len());
+        for input_port_key in &node.input_port_keys
+        {
+            let input_port;
+            match self.input_ports.get(input_port_key)
+            {
+                Some( value ) => input_port = value,
+                None => return Vec::new(),
+            }
+
+            input_port_values.push(&input_port.value);
+        } 
+
+        input_port_values
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey

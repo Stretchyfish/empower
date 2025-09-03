@@ -4,7 +4,7 @@ pub fn get_number_node_input_ports_compatabilities() -> Vec<PortCompatability>
 {
     Vec::from(
         [
-            PortCompatability::OneOf( vec!( PortValue::Undefined( String::from("0") ), PortValue::Float(0.0), PortValue::Integer(0) ) ),
+            PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ),
         ]
     )
 }

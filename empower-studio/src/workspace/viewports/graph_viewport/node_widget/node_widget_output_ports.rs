@@ -1,6 +1,5 @@
-use empower_node_graph::EmpowerData;
-use empower_node_graph::EmpowerKey;
-use empower_node_graph::OutputPort;
+use empower_engine::node_graph::port::Port;
+use empower_engine::NodeGraphKey;
 
 use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
@@ -8,7 +7,17 @@ use crate::graph_editor::display_port::DisplayPort;
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-pub fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_port: &DisplayPort, output_port: &OutputPort, graph_viewport_title: &String, node_key: &EmpowerKey, port_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool)
+pub fn show_output_port(
+                        ui: &mut egui::Ui, 
+                        display_node: &DisplayNode, 
+                        display_port: &DisplayPort, 
+                        output_port: &Port, 
+                        graph_viewport_title: &String, 
+                        node_key: &NodeGraphKey, 
+                        port_key: &NodeGraphKey, 
+                        node_widget_response: &mut Option<NodeWidgetResponse>, 
+                        debug_mode: &bool
+                    )
 {
     let output_port_position = display_node.position + display_port.relative_position;
 
@@ -23,24 +32,25 @@ pub fn show_output_port(ui: &mut egui::Ui, display_node: &DisplayNode, display_p
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedOutputPort(*port_key) });
         // output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key, node_widget_response);
     }
-    output_port_response.on_hover_text( format!("{}", output_port.value.get_type()) );
+    output_port_response.on_hover_text( format!("{:?}", output_port.value) );
 
-    let port_color;
-    match output_port.value 
-    {
-        EmpowerData::Trigger =>
-        {
-            port_color = egui::Color32::WHITE;
-        }
-        _ =>
-        {
-            port_color = egui::Color32::YELLOW;
-        }
-    }
+    let port_color = egui::Color32::YELLOW;
+    // let port_color;
+    // match output_port.value 
+    // {
+    //     EmpowerData::Trigger =>
+    //     {
+    //         port_color = egui::Color32::WHITE;
+    //     }
+    //     _ =>
+    //     {
+    //         port_color = egui::Color32::YELLOW;
+    //     }
+    // }
 
     let output_port_text_offset = egui::Vec2 { x: -40.0, y: 0.0};
     let output_port_text_position = output_port_position + output_port_text_offset;
-    let port_text = &display_port.text;
+    let port_text = &display_port.display_value.text;
 
     ui.painter().text(
         output_port_text_position,

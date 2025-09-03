@@ -5,13 +5,13 @@ use core::panic;
 
 use empower_engine::NodeGraphKey;
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
-use crate::graph_editor::GraphEditor;
+use crate::graph_editor::{display_port::display_port_value::DisplayPortValue, GraphEditor};
 use super::GraphViewport;
 
 mod node_widget_body;
 // mod node_widget_state;
-// mod node_widget_input_ports;
-// mod node_widget_output_ports;
+mod node_widget_input_ports;
+mod node_widget_output_ports;
 
 pub struct NodeWidgetResponse
 {
@@ -24,7 +24,7 @@ pub enum NodeWidgetResponseType
     ClickedTitle,
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
-    // ChangedInputPortValueRepresentation(i32, DisplayPortValueRepresentation),
+    ChangedInputPortDisplayValue(i32, DisplayPortValue),
     // ChangedState(NodeState),
     ClickedQuickMenuButton(egui::Pos2),
     InsideSelectionRect,
@@ -61,7 +61,6 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
             Some(port) => port,
             None => panic!("Tried to get port {} in node graph during show node widget, but key was not present", input_port_key),
         };
-        // let input_port = graph_editor.node_graph..get(input_port_key).unwrap(); 
 
         let display_input_port = match graph_editor.display_input_ports.get(input_port_key)
         {
@@ -71,7 +70,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
 
         let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key);
 
-        // node_widget_input_ports::show_input_port(ui, display_node, display_input_port, input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
+        node_widget_input_ports::show_input_port(ui, display_node, display_input_port, input_port, graph_viewport_title, port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
     }
 
     let output_port_keys = &node.output_port_keys;
@@ -89,7 +88,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
             None => panic!("Tried to get port {} in graph editor during show node widget, but key was not present", output_port_key),
         };
         
-        // node_widget_output_ports::show_output_port(ui, display_node, display_output_port, output_port, graph_viewport_title, node_key, output_port_key, &mut node_widget_response, &debug_mode);
+        node_widget_output_ports::show_output_port(ui, display_node, display_output_port, output_port, graph_viewport_title, node_key, output_port_key, &mut node_widget_response, &debug_mode);
     }
 
     node_widget_response

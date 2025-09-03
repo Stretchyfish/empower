@@ -109,5 +109,4 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
             });
         });
     });   
-
 }

@@ -11,7 +11,7 @@ pub enum PortValue
     Float(f32),
     Text(String),
     Bool(bool),
-    Undefined(String),
+    Undefined(String), // @TODO, consider removing undefined
     #[default] None,
 }
 

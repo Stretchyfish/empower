@@ -156,11 +156,10 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
        }
 
         // @TODO, prepare for multiple kinds of input ports
-        // NodeWidgetResponseType::ChangedInputPortValueRepresentation(port_key, new_value_representation) =>
-        // {
-        //     // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
-        //     input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
-        // }
+        NodeWidgetResponseType::ChangedInputPortDisplayValue(port_key, new_display_value) =>
+        {
+            graph_editor.set_input_port_value(&port_key, new_display_value);
+        }
 
         // NodeWidgetResponseType::ChangedState( new_state ) =>
         // {
