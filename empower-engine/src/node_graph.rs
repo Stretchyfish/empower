@@ -132,6 +132,32 @@ impl NodeGraph
         Ok(())
     }
 
+    // @TODO, consider making this a bool?
+    pub fn remove_connection(&mut self, input_port_key: &NodeGraphKey, output_port_key: &NodeGraphKey)
+    {
+        self.connections_in.remove(input_port_key);
+
+        let mut no_more_elements_in_connection_out = false;
+
+        {
+            let connections_going_out = self.connections_out.get_mut(output_port_key).expect("failed");
+
+            let element_to_remove_index = connections_going_out.iter().position(|p| p == input_port_key).expect("remove connection was asked to remove a output port that should exist, but doesn't");
+
+            connections_going_out.remove(element_to_remove_index);
+
+            if connections_going_out.is_empty()
+            {
+                no_more_elements_in_connection_out = true;
+            }
+        }
+
+        if no_more_elements_in_connection_out
+        {
+            self.connections_out.remove(output_port_key);
+        }
+    }
+
     pub fn get_all_nodes(&self) -> Vec<&Node>
     {
         self.nodes.values().collect()
@@ -207,9 +233,24 @@ impl NodeGraph
         self.connections_in.contains_key(port_key)
     }
 
+    pub fn output_port_has_connection(&self, port_key: &NodeGraphKey) -> bool
+    {
+        self.connections_out.contains_key(port_key)
+    }
+
     pub fn get_output_port(&self, port_key: &NodeGraphKey) -> Option<&Port>
     {
         self.output_ports.get(port_key)
+    }
+
+    pub fn get_input_port_connection_key(&self, port_key: &NodeGraphKey) -> Option<&NodeGraphKey>
+    {
+        self.connections_in.get(port_key)
+    }
+
+    pub fn get_output_port_connection_keys(&self, port_key: &NodeGraphKey) -> Option<&Vec<NodeGraphKey>>
+    {
+        self.connections_out.get(port_key)
     }
 
     pub fn get_node_handle(&self, node_key: &NodeGraphKey) -> NodeHandle

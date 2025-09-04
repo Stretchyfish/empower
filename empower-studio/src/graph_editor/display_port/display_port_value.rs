@@ -15,7 +15,7 @@ impl DisplayPortValue
     {
         let value_type= match port_value
         {
-            PortValue::Trigger => todo!(),
+            PortValue::Trigger => DisplayPortValueType::None,
             PortValue::Integer( int_value ) => DisplayPortValueType::Text( int_value.to_string() ),
             PortValue::Float(_) => todo!(),
             PortValue::Text(_) => todo!(),
@@ -81,7 +81,6 @@ impl DisplayPortValue
             Err(_) => None,
         }
     }
-    
 }
 
 #[derive(Default, Clone, PartialEq)]

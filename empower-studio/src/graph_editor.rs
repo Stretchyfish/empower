@@ -151,9 +151,13 @@ impl GraphEditor
         // }
 
         if input_port_display_values.len() != node.input_port_keys.len()
-            || output_port_display_values.len() != node.output_port_keys.len()
         {
-            println!("ERROR, the size of input port or output names does not match");
+            println!("ERROR, the size of node in graph editor (add_node) input port and display input ports does not match");
+            return false;
+        }
+        if output_port_display_values.len() != node.output_port_keys.len()
+        {
+            println!("ERROR, the size of node in graph editor (add_node) output and display output ports does not match");
             return false;
         }
               

@@ -2,10 +2,10 @@ use empower_engine::NodeGraphKey;
 
 // use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
 
-use crate::{graph_editor::GraphEditor, workspace::viewports::graph_viewport::node_widget::NodeWidgetResponseType};
+use crate::{graph_editor::GraphEditor, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::PortKind}};
 
 mod node_widget;
-// mod connection_widget;
+mod connection_widget;
 mod user_input; // @TODO, find a better structure for this
 mod port_searcher;
 use port_searcher::PortSearcher;
@@ -86,11 +86,11 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         // @TODO, find a more computationally effecient way of doing this
         // @TODO, conder going the other way around this, looking at connection_in instead?
-        // let connection_keys = graph_editor.empower_node_graph.connections_out.clone();
-        // for connection_key in connection_keys.keys()
-        // {
-        //     connection_widget::show(scene_ui, graph_editor, graph_viewport, &connection_key);
-        // }
+        let connection_keys = graph_editor.node_graph.get_all_connections();
+        for connection in connection_keys
+        {
+            connection_widget::show(scene_ui, graph_editor, graph_viewport, connection);
+        }
 
         let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
         for node_key in node_keys
@@ -104,7 +104,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             }
         }
 
-        // connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
+        connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 
         if graph_viewport.node_selection_rect.is_some()
         {
@@ -145,14 +145,16 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         NodeWidgetResponseType::ClickedInputPort(port_key) =>
         {
-            // input_port_interaction(graph_editor, graph_viewport, &port_key);
+            input_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
+            println!("Clicked input port");
         }
 
         NodeWidgetResponseType::ClickedOutputPort(port_key) =>
         {
-            // output_port_interaction(graph_editor, graph_viewport, &port_key);
+            output_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
+            println!("Clicked output port");
        }
 
         // @TODO, prepare for multiple kinds of input ports
@@ -246,127 +248,122 @@ fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &NodeGraphKey)
     }
 }
 
-// fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
-// {
-//     if graph_editor.input_port_has_connection(port_key)
-//     {
-//         // @TODO, simplify the code in here
-//         if graph_viewport.port_searcher.is_some()
-//         {
-//             let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-//             let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
+{
+    if graph_editor.node_graph.input_port_has_connection(port_key) // @TODO, consider changing this to be part of the graph editor itself
+    {
+        let connect_output_port_key = graph_editor.node_graph.get_input_port_connection_key(port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+        graph_editor.node_graph.remove_connection(port_key, &connect_output_port_key);
 
-//             if successfully_removed_connection
-//             {
-//                 graph_editor.empower_node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
-//                 graph_viewport.port_searcher = None;
-//                 return;
-//             }
+        if graph_viewport.port_searcher.is_some()
+        {
+            graph_editor.node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
+            graph_viewport.port_searcher = None;
+            return; 
+        }
 
-//             println!("Failed to to replace input port connection");
-//             return; 
-//         }
+        graph_viewport.port_searcher = Some( PortSearcher::output_port_searching(connect_output_port_key) );
+        return; 
+    }
+    
+    if graph_viewport.port_searcher.is_none()
+    {
+        graph_viewport.port_searcher = Some( PortSearcher::input_port_searching( port_key.clone() ) );
+        return;
+    }
 
-//         let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-//         let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+    let port_searcher = graph_viewport.port_searcher.unwrap();
 
-//         if successfully_removed_connection
-//         {
-//             graph_viewport.port_searcher = Some( PortSearcher { port_key: connect_output_port_key, port_kind: PortKind::OutputPort });
-//             return;
-//         }
+    match  port_searcher.port_kind 
+    {
+        PortKind::InputPort =>
+        {
+            if port_searcher.port_key == *port_key
+            {
+                graph_viewport.port_searcher = None; // @TODO, expand this functionality to be more complex
+                return;
+            } 
+        },
 
-//         println!("Failed to handle input port port search transfer");
-//         return; 
-//     }
+        PortKind::OutputPort =>
+        {    
+            // println!("Reached here 4");
+
+            // if graph_editor.node_graph.output_port_has_connection(port_key)
+            // {
+
+            // }
+            // let port_connection = connections.iter().map(|(key, vec)|
+            // {
+            //     if vec.contains(&empower_input_port.key)
+            //     {
+            //         Some(key)
+            //     }
+            //     else // @TODO, find a better way to write
+            //     {
+            //         None
+            //     }
+            // });
+
+            // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
+            let add_connection_result = graph_editor.node_graph.add_connection(port_searcher.port_key, *port_key);
+
+            match add_connection_result
+            {
+                Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
+                Err( text ) => println!("Failed to add connection because: {}", text),
+            }
+
+            // @TODO, simplify this
+            // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
+
+            // let value_representation = graph_editor.get_input_port_value_representation(port_key);
+            // let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
+
+            // display_port.value_representation = value_representation;
+
+            // display_port.value = empower_port.get_value_as_string();
+            // display_port.value_text_valid = true;
 
 
-//     if graph_viewport.port_searcher.is_none()
-//     {
-//         graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });
-//         return;
-//     }
+            // display_port.value_representation_valid = true;
 
-//     let port_searcher = graph_viewport.port_searcher.unwrap();
+            graph_viewport.port_searcher = None;
+            return;
+        }
+    }
+}
 
-//     match  port_searcher.port_kind 
-//     {
-//         PortKind::InputPort =>
-//         {
-//             if port_searcher.port_key == *port_key
-//             {
-//                 graph_viewport.port_searcher = None; // @TODO, expand this functionality to be more complex
-//                 return;
-//             } 
-//         },
+fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
+{
+    if graph_viewport.port_searcher.is_none()
+    {
+        graph_viewport.port_searcher = Some( PortSearcher::output_port_searching(*port_key) );
+        return;
+    }
 
-//         PortKind::OutputPort =>
-//         {
-//             // let port_connection = connections.iter().map(|(key, vec)|
-//             // {
-//             //     if vec.contains(&empower_input_port.key)
-//             //     {
-//             //         Some(key)
-//             //     }
-//             //     else // @TODO, find a better way to write
-//             //     {
-//             //         None
-//             //     }
-//             // });
+    let port_searcher = graph_viewport.port_searcher.unwrap(); // @TODO, switch to an unwrap
 
-//             // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
-//             graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
-//             println!("Tried to connect: {}, {}", port_searcher.port_key, *port_key);
+    match  port_searcher.port_kind 
+    {
+        PortKind::InputPort =>
+        {
+            graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
+            graph_viewport.port_searcher = None;
+            return;
+        },
 
-//             // @TODO, simplify this
-//             // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
+        PortKind::OutputPort =>
+        {
+            if port_searcher.port_key == *port_key
+            {
+                graph_viewport.port_searcher = None;
+            }
+        }
+    }
 
-//             let value_representation = graph_editor.get_input_port_value_representation(port_key);
-//             let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-
-//             display_port.value_representation = value_representation;
-//             // display_port.value = empower_port.get_value_as_string();
-//             // display_port.value_text_valid = true;
-//             display_port.value_representation_valid = true;
-
-//             graph_viewport.port_searcher = None;
-//             return;
-//         }
-//     }
-
-//     println!("input port id from show function: {}", *port_key);
-// }
-
-// fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
-// {
-//     if graph_viewport.port_searcher.is_none()
-//     {
-//         graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::OutputPort });
-//         return;
-//     }
-
-//     let port_searcher = graph_viewport.port_searcher.unwrap();
-
-//     match  port_searcher.port_kind 
-//     {
-//         PortKind::InputPort =>
-//         {
-//             graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
-//             graph_viewport.port_searcher = None;
-//             return;
-//         },
-
-//         PortKind::OutputPort =>
-//         {
-//             if port_searcher.port_key == *port_key
-//             {
-//                 graph_viewport.port_searcher = None;
-//             }
-//         }
-//     }
-
-//     println!("output port id from show function: {}", port_key);
-// }
+    println!("output port id from show function: {}", port_key);
+}
 
 // fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
 // {
