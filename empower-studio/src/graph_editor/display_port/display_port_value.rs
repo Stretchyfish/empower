@@ -27,7 +27,7 @@ impl DisplayPortValue
             PortValue::Integer(_) => egui::Color32::YELLOW,
             PortValue::Float(_) => todo!(),
             PortValue::Text(_) => egui::Color32::YELLOW,
-            PortValue::Bool(_) => todo!(),
+            PortValue::Bool(_) => egui::Color32::YELLOW,
             PortValue::Undefined(_) => todo!(),
             PortValue::None => todo!(),
         }
@@ -54,7 +54,8 @@ impl DisplayPortValue
                 (DisplayPortValueType::Text( text_to_parse ), PortValue::Integer(_)) => self.text_to_int(&text_to_parse),
                 (DisplayPortValueType::Text( text_to_parse ), PortValue::Float(_)) => self.text_to_float(&text_to_parse),
                 (DisplayPortValueType::Text( text_send ), PortValue::Text(_)) => Some( PortValue::Text( text_send ) ),
-                _ => continue,
+                (DisplayPortValueType::Checkbox( boolean_to_parse), PortValue::Bool(_)) => Some( PortValue::Bool( boolean_to_parse )),
+                _ => panic!("Tried to pass two incompatible values"),
             };
 
             if parsed_value.is_none()
@@ -107,7 +108,7 @@ impl DisplayPortValueType
             PortValue::Integer( int_value ) => DisplayPortValueType::Text( int_value.to_string() ),
             PortValue::Float(_) => todo!(),
             PortValue::Text( text_value ) => DisplayPortValueType::Text( text_value.clone() ),
-            PortValue::Bool(_) => todo!(),
+            PortValue::Bool( bool_value ) => DisplayPortValueType::Checkbox( *bool_value ), 
             PortValue::Undefined(_) => todo!(),
             PortValue::None => todo!(),
         }
@@ -127,7 +128,7 @@ pub fn get_display_port_value_color(display_value: &DisplayPortValue) -> egui::C
 // pub fn show_display_port_value(display_value_type: &DisplayPortValueType, input_port_text_position: &egui::Pos2, port_has_connection: bool)
 pub fn show_display_port_value(display_value: &DisplayPortValue, input_port_position: &egui::Pos2, port_has_connection: bool, ui: &mut egui::Ui) -> DisplayPortValue
 {
-    let mut modified_display_value = display_value.clone();
+    let mut modified_display_value = display_value.clone(); // @TODO, find a better name
 
     let input_port_text_offset = egui::Vec2 { x: 40.0, y: 0.0};
     let input_port_text_position = *input_port_position + input_port_text_offset;
@@ -146,17 +147,26 @@ pub fn show_display_port_value(display_value: &DisplayPortValue, input_port_posi
     let painted_text_size = painted_text.size();
     let text_and_display_value_buffer = 20.0;
 
+    let input_port_value_position = input_port_text_position + egui::Vec2 { x: painted_text_size.x + text_and_display_value_buffer, y: -painted_text_size.y / 2.0 };
+
     match &mut modified_display_value.value_type
     {
         DisplayPortValueType::None => (),
-        DisplayPortValueType::Checkbox( toggle ) => (),
+        DisplayPortValueType::Checkbox( toggle ) => 
+        {
+            let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
+            let input_port_checkbox_rect = egui::Rect::from_min_size(input_port_value_position, input_port_checkbox_size);
+
+            // @TODO, improve this, and fix box size
+            let checkbox = egui::Checkbox::new(
+                                                    toggle, 
+                                                        egui::RichText::new("").font(egui::FontId::proportional(35.0)));
+            ui.put(input_port_checkbox_rect, checkbox);
+        },
         DisplayPortValueType::Text( text ) => 
         {
-            // let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
-            let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: painted_text_size.x + text_and_display_value_buffer, y: -painted_text_size.y / 2.0 };
             let input_port_value_box_size = egui::Vec2{ x: 120.0, y: painted_text_size.y };
-            // let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_value_box_size);
-            let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position, input_port_value_box_size);
+            let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_position, input_port_value_box_size);
 
             let mut text_edit_color = egui::Color32::WHITE;
             let mut text_background_color = egui::Color32::BLACK;
