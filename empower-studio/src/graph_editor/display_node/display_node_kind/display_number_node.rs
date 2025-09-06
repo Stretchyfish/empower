@@ -15,9 +15,9 @@ pub fn get_display_number_node_input_ports(inputs: Vec<&PortValue>) -> Vec<Displ
     ]
 }
 
-pub fn get_display_number_node_output_ports() -> Vec<DisplayPortValue>
+pub fn get_display_number_node_output_ports(outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
 {
     vec![ 
-        DisplayPortValue::nothing_with_text( "Out".to_string() ), 
+        DisplayPortValue::nothing_with_text( "Out".to_string(), outputs[0] ), 
     ]
 }

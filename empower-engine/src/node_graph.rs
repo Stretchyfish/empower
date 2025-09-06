@@ -264,6 +264,11 @@ impl NodeGraph
         NodeHandle { node_key: *node_key, input_port_keys: node.input_port_keys.clone(), output_port_keys: node.output_port_keys.clone() }
     }
 
+    pub fn get_all_node_keys(&self) -> Vec<NodeGraphKey> // @TODO, consider if this is the best way to go
+    {
+        self.nodes.keys().cloned().collect()
+    }
+
     pub fn execute_node_graph(&mut self) -> bool
     {
         if self.node_count() == 0 { return false; }
@@ -388,6 +393,26 @@ impl NodeGraph
         } 
 
         input_port_values
+    }
+
+    // @TODO, simplify these input and output port functions
+    pub fn get_output_port_values(&self, node_key: &NodeGraphKey) -> Vec<&PortValue>
+    {
+        let node = match self.nodes.get(node_key)
+        {
+            Some( node ) => node,
+            None => return Vec::new(),
+        };
+
+        let mut output_port_values= Vec::with_capacity(node.output_port_keys.len());
+        for output_port_key in &node.output_port_keys
+        {
+            let output_port = self.output_ports.get(output_port_key).expect("Tried to fetch output port key in get_output_port_value, but output port was not avaiable");
+
+            output_port_values.push(&output_port.value);
+        } 
+
+        output_port_values
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey

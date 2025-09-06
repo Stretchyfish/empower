@@ -37,12 +37,12 @@ pub fn get_display_input_ports(node_kind: &NodeKind, inputs: Vec<&PortValue>) ->
 }
 
 // @TODO, consider if all elements in DisplayPortValue should be shown in the output nodes
-pub fn get_display_output_ports(node_kind: &NodeKind) -> Vec<DisplayPortValue>
+pub fn get_display_output_ports(node_kind: &NodeKind, outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
 {
     match node_kind
     {
-        NodeKind::Start => display_start_node::get_display_start_node_output_ports(),
-        NodeKind::Number => display_number_node::get_display_number_node_output_ports(),
+        NodeKind::Start => display_start_node::get_display_start_node_output_ports(outputs),
+        NodeKind::Number => display_number_node::get_display_number_node_output_ports(outputs),
         NodeKind::Print => display_print_node::get_display_print_node_output_ports(),
         _ => Vec::new(),
     }

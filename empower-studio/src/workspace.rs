@@ -1,7 +1,7 @@
 mod manu_bar;
 pub mod viewports;
 mod tab_viewer;
-// mod debug_window;
+mod debug_window;
 use tab_viewer::TabsViewer;
 use viewports::Viewports;
 use viewports::viewport_type::ViewportType;
@@ -53,7 +53,7 @@ impl Workspace
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
-    // debug_window::show(ctx, studio_context);
+    debug_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {

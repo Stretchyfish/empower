@@ -13,7 +13,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
     let output_port_position = display_output_port_node.position + display_output_port.relative_position;
     let input_port_position = display_input_port_node.position + display_input_port.relative_position;
-    let connection_color = egui::Color32::YELLOW;
+    let connection_color = display_output_port.display_value.color;
 
     ui.painter().line_segment([output_port_position, input_port_position], egui::Stroke::new(10.0, connection_color));
 
@@ -92,5 +92,5 @@ pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &mut GraphEditor,
     let display_node = graph_editor.display_nodes.get(&display_port.node_key).unwrap();
     let display_port_position = display_node.position + display_port.relative_position;
 
-    ui.painter().line_segment([ display_port_position, *mouse_scene_position], egui::Stroke::new(10.0, egui::Color32::YELLOW));
+    ui.painter().line_segment([ display_port_position, *mouse_scene_position], egui::Stroke::new(10.0, display_port.display_value.color));
 }

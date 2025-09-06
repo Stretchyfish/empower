@@ -348,6 +348,7 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     {
         PortKind::InputPort =>
         {
+            // @TODO, might add another check here
             graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
             graph_viewport.port_searcher = None;
             return;

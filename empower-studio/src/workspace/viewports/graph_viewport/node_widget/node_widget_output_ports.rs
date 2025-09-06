@@ -1,7 +1,8 @@
 use empower_engine::node_graph::port::Port;
 use empower_engine::NodeGraphKey;
 
-use crate::graph_editor::display_node::DisplayNode; // @TODO, simplify this include
+use crate::graph_editor::display_node::DisplayNode; use crate::graph_editor::display_port::display_port_value;
+// @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
 
 use super::NodeWidgetResponse;
@@ -34,7 +35,7 @@ pub fn show_output_port(
     }
     output_port_response.on_hover_text( format!("{:?}", output_port.value) );
 
-    let port_color = egui::Color32::YELLOW;
+    let port_color = display_port.display_value.color;
     // let port_color;
     // match output_port.value 
     // {

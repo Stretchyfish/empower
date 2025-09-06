@@ -22,6 +22,7 @@ pub mod display_port;
 use display_port::DisplayPort;
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
+use crate::graph_editor::display_port::display_port_value::DisplayPortValueType;
 
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 // use display_port::DisplayPortValueRepresentation;
@@ -83,11 +84,12 @@ impl GraphEditor
         let display_node_title = node.kind.to_string();
 
         let input_port_values = self.node_graph.get_node_input_port_values(&node_handle.node_key);
+        let output_port_values = self.node_graph.get_output_port_values(&node_handle.node_key);
 
         let display_node_size = display_node::display_node_kind::get_display_node_size(&node_kind);
         let display_node_value_offset = display_node::display_node_kind::get_display_node_value_offset(&node_kind);
         let input_port_display_values = display_node::display_node_kind::get_display_input_ports(&node_kind, input_port_values);
-        let output_port_display_values = display_node::display_node_kind::get_display_output_ports(&node_kind);
+        let output_port_display_values = display_node::display_node_kind::get_display_output_ports(&node_kind, output_port_values);
 
         // let extra_input_port_offset; // @TODO, consider if this is the correct approach
         // match new_node_type 
@@ -257,6 +259,39 @@ impl GraphEditor
 
         input_port.value = new_input_port_value;
     }
+
+    pub fn refresh_all_node_display(&mut self)
+    {
+        // @TODO, try to find a better approach for this
+        let node_keys = self.node_graph.get_all_node_keys();
+        for node_key in node_keys
+        {
+            self.refresh_node_display(&node_key);
+        }
+     }
+
+    pub fn refresh_node_display(&mut self, node_key: &NodeGraphKey)
+    {
+        let node_handle = self.node_graph.get_node_handle(node_key);
+
+        for input_port_key in node_handle.input_port_keys
+        {
+            let input_port= self.node_graph.get_input_port(&input_port_key).expect("Failed to fetch input port");
+            let display_input_port = self.display_input_ports.get_mut(&input_port_key).expect("Failed to fetch display input port");
+
+            display_input_port.display_value.value_type = DisplayPortValueType::new(&input_port.value);
+        }
+
+        for output_port_key in node_handle.output_port_keys
+        {
+            let output_port= self.node_graph.get_output_port(&output_port_key).expect("Failed to fetch output port");
+            let display_output_port= self.display_output_ports.get_mut(&output_port_key).expect("Failed to fetch display output port");
+
+            display_output_port.display_value.value_type = DisplayPortValueType::new(&output_port.value);
+        }
+    }
+
+
     // pub fn set_input_port_value_from_representation(&mut self, input_port_key: &EmpowerKey, value_representation: DisplayPortValueRepresentation) -> bool
     // {
     //     let input_port = self.empower_node_graph.input_ports.get_mut(input_port_key).unwrap();

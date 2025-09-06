@@ -1,5 +1,5 @@
 use egui;
-use empower_engine::node_graph::port::{port_value::PortValue, PortCompatability};
+use empower_engine::node_graph::port::{port_value::{self, PortValue}, PortCompatability};
 
 #[derive(Default, Clone, PartialEq)]
 pub struct DisplayPortValue
@@ -7,34 +7,40 @@ pub struct DisplayPortValue
     pub text: String,
     pub value_type: DisplayPortValueType,
     pub display_value_valid: bool,
+    pub color: egui::Color32, // @TODO, consider if this should be calculated
 }
 
 impl DisplayPortValue
 {
     pub fn from(text: String, port_value: &PortValue) -> Self
     {
-        let value_type= match port_value
+        let value_type = DisplayPortValueType::new(port_value);
+
+        DisplayPortValue { text, value_type, display_value_valid: true, color: DisplayPortValue::get_port_color(port_value) }
+    }
+
+    fn get_port_color(port_value: &PortValue) -> egui::Color32
+    {
+        match port_value
         {
-            PortValue::Trigger => DisplayPortValueType::None,
-            PortValue::Integer( int_value ) => DisplayPortValueType::Text( int_value.to_string() ),
+            PortValue::Trigger => egui::Color32::WHITE,
+            PortValue::Integer(_) => egui::Color32::YELLOW,
             PortValue::Float(_) => todo!(),
             PortValue::Text(_) => todo!(),
             PortValue::Bool(_) => todo!(),
             PortValue::Undefined(_) => todo!(),
             PortValue::None => todo!(),
-        };
-
-        DisplayPortValue { text, value_type, display_value_valid: true }
+        }
     }
 
-    pub fn nothing() -> Self
+    pub fn nothing(port_value: &PortValue) -> Self
     {
-        DisplayPortValue { text: "".to_string(), value_type: DisplayPortValueType::None, display_value_valid: true }
+        DisplayPortValue { text: "".to_string(), value_type: DisplayPortValueType::None, display_value_valid: true, color: DisplayPortValue::get_port_color(port_value) }
     }
 
-    pub fn nothing_with_text(text: String) -> Self
+    pub fn nothing_with_text(text: String, port_value: &PortValue) -> Self
     {
-        DisplayPortValue { text, value_type: DisplayPortValueType::None, display_value_valid: true }
+        DisplayPortValue { text, value_type: DisplayPortValueType::None, display_value_valid: true, color: DisplayPortValue::get_port_color(port_value) }
     }
     
     pub fn to(&self, compatabilities: &PortCompatability) -> Option<PortValue>
@@ -89,6 +95,23 @@ pub enum DisplayPortValueType
     Text(String),
     Checkbox(bool),
     #[default] None, //@TODO, consider if this should be named something else?
+}
+
+impl DisplayPortValueType
+{
+    pub fn new(port_value: &PortValue) -> Self
+    {
+        match port_value
+        {
+            PortValue::Trigger => DisplayPortValueType::None,
+            PortValue::Integer( int_value ) => DisplayPortValueType::Text( int_value.to_string() ),
+            PortValue::Float(_) => todo!(),
+            PortValue::Text(_) => todo!(),
+            PortValue::Bool(_) => todo!(),
+            PortValue::Undefined(_) => todo!(),
+            PortValue::None => todo!(),
+        }
+    }
 }
 
 pub fn get_display_port_value_color(display_value: &DisplayPortValue) -> egui::Color32

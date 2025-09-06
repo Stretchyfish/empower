@@ -1,4 +1,5 @@
 use egui;
+use empower_engine::node_graph::port::PortValue;
 
 use crate::graph_editor::display_port::display_port_value::{DisplayPortValue, DisplayPortValueType};
 
@@ -12,9 +13,9 @@ pub fn get_display_start_node_input_ports() -> Vec<DisplayPortValue>
     Vec::new()
 }
 
-pub fn get_display_start_node_output_ports() -> Vec<DisplayPortValue>
+pub fn get_display_start_node_output_ports(outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
 {
     vec![ 
-        DisplayPortValue::nothing_with_text( "Out".to_string() ),
+        DisplayPortValue::nothing_with_text( "Out".to_string(), outputs[0] ),
     ]
 }

@@ -44,7 +44,7 @@ pub fn show_input_port(
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
 
     // let port_color;
-    let port_color = display_port_value::get_display_port_value_color(&display_port.display_value);
+    let port_color = display_port.display_value.color;
     
     // match input_port.value 
     // {
