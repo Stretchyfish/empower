@@ -133,21 +133,13 @@ pub fn show_display_port_value(display_value: &DisplayPortValue, input_port_posi
     let input_port_text_position = *input_port_position + input_port_text_offset;
 
     let input_port_text_font_size = 35.0;
-    // let text_size = ui
-    //     .painter()
-    //     .layout_no_wrap(
-    //         display_value.text.clone(),
-    //         egui::FontId::proportional(input_port_text_font_size),
-    //         egui::Color32::YELLOW,
-    //     )
-    //     .size();
 
     let painted_text = ui.painter().text(
         input_port_text_position,
         // egui::Align2::LEFT_TOP,
         egui::Align2::LEFT_CENTER,
         &display_value.text,
-        egui::FontId::proportional(35.0),
+        egui::FontId::proportional(input_port_text_font_size),
         egui::Color32::WHITE,
     );
 
@@ -160,7 +152,6 @@ pub fn show_display_port_value(display_value: &DisplayPortValue, input_port_posi
         DisplayPortValueType::Checkbox( toggle ) => (),
         DisplayPortValueType::Text( text ) => 
         {
-            // @TODO, automatically determine the offset based on the text size
             // let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
             let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: painted_text_size.x + text_and_display_value_buffer, y: -painted_text_size.y / 2.0 };
             let input_port_value_box_size = egui::Vec2{ x: 120.0, y: painted_text_size.y };
