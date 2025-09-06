@@ -344,7 +344,7 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
 
     let port_searcher = graph_viewport.port_searcher.unwrap(); // @TODO, switch to an unwrap
 
-    match  port_searcher.port_kind 
+    match  port_searcher.port_kind // @Look again at this match stement, the returns currently seems redundant
     {
         PortKind::InputPort =>
         {
