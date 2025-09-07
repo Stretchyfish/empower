@@ -69,6 +69,39 @@ impl DisplayPortValue
         None
     }
 
+    // maybe make the nodes go to the None DisplayPortType when connected to this statement?
+    // Atleast think about it 
+    pub fn update(&mut self, port_value: &PortValue)
+    {
+        // @TODO, consider if this is the best approach
+        let updated_display_port_value_type = match (&self.value_type, port_value)
+        {
+            (DisplayPortValueType::Text(_), PortValue::Trigger) => todo!(),
+            (DisplayPortValueType::Text(_), PortValue::Integer( int )) => DisplayPortValueType::Text( int.to_string() ),
+            (DisplayPortValueType::Text(_), PortValue::Float( float )) => DisplayPortValueType::Text( float.to_string() ),
+            (DisplayPortValueType::Text(_), PortValue::Text( text )) => DisplayPortValueType::Text( text.clone() ),
+            (DisplayPortValueType::Text(_), PortValue::Bool( bool )) => DisplayPortValueType::Text( bool.to_string() ),
+            (DisplayPortValueType::Text(_), PortValue::Undefined(_)) => todo!(),
+            (DisplayPortValueType::Text(_), PortValue::None) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::Trigger) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::Integer(_)) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::Float(_)) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::Text(_)) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::Bool( bool )) => DisplayPortValueType::Checkbox( *bool ),
+            (DisplayPortValueType::Checkbox(_), PortValue::Undefined(_)) => todo!(),
+            (DisplayPortValueType::Checkbox(_), PortValue::None) => todo!(),
+            (DisplayPortValueType::None, PortValue::Trigger) => DisplayPortValueType::None,
+            (DisplayPortValueType::None, PortValue::Integer(_)) => todo!(),
+            (DisplayPortValueType::None, PortValue::Float(_)) => todo!(),
+            (DisplayPortValueType::None, PortValue::Text(_)) => todo!(),
+            (DisplayPortValueType::None, PortValue::Bool(_)) => DisplayPortValueType::None,
+            (DisplayPortValueType::None, PortValue::Undefined(_)) => todo!(),
+            (DisplayPortValueType::None, PortValue::None) => todo!(),
+        };
+
+        self.value_type = updated_display_port_value_type;
+    }
+
     fn text_to_int(&self, text_to_parse: &String) -> Option<PortValue>
     {
         let parse_result = text_to_parse.parse::<i32>();
@@ -115,6 +148,7 @@ impl DisplayPortValueType
     }
 }
 
+// @TODO, decide if this should be used
 pub fn get_display_port_value_color(display_value: &DisplayPortValue) -> egui::Color32
 {
     match display_value.value_type

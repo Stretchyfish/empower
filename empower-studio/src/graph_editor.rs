@@ -279,7 +279,8 @@ impl GraphEditor
             let input_port= self.node_graph.get_input_port(&input_port_key).expect("Failed to fetch input port");
             let display_input_port = self.display_input_ports.get_mut(&input_port_key).expect("Failed to fetch display input port");
 
-            display_input_port.display_value.value_type = DisplayPortValueType::new(&input_port.value);
+            // display_input_port.display_value.value_type = DisplayPortValueType::new(&input_port.value);
+            display_input_port.display_value.update(&input_port.value);
         }
 
         for output_port_key in node_handle.output_port_keys
@@ -287,7 +288,8 @@ impl GraphEditor
             let output_port= self.node_graph.get_output_port(&output_port_key).expect("Failed to fetch output port");
             let display_output_port= self.display_output_ports.get_mut(&output_port_key).expect("Failed to fetch display output port");
 
-            display_output_port.display_value.value_type = DisplayPortValueType::new(&output_port.value);
+            // display_output_port.display_value.value_type = DisplayPortValueType::new(&output_port.value);
+            display_output_port.display_value.update(&output_port.value);
         }
     }
 
