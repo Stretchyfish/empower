@@ -91,7 +91,7 @@ impl DisplayPortValue
             (DisplayPortValueType::Checkbox(_), PortValue::Undefined(_)) => todo!(),
             (DisplayPortValueType::Checkbox(_), PortValue::None) => todo!(),
             (DisplayPortValueType::None, PortValue::Trigger) => DisplayPortValueType::None,
-            (DisplayPortValueType::None, PortValue::Integer(_)) => todo!(),
+            (DisplayPortValueType::None, PortValue::Integer(_)) => DisplayPortValueType::None,
             (DisplayPortValueType::None, PortValue::Float(_)) => todo!(),
             (DisplayPortValueType::None, PortValue::Text(_)) => todo!(),
             (DisplayPortValueType::None, PortValue::Bool(_)) => DisplayPortValueType::None,
@@ -102,6 +102,7 @@ impl DisplayPortValue
         self.value_type = updated_display_port_value_type;
     }
 
+    // @TODO, look at this again
     fn text_to_int(&self, text_to_parse: &String) -> Option<PortValue>
     {
         let parse_result = text_to_parse.parse::<i32>();
