@@ -84,6 +84,26 @@ impl NodeGraph
         NodeHandle::new(new_node_key, new_input_port_keys, new_output_port_keys)
     }
 
+    // @TODO, consider if this should return a node handle or a bool, result or similar
+    pub fn remove_node(&mut self, node_key: &NodeGraphKey)
+    {
+        let node_handle = self.get_node_handle(node_key);
+
+        self.nodes.remove(node_key);
+
+        for input_port_key in node_handle.input_port_keys
+        {
+            self.input_ports.remove(&input_port_key);
+            self.remove_input_port_connections(&input_port_key);
+        }
+
+        for output_port_key in node_handle.output_port_keys
+        {
+            self.output_ports.remove(&output_port_key);
+            self.remove_output_port_connections(&output_port_key);
+        }
+    }
+
     pub fn add_connection(&mut self, output_port_key: NodeGraphKey, input_port_key: NodeGraphKey) -> Result<(), String>
     {
         let output_port;
@@ -133,8 +153,13 @@ impl NodeGraph
     }
 
     // @TODO, consider making this a bool?
-    pub fn remove_connection(&mut self, input_port_key: &NodeGraphKey, output_port_key: &NodeGraphKey)
+    pub fn remove_connection(&mut self, input_port_key: &NodeGraphKey, output_port_key: &NodeGraphKey) -> bool
     {
+        if !self.connections_in.contains_key(input_port_key) || !self.connections_out.contains_key(output_port_key)
+        {
+            return false;
+        }
+
         self.connections_in.remove(input_port_key);
 
         let mut no_more_elements_in_connection_out = false;
@@ -156,6 +181,32 @@ impl NodeGraph
         {
             self.connections_out.remove(output_port_key);
         }
+
+        true
+    }
+
+    pub fn remove_input_port_connections(&mut self, input_port_key: &NodeGraphKey) -> bool
+    {
+        if !self.connections_in.contains_key(input_port_key) { return false; }
+
+        let connected_port = self.connections_in.get(input_port_key).expect("Tried to fetch non existing connection_in").clone();
+        self.remove_connection(input_port_key, &connected_port);
+
+        true
+    }
+
+    pub fn remove_output_port_connections(&mut self, output_port_key: &NodeGraphKey) -> bool
+    {
+        if !self.connections_out.contains_key(output_port_key) { return false; }
+
+        let connected_ports = self.connections_out.get(output_port_key).expect("Tried to feth non-existing connection_out").clone();
+
+        for connected_port in connected_ports
+        {
+            self.remove_connection(&connected_port, output_port_key);
+        }
+
+        true
     }
 
     pub fn get_all_nodes(&self) -> Vec<&Node>

@@ -205,26 +205,24 @@ impl GraphEditor
         true
     }
 
-    // pub fn remove_node(&mut self, node_key: &EmpowerKey)
-    // {
-    //     let node = self.empower_node_graph.nodes.get(node_key).unwrap().clone();
-    //     let input_port_keys = node.input_port_keys;
-    //     let output_port_keys = node.output_port_keys;
+    pub fn remove_node(&mut self, node_key: &NodeGraphKey)
+    {
+        let node_handle = self.node_graph.get_node_handle(node_key);
 
-    //     self.empower_node_graph.remove_node(*node_key); // @TODO, remove connections
+        self.node_graph.remove_node(node_key);
 
-    //     for input_port_key in input_port_keys
-    //     {
-    //         self.display_input_ports.remove(&input_port_key);
-    //     }
+        for input_port_key in node_handle.input_port_keys
+        {
+            self.display_input_ports.remove(&input_port_key);
+        }
 
-    //     for output_port_key in output_port_keys
-    //     {
-    //         self.display_output_ports.remove(&output_port_key);
-    //     }
+        for output_port_key in node_handle.output_port_keys
+        {
+            self.display_output_ports.remove(&output_port_key);
+        }
 
-    //     self.display_nodes.remove(node_key);
-    // }
+        self.display_nodes.remove(node_key);
+    }
 
     pub fn set_input_port_value(&mut self, input_port_key: &NodeGraphKey, display_port_value: DisplayPortValue)
     {
