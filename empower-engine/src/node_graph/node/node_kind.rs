@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::analyser::TextBuffer;
 use crate::node_graph::port::PortCompatability;
 use crate::node_graph::PortValue;
 
@@ -62,12 +63,12 @@ pub fn get_node_output_port_compatabilities(node_kind: &NodeKind) -> Vec<PortCom
     }
 }
 
-pub fn execute_node(node_kind: &NodeKind, node: &mut NodeValue, inputs: Vec<&PortValue>) -> Vec<PortValue>
+pub fn execute_node(node_kind: &NodeKind, node: &mut NodeValue, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Vec<PortValue>
 {
     match node_kind
     {
         NodeKind::Start => start_node::execute_start_node(),
-        NodeKind::Print => print_node::execute_print_node(inputs),
+        NodeKind::Print => print_node::execute_print_node(inputs, log),
         NodeKind::Number => number_node::execute_number_node(node, inputs),
         NodeKind::Text => text_node::execute_text_node(inputs),
         NodeKind::Bool => bool_node::execute_bool_node(inputs),

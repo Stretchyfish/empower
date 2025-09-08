@@ -115,7 +115,7 @@ pub fn show_single_viewport(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, v
     {
         if terminal_viewport.title == viewport_title
         {
-            terminal_viewport::show(ui, terminal_viewport);
+            terminal_viewport::show(ui, terminal_viewport, graph_editor.node_graph.get_logs());
             return;
         }
     }

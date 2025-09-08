@@ -22,7 +22,6 @@ pub mod display_port;
 use display_port::DisplayPort;
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-use crate::graph_editor::display_port::display_port_value::DisplayPortValueType;
 
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 // use display_port::DisplayPortValueRepresentation;

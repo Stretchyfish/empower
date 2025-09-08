@@ -12,6 +12,8 @@ pub mod port;
 use port::Port;
 use port::PortValue;
 
+use crate::analyser::TextBuffer;
+
 mod analysis;
 
 #[derive(Default, Clone)]
@@ -22,6 +24,7 @@ pub struct NodeGraph
     output_ports: HashMap<NodeGraphKey, Port>,
     connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
     connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
+    log: TextBuffer,
 }
 
 impl NodeGraph
@@ -35,6 +38,7 @@ impl NodeGraph
             output_ports: HashMap::new(),
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
+            log: TextBuffer::new(),
         }
     }
 
@@ -382,7 +386,8 @@ impl NodeGraph
         let executed_output_values = node::node_kind::execute_node(
                                                                                 &node_to_execute.kind,
                                                                                 &mut node_to_execute.value,
-                                                                                input_port_values
+                                                                                input_port_values,
+                                                                                &mut self.log 
         );
 
         if executed_output_values.len() != node_to_execute.output_port_keys.len()
@@ -537,5 +542,10 @@ impl NodeGraph
         }
 
         Ok( next_nodes_to_execute )
+    }
+
+    pub fn get_logs(&self) -> &TextBuffer
+    {
+        &self.log
     }
 }

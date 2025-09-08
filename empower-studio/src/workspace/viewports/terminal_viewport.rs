@@ -1,3 +1,5 @@
+use empower_engine::analyser::TextBuffer;
+
 pub struct TerminalViewport
 {
    pub title: String, 
@@ -33,7 +35,7 @@ impl TerminalViewport
 
 }
 
-pub fn show(ui: &mut egui::Ui, terminal_viewport: &mut TerminalViewport)
+pub fn show(ui: &mut egui::Ui, terminal_viewport: &mut TerminalViewport, log: &TextBuffer)
 {
     ui.horizontal_top(|ui|
     {
@@ -59,7 +61,7 @@ pub fn show(ui: &mut egui::Ui, terminal_viewport: &mut TerminalViewport)
     .stick_to_bottom(true)
     .show(ui, |ui|
     {
-        for line in terminal_viewport.lines.iter()
+        for line in log.lines.iter()
         {
             let line_text = format!("{}", line);
             ui.label(line_text); 
