@@ -6,13 +6,22 @@ use crate::node_graph::PortValue;
 
 use super::NodeValue;
 
-mod start_node;
-mod number_node;
-mod bool_node;
-mod text_node;
-mod addition_node;
-mod multiply_node;
-mod print_node;
+// @TODO, make these private again?
+pub mod start_node;
+pub mod number_node;
+pub mod bool_node;
+pub mod text_node;
+pub mod addition_node;
+pub mod multiply_node;
+pub mod print_node;
+
+pub trait NodeKind2 
+{
+    fn name(&self) -> &'static str;
+    fn input_ports_compatabilities(&self) -> Vec<PortCompatability>;
+    fn output_ports_compatabilities(&self) -> Vec<PortCompatability>;
+    fn execute(&self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Vec<PortValue>;
+}
 
 // @TODO, in the future this should probably get rewritten into a trait 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]

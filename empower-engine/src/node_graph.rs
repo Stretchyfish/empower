@@ -7,6 +7,7 @@ pub mod node;
 use node::Node;
 use node::NodeHandle;
 pub use node::NodeKind;
+use node::NODE_REGISTRY;
 
 pub mod port;
 use port::Port;
@@ -16,7 +17,7 @@ use crate::analyser::TextBuffer;
 
 mod analysis;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct NodeGraph
 {
     nodes: HashMap<NodeGraphKey, Node>,
@@ -42,10 +43,16 @@ impl NodeGraph
         }
     }
 
-    pub fn add_node(&mut self,  node_kind: NodeKind) -> NodeHandle
+    pub fn add_node(&mut self,  node_kind: &str) -> NodeHandle
     {    
-        let input_ports_compatabilities = node::node_kind::get_node_input_port_compatabilities(&node_kind);
-        let output_ports_compatabilities = node::node_kind::get_node_output_port_compatabilities(&node_kind);
+        let node_kind_constructor = NODE_REGISTRY.get(node_kind).unwrap();
+        let node_kind= node_kind_constructor();
+        
+        let input_ports_compatabilities = node_kind.input_ports_compatabilities();
+        let output_ports_compatabilities = node_kind.output_ports_compatabilities();
+
+        // let input_ports_compatabilities = node::node_kind::get_node_input_port_compatabilities(&node_kind);
+        // let output_ports_compatabilities = node::node_kind::get_node_output_port_compatabilities(&node_kind);
 
         let new_node_key = self.get_available_node_key();
 
@@ -383,12 +390,14 @@ impl NodeGraph
             input_port_values.push(&input_port.value);
         } 
 
-        let executed_output_values = node::node_kind::execute_node(
-                                                                                &node_to_execute.kind,
-                                                                                &mut node_to_execute.value,
-                                                                                input_port_values,
-                                                                                &mut self.log 
-        );
+        let executed_output_values = node_to_execute.kind.execute(input_port_values, &mut self.log);
+
+        // let executed_output_values = node::node_kind::execute_node(
+        //                                                                         &node_to_execute.kind,
+        //                                                                         &mut node_to_execute.value,
+        //                                                                         input_port_values,
+        //                                                                         &mut self.log 
+        // );
 
         if executed_output_values.len() != node_to_execute.output_port_keys.len()
         {
