@@ -136,7 +136,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     {
         interaction_happened_this_loop = true;
         let node_with_response_key = node_widget_response.key;
-        match node_widget_response.kind 
+        match node_widget_response.kind
         {
         NodeWidgetResponseType::ClickedTitle =>
         {

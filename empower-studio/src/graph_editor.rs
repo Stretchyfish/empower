@@ -23,10 +23,10 @@ use display_port::DisplayPort;
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 
+use display_node::display_node_registry::DISPLAY_NODE_REGISTRY;
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 // use display_port::DisplayPortValueRepresentation;
 
-#[derive(Default, Clone)]
 pub struct GraphEditor
 {
     pub(crate) display_nodes: HashMap<NodeGraphKey, DisplayNode>, 
@@ -49,7 +49,8 @@ impl GraphEditor
             selected_nodes: Vec::new(),
         };
 
-        let new_node_type = NodeKind::Start;
+        // let new_node_type = NodeKind::Start;
+        let new_node_type = "start";
 
         // @TODO, find a better approach to centering the start node
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
@@ -59,7 +60,7 @@ impl GraphEditor
         graph_editor
     }
 
-    pub fn add_node(&mut self, node_kind: NodeKind, position: egui::Pos2) -> bool
+    pub fn add_node(&mut self, node_kind: &str, position: egui::Pos2) -> bool
     {
         // @TODO, find a better way of assigning keys
         let node_handle= self.node_graph.add_node(node_kind); 
@@ -80,15 +81,31 @@ impl GraphEditor
             }
         };
 
-        let display_node_title = node.kind.to_string();
-
+        
         let input_port_values = self.node_graph.get_node_input_port_values(&node_handle.node_key);
         let output_port_values = self.node_graph.get_output_port_values(&node_handle.node_key);
 
-        let display_node_size = display_node::display_node_kind::get_display_node_size(&node_kind);
-        let display_node_value_offset = display_node::display_node_kind::get_display_node_value_offset(&node_kind);
-        let input_port_display_values = display_node::display_node_kind::get_display_input_ports(&node_kind, input_port_values);
-        let output_port_display_values = display_node::display_node_kind::get_display_output_ports(&node_kind, output_port_values);
+        let display_node_constructor_option = DISPLAY_NODE_REGISTRY.get(node.kind.name());
+
+        if display_node_constructor_option.is_none() // @TODO, look more into this approach
+        {
+            println!("Unable to find a matching display node constructor in DISPLAY NODE REGISTRY");
+            return false;
+        }
+
+        let display_node_title = node.kind.name().to_string();
+
+        let display_node_constructor = display_node_constructor_option.unwrap();
+
+        let display_node = display_node_constructor();
+
+        let display_node_size = display_node.get_display_node_size();
+        // let display_node_value_offset = display_node::display_node_kind::get_display_node_value_offset(&node_kind);
+        let display_node_value_offset = 0.0;
+        let input_port_display_values = display_node.get_display_input_ports(input_port_values);
+        let output_port_display_values = display_node.get_display_output_ports(output_port_values);
+
+        // let display_node_size = node.kind.get_size();
 
         // let extra_input_port_offset; // @TODO, consider if this is the correct approach
         // match new_node_type 

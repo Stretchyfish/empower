@@ -41,7 +41,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 
                                 ui.vertical(|ui|
                                 {
-                                    ui.label(node.kind.to_string());
+                                    ui.label(node.kind.name().to_string());
                                 });
 
                                 ui.vertical(|ui|

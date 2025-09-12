@@ -4,7 +4,7 @@ use empower_engine::node_graph::port::{port_value::{self, PortValue}, PortCompat
 #[derive(Default, Clone, PartialEq)]
 pub struct DisplayPortValue
 {
-    pub text: String,
+    pub text: String, // @TODO, make not string?
     pub value_type: DisplayPortValueType,
     pub display_value_valid: bool,
     pub color: egui::Color32, // @TODO, consider if this should be calculated

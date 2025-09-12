@@ -1,6 +1,7 @@
 use empower_engine::NodeKind;
 
 pub mod display_node_kind;
+pub mod display_node_registry;
 
 #[derive(Default, Clone)]
 pub struct DisplayNode

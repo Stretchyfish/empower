@@ -28,17 +28,3 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
 
     m 
 });
-
-pub struct NodeRegistry
-{
-
-}
-
-impl NodeRegistry
-{
-    pub fn new() -> Self
-    {
-        NodeRegistry {  }
-    }
-
-}

@@ -10,7 +10,7 @@ pub struct BoolNode
 impl NodeKind2 for BoolNode
 {
     fn name(&self) -> &'static str {
-        "bool node"
+        "bool"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {

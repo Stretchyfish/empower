@@ -10,7 +10,7 @@ pub struct PrintNode
 impl NodeKind2 for PrintNode
 {
     fn name(&self) -> &'static str {
-        "print node"
+        "print"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {

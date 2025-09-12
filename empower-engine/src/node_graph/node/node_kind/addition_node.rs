@@ -12,7 +12,7 @@ pub struct AdditionNode
 impl NodeKind2 for AdditionNode
 {
     fn name(&self) -> &'static str {
-        "addition node"
+        "addition"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {

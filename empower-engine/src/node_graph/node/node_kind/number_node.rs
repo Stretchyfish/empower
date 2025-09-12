@@ -10,7 +10,7 @@ pub struct NumberNode
 impl NodeKind2 for NumberNode
 {
     fn name(&self) -> &'static str {
-        "number node"
+        "number"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {

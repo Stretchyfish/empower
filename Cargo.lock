@@ -870,6 +870,9 @@ dependencies = [
 [[package]]
 name = "empower-engine"
 version = "0.1.0"
+dependencies = [
+ "once_cell",
+]
 
 [[package]]
 name = "empower-studio"
@@ -879,6 +882,7 @@ dependencies = [
  "egui",
  "egui_dock",
  "empower-engine",
+ "once_cell",
 ]
 
 [[package]]

@@ -10,7 +10,7 @@ pub struct MultiplyNode
 impl NodeKind2 for MultiplyNode
 {
     fn name(&self) -> &'static str {
-        "multiply node"
+        "multiply"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {

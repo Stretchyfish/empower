@@ -14,7 +14,7 @@ impl NodeKind2 for StartNode
 {
     fn name(&self) -> &'static str 
     {
-        "start node"
+        "start"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> 

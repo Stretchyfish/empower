@@ -9,7 +9,7 @@ pub struct TextNode
 impl NodeKind2 for TextNode
 {
     fn name(&self) -> &'static str {
-        "text_node"
+        "text"
     }
 
     fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {
