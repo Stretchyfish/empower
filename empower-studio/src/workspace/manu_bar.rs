@@ -1,3 +1,5 @@
+use empower_engine::{analyser, node_graph};
+
 use crate::{graph_editor, studio_context::StudioContext, workspace::viewports::viewport_type::ViewportType};
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
@@ -65,5 +67,11 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 studio_context.workspace.add_viewport(new_viewport_type);
             }
         });
+
+        if ui.button("Check execution order").clicked()
+        {
+            let node_execution_order = node_graph::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
+            println!("Execution order: {:?}", node_execution_order);
+        }
     });
 }

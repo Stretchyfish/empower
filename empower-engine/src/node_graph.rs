@@ -15,7 +15,7 @@ use port::PortValue;
 
 use crate::analyser::TextBuffer;
 
-mod analysis;
+pub mod analysis; // @TODO, decide on how to approach this
 
 #[derive(Default)]
 pub struct NodeGraph
