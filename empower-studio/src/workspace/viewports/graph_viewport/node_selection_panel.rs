@@ -27,7 +27,7 @@ impl NodeSelectionPanel // @TODO, consider a better name for this?
 // @TODO, simplify this function, especially the user_input and mouse postion
 pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, graph_editor: &mut GraphEditor, user_inputs: &UserInputs, mouse_position_in_scene: &egui::Pos2)
 {    
-    if user_inputs.right_clicked // @TODO, consider moving this into the show function?
+    if user_inputs.right_clicked && graph_editor.selected_nodes.is_empty() // @TODO, consider moving this into the show function?
     {
         node_selection_panel.visible = !node_selection_panel.visible;
 
