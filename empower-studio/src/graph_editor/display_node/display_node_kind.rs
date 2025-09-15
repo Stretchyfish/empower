@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
 
 use empower_engine::{node_graph::port::PortValue, NodeKind};
 
@@ -10,6 +12,13 @@ pub mod display_text_node;
 pub mod display_bool_node;
 pub mod display_addition_node;
 pub mod display_multiplication_node;
+use display_addition_node::DisplayAdditionNode;
+use display_start_node::DisplayStartNode;
+use display_number_node::DisplayNumberNode;
+use display_bool_node::DisplayBoolNode;
+use display_print_node::DisplayPrintNode;
+use display_text_node::DisplayTextNode;
+use display_multiplication_node::DisplayMultiplyNode;
 
 pub trait DisplayNodeKind
 {
@@ -18,6 +27,21 @@ pub trait DisplayNodeKind
     fn get_display_output_ports(&self, outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>;
 }
 
+type DisplayNodeConstructor = fn() -> Box<dyn DisplayNodeKind>;
+
+pub static DISPLAY_NODE_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeConstructor>> = Lazy::new(|| {
+    let mut m: HashMap<&'static str, fn() -> Box<dyn DisplayNodeKind>> = HashMap::new();
+
+    m.insert("start", || Box::new( DisplayStartNode {} ));
+    m.insert("number", || Box::new( DisplayNumberNode {} ));
+    m.insert("addition", || Box::new( DisplayAdditionNode {} ));
+    m.insert("text", || Box::new( DisplayTextNode {} ));
+    m.insert("multiply", || Box::new( DisplayMultiplyNode {} ));
+    m.insert("bool", || Box::new( DisplayBoolNode {} ));
+    m.insert("print", || Box::new( DisplayPrintNode {} ));
+
+    m
+});
 
 
 // pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2

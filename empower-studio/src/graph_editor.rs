@@ -97,13 +97,13 @@ impl GraphEditor
 
         let display_node_constructor = display_node_constructor_option.unwrap();
 
-        let display_node = display_node_constructor();
+        let display_node_kind = display_node_constructor();
 
-        let display_node_size = display_node.get_display_node_size();
+        let display_node_size = display_node_kind.get_display_node_size();
         // let display_node_value_offset = display_node::display_node_kind::get_display_node_value_offset(&node_kind);
         let display_node_value_offset = 0.0;
-        let input_port_display_values = display_node.get_display_input_ports(input_port_values);
-        let output_port_display_values = display_node.get_display_output_ports(output_port_values);
+        let input_port_display_values = display_node_kind.get_display_input_ports(input_port_values);
+        let output_port_display_values = display_node_kind.get_display_output_ports(output_port_values);
 
         // let display_node_size = node.kind.get_size();
 
@@ -215,7 +215,7 @@ impl GraphEditor
             output_port_offset += port_gap;
         }
 
-        let new_display_node = DisplayNode::new( display_node_title, position, display_node_size );
+        let new_display_node = DisplayNode::new( display_node_title, position, display_node_size, display_node_kind);
         self.display_nodes.insert(node.key.clone(), new_display_node );
 
         true
