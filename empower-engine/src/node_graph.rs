@@ -391,13 +391,6 @@ impl NodeGraph
 
         let executed_output_values = node_to_execute.kind.execute(input_port_values, &mut self.log);
 
-        // let executed_output_values = node::node_kind::execute_node(
-        //                                                                         &node_to_execute.kind,
-        //                                                                         &mut node_to_execute.value,
-        //                                                                         input_port_values,
-        //                                                                         &mut self.log 
-        // );
-
         if executed_output_values.len() != node_to_execute.output_port_keys.len()
         {
             println!("Executed output and node output does not match");
