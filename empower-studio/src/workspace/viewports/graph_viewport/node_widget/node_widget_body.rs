@@ -118,7 +118,7 @@ pub fn show_node_body(
         title_rect_color= egui::Color32::from_rgb(40, 40, 40);
     }
 
-    if node_reponse.clicked()
+    if node_reponse.clicked() || node_reponse.secondary_clicked()
     {
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
     }
