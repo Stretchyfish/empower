@@ -406,16 +406,21 @@ fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_posit
     {
         egui::Frame::popup(ui.style()).show(ui, |ui| 
         {
+            let selected_nodes = graph_editor.selected_nodes.clone();
 
-            if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+            if selected_nodes.len() == 1
             {
-                button_clicked = true;
+                if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+                {
+                    graph_editor.node_graph.execute_node_graph_from_entry(&selected_nodes[0]);
+                    button_clicked = true;
+                }
             }
+
 
             if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
             {
                 // @TODO, I think this will cause a crash when multiple graph viewports are open
-                let selected_nodes = graph_editor.selected_nodes.clone();
                 for selected_node_key in selected_nodes
                 {
                     graph_editor.remove_node(&selected_node_key);
