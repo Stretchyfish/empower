@@ -1,5 +1,4 @@
-use empower_engine::NodeKind;
-use crate::graph_editor::{self, GraphEditor};
+use crate::graph_editor::GraphEditor;
 use super::user_input::UserInputs;
 
 #[derive(Default)]

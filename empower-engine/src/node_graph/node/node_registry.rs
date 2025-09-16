@@ -1,11 +1,10 @@
 use std::collections::HashMap;
-use std::ops::Mul;
-
-use crate::node_graph::node::NodeKind2;
 
 use once_cell::sync::Lazy;
 
-type NodeConstructor = fn() -> Box<dyn NodeKind2>;
+use crate::node_graph::node::NodeKind;
+
+type NodeConstructor = fn() -> Box<dyn NodeKind>;
 
 use super::node_kind::start_node::StartNode;
 use super::node_kind::text_node::TextNode;
@@ -17,7 +16,7 @@ use super::node_kind::print_node::PrintNode;
 
 
 pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
-    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKind2>> = HashMap::new();
+    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKind>> = HashMap::new();
     m.insert("start", || Box::new( StartNode {} ));
     m.insert("number", || Box::new( NumberNode {} ));
     m.insert("text", || Box::new( TextNode {} ));

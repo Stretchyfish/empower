@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
-use empower_engine::{node_graph::port::PortValue, NodeKind};
+use empower_engine::node_graph::port::PortValue;
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 

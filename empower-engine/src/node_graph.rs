@@ -6,7 +6,6 @@ pub type NodeGraphKey = i32;
 pub mod node;
 use node::Node;
 use node::NodeHandle;
-pub use node::NodeKind;
 use node::NODE_REGISTRY;
 
 pub mod port;

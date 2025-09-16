@@ -1,12 +1,12 @@
 use crate::node_graph::port::{PortCompatability, PortValue};
-use super::NodeKind2;
+use super::NodeKind;
 
 pub struct TextNode
 {
 
 }
 
-impl NodeKind2 for TextNode
+impl NodeKind for TextNode
 {
     fn name(&self) -> &'static str {
         "text"
@@ -32,28 +32,4 @@ impl NodeKind2 for TextNode
         let output_value = inputs[0].clone();
         Vec::from( [ output_value ] )
     }
-}
-
-pub fn get_text_node_input_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::from(
-        [
-           PortCompatability::Exatch( PortValue::Text( String::new() ) ), 
-        ]
-    )
-}
-
-pub fn get_text_node_output_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::from(
-        [
-           PortCompatability::Exatch( PortValue::Text( String::new() ) ), 
-        ]
-    )
-}
-
-pub fn execute_text_node(inputs: Vec<&PortValue>) -> Vec<PortValue>
-{
-    let output_value = inputs[0].clone();
-    Vec::from( [ output_value ] )
 }
