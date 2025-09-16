@@ -1,5 +1,5 @@
 use egui;
-use empower_engine::node_graph::port::{port_value::{self, PortValue}, PortCompatability};
+use empower_engine::node_graph::port::{port_value::PortValue, PortCompatability};
 
 #[derive(Default, Clone, PartialEq)]
 pub struct DisplayPortValue
@@ -33,10 +33,10 @@ impl DisplayPortValue
         }
     }
 
-    pub fn nothing(port_value: &PortValue) -> Self
-    {
-        DisplayPortValue { text: "".to_string(), value_type: DisplayPortValueType::None, display_value_valid: true, color: DisplayPortValue::get_port_color(port_value) }
-    }
+    // pub fn nothing(port_value: &PortValue) -> Self
+    // {
+    //     DisplayPortValue { text: "".to_string(), value_type: DisplayPortValueType::None, display_value_valid: true, color: DisplayPortValue::get_port_color(port_value) }
+    // }
 
     pub fn nothing_with_text(text: String, port_value: &PortValue) -> Self
     {
@@ -149,18 +149,6 @@ impl DisplayPortValueType
     }
 }
 
-// @TODO, decide if this should be used
-pub fn get_display_port_value_color(display_value: &DisplayPortValue) -> egui::Color32
-{
-    match display_value.value_type
-    {
-        DisplayPortValueType::None => egui::Color32::GRAY,
-        DisplayPortValueType::Checkbox(_) => egui::Color32::BLUE,
-        DisplayPortValueType::Text(_) => egui::Color32::YELLOW, 
-    }
-}
-
-// pub fn show_display_port_value(display_value_type: &DisplayPortValueType, input_port_text_position: &egui::Pos2, port_has_connection: bool)
 pub fn show_display_port_value(display_value: &DisplayPortValue, input_port_position: &egui::Pos2, port_has_connection: bool, ui: &mut egui::Ui) -> DisplayPortValue
 {
     let mut modified_display_value = display_value.clone(); // @TODO, find a better name

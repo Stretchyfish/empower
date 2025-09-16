@@ -15,8 +15,6 @@ pub use debug_info::DebugInfo;
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 
 use display_node::display_node_registry::DISPLAY_NODE_REGISTRY;
-// use crate::graph_editor::display_port::DisplayPortValueRepresentation;
-// use display_port::DisplayPortValueRepresentation;
 
 pub struct GraphEditor
 {
@@ -208,7 +206,7 @@ impl GraphEditor
             output_port_offset += port_gap;
         }
 
-        let new_display_node = DisplayNode::new( display_node_title, position, display_node_size, display_node_kind);
+        let new_display_node = DisplayNode::new( display_node_title, position, display_node_size);
         self.display_nodes.insert(node.key.clone(), new_display_node );
 
         true

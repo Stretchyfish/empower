@@ -1,5 +1,3 @@
-use std::ops::Add;
-
 use crate::node_graph::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
@@ -33,7 +31,7 @@ impl NodeKind for AdditionNode
 
     }
 
-    fn execute(&self, inputs: Vec<&PortValue>, log: &mut crate::analyser::TextBuffer) -> Vec<PortValue> {
+    fn execute(&self, inputs: Vec<&PortValue>, _: &mut crate::analyser::TextBuffer) -> Vec<PortValue> {
         let output_value = inputs[0].clone() + inputs[1].clone();
         Vec::from( [ output_value ] )
     }

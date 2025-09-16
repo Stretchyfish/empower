@@ -6,8 +6,6 @@ use empower_engine::NodeGraphKey;
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-use crate::graph_editor::DebugInfo;
-
 pub fn show_node_body(
                         ui: &mut egui::Ui, 
                         display_node: &DisplayNode, 
@@ -17,7 +15,6 @@ pub fn show_node_body(
                         node_widget_response: &mut Option<NodeWidgetResponse>, 
                         debug_mode: &bool, 
                         node_selection_rect: &Option<egui::Rect>,
-                        debug_info: &DebugInfo,
                     )
 {
     let node_position = display_node.position;
@@ -123,30 +120,6 @@ pub fn show_node_body(
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
     }
 
-    // @TODO, simplify this a bit by having the sizes saves seperate to avoid uneeded size call? 
-    // let node_quick_menu_button_position = node_position + egui::Vec2 { x: title_box_rect.size().x - 30.0, y: (title_box_rect.size().y - node_body_title_area_overlap) / 2.0 } ; 
-    // let node_quick_menu_button_size = 15.0;
-    // let node_quick_menu_button_rect = egui::Rect::from_center_size(
-    //     node_quick_menu_button_position, 
-    //     Vec2::splat(node_quick_menu_button_size * 2.0));
-
-    // let node_quick_menu_button_response = ui.interact(
-    //     node_quick_menu_button_rect, 
-    //     egui::Id::new(graph_viewport_title.to_owned() + "_node_quick_menu_button_" + node_key.to_string().as_str()), 
-    //     egui::Sense::click()
-    // );
-
-    // let mut node_quick_menu_button_color = egui::Color32::DARK_GRAY;
-    // if node_quick_menu_button_response.hovered()
-    // {
-    //     node_quick_menu_button_color = egui::Color32::BLACK;
-    // }
-
-    // if node_quick_menu_button_response.clicked()
-    // {
-    //     *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedQuickMenuButton( node_quick_menu_button_position ) });
-    // }
-
     if node_is_selected || node_is_inside_selection_rect
     {
         ui.painter().rect(
@@ -176,13 +149,6 @@ pub fn show_node_body(
         egui::Color32::WHITE,
     );
 
-    // ui.painter().circle(
-    //     node_quick_menu_button_position, 
-    //     node_quick_menu_button_size, 
-    //     node_quick_menu_button_color, 
-    //     egui::Stroke::NONE
-    // );
-
     // Show node body
     ui.painter().rect(
         node_rect_without_title_and_bottom,
@@ -192,16 +158,6 @@ pub fn show_node_body(
             egui::StrokeKind::Inside,
     );
 
-    // let close_button_widget = egui::Button::new(egui::RichText::new("x").size(14.0));
-
-    // let close_button_position = egui::Pos2 { x: title_box_rect.max.x - 30.0, y: title_box_rect.min.y };
-    // let close_button_size = egui::Vec2 { x: 28.0, y: 28.0 };
-
-    // if ui.put(egui::Rect::from_min_size(close_button_position, close_button_size), close_button_widget).clicked()
-    // {
-
-    // }
-
     // Show node bottom
     ui.painter().rect(
         node_rect_round_bottom,
@@ -210,5 +166,4 @@ pub fn show_node_body(
         egui::Stroke::NONE,
             egui::StrokeKind::Inside,
     );
-
 }

@@ -14,7 +14,7 @@ impl EmptyViewport
    }
 }
 
-pub fn show(ui: &mut egui::Ui)
+pub fn show(_: &mut egui::Ui)
 {
 
 }

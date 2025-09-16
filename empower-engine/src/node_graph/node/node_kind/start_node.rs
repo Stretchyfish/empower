@@ -26,12 +26,12 @@ impl NodeKind for StartNode
     {
         Vec::from(
                 [ 
-                        PortCompatability::Exatch( PortValue::Trigger )
+                    PortCompatability::Exatch( PortValue::Trigger )
                 ]
             )
     }
 
-    fn execute(&self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Vec<PortValue> 
+    fn execute(&self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Vec<PortValue> 
     {
         println!("Ran start node");
         Vec::from( [ PortValue::Trigger ] )

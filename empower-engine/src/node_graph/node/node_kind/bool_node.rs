@@ -29,7 +29,7 @@ impl NodeKind for BoolNode
         )
     }
 
-    fn execute(&self, inputs: Vec<&PortValue>, log: &mut crate::analyser::TextBuffer) -> Vec<PortValue> {
+    fn execute(&self, inputs: Vec<&PortValue>, _: &mut crate::analyser::TextBuffer) -> Vec<PortValue> {
         let output_value = inputs[0].clone();
         Vec::from( [ output_value ] )
     }

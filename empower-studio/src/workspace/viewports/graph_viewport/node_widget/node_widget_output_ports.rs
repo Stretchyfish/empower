@@ -1,7 +1,8 @@
 use empower_engine::node_graph::port::Port;
 use empower_engine::NodeGraphKey;
 
-use crate::graph_editor::display_node::DisplayNode; use crate::graph_editor::display_port::display_port_value;
+use crate::graph_editor::display_node::DisplayNode; 
+
 // @TODO, simplify this include
 use crate::graph_editor::display_port::DisplayPort;
 

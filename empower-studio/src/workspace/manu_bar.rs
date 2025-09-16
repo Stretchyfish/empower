@@ -1,10 +1,9 @@
-use empower_engine::{analyser, node_graph};
-
-use crate::{graph_editor, studio_context::StudioContext, workspace::viewports::viewport_type::ViewportType};
+use crate::{studio_context::StudioContext, workspace::viewports::viewport_type::ViewportType};
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
-    egui::menu::bar(ui, |ui|
+    egui::MenuBar::new()
+    .ui(ui, |ui|
     {
         ui.menu_button("Nodes", |ui|
         {
@@ -28,20 +27,6 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             studio_context.graph_editor.node_graph.execute_node_graph();
             studio_context.graph_editor.refresh_all_node_display();
             // @TODO, condier adding a check, that all display port values are valid?
-
-            // let empower_result = empower_engine::debug_compile(&mut studio_context.graph_editor.empower_node_graph);
-
-            // // @TODO, find a better way to do this!
-            // for terminal_viewport in studio_context.workspace.viewports.terminal_viewports.iter_mut()
-            // {
-            //     for line in empower_result.get_lines()
-            //     {
-            //         terminal_viewport.add_line(line);
-            //     }
-            //     terminal_viewport.add_line(String::from(format!("Compilation time: {} sec", empower_result.compilation_duration)));
-            // }
-
-            // studio_context.graph_editor.refresh_display_port_values();
         }
 
         if ui.button("turn on debug mode").clicked()

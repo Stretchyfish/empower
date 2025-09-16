@@ -6,9 +6,6 @@ pub use node_kind::NodeKind;
 pub mod node_handle;
 pub use node_handle::NodeHandle;
 
-mod node_value;
-use node_value::NodeValue;
-
 mod node_registry;
 pub use node_registry::NODE_REGISTRY; // @TODO, consider improving these imports
 

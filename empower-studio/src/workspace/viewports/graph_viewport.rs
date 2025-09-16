@@ -91,7 +91,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         let connection_keys = graph_editor.node_graph.get_all_connections();
         for connection in connection_keys
         {
-            connection_widget::show(scene_ui, graph_editor, graph_viewport, connection);
+            connection_widget::show(scene_ui, graph_editor, connection);
         }
 
         let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
@@ -271,7 +271,14 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
 
         if graph_viewport.port_searcher.is_some()
         {
-            graph_editor.node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
+            let add_connection_result = graph_editor.node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
+
+            match add_connection_result
+            {
+                Ok(_) => {},
+                Err(explanation) => println!("{}", explanation),
+            }
+
             graph_viewport.port_searcher = None;
             return; 
         }
@@ -301,25 +308,6 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
 
         PortKind::OutputPort =>
         {    
-            // println!("Reached here 4");
-
-            // if graph_editor.node_graph.output_port_has_connection(port_key)
-            // {
-
-            // }
-            // let port_connection = connections.iter().map(|(key, vec)|
-            // {
-            //     if vec.contains(&empower_input_port.key)
-            //     {
-            //         Some(key)
-            //     }
-            //     else // @TODO, find a better way to write
-            //     {
-            //         None
-            //     }
-            // });
-
-            // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
             let add_connection_result = graph_editor.node_graph.add_connection(port_searcher.port_key, *port_key);
 
             match add_connection_result
@@ -327,20 +315,6 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
                 Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
                 Err( text ) => println!("Failed to add connection because: {}", text),
             }
-
-            // @TODO, simplify this
-            // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
-
-            // let value_representation = graph_editor.get_input_port_value_representation(port_key);
-            // let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-
-            // display_port.value_representation = value_representation;
-
-            // display_port.value = empower_port.get_value_as_string();
-            // display_port.value_text_valid = true;
-
-
-            // display_port.value_representation_valid = true;
 
             graph_viewport.port_searcher = None;
             return;
@@ -362,8 +336,14 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     {
         PortKind::InputPort =>
         {
-            // @TODO, might add another check here
-            graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
+            let added_connection_result = graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); 
+
+            match added_connection_result
+            {
+                Ok(_) => {},
+                Err(explanation) => println!("{}", explanation),
+            }
+
             graph_viewport.port_searcher = None;
             return;
         },
@@ -380,29 +360,14 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     println!("output port id from show function: {}", port_key);
 }
 
-// fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
-// {
-//     // let display_port_value_representation = graph_editor.display_input_ports.get(port_key).unwrap().value_representation.clone();
-
-//     let succesfully_set_value = graph_editor.set_input_port_value_from_representation(port_key, new_value_representation.clone());
-
-//    // @TODO, this can be written better
-//     let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-//     display_port.value_representation = new_value_representation;
-
-//     display_port.value_representation_valid = succesfully_set_value; // @TODO, this should work no problem, but keep an eye on it
-//     // if succesfully_set_value
-//     // {
-//     //     display_port.value_representation_valid = true;
-//     // }
-// }
-
 fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_position: egui::Pos2) -> bool
 {
     let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
 
     let mut button_clicked = false;
-    ui.allocate_ui_at_rect(quick_menu_rect, |ui|
+
+    let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
+    ui.scope_builder(quick_menu_ui_builder, |ui|
     {
         egui::Frame::popup(ui.style()).show(ui, |ui| 
         {

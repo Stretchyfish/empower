@@ -1,20 +1,11 @@
-// use empower_node_graph::EmpowerData;
-// use empower_node_graph::InputPort;
-// use empower_node_graph::EmpowerKey;
-// use empower_node_graph::OutputPort;
-
 use empower_engine::node_graph::port::Port;
 use empower_engine::NodeGraphKey;
-// use empower_engine::node_graph::
-use crate::graph_editor::display_node::DisplayNode; use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-// @TODO, simplify this include
+use crate::graph_editor::display_node::DisplayNode; 
 use crate::graph_editor::display_port::DisplayPort;
-// use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 use crate::graph_editor::display_port::display_port_value;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
-
 
 // @TODO, find a way to reduce the number of inputs in this function?
 pub fn show_input_port(
@@ -88,75 +79,11 @@ pub fn show_input_port(
             egui::Color32::BLACK,
         );
     }
-    // display_port_value::show_display_port_value_type(&display_port.display_value.value_type, &input_port_text_position, port_has_coonection);
     let potentially_modified_display_value = display_port_value::show_display_port_value(&display_port.display_value, &input_port_position, port_has_coonection, ui);
 
     if potentially_modified_display_value != display_port.display_value
     {
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortDisplayValue(*port_key, potentially_modified_display_value ) } );
     }
-
-    // match &display_port.value_representation
-    // {
-    //     DisplayPortValueRepresentation::Text( value_text) =>
-    //     {
-    //         let input_port_value_box_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
-    //         let input_port_value_box_size = egui::Vec2{ x: 120.0, y: 40.0 };
-    //         let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_box_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_value_box_size);
-
-    //         let mut text_edit_color = egui::Color32::WHITE;
-    //         let mut text_background_color = egui::Color32::BLACK;
-
-    //         if port_has_coonection
-    //         {
-    //             text_edit_color = egui::Color32::GRAY;
-    //             text_background_color = egui::Color32::TRANSPARENT;
-    //         }
-
-    //         if !display_port.value_representation_valid
-    //         {
-    //             text_edit_color = egui::Color32::RED;
-    //         }
-
-    //         let mut display_port_text = value_text.clone();
-
-    //         let text_edit = egui::TextEdit::singleline(&mut display_port_text)
-    //         .char_limit(5)
-    //         .font(egui::FontId::proportional(35.0))
-    //         .interactive(!port_has_coonection)
-    //         .text_color(text_edit_color)
-    //         .background_color(text_background_color);
-            
-    //         ui.put(input_port_value_box_rect, text_edit);
-
-    //         if display_port_text != *value_text
-    //         {
-    //             // @TODO, consider how to change this for other than text
-    //             *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueRepresentation(*port_key, DisplayPortValueRepresentation::Text( display_port_text )) } );
-    //         }
-    //     },
-
-    //     DisplayPortValueRepresentation::Checkbox( boolean ) =>
-    //     {
-    //         let input_port_checkbox_position = input_port_text_position + egui::Vec2 { x: 50.0, y: 0.0 };
-    //         let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
-    //         let input_port_checkbox_rect = egui::Rect::from_min_size(input_port_checkbox_position + egui::Vec2 { x: 50.0, y: -20.0 }, input_port_checkbox_size);
-
-    //         let mut check = boolean.clone();
-            
-    //         let checkbox = egui::Checkbox::new(&mut check, egui::RichText::new("check").font(egui::FontId::proportional(35.0)));
-    //         ui.put(input_port_checkbox_rect, checkbox);
-
-    //         if check != *boolean
-    //         {
-    //             *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedInputPortValueRepresentation( *port_key, DisplayPortValueRepresentation::Checkbox( check ) ) });
-    //         }
-    //     },
-
-    //     DisplayPortValueRepresentation::None =>
-    //     {
-
-    //     },
-    // }
 }
 
