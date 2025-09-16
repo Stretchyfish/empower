@@ -68,10 +68,5 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
 
-        if ui.button("Check execution order").clicked()
-        {
-            let node_execution_order = node_graph::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
-            println!("Execution order: {:?}", node_execution_order);
-        }
     });
 }

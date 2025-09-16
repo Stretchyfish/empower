@@ -12,6 +12,8 @@ use port_searcher::PortSearcher;
 mod node_selection_panel;
 use node_selection_panel::NodeSelectionPanel;
 
+mod debug_info_widgets;
+
 pub struct GraphViewport
 {
     pub title: String,
@@ -103,6 +105,8 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
                 node_widgets_responses.push(node_widget_response.unwrap());
             }
         }
+
+        debug_info_widgets::nodes_debug_info_show(scene_ui, &graph_editor);
 
         connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 

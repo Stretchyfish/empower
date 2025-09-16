@@ -19,8 +19,7 @@ pub fn detect_execution_order(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
     // @TODO, find a smarter check than 1000
     let max_number_of_checks = 1000;
 
-    while number_of_nodes_checked != node_execution_order.len() 
-            && number_of_nodes_checked < max_number_of_checks
+    while number_of_nodes_checked != node_execution_order.len() && number_of_nodes_checked < max_number_of_checks
     {
         // @TODO, handle this result better
         let next_nodes_to_execute = node_graph.distribute_outputs(&node_execution_order[number_of_nodes_checked]);

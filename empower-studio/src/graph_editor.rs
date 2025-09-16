@@ -21,6 +21,9 @@ use display_node::DisplayNode;
 pub mod display_port;
 use display_port::DisplayPort;
 
+pub mod debug_info;
+pub use debug_info::DebugInfo;
+
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 
 use display_node::display_node_registry::DISPLAY_NODE_REGISTRY;
@@ -34,6 +37,7 @@ pub struct GraphEditor
     pub(crate) display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub(crate) node_graph: NodeGraph, 
     pub(crate) selected_nodes: Vec<NodeGraphKey>,
+    pub(crate) debug_info: DebugInfo,
 }
 
 impl GraphEditor
@@ -47,6 +51,7 @@ impl GraphEditor
             display_output_ports: HashMap::new(),
             node_graph: NodeGraph::new(),
             selected_nodes: Vec::new(),
+            debug_info: DebugInfo::new(),
         };
 
         // let new_node_type = NodeKind::Start;

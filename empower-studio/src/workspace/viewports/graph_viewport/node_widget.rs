@@ -30,7 +30,12 @@ pub enum NodeWidgetResponseType
     InsideSelectionRect,
 }
 
-pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &GraphViewport, node_key: &NodeGraphKey) -> Option<NodeWidgetResponse>
+pub fn show(
+                ui: &mut egui::Ui, 
+                graph_editor: &GraphEditor, 
+                graph_viewport: &GraphViewport, 
+                node_key: &NodeGraphKey,
+            ) -> Option<NodeWidgetResponse>
 {
     let mut node_widget_response = None;
 
@@ -41,7 +46,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport: &Grap
     let graph_viewport_title = &graph_viewport.title;
 
     // @TODO, consider changing this to return a node reponse instead of taking it as input?
-    node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &graph_viewport.node_selection_rect);
+    node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &graph_viewport.node_selection_rect, &graph_editor.debug_info);
 
     // @TODO, consider improving this interface
     let node = match graph_editor.node_graph.get_node(node_key)

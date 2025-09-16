@@ -6,7 +6,19 @@ use empower_engine::NodeGraphKey;
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<NodeGraphKey>, graph_viewport_title: &String, node_key: &NodeGraphKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool, node_selection_rect: &Option<egui::Rect>)
+use crate::graph_editor::DebugInfo;
+
+pub fn show_node_body(
+                        ui: &mut egui::Ui, 
+                        display_node: &DisplayNode, 
+                        selected_nodes: &Vec<NodeGraphKey>, 
+                        graph_viewport_title: &String, 
+                        node_key: &NodeGraphKey, 
+                        node_widget_response: &mut Option<NodeWidgetResponse>, 
+                        debug_mode: &bool, 
+                        node_selection_rect: &Option<egui::Rect>,
+                        debug_info: &DebugInfo,
+                    )
 {
     let node_position = display_node.position;
     let node_screen_size= display_node.size;

@@ -1,3 +1,5 @@
+use empower_engine::node_graph;
+
 use crate::studio_context::StudioContext;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
@@ -245,5 +247,18 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 // });
                 ui.add_space(0.5);
             });
+    
+        ui.horizontal(|ui| 
+        {
+            ui.checkbox(&mut studio_context.graph_editor.debug_info.show_node_execution_order, "Show node execution order");
+
+            if ui.button("Refresh execution order").clicked()
+            {
+                let node_execution_order = node_graph::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
+
+                studio_context.graph_editor.debug_info.node_execution_order = node_execution_order;
+            }
         });
+    
+    });
 }
