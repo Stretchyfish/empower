@@ -34,7 +34,7 @@ pub fn show_output_port(
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedOutputPort(*port_key) });
         // output_port_interaction(&mut graph_editor.empower_node_graph, graph_viewport, port_key, node_widget_response);
     }
-    output_port_response.on_hover_text( format!("{:?}", output_port.value) );
+    output_port_response.on_hover_text( format!("{:?}, {:?}", output_port.value, output_port.compatability ));
 
     let port_color = display_port.display_value.color;
     // let port_color;

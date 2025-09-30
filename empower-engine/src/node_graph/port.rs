@@ -60,4 +60,10 @@ impl Port
             value,
         }
     }
+
+    pub fn update_compatability(&mut self, new_compatability: PortCompatability)
+    {
+        self.compatability = new_compatability;
+        self.value = self.compatability.get_initial_port_value();
+    }
 }

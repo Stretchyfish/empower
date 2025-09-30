@@ -18,7 +18,7 @@ pub fn show_input_port(
                         node_key: &NodeGraphKey, 
                         port_key: &NodeGraphKey, 
                         node_widget_response: &mut Option<NodeWidgetResponse>, 
-                        debug_mode: &bool
+                        debug_mode: &bool,
                     )
 {
     let input_port_position = display_node.position + display_port.relative_position;
@@ -34,33 +34,7 @@ pub fn show_input_port(
 
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
 
-    // let port_color;
     let port_color = display_port.display_value.color;
-    
-    // match input_port.value 
-    // {
-    //     EmpowerData::Trigger =>
-    //     {
-    //         // port_text = "";
-    //         port_color = egui::Color32::WHITE;
-    //     }
-    //     EmpowerData::Integer(_) =>
-    //     {
-
-    //         // port_text = "int";
-    //         port_color = egui::Color32::YELLOW;
-    //     }
-    //     EmpowerData::Undefined(_) =>
-    //     {
-    //         // port_text = ""; // @TODO, consider getting rid of the port text
-    //         port_color = egui::Color32::YELLOW;
-    //     }
-    //     _ =>
-    //     {
-    //         // port_text = "float";
-    //         port_color = egui::Color32::YELLOW; 
-    //     }
-    // }
 
     ui.painter().circle(
         input_port_position,

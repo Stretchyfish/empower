@@ -3,7 +3,7 @@
 
 use core::panic;
 
-use empower_engine::NodeGraphKey;
+use empower_engine::{node_graph::node::NodeKind2, NodeGraphKey};
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 use crate::graph_editor::{display_port::display_port_value::DisplayPortValue, GraphEditor};
 use super::GraphViewport;
@@ -25,8 +25,7 @@ pub enum NodeWidgetResponseType
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
     ChangedInputPortDisplayValue(i32, DisplayPortValue),
-    // ChangedState(NodeState),
-    // ClickedQuickMenuButton(egui::Pos2),
+    ChangedState(NodeKind2),
     InsideSelectionRect,
 }
 
@@ -45,8 +44,6 @@ pub fn show(
 
     let graph_viewport_title = &graph_viewport.title;
 
-    // @TODO, consider changing this to return a node reponse instead of taking it as input?
-    node_widget_body::show_node_body(ui, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &graph_viewport.node_selection_rect);
 
     // @TODO, consider improving this interface
     let node = match graph_editor.node_graph.get_node(node_key)
@@ -54,6 +51,9 @@ pub fn show(
         Some( node ) => node,
         None => panic!("Tried to get key {} in node graph during show node widget, but key was not present", node_key),
     };
+
+    // @TODO, consider changing this to return a node reponse instead of taking it as input?
+    node_widget_body::show_node_body(ui, node, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &graph_viewport.node_selection_rect);
 
     // @TODO, add state to show node body?
     // node_widget_state::show_node_widget_state(ui, empower_node, display_node, graph_viewport_title, &mut node_widget_response);

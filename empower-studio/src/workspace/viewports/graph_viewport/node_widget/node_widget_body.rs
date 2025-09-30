@@ -1,13 +1,15 @@
+use crate::graph_editor::display_node::display_node_kind;
 use crate::graph_editor::display_node::DisplayNode; 
-// @TODO, simplify this include
-// use empower_node_graph::EmpowerKey;
+use crate::graph_editor::display_node; 
 use empower_engine::NodeGraphKey;
+use empower_engine::node_graph::node::Node;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
 pub fn show_node_body(
                         ui: &mut egui::Ui, 
+                        node: &Node,
                         display_node: &DisplayNode, 
                         selected_nodes: &Vec<NodeGraphKey>, 
                         graph_viewport_title: &String, 
@@ -45,7 +47,7 @@ pub fn show_node_body(
     let node_is_selected = selected_nodes.iter().any(| selected_node_key | *selected_node_key == *node_key ); // @TODO, find a reduce the computation of this check
   
     let title_text_font_size = 40.0;
-    let mut node_title = display_node.title.clone();
+    let mut node_title = display_node.title.to_string();
 
     if *debug_mode
     {
@@ -166,4 +168,26 @@ pub fn show_node_body(
         egui::Stroke::NONE,
             egui::StrokeKind::Inside,
     );
+
+    let node_state_margin = 5.0;
+    let state_size = display_node_kind::get_state_size(&node.kind);
+    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + display_node.size.x / 2.0 - state_size.x / 2.0, y: title_box_rect.max.y + node_state_margin };
+    let state_max_rect = egui::Rect::from_min_size(state_top_left_corner, state_size); 
+
+    let state_ui_builder = egui::UiBuilder::new()
+    .max_rect(state_max_rect);
+
+    let mut modified_state = None;
+    ui.scope_builder(state_ui_builder, |ui|
+    {
+        let style = ui.style_mut();
+        style.override_font_id = Some ( egui::FontId::proportional(35.0));
+
+        modified_state = display_node_kind::show(ui, &node.kind);
+    });
+
+    if modified_state.is_some()
+    {
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedState(modified_state.unwrap())});
+    }
 }

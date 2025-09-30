@@ -7,7 +7,7 @@ pub fn node_graph_quick_overview(node_graph: &NodeGraph)
 
     for node in node_graph.get_all_nodes()
     {
-        println!("--- key: {}, type: {}", node.key, node.kind.name());
+        println!("--- key: {}, type: {}", node.key, node.kind.name()); // @TODO, consider changing this to name
     }
 
     println!("input ports: {}", node_graph.input_port_count());

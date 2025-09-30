@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::process::Output;
 
 pub type NodeGraphKey = i32;
 
@@ -7,12 +8,14 @@ pub mod node;
 use node::Node;
 use node::NodeHandle;
 use node::NODE_REGISTRY;
+use node::node_kind::NodeKind2; // @TODO, make this include better
 
 pub mod port;
 use port::Port;
 use port::PortValue;
 
 use crate::analyser::TextBuffer;
+use crate::node_graph::port::port_compatability;
 
 pub mod analysis; // @TODO, decide on how to approach this
 
@@ -42,10 +45,10 @@ impl NodeGraph
         }
     }
 
-    pub fn add_node(&mut self,  node_kind: &str) -> NodeHandle
+    pub fn add_node(&mut self,  node_kind: &NodeKind2) -> NodeHandle
     {    
-        let node_kind_constructor = NODE_REGISTRY.get(node_kind).unwrap();
-        let node_kind= node_kind_constructor();
+        // let node_kind_constructor = NODE_REGISTRY.get(node_kind).unwrap();
+        // let node_kind= node_kind_constructor();
         
         let input_ports_compatabilities = node_kind.input_ports_compatabilities();
         let output_ports_compatabilities = node_kind.output_ports_compatabilities();
@@ -85,7 +88,7 @@ impl NodeGraph
 
         let new_node = Node::new(
                                 new_node_key, 
-                                node_kind, 
+                                node_kind.clone(), 
                                 new_input_port_keys.clone(), 
                                 new_output_port_keys.clone()
         );
@@ -111,6 +114,128 @@ impl NodeGraph
         {
             self.output_ports.remove(&output_port_key);
             self.remove_output_port_connections(&output_port_key);
+        }
+    }
+
+    pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind2)
+    {
+        let node = self.nodes.get_mut(node_key).expect("Error in update node, unable to fetch node key");
+        node.kind = new_node_state;
+
+        self.refresh_node(node_key);
+    }
+
+    pub fn refresh_node(&mut self, node_key: &NodeGraphKey)
+    {
+
+        // This is defined outside of the first scope to avoid borrower issues
+        let mut connections_to_remove: Vec<(NodeGraphKey, NodeGraphKey)> = Vec::new();
+
+        {
+            let node = self.nodes.get(node_key).expect("ERROR in refresh node, unable to fetch node key");
+
+            let updated_input_compatabilities = node.kind.input_ports_compatabilities();
+            let updated_output_compatabilities = node.kind.output_ports_compatabilities();
+
+            // If too many input ports now exist, remove the extra ones
+            if node.input_port_keys.len() < updated_input_compatabilities.len()
+            {
+                let mut key_to_remove = node.input_port_keys.len();
+                while key_to_remove < updated_input_compatabilities.len() 
+                {
+                    self.input_ports.remove(&(key_to_remove as NodeGraphKey));
+                    key_to_remove += 1;
+                }
+            }
+
+            // If too many output ports now exist, remove the extra ones
+            if node.input_port_keys.len() < updated_output_compatabilities.len()
+            {
+                let mut key_to_remove = node.output_port_keys.len();
+                while key_to_remove < updated_output_compatabilities.len()
+                {
+                    self.output_ports.remove(&(key_to_remove as NodeGraphKey));
+                    key_to_remove += 1;
+                }
+            }
+
+            // Go though existing input ports and overwrite their values
+            for (index, port_compatability) in updated_input_compatabilities.iter().enumerate()
+            {
+                // If there are to many new ports, add more
+                if node.input_port_keys.len() - 1 < index
+                {
+                    let new_input_port_key = self.get_available_input_port_key();
+                    let new_input_port = Port::new_input_port(
+                                                        new_input_port_key, 
+                                                        *node_key, 
+                                                        port_compatability.clone(),
+                    );
+    
+                    self.input_ports.insert(new_input_port_key, new_input_port);
+                    continue;
+                }
+
+                let input_port = self.input_ports.get_mut(&node.input_port_keys[index]).unwrap();
+                input_port.update_compatability(port_compatability.clone() );
+
+                // Check that the inwards connections to the input ports are still valid
+                if !self.connections_in.contains_key(&input_port.key)
+                {
+                    continue;
+                }
+
+                let connected_output_port_key = self.connections_in.get(&input_port.key).unwrap();
+                let connected_output_port = self.output_ports.get(connected_output_port_key).unwrap();
+
+                if !connected_output_port.compatability.is_compatible_with(&port_compatability)
+                {
+                    connections_to_remove.push( (input_port.key, connected_output_port_key.clone() ) );
+                }
+            }
+
+            // Go though existing output ports and overwrite their values
+            for (index, port_compatability) in updated_output_compatabilities.iter().enumerate()
+            {
+                // If there are to many new ports, add more
+                if node.output_port_keys.len() - 1 < index
+                {
+                    let new_output_port_key = self.get_available_output_port_key();
+                    let new_output_port = Port::new_output_port(
+                                                                    new_output_port_key, 
+                                                                    *node_key, 
+                                                                    port_compatability.clone()
+                    );
+
+                    self.input_ports.insert(new_output_port_key, new_output_port);
+                    continue;
+                }
+
+                let output_port = self.output_ports.get_mut(&node.output_port_keys[index]).unwrap();
+                output_port.update_compatability(port_compatability.clone() );
+
+                if !self.connections_out.contains_key(&output_port.key)
+                {
+                    continue;
+                }
+
+                let connected_input_port_keys = self.connections_out.get(&output_port.key).unwrap();
+
+                for connected_input_port_key in connected_input_port_keys
+                {
+                    let connected_input_port = self.input_ports.get(connected_input_port_key).unwrap();
+                    
+                    if !connected_input_port.compatability.is_compatible_with(port_compatability)
+                    {
+                        connections_to_remove.push( (*connected_input_port_key, output_port.key) );
+                    }
+                }
+            }
+        }
+
+        for connection in connections_to_remove
+        {
+            self.remove_connection(&connection.0, &connection.1);
         }
     }
 
