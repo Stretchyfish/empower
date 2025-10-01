@@ -14,7 +14,7 @@ impl NumberNodeState
     {
         Self 
         {  
-            desired_value: NumberNodeValueKind::Any
+            desired_value: NumberNodeValueKind::Automatic
         }
     }
 }
@@ -22,7 +22,7 @@ impl NumberNodeState
 #[derive(Default, Clone, PartialEq, Eq, Debug)]
 pub enum NumberNodeValueKind
 {
-    #[default] Any,
+    #[default] Automatic,
     Integer,
     Float,
 }
@@ -44,7 +44,7 @@ pub fn get_number_node_input_ports_compatabilities(state: &NumberNodeState) -> V
 {
     match state.desired_value
     {
-        NumberNodeValueKind::Any => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
+        NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
         NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
         NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
     }
@@ -54,7 +54,7 @@ pub fn get_number_node_output_ports_compatabilities(state: &NumberNodeState) -> 
 {
     match state.desired_value
     {
-        NumberNodeValueKind::Any => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
+        NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
         NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
         NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
     }

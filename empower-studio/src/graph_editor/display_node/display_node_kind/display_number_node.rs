@@ -11,7 +11,7 @@ pub fn get_display_node_size() -> egui::Vec2
 
 pub fn get_state_size() -> egui::Vec2 
 {
-    egui::Vec2 { x: 150.0, y: 50.0 }
+    egui::Vec2 { x: 175.0, y: 50.0 }
 }
 
 pub fn get_display_input_ports(inputs: Vec<&PortValue>) -> Vec<DisplayPortValue> 
@@ -32,29 +32,23 @@ pub fn show(ui: &mut egui::Ui, state: &NumberNodeState) -> Option<NodeKind2>
 {
     let mut state_to_modify = state.clone();
 
-    let mut made_a_change = false;
-
     ui.menu_button(state_to_modify.desired_value.to_string(), |ui|
     {
-        if ui.button("Any").clicked()
+        if ui.button("Automatic").clicked()
         {
-            state_to_modify.desired_value = NumberNodeValueKind::Any;
-            made_a_change = true;
+            state_to_modify.desired_value = NumberNodeValueKind::Automatic;
         }
         if ui.button("Integer").clicked()
         {
             state_to_modify.desired_value = NumberNodeValueKind::Integer;
-            made_a_change = true;
         }
         if ui.button("Float").clicked()
         {
             state_to_modify.desired_value = NumberNodeValueKind::Float;
-            made_a_change = true;
         }
     });
 
-
-    if made_a_change == false
+    if state.desired_value == state_to_modify.desired_value
     {
         return None;
     }
