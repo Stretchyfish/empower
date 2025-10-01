@@ -3,7 +3,7 @@
 
 use core::panic;
 
-use empower_engine::{node_graph::node::NodeKind2, NodeGraphKey};
+use empower_engine::{node_graph::node::NodeKind, NodeGraphKey};
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
 use crate::graph_editor::{display_port::display_port_value::DisplayPortValue, GraphEditor};
 use super::GraphViewport;
@@ -25,7 +25,7 @@ pub enum NodeWidgetResponseType
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
     ChangedInputPortDisplayValue(i32, DisplayPortValue),
-    ChangedState(NodeKind2),
+    ChangedState(NodeKind),
     InsideSelectionRect,
 }
 

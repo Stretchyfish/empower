@@ -1,5 +1,4 @@
 pub mod display_node_kind;
-pub mod display_node_registry;
 
 pub struct DisplayNode
 {

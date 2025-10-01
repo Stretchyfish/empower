@@ -1,4 +1,4 @@
-use empower_engine::node_graph::node::NodeKind2;
+use empower_engine::node_graph::node::NodeKind;
 use empower_engine::NodeGraph;
 use empower_engine::NodeGraphKey;
 
@@ -15,8 +15,6 @@ pub use debug_info::DebugInfo;
 
 use crate::graph_editor::display_node::display_node_kind;
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-
-use display_node::display_node_registry::DISPLAY_NODE_REGISTRY;
 
 pub struct GraphEditor
 {
@@ -43,7 +41,7 @@ impl GraphEditor
         };
 
         // let new_node_type = NodeKind::Start;
-        let new_node_type = NodeKind2::Start;
+        let new_node_type = NodeKind::Start;
 
         // @TODO, find a better approach to centering the start node
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
@@ -53,7 +51,7 @@ impl GraphEditor
         graph_editor
     }
 
-    pub fn add_node(&mut self, node_kind: NodeKind2, position: egui::Pos2) -> bool
+    pub fn add_node(&mut self, node_kind: NodeKind, position: egui::Pos2) -> bool
     {
         // @TODO, find a better way of assigning keys
         let node_handle= self.node_graph.add_node(&node_kind); 
@@ -204,7 +202,7 @@ impl GraphEditor
         input_port.value = new_input_port_value;
     }
 
-    pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind2)
+    pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind)
     {
         self.node_graph.update_node(node_key, new_node_state);
     }

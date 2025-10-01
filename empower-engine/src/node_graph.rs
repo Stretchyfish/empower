@@ -1,21 +1,18 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::process::Output;
 
 pub type NodeGraphKey = i32;
 
 pub mod node;
 use node::Node;
 use node::NodeHandle;
-use node::NODE_REGISTRY;
-use node::node_kind::NodeKind2; // @TODO, make this include better
+use node::node_kind::NodeKind; // @TODO, make this include better
 
 pub mod port;
 use port::Port;
 use port::PortValue;
 
 use crate::analyser::TextBuffer;
-use crate::node_graph::port::port_compatability;
 
 pub mod analysis; // @TODO, decide on how to approach this
 
@@ -45,7 +42,7 @@ impl NodeGraph
         }
     }
 
-    pub fn add_node(&mut self,  node_kind: &NodeKind2) -> NodeHandle
+    pub fn add_node(&mut self,  node_kind: &NodeKind) -> NodeHandle
     {    
         // let node_kind_constructor = NODE_REGISTRY.get(node_kind).unwrap();
         // let node_kind= node_kind_constructor();
@@ -117,7 +114,7 @@ impl NodeGraph
         }
     }
 
-    pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind2)
+    pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind)
     {
         let node = self.nodes.get_mut(node_key).expect("Error in update node, unable to fetch node key");
         node.kind = new_node_state;

@@ -1,4 +1,4 @@
-use empower_engine::node_graph::node::{node_kind::NumberNodeState, NodeKind2};
+use empower_engine::node_graph::node::{node_kind::NumberNodeState, NodeKind};
 
 use crate::graph_editor::GraphEditor;
 use super::user_input::UserInputs;
@@ -63,7 +63,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("Number").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     // let new_node_type = NodeKind::Number;
-                    let new_node_type = NodeKind2::Number( NumberNodeState::new() );
+                    let new_node_type = NodeKind::Number( NumberNodeState::new() );
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
@@ -72,7 +72,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("Text").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     // let new_node_type = NodeKind::Text;
-                    let new_node_type = NodeKind2::Text;
+                    let new_node_type = NodeKind::Text;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
@@ -81,7 +81,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("bool").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
                 {
                     // let new_node_type = NodeKind::Bool;
-                    let new_node_type = NodeKind2::Bool;
+                    let new_node_type = NodeKind::Bool;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
@@ -90,7 +90,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("Addition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     // let new_node_type = NodeKind::Addition;
-                    let new_node_type = NodeKind2::Addition;
+                    let new_node_type = NodeKind::Addition;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
@@ -99,7 +99,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("Multiply").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     // let new_node_type = NodeKind::Multiply;
-                    let new_node_type = NodeKind2::Multiply;
+                    let new_node_type = NodeKind::Multiply;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
@@ -108,7 +108,7 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 if ui.add(egui::Button::new("Print").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                 {
                     // let new_node_type = NodeKind::Print;
-                    let new_node_type = NodeKind2::Print;
+                    let new_node_type = NodeKind::Print;
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;
