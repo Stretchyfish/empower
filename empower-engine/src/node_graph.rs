@@ -524,17 +524,13 @@ impl NodeGraph
 
         for (output_port_index, output_port_key) in node_to_execute.output_port_keys.iter().enumerate()
         {
-            let output_port;
-            match self.output_ports.get_mut(output_port_key)
-            {
-                Some( value ) => output_port = value,
-                None => return Vec::new(),
-            }
+            let output_port = self.output_ports.get_mut(output_port_key).expect("ERROR in execute node, unable to fetch output port");
 
             let executed_output_value = &executed_output_values[output_port_index];
 
             if !output_port.compatability.contains_port_value_type(executed_output_value)
             {
+                println!("Executed node, and tried to set output port, but types are incompatible");
                 return Vec::new();
             }
 
@@ -650,9 +646,13 @@ impl NodeGraph
                     None => return Err( format!("Failed to retrieve input port with key {} in distribute outputs", connected_input_port_key)),
                 };
 
+                let mut new_input_port_value = output_port.value.clone();
+
                 if !input_port.compatability.contains_port_value_type(&output_port.value)
                 {
-                    return Err( format!("ERROR, input port {} and output port {} are connected, but have incompatable types in distribute output", input_port.key, output_port_key) );
+                    new_input_port_value = output_port.value.as_desired_value(&input_port.value).expect("Unable to convert the two desired values");
+
+                    // return Err( format!("ERROR, input port {} and output port {} are connected, but have incompatable types in distribute output", input_port.key, output_port_key) );
                 }
 
                 // @TODO, find a way of detecting math / immediate nodes 
@@ -662,7 +662,7 @@ impl NodeGraph
                 //     _ => {},
                 // }
 
-                input_port.value = output_port.value.clone();
+                input_port.value = new_input_port_value;
                 next_nodes_to_execute.push(input_port.node_key);
             }
         }

@@ -38,7 +38,7 @@ impl PortCompatability
         {
             PortCompatability::Exatch( value ) => vec![ value.clone() ], 
             PortCompatability::OneOf( value_list ) => value_list.clone(),
-            PortCompatability::Any => Vec::new(),
+            PortCompatability::Any => Vec::new(), // @TODO, consider a better approach for Any
             PortCompatability::None => Vec::new()
         }
     }
