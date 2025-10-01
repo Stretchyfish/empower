@@ -1,23 +1,28 @@
-use egui::{menu, Vec2};
-use empower_node_graph::{node, EmpowerKey};
-use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+use empower_engine::NodeGraphKey;
+
+// use crate::{graph_editor::{display_port::DisplayPortValueRepresentation, GraphEditor}, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::{PortKind, PortSearcher}}};
+
+use crate::{graph_editor::GraphEditor, workspace::viewports::graph_viewport::{node_widget::NodeWidgetResponseType, port_searcher::PortKind}};
 
 mod node_widget;
 mod connection_widget;
 mod user_input; // @TODO, find a better structure for this
 mod port_searcher;
+use port_searcher::PortSearcher;
 mod node_selection_panel;
 use node_selection_panel::NodeSelectionPanel;
+
+mod debug_info_widgets;
 
 pub struct GraphViewport
 {
     pub title: String,
     node_selection_panel: NodeSelectionPanel,
     node_selection_rect: Option<egui::Rect>,
-    pub mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
-    pub mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
+    mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
+    mouse_delta_last_frame: egui::Vec2, // @TODO, this is only temporary for debug purpose
     port_searcher: Option<PortSearcher>, 
-    quick_menu: Option<(EmpowerKey, egui::Pos2)>,
+    quick_menu: Option<egui::Pos2>,
     scene_rect: egui::Rect,
 }
 
@@ -83,13 +88,13 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
         // @TODO, find a more computationally effecient way of doing this
         // @TODO, conder going the other way around this, looking at connection_in instead?
-        let connection_keys = graph_editor.empower_node_graph.connections_out.clone();
-        for connection_key in connection_keys.keys()
+        let connection_keys = graph_editor.node_graph.get_all_connections();
+        for connection in connection_keys
         {
-            connection_widget::show(scene_ui, graph_editor, graph_viewport, &connection_key);
+            connection_widget::show(scene_ui, graph_editor, connection);
         }
 
-        let node_keys: Vec<EmpowerKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
+        let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
         for node_key in node_keys
         {
             // @TODO, consider if the naming should be changed so, show functions include changes to the values, and view functions is purely rendering?
@@ -100,6 +105,8 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
                 node_widgets_responses.push(node_widget_response.unwrap());
             }
         }
+
+        debug_info_widgets::nodes_debug_info_show(scene_ui, &graph_editor);
 
         connection_widget::show_connection_search(scene_ui, graph_editor, graph_viewport.port_searcher, &mouse_position_in_scene);
 
@@ -113,7 +120,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             let quick_menu = graph_viewport.quick_menu.unwrap();
 
             // @TODO, change from tuple to struct
-            let clicked_quick_menu_button = show_quick_menu(scene_ui, graph_editor, quick_menu.0, quick_menu.1);
+            let clicked_quick_menu_button = show_quick_menu(scene_ui, graph_editor, quick_menu);
 
             if clicked_quick_menu_button
             {
@@ -133,7 +140,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     {
         interaction_happened_this_loop = true;
         let node_with_response_key = node_widget_response.key;
-        match node_widget_response.kind 
+        match node_widget_response.kind
         {
         NodeWidgetResponseType::ClickedTitle =>
         {
@@ -144,40 +151,41 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         {
             input_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
+            println!("Clicked input port");
         }
 
         NodeWidgetResponseType::ClickedOutputPort(port_key) =>
         {
             output_port_interaction(graph_editor, graph_viewport, &port_key);
             port_was_clicked = true;
+            println!("Clicked output port");
        }
 
         // @TODO, prepare for multiple kinds of input ports
-        NodeWidgetResponseType::ChangedInputPortValueRepresentation(port_key, new_value_representation) =>
+        NodeWidgetResponseType::ChangedInputPortDisplayValue(port_key, new_display_value) =>
         {
-            // graph_editor.set_input_port_value_from_representation(&port_key, new_value_representation);
-            input_port_representation_interaction(graph_editor, &port_key, new_value_representation);
+            graph_editor.set_input_port_value(&port_key, new_display_value);
         }
 
         NodeWidgetResponseType::ChangedState( new_state ) =>
         {
-            graph_editor.change_node_state(&node_with_response_key, &new_state);
+            graph_editor.update_node(&node_with_response_key, new_state);
         }
 
-        NodeWidgetResponseType::ClickedQuickMenuButton( quick_menu_button_position ) =>
-        {
-            if graph_viewport.quick_menu.is_some()
-            {
-                // @TODO, change from a tuple to a struct
-                if graph_viewport.quick_menu.unwrap().0 == node_with_response_key
-                {
-                    graph_viewport.quick_menu = None;
-                    break;
-                }
-            }
+        // NodeWidgetResponseType::ClickedQuickMenuButton( quick_menu_button_position ) =>
+        // {
+        //     if graph_viewport.quick_menu.is_some()
+        //     {
+        //         // @TODO, change from a tuple to a struct
+        //         if graph_viewport.quick_menu.unwrap().0 == node_with_response_key
+        //         {
+        //             graph_viewport.quick_menu = None;
+        //             break;
+        //         }
+        //     }
 
-            graph_viewport.quick_menu = Some( (node_with_response_key, quick_menu_button_position) );
-        }
+        //     graph_viewport.quick_menu = Some( (node_with_response_key, quick_menu_button_position) );
+        // }
 
         NodeWidgetResponseType::InsideSelectionRect =>
         {
@@ -202,11 +210,15 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         graph_viewport.node_selection_rect = None;
     }
 
-    for selected_node_key in graph_editor.selected_nodes.iter()
+    // Simplify this whole section
+    if graph_viewport.quick_menu.is_none()
     {
-        // @TODO, make this more safe
-        let display_node = graph_editor.display_nodes.get_mut(selected_node_key).unwrap();
-        display_node.position += mouse_scene_delta;
+        for selected_node_key in graph_editor.selected_nodes.iter()
+        {
+            // @TODO, make this more safe
+            let display_node = graph_editor.display_nodes.get_mut(selected_node_key).unwrap();
+            display_node.position += mouse_scene_delta;
+        }
     }
 
     if user_inputs.left_clicked && graph_viewport.port_searcher.is_some() && port_was_clicked == false && graph_viewport.node_selection_panel.visible == false
@@ -218,12 +230,18 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
     if !interaction_happened_this_loop && user_inputs.left_clicked && !graph_editor.selected_nodes.is_empty() && graph_viewport.node_selection_panel.visible == false 
     {
         graph_editor.selected_nodes = Vec::new();
+        graph_viewport.quick_menu = None;
     }
 
-    if user_inputs.right_clicked && graph_viewport.node_selection_panel.visible == false
+    if user_inputs.right_clicked && !graph_editor.selected_nodes.is_empty() && !graph_viewport.node_selection_panel.visible
     {
-        graph_editor.selected_nodes = Vec::new();
+        graph_viewport.quick_menu = Some( mouse_position_in_scene );
     }
+
+    // if user_inputs.right_clicked && graph_viewport.node_selection_panel.visible == false && graph_editor.selected_nodes.is_empty()
+    // {
+    //     graph_editor.selected_nodes = Vec::new();
+    // }
 
 
     // This needs to be this low to avoid problems with the if statement above, consider a better approach for this?
@@ -232,7 +250,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 }
 
 // @TODO, consider where this function should be 
-fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &EmpowerKey)
+fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &NodeGraphKey)
 {
     if graph_editor.selected_nodes.contains(node_key) // @TODO, figure out if this is the most performance apporaach.
     {
@@ -244,44 +262,34 @@ fn add_selected_node(graph_editor: &mut GraphEditor, node_key: &EmpowerKey)
     }
 }
 
-fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
+fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
 {
-    if graph_editor.input_port_has_connection(port_key)
+    if graph_editor.node_graph.input_port_has_connection(port_key) // @TODO, consider changing this to be part of the graph editor itself
     {
-        // @TODO, simplify the code in here
+        let connect_output_port_key = graph_editor.node_graph.get_input_port_connection_key(port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+        graph_editor.node_graph.remove_connection(port_key, &connect_output_port_key);
+
         if graph_viewport.port_searcher.is_some()
         {
-            let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-            let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
+            let add_connection_result = graph_editor.node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
 
-            if successfully_removed_connection
+            match add_connection_result
             {
-                graph_editor.empower_node_graph.add_connection(graph_viewport.port_searcher.unwrap().port_key, *port_key);
-                graph_viewport.port_searcher = None;
-                return;
+                Ok(_) => {},
+                Err(explanation) => println!("{}", explanation),
             }
 
-            println!("Failed to to replace input port connection");
+            graph_viewport.port_searcher = None;
             return; 
         }
 
-        let connect_output_port_key = graph_editor.get_input_port_connection_key(port_key);
-        let successfully_removed_connection = graph_editor.empower_node_graph.remove_connection(*port_key, connect_output_port_key);
-
-        if successfully_removed_connection
-        {
-            graph_viewport.port_searcher = Some( PortSearcher { port_key: connect_output_port_key, port_kind: PortKind::OutputPort });
-            return;
-        }
-
-        println!("Failed to handle input port port search transfer");
+        graph_viewport.port_searcher = Some( PortSearcher::output_port_searching(connect_output_port_key) );
         return; 
     }
-
-
+    
     if graph_viewport.port_searcher.is_none()
     {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::InputPort });
+        graph_viewport.port_searcher = Some( PortSearcher::input_port_searching( port_key.clone() ) );
         return;
     }
 
@@ -299,57 +307,43 @@ fn input_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut G
         },
 
         PortKind::OutputPort =>
-        {
-            // let port_connection = connections.iter().map(|(key, vec)|
-            // {
-            //     if vec.contains(&empower_input_port.key)
-            //     {
-            //         Some(key)
-            //     }
-            //     else // @TODO, find a better way to write
-            //     {
-            //         None
-            //     }
-            // });
+        {    
+            let add_connection_result = graph_editor.node_graph.add_connection(port_searcher.port_key, *port_key);
 
-            // let connection = connections.get_mut(&port_searcher.port_key).unwrap(); 
-            graph_editor.empower_node_graph.add_connection(port_searcher.port_key, *port_key);
-            println!("Tried to connect: {}, {}", port_searcher.port_key, *port_key);
-
-            // @TODO, simplify this
-            // let empower_port = graph_editor.empower_node_graph.input_ports.get(port_key).unwrap();
-
-            let value_representation = graph_editor.get_input_port_value_representation(port_key);
-            let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-
-            display_port.value_representation = value_representation;
-            // display_port.value = empower_port.get_value_as_string();
-            // display_port.value_text_valid = true;
-            display_port.value_representation_valid = true;
+            match add_connection_result
+            {
+                Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
+                Err( text ) => println!("Failed to add connection because: {}", text),
+            }
 
             graph_viewport.port_searcher = None;
             return;
         }
     }
-
-    println!("input port id from show function: {}", *port_key);
 }
 
-fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &EmpowerKey) // @TODO, find a better name and location
+fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut GraphViewport, port_key: &NodeGraphKey) // @TODO, find a better name and location
 {
     if graph_viewport.port_searcher.is_none()
     {
-        graph_viewport.port_searcher = Some( PortSearcher { port_key: *port_key, port_kind: PortKind::OutputPort });
+        graph_viewport.port_searcher = Some( PortSearcher::output_port_searching(*port_key) );
         return;
     }
 
-    let port_searcher = graph_viewport.port_searcher.unwrap();
+    let port_searcher = graph_viewport.port_searcher.unwrap(); // @TODO, switch to an unwrap
 
-    match  port_searcher.port_kind 
+    match  port_searcher.port_kind // @Look again at this match stement, the returns currently seems redundant
     {
         PortKind::InputPort =>
         {
-            graph_editor.empower_node_graph.add_connection(*port_key, port_searcher.port_key); // @TODO, consider changing this API
+            let added_connection_result = graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); 
+
+            match added_connection_result
+            {
+                Ok(_) => {},
+                Err(explanation) => println!("{}", explanation),
+            }
+
             graph_viewport.port_searcher = None;
             return;
         },
@@ -366,49 +360,46 @@ fn output_port_interaction(graph_editor: &mut GraphEditor, graph_viewport: &mut 
     println!("output port id from show function: {}", port_key);
 }
 
-fn input_port_representation_interaction(graph_editor: &mut GraphEditor, port_key: &EmpowerKey, new_value_representation: DisplayPortValueRepresentation)
+fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_position: egui::Pos2) -> bool
 {
-    // let display_port_value_representation = graph_editor.display_input_ports.get(port_key).unwrap().value_representation.clone();
-
-    let succesfully_set_value = graph_editor.set_input_port_value_from_representation(port_key, new_value_representation.clone());
-
-   // @TODO, this can be written better
-    let display_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-    display_port.value_representation = new_value_representation;
-
-    display_port.value_representation_valid = succesfully_set_value; // @TODO, this should work no problem, but keep an eye on it
-    // if succesfully_set_value
-    // {
-    //     display_port.value_representation_valid = true;
-    // }
-}
-
-fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, node_key: EmpowerKey, menu_position: egui::Pos2) -> bool
-{
-    // let node_selection_window = egui::Window::new("").current_pos(egui::Pos2 {x: window_position.x - 100.0, y: window_position.y - 15.0}).collapsible(false).max_size(egui::Vec2 {x: 200.0, y: 200.0}).title_bar(false);
-
     let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
 
     let mut button_clicked = false;
-    ui.allocate_ui_at_rect(quick_menu_rect, |ui|
+
+    let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
+    ui.scope_builder(quick_menu_ui_builder, |ui|
     {
         egui::Frame::popup(ui.style()).show(ui, |ui| 
         {
+            let selected_nodes = graph_editor.selected_nodes.clone();
 
-            if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+            if selected_nodes.len() == 1
             {
-                button_clicked = true;
+                if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+                {
+                    graph_editor.node_graph.execute_node_graph_from_entry(&selected_nodes[0]);
+                    button_clicked = true;
+                }
             }
+
 
             if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
             {
-                graph_editor.remove_node(&node_key);
+                // @TODO, I think this will cause a crash when multiple graph viewports are open
+                for selected_node_key in selected_nodes
+                {
+                    graph_editor.remove_node(&selected_node_key);
+                }
                 button_clicked = true;
-
             }
 
         });
     });
+
+    if button_clicked
+    {
+        graph_editor.selected_nodes = Vec::new(); // @TODO, find a more elegant way of doing this
+    }
 
     button_clicked
 }

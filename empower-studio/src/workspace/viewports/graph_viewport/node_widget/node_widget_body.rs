@@ -1,11 +1,22 @@
-use crate::graph_editor::display_node::DisplayNode; use egui::Vec2;
-// @TODO, simplify this include
-use empower_node_graph::EmpowerKey;
+use crate::graph_editor::display_node::display_node_kind;
+use crate::graph_editor::display_node::DisplayNode; 
+use empower_engine::NodeGraphKey;
+use empower_engine::node_graph::node::Node;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
-pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_nodes: &Vec<EmpowerKey>, graph_viewport_title: &String, node_key: &EmpowerKey, node_widget_response: &mut Option<NodeWidgetResponse>, debug_mode: &bool, node_selection_rect: &Option<egui::Rect>)
+pub fn show_node_body(
+                        ui: &mut egui::Ui, 
+                        node: &Node,
+                        display_node: &DisplayNode, 
+                        selected_nodes: &Vec<NodeGraphKey>, 
+                        graph_viewport_title: &String, 
+                        node_key: &NodeGraphKey, 
+                        node_widget_response: &mut Option<NodeWidgetResponse>, 
+                        debug_mode: &bool, 
+                        node_selection_rect: &Option<egui::Rect>,
+                    )
 {
     let node_position = display_node.position;
     let node_screen_size= display_node.size;
@@ -35,7 +46,7 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
     let node_is_selected = selected_nodes.iter().any(| selected_node_key | *selected_node_key == *node_key ); // @TODO, find a reduce the computation of this check
   
     let title_text_font_size = 40.0;
-    let mut node_title = display_node.title.clone();
+    let mut node_title = display_node.title.to_string();
 
     if *debug_mode
     {
@@ -105,33 +116,9 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         title_rect_color= egui::Color32::from_rgb(40, 40, 40);
     }
 
-    if node_reponse.clicked()
+    if node_reponse.clicked() || node_reponse.secondary_clicked()
     {
         *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedTitle });
-    }
-
-    // @TODO, simplify this a bit by having the sizes saves seperate to avoid uneeded size call? 
-    let node_quick_menu_button_position = node_position + egui::Vec2 { x: title_box_rect.size().x - 30.0, y: (title_box_rect.size().y - node_body_title_area_overlap) / 2.0 } ; 
-    let node_quick_menu_button_size = 15.0;
-    let node_quick_menu_button_rect = egui::Rect::from_center_size(
-        node_quick_menu_button_position, 
-        Vec2::splat(node_quick_menu_button_size * 2.0));
-
-    let node_quick_menu_button_response = ui.interact(
-        node_quick_menu_button_rect, 
-        egui::Id::new(graph_viewport_title.to_owned() + "_node_quick_menu_button_" + node_key.to_string().as_str()), 
-        egui::Sense::click()
-    );
-
-    let mut node_quick_menu_button_color = egui::Color32::DARK_GRAY;
-    if node_quick_menu_button_response.hovered()
-    {
-        node_quick_menu_button_color = egui::Color32::BLACK;
-    }
-
-    if node_quick_menu_button_response.clicked()
-    {
-        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ClickedQuickMenuButton( node_quick_menu_button_position ) });
     }
 
     if node_is_selected || node_is_inside_selection_rect
@@ -163,13 +150,6 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         egui::Color32::WHITE,
     );
 
-    ui.painter().circle(
-        node_quick_menu_button_position, 
-        node_quick_menu_button_size, 
-        node_quick_menu_button_color, 
-        egui::Stroke::NONE
-    );
-
     // Show node body
     ui.painter().rect(
         node_rect_without_title_and_bottom,
@@ -178,16 +158,6 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
         egui::Stroke::NONE,
             egui::StrokeKind::Inside,
     );
-
-    // let close_button_widget = egui::Button::new(egui::RichText::new("x").size(14.0));
-
-    // let close_button_position = egui::Pos2 { x: title_box_rect.max.x - 30.0, y: title_box_rect.min.y };
-    // let close_button_size = egui::Vec2 { x: 28.0, y: 28.0 };
-
-    // if ui.put(egui::Rect::from_min_size(close_button_position, close_button_size), close_button_widget).clicked()
-    // {
-
-    // }
 
     // Show node bottom
     ui.painter().rect(
@@ -198,4 +168,25 @@ pub fn show_node_body(ui: &mut egui::Ui, display_node: &DisplayNode, selected_no
             egui::StrokeKind::Inside,
     );
 
+    let node_state_margin = 5.0;
+    let state_size = display_node_kind::get_state_size(&node.kind);
+    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + display_node.size.x / 2.0 - state_size.x / 2.0, y: title_box_rect.max.y + node_state_margin };
+    let state_max_rect = egui::Rect::from_min_size(state_top_left_corner, state_size); 
+
+    let state_ui_builder = egui::UiBuilder::new()
+    .max_rect(state_max_rect);
+
+    let mut modified_state = None;
+    ui.scope_builder(state_ui_builder, |ui|
+    {
+        let style = ui.style_mut();
+        style.override_font_id = Some ( egui::FontId::proportional(35.0));
+
+        modified_state = display_node_kind::show(ui, &node.kind);
+    });
+
+    if modified_state.is_some()
+    {
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedState(modified_state.unwrap())});
+    }
 }

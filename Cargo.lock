@@ -871,12 +871,8 @@ dependencies = [
 name = "empower-engine"
 version = "0.1.0"
 dependencies = [
- "empower-node-graph",
+ "once_cell",
 ]
-
-[[package]]
-name = "empower-node-graph"
-version = "0.1.0"
 
 [[package]]
 name = "empower-studio"
@@ -886,7 +882,7 @@ dependencies = [
  "egui",
  "egui_dock",
  "empower-engine",
- "empower-node-graph",
+ "once_cell",
 ]
 
 [[package]]

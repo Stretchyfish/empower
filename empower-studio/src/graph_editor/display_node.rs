@@ -1,14 +1,15 @@
-#[derive(Default, Clone)]
+pub mod display_node_kind;
+
 pub struct DisplayNode
 {
-    pub title: String,
+    pub title: &'static str,
     pub position: egui::Pos2,
     pub size: egui::Vec2,
 }
 
 impl DisplayNode
 {
-    pub fn new(title: String,position: egui::Pos2, size: egui::Vec2) -> Self
+    pub fn new(title: &'static str, position: egui::Pos2, size: egui::Vec2) -> Self
     {
         Self
         {
@@ -18,4 +19,7 @@ impl DisplayNode
         }
     }
 }
+
+
+
 

@@ -2,7 +2,6 @@ mod manu_bar;
 pub mod viewports;
 mod tab_viewer;
 mod debug_window;
-use egui_dock::NodeIndex;
 use tab_viewer::TabsViewer;
 use viewports::Viewports;
 use viewports::viewport_type::ViewportType;
@@ -83,13 +82,14 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 },
             );
 
+        // @TODO, find a better location for this?
         let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
         if clicked_backspace
         {
             let mut nodes_to_delete = Vec::new();
             for node_key in studio_context.graph_editor.selected_nodes.iter() // @TODO, find a more effecient way of writting this
             {
-            nodes_to_delete.push(node_key.clone()); 
+                nodes_to_delete.push(node_key.clone()); 
             }
 
             for node_key in nodes_to_delete
