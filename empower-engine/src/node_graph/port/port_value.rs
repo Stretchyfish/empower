@@ -11,6 +11,7 @@ pub enum PortValue
     Float(f32),
     Text(String),
     Bool(bool),
+    Vector(Vec<PortValue>),
     Undefined(String), // @TODO, consider removing undefined
     #[default] None,
 }
@@ -75,6 +76,21 @@ impl PortValue
             (PortValue::None, PortValue::Bool(_)) => todo!(),
             (PortValue::None, PortValue::Undefined(_)) => todo!(),
             (PortValue::None, PortValue::None) => todo!(),
+            (PortValue::Trigger, PortValue::Vector(port_values)) => todo!(),
+            (PortValue::Integer(_), PortValue::Vector(port_values)) => todo!(),
+            (PortValue::Float(_), PortValue::Vector(port_values)) => todo!(),
+            (PortValue::Text(_), PortValue::Vector(port_values)) => todo!(),
+            (PortValue::Bool(_), PortValue::Vector(port_values)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Trigger) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Integer(_)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Float(_)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Text(_)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Bool(_)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Vector(port_values2)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::Undefined(_)) => todo!(),
+            (PortValue::Vector(port_values), PortValue::None) => todo!(),
+            (PortValue::Undefined(_), PortValue::Vector(port_values)) => todo!(),
+            (PortValue::None, PortValue::Vector(port_values)) => todo!(),
         }
     }
 }
@@ -83,15 +99,16 @@ impl fmt::Display for PortValue
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 
-        match *self
+        match self
         {
             PortValue::Trigger => write!(f, "trigger"),
             PortValue::Integer(value) => write!(f, "{}", value),
             PortValue::Float(value) => write!(f, "{}", value),
-            PortValue::Text(ref value) => write!(f, "{}", value),
-            PortValue::Bool(value) => write!(f, "{}", value), 
-            PortValue::Undefined(ref value) => write!(f, "{}", value),
+            PortValue::Text(value) => write!(f, "{}", value),
+            PortValue::Bool(value) => write!(f, "{}", value),
+            PortValue::Undefined(value) => write!(f, "{}", value),
             PortValue::None => write!(f, "none"),
+            PortValue::Vector(port_values) => write!(f, "{:?}", port_values)
         }
     }
 }

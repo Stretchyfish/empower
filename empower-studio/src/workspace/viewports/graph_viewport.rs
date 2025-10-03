@@ -167,9 +167,9 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             graph_editor.set_input_port_value(&port_key, new_display_value);
         }
 
-        NodeWidgetResponseType::ChangedState( new_state ) =>
+        NodeWidgetResponseType::ChangedState( new_state, new_display_state ) =>
         {
-            graph_editor.update_node(&node_with_response_key, new_state);
+            graph_editor.update_node(&node_with_response_key, new_state, new_display_state);
         }
 
         // NodeWidgetResponseType::ClickedQuickMenuButton( quick_menu_button_position ) =>

@@ -5,7 +5,7 @@ use core::panic;
 
 use empower_engine::{node_graph::node::NodeKind, NodeGraphKey};
 // use crate::graph_editor::display_port::DisplayPortValueRepresentation;
-use crate::graph_editor::{display_port::display_port_value::DisplayPortValue, GraphEditor};
+use crate::graph_editor::{display_node::display_node_kind::DisplayState, display_port::display_port_value::DisplayPortValue, GraphEditor};
 use super::GraphViewport;
 
 mod node_widget_body;
@@ -25,7 +25,7 @@ pub enum NodeWidgetResponseType
     ClickedInputPort(i32), // @TODO, change this to empowerkeys
     ClickedOutputPort(i32),
     ChangedInputPortDisplayValue(i32, DisplayPortValue),
-    ChangedState(NodeKind),
+    ChangedState(NodeKind, DisplayState),
     InsideSelectionRect,
 }
 

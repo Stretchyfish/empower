@@ -27,32 +27,22 @@ pub fn get_display_output_ports(outputs: Vec<&PortValue>) -> Vec<DisplayPortValu
     ]
 }
 
-pub fn show(ui: &mut egui::Ui, state: &NumberNodeState) -> Option<NodeKind>
+pub fn show(ui: &mut egui::Ui, state: &mut NumberNodeState)
 {
-    let mut state_to_modify = state.clone();
-
-    ui.menu_button(state_to_modify.desired_value.to_string(), |ui|
+    ui.menu_button(state.desired_value.to_string(), |ui|
     {
         if ui.button("Automatic").clicked()
         {
-            state_to_modify.desired_value = NumberNodeValueKind::Automatic;
+            state.desired_value = NumberNodeValueKind::Automatic;
         }
         if ui.button("Integer").clicked()
         {
-            state_to_modify.desired_value = NumberNodeValueKind::Integer;
+            state.desired_value = NumberNodeValueKind::Integer;
         }
         if ui.button("Float").clicked()
         {
-            state_to_modify.desired_value = NumberNodeValueKind::Float;
+            state.desired_value = NumberNodeValueKind::Float;
         }
     });
-
-    if state.desired_value == state_to_modify.desired_value
-    {
-        return None;
-    }
-
-    Some ( NodeKind::Number( state_to_modify ) )
-    
 }
 

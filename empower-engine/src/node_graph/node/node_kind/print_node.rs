@@ -10,8 +10,8 @@ pub fn get_print_node_input_ports_compatabilities() -> Vec<PortCompatability>
     Vec::from(
         [
             PortCompatability::Exatch( PortValue::Trigger ),
-            PortCompatability::OneOf( vec![PortValue::Integer(0), PortValue::Float(0.0), PortValue::Text( String::new() ), PortValue::Bool( false ) ]),
-        ]
+            PortCompatability::OneOf( vec![PortValue::Integer(0), PortValue::Float(0.0), PortValue::Text( String::new() ), PortValue::Bool( false ), PortValue::Vector( Vec::new() ) ])
+       ]
     )
 }
 

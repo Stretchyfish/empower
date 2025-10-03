@@ -1,4 +1,5 @@
-use empower_engine::node_graph::port::PortValue;
+use egui::accesskit::Node;
+use empower_engine::node_graph::{node::node_kind, port::PortValue};
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
 
@@ -11,6 +12,31 @@ pub mod display_text_node;
 pub mod display_bool_node;
 pub mod display_addition_node;
 pub mod display_multiplication_node;
+pub mod display_vector_node;
+pub use display_vector_node::DisplayVectorState;
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum DisplayState
+{
+    None,
+    Vector(DisplayVectorState),
+}
+
+pub fn get_display_state(node_kind: &NodeKind) -> DisplayState
+{
+    match  node_kind
+    {
+        NodeKind::Start => DisplayState::None,
+        NodeKind::Number(_) => DisplayState::None,
+        NodeKind::Bool => DisplayState::None,
+        NodeKind::Text => DisplayState::None,
+        NodeKind::Addition => DisplayState::None,
+        NodeKind::Multiply => DisplayState::None,
+        NodeKind::Print => DisplayState::None,
+        NodeKind::Vector(_) => DisplayState::Vector( DisplayVectorState::new() ),
+    }
+
+}
 
 pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2
 {
@@ -22,7 +48,8 @@ pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2
         NodeKind::Text => display_text_node::get_display_text_node_size(),
         NodeKind::Addition => display_addition_node::get_display_node_size(),
         NodeKind::Multiply => display_multiplication_node::get_display_node_size(),
-        NodeKind::Print => display_print_node::get_display_print_node_size(),
+        NodeKind::Print => display_print_node::get_display_node_size(),
+        NodeKind::Vector( state ) => display_vector_node::get_display_node_size(state)
     }
 }
 
@@ -36,7 +63,8 @@ pub fn get_state_size(node_kind: &NodeKind) -> egui::Vec2
         NodeKind::Text => display_text_node::get_display_text_node_state_size(),
         NodeKind::Addition => display_addition_node::get_state_size(),
         NodeKind::Multiply => display_multiplication_node::get_state_size(), // @TODO, fix file naming
-        NodeKind::Print => display_print_node::get_display_print_node_state_size(),
+        NodeKind::Print => display_print_node::get_display_node_state_size(),
+        NodeKind::Vector(_) => display_vector_node::get_display_node_state_size(),
     }
 }
 
@@ -50,7 +78,8 @@ pub fn get_display_input_ports(node_kind: &NodeKind, inputs: Vec<&PortValue>) ->
         NodeKind::Text => display_text_node::get_display_text_node_input_ports(inputs),
         NodeKind::Addition => display_addition_node::get_display_input_ports(inputs),
         NodeKind::Multiply => display_multiplication_node::get_display_input_ports(inputs),
-        NodeKind::Print => display_print_node::get_display_print_node_input_ports(inputs),
+        NodeKind::Print => display_print_node::get_display_node_input_ports(inputs),
+        NodeKind::Vector(_) => display_vector_node::get_display_node_input_ports(inputs),
     }
 }
 
@@ -64,20 +93,43 @@ pub fn get_display_output_ports(node_kind: &NodeKind, outputs: Vec<&PortValue>) 
         NodeKind::Text => display_text_node::get_display_text_node_output_ports(outputs),
         NodeKind::Addition => display_addition_node::get_display_output_ports(outputs),
         NodeKind::Multiply => display_multiplication_node::get_display_output_ports(outputs),
-        NodeKind::Print => display_print_node::get_display_print_node_output_ports(),
+        NodeKind::Print => display_print_node::get_display_node_output_ports(),
+        NodeKind::Vector(_) => display_vector_node::get_display_node_output_ports(outputs),
     }
 }
 
-pub fn show(ui: &mut egui::Ui, node_kind: &NodeKind) -> Option<NodeKind>
+// @TODO, update the naming between view and show
+pub fn show(ui: &mut egui::Ui, node_kind: &NodeKind, display_state: &DisplayState) -> Option<(NodeKind, DisplayState)>
 {
-    match node_kind
+    // @TODO, this could potentially be expensive, be aware of that!
+    let mut node_kind_to_modify = node_kind.clone(); 
+    let mut display_state_to_modify = display_state.clone();
+    
+    match &mut node_kind_to_modify
     {
-        NodeKind::Start => None,
+        NodeKind::Start => {},
         NodeKind::Number( state ) => display_number_node::show(ui, state),
-        NodeKind::Bool => None,
-        NodeKind::Text => None,
-        NodeKind::Addition => None,
-        NodeKind::Multiply => None,
-        NodeKind::Print => None,
+        NodeKind::Bool => {},
+        NodeKind::Text => {},
+        NodeKind::Addition => {},
+        NodeKind::Multiply => {},
+        NodeKind::Print => {},
+        NodeKind::Vector( state ) => 
+        {
+            let display_vector_state = match &mut display_state_to_modify
+            {
+                DisplayState::None => panic!("The display state of the vector is wrong!"),
+                DisplayState::Vector( state ) => state,
+            };
+
+            display_vector_node::show(ui, state, display_vector_state);
+        },
+    };
+
+    if *node_kind == node_kind_to_modify && *display_state == display_state_to_modify
+    {
+        return None;
     }
+
+    return Some( (node_kind_to_modify, display_state_to_modify) )
 }

@@ -1,5 +1,6 @@
 use crate::node_graph::NodeGraphKey;
 
+#[derive(Clone)]
 pub struct NodeHandle
 {
     pub node_key: NodeGraphKey,

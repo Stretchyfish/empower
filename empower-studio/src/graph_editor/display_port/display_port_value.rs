@@ -30,6 +30,7 @@ impl DisplayPortValue
             PortValue::Bool(_) => egui::Color32::YELLOW,
             PortValue::Undefined(_) => todo!(),
             PortValue::None => todo!(),
+            PortValue::Vector(port_values) => egui::Color32::YELLOW,
         }
     }
 
@@ -97,6 +98,9 @@ impl DisplayPortValue
             (DisplayPortValueType::None, PortValue::Bool(_)) => DisplayPortValueType::None,
             (DisplayPortValueType::None, PortValue::Undefined(_)) => todo!(),
             (DisplayPortValueType::None, PortValue::None) => todo!(),
+            (DisplayPortValueType::Text(_), PortValue::Vector(port_values)) => DisplayPortValueType::None,
+            (DisplayPortValueType::Checkbox(_), PortValue::Vector(port_values)) => todo!(),
+            (DisplayPortValueType::None, PortValue::Vector(port_values)) => DisplayPortValueType::None,
         };
 
         self.value_type = updated_display_port_value_type;
@@ -142,7 +146,8 @@ impl DisplayPortValueType
             PortValue::Integer( int_value ) => DisplayPortValueType::Text( int_value.to_string() ),
             PortValue::Float(_) => todo!(),
             PortValue::Text( text_value ) => DisplayPortValueType::Text( text_value.clone() ),
-            PortValue::Bool( bool_value ) => DisplayPortValueType::Checkbox( *bool_value ), 
+            PortValue::Bool( bool_value ) => DisplayPortValueType::Checkbox( *bool_value ),
+            PortValue::Vector(port_values) => DisplayPortValueType::None,
             PortValue::Undefined(_) => todo!(),
             PortValue::None => todo!(),
         }

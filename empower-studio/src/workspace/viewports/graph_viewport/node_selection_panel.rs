@@ -1,4 +1,4 @@
-use empower_engine::node_graph::node::{node_kind::NumberNodeState, NodeKind};
+use empower_engine::node_graph::node::{node_kind::{NumberNodeState, VectorState}, NodeKind};
 
 use crate::graph_editor::GraphEditor;
 use super::user_input::UserInputs;
@@ -109,6 +109,14 @@ pub fn show(ui: &mut egui::Ui, node_selection_panel: &mut NodeSelectionPanel, gr
                 {
                     // let new_node_type = NodeKind::Print;
                     let new_node_type = NodeKind::Print;
+                    graph_editor.add_node(new_node_type, *mouse_position_in_scene);
+
+                    node_selection_panel.visible = false;
+                }
+
+                if ui.add(egui::Button::new("Vector").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                {
+                    let new_node_type = NodeKind::Vector( VectorState::new() );
                     graph_editor.add_node(new_node_type, *mouse_position_in_scene);
 
                     node_selection_panel.visible = false;

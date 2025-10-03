@@ -116,43 +116,42 @@ impl NodeGraph
 
     pub fn update_node(&mut self, node_key: &NodeGraphKey, new_node_state: NodeKind)
     {
-        let node = self.nodes.get_mut(node_key).expect("Error in update node, unable to fetch node key");
-        node.kind = new_node_state;
-
-        self.refresh_node(node_key);
-    }
-
-    pub fn refresh_node(&mut self, node_key: &NodeGraphKey)
-    {
-
         // This is defined outside of the first scope to avoid borrower issues
         let mut connections_to_remove: Vec<(NodeGraphKey, NodeGraphKey)> = Vec::new();
+        let mut new_input_port_keys = Vec::new();
+        let mut new_output_port_keys = Vec::new();
 
         {
+            // @TODO, take a look if this node fetch can be removed
             let node = self.nodes.get(node_key).expect("ERROR in refresh node, unable to fetch node key");
 
-            let updated_input_compatabilities = node.kind.input_ports_compatabilities();
-            let updated_output_compatabilities = node.kind.output_ports_compatabilities();
+            // @TODO, see if its possible to put the node back instead of new_node_state
+            let updated_input_compatabilities = new_node_state.input_ports_compatabilities();
+            let updated_output_compatabilities = new_node_state.output_ports_compatabilities();
+            println!("see me! {} {}", node.output_port_keys.len(), updated_output_compatabilities.len());
 
             // If too many input ports now exist, remove the extra ones
-            if node.input_port_keys.len() < updated_input_compatabilities.len()
+            if node.input_port_keys.len() > updated_input_compatabilities.len()
             {
-                let mut key_to_remove = node.input_port_keys.len();
-                while key_to_remove < updated_input_compatabilities.len() 
+                let mut index_to_remove= updated_input_compatabilities.len();
+                while index_to_remove < node.input_port_keys.len() 
                 {
-                    self.input_ports.remove(&(key_to_remove as NodeGraphKey));
-                    key_to_remove += 1;
+                    let key_to_remove = node.input_port_keys[index_to_remove];
+                    self.input_ports.remove(&key_to_remove); // This does not look correct!
+                    index_to_remove += 1;
                 }
             }
 
             // If too many output ports now exist, remove the extra ones
-            if node.input_port_keys.len() < updated_output_compatabilities.len()
+            if node.output_port_keys.len() > updated_output_compatabilities.len()
             {
-                let mut key_to_remove = node.output_port_keys.len();
-                while key_to_remove < updated_output_compatabilities.len()
+                println!("Entered here");
+                let mut index_to_remove = updated_output_compatabilities.len();
+                while index_to_remove < node.output_port_keys.len()
                 {
-                    self.output_ports.remove(&(key_to_remove as NodeGraphKey));
-                    key_to_remove += 1;
+                    let key_to_remove = node.output_port_keys[index_to_remove];
+                    self.output_ports.remove(&key_to_remove);
+                    index_to_remove += 1;
                 }
             }
 
@@ -160,7 +159,7 @@ impl NodeGraph
             for (index, port_compatability) in updated_input_compatabilities.iter().enumerate()
             {
                 // If there are to many new ports, add more
-                if node.input_port_keys.len() - 1 < index
+                if node.input_port_keys.len() - 1 < index // @TODO, this should also be doable with a contain
                 {
                     let new_input_port_key = self.get_available_input_port_key();
                     let new_input_port = Port::new_input_port(
@@ -170,10 +169,12 @@ impl NodeGraph
                     );
     
                     self.input_ports.insert(new_input_port_key, new_input_port);
+                    new_input_port_keys.push(new_input_port_key);
                     continue;
                 }
 
                 let input_port = self.input_ports.get_mut(&node.input_port_keys[index]).unwrap();
+                new_input_port_keys.push(input_port.key);
                 input_port.update_compatability(port_compatability.clone() );
 
                 // Check that the inwards connections to the input ports are still valid
@@ -204,12 +205,14 @@ impl NodeGraph
                                                                     port_compatability.clone()
                     );
 
-                    self.input_ports.insert(new_output_port_key, new_output_port);
+                    self.output_ports.insert(new_output_port_key, new_output_port);
+                    new_output_port_keys.push(new_output_port_key);
                     continue;
                 }
 
                 let output_port = self.output_ports.get_mut(&node.output_port_keys[index]).unwrap();
                 output_port.update_compatability(port_compatability.clone() );
+                new_output_port_keys.push(output_port.key);
 
                 if !self.connections_out.contains_key(&output_port.key)
                 {
@@ -229,6 +232,14 @@ impl NodeGraph
                 }
             }
         }
+
+        let node = self.nodes.get_mut(node_key).expect("Error in update node, unable to fetch node key");
+        node.kind = new_node_state;
+
+        println!("New number of output port keys: {}", new_output_port_keys.len());
+
+        node.input_port_keys = new_input_port_keys;
+        node.output_port_keys = new_output_port_keys;
 
         for connection in connections_to_remove
         {
@@ -571,7 +582,7 @@ impl NodeGraph
     }
 
     // @TODO, simplify these input and output port functions
-    pub fn get_output_port_values(&self, node_key: &NodeGraphKey) -> Vec<&PortValue>
+    pub fn get_output_port_values(&self, node_key: &NodeGraphKey) -> Vec<&PortValue> // @TODO, fix the naming now matching its neighbor function
     {
         let node = match self.nodes.get(node_key)
         {

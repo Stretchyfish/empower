@@ -182,11 +182,12 @@ pub fn show_node_body(
         let style = ui.style_mut();
         style.override_font_id = Some ( egui::FontId::proportional(35.0));
 
-        modified_state = display_node_kind::show(ui, &node.kind);
+        modified_state = display_node_kind::show(ui, &node.kind, &display_node.display_state);
     });
 
     if modified_state.is_some()
     {
-        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedState(modified_state.unwrap())});
+        let modifications = modified_state.unwrap();
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedState(modifications.0, modifications.1)});
     }
 }
