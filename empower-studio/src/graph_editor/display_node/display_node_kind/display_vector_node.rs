@@ -3,7 +3,7 @@ use core::num;
 use egui::{self, output};
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-use empower_engine::node_graph::{node::{node_kind::VectorState, NodeKind}, port::PortValue};
+use empower_engine::{node_graph::{node::{node_kind::VectorState, NodeKind}, port::PortValue}, utilities::AlphabetCounter};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DisplayVectorState
@@ -47,10 +47,13 @@ pub fn get_display_node_input_ports(inputs: Vec<&PortValue>) -> Vec<DisplayPortV
 
     let mut display_port_values = Vec::new();
     display_port_values.reserve(inputs.len());
+    
+    let mut alphabet_counter = AlphabetCounter::new(); 
 
     for input in inputs
     {
-        display_port_values.push( DisplayPortValue::from("a".to_string(), input ));
+        let letter = alphabet_counter.next_letter();
+        display_port_values.push( DisplayPortValue::from(letter.to_string(), input ));
     }
 
     display_port_values
