@@ -23,7 +23,7 @@ impl AlphabetCounter
 
         let char_to_return = chars_array[self.current_letter];
 
-        if (chars_array.len() - 1 > self.current_letter)
+        if chars_array.len() - 1 > self.current_letter
         {
             self.current_letter += 1;
         }

@@ -15,6 +15,8 @@ pub mod print_node;
 pub mod text_node;
 pub mod vector_node;
 pub use vector_node::VectorState;
+pub mod file_path_node;
+pub use file_path_node::FilePathState;
 
 #[derive(Default, Clone, PartialEq, Eq, Debug)]
 pub enum NodeKind {
@@ -27,6 +29,7 @@ pub enum NodeKind {
     Multiply,
     Print,
     Vector(VectorState),
+    FilePath(FilePathState),
 }
 
 impl fmt::Display for NodeKind {
@@ -46,6 +49,7 @@ impl NodeKind {
             NodeKind::Multiply => multiply_node::get_name(),
             NodeKind::Print => print_node::get_name(),
             NodeKind::Vector(_) => vector_node::get_name(),
+            NodeKind::FilePath(_) => file_path_node::get_name(),
         }
     }
 
@@ -61,6 +65,7 @@ impl NodeKind {
             NodeKind::Multiply => multiply_node::get_multiply_node_input_ports_compatabilities(),
             NodeKind::Print => print_node::get_print_node_input_ports_compatabilities(),
             NodeKind::Vector( state ) => vector_node::get_input_ports_compatabilities(state),
+            NodeKind::FilePath(_) => file_path_node::get_node_input_ports_compatabilities(),
         }
     }
 
@@ -75,7 +80,8 @@ impl NodeKind {
             NodeKind::Addition => addition_node::get_addition_node_output_ports_compatabilities(),
             NodeKind::Multiply => multiply_node::get_multiply_node_output_ports_compatabilities(),
             NodeKind::Print => print_node::get_print_node_output_ports_compatabilities(),
-            NodeKind::Vector( state ) => vector_node::get_output_ports_compatabilities(state),
+            NodeKind::Vector(_) => vector_node::get_output_ports_compatabilities(),
+            NodeKind::FilePath(_) => file_path_node::get_node_output_ports_compatabilities(),
         }
     }
 
@@ -90,6 +96,7 @@ impl NodeKind {
             NodeKind::Multiply => multiply_node::execute_multiply_node(inputs),
             NodeKind::Print => print_node::execute_print_node(inputs, log),
             NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
+            NodeKind::FilePath( state ) => file_path_node::execute(state),
         }
     }
 }

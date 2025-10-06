@@ -1,7 +1,7 @@
 use egui;
 
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-use empower_engine::node_graph::{node::node_kind::{number_node::{NumberNodeValueKind}, NodeKind, NumberNodeState}, port::PortValue};
+use empower_engine::node_graph::{node::node_kind::{number_node::{NumberNodeValueKind}, NumberNodeState}, port::PortValue};
 
 pub fn get_display_node_size() -> egui::Vec2 
 {

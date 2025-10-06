@@ -168,9 +168,13 @@ pub fn show_node_body(
             egui::StrokeKind::Inside,
     );
 
+
+    // @TODO, try and find a way to precompute the state and calculate this distance first, then show it later
+
     let node_state_margin = 5.0;
     let state_size = display_node_kind::get_state_size(&node.kind);
-    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + display_node.size.x / 2.0 - state_size.x / 2.0, y: title_box_rect.max.y + node_state_margin };
+    // let state_top_left_corner = egui::Pos2 { x: display_node.position.x + display_node.size.x / 2.0 - state_size.x / 2.0, y: title_box_rect.max.y + node_state_margin };
+    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + node_state_margin, y: title_box_rect.max.y + node_state_margin };
     let state_max_rect = egui::Rect::from_min_size(state_top_left_corner, state_size); 
 
     let state_ui_builder = egui::UiBuilder::new()

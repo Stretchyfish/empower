@@ -1,9 +1,5 @@
-use core::num;
-
-use egui::{self, output};
-
 use crate::graph_editor::display_port::display_port_value::DisplayPortValue;
-use empower_engine::{node_graph::{node::{node_kind::VectorState, NodeKind}, port::PortValue}, utilities::AlphabetCounter};
+use empower_engine::{node_graph::{node::{node_kind::VectorState}, port::PortValue}, utilities::AlphabetCounter};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DisplayVectorState
@@ -57,57 +53,6 @@ pub fn get_display_node_input_ports(inputs: Vec<&PortValue>) -> Vec<DisplayPortV
     }
 
     display_port_values
-
-    // @TODO, find a better approach for this?
-    // match inputs.len()
-    // {
-    //     2 =>
-    //     {
-    //         vec![ 
-    //             DisplayPortValue::from("a".to_string(), inputs[0]),
-    //             DisplayPortValue::from("b".to_string(), inputs[1]),
-    //         ]
-    //     }
-    //     3 =>
-    //     {
-    //         vec![ 
-    //             DisplayPortValue::from("a".to_string(), inputs[0]),
-    //             DisplayPortValue::from("b".to_string(), inputs[1]),
-    //             DisplayPortValue::from("c".to_string(), inputs[1]),
-    //         ]
-    //     }
-    //     4 =>
-    //     {
-    //         vec![ 
-    //             DisplayPortValue::from("a".to_string(), inputs[0]),
-    //             DisplayPortValue::from("b".to_string(), inputs[1]),
-    //             DisplayPortValue::from("c".to_string(), inputs[1]),
-    //             DisplayPortValue::from("d".to_string(), inputs[1]),
-    //         ]
-    //     }
-    //     5 =>
-    //     {
-    //         vec![ 
-    //             DisplayPortValue::from("a".to_string(), inputs[0]),
-    //             DisplayPortValue::from("b".to_string(), inputs[1]),
-    //             DisplayPortValue::from("c".to_string(), inputs[1]),
-    //             DisplayPortValue::from("d".to_string(), inputs[1]),
-    //             DisplayPortValue::from("e".to_string(), inputs[1]),
-    //         ]
-    //     }
-    //     6 =>
-    //     {
-    //         vec![ 
-    //             DisplayPortValue::from("a".to_string(), inputs[0]),
-    //             DisplayPortValue::from("b".to_string(), inputs[1]),
-    //             DisplayPortValue::from("c".to_string(), inputs[1]),
-    //             DisplayPortValue::from("d".to_string(), inputs[1]),
-    //             DisplayPortValue::from("e".to_string(), inputs[1]),
-    //             DisplayPortValue::from("f".to_string(), inputs[1]),
-    //         ]
-    //     }
-    //     _ => panic!("Vector somehow got an impossible size"),
-    // }
 }
 
 pub fn get_display_node_output_ports(outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
@@ -120,6 +65,8 @@ pub fn get_display_node_output_ports(outputs: Vec<&PortValue>) -> Vec<DisplayPor
 pub fn show(ui: &mut egui::Ui, state: &mut VectorState, display_state: &mut DisplayVectorState)
 {
     ui.horizontal(|ui|
+    {
+    ui.horizontal_centered(|ui|
     {
         ui.label("size: ");
 
@@ -202,6 +149,8 @@ pub fn show(ui: &mut egui::Ui, state: &mut VectorState, display_state: &mut Disp
             ui.add( text_edit);
             
         }
+    });
+
     });
 }
 
