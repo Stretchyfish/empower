@@ -14,6 +14,7 @@ pub mod display_multiplication_node;
 pub mod display_vector_node;
 pub use display_vector_node::DisplayVectorState;
 pub mod display_file_path_node;
+pub mod display_show_image_node;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum DisplayState
@@ -35,8 +36,8 @@ pub fn get_display_state(node_kind: &NodeKind) -> DisplayState
         NodeKind::Print => DisplayState::None,
         NodeKind::Vector(_) => DisplayState::Vector( DisplayVectorState::new() ),
         NodeKind::FilePath(_) => DisplayState::None,
+        NodeKind::ShowImage => DisplayState::None,
     }
-
 }
 
 pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2
@@ -52,6 +53,7 @@ pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2
         NodeKind::Print => display_print_node::get_display_node_size(),
         NodeKind::Vector( state ) => display_vector_node::get_display_node_size(state),
         NodeKind::FilePath(_) => display_file_path_node::get_display_node_size(),
+        NodeKind::ShowImage => display_show_image_node::get_display_node_size(),
     }
 }
 
@@ -68,6 +70,7 @@ pub fn get_state_size(node_kind: &NodeKind) -> egui::Vec2
         NodeKind::Print => display_print_node::get_display_node_state_size(),
         NodeKind::Vector(_) => display_vector_node::get_display_node_state_size(),
         NodeKind::FilePath(_) => display_file_path_node::get_state_size(),
+        NodeKind::ShowImage => display_show_image_node::get_display_node_state_size(),
     }
 }
 
@@ -84,6 +87,7 @@ pub fn get_display_input_ports(node_kind: &NodeKind, inputs: Vec<&PortValue>) ->
         NodeKind::Print => display_print_node::get_display_node_input_ports(inputs),
         NodeKind::Vector(_) => display_vector_node::get_display_node_input_ports(inputs),
         NodeKind::FilePath(_) => display_file_path_node::get_display_input_ports(),
+        NodeKind::ShowImage => display_show_image_node::get_display_node_input_ports(inputs),
     }
 }
 
@@ -100,6 +104,7 @@ pub fn get_display_output_ports(node_kind: &NodeKind, outputs: Vec<&PortValue>) 
         NodeKind::Print => display_print_node::get_display_node_output_ports(),
         NodeKind::Vector(_) => display_vector_node::get_display_node_output_ports(outputs),
         NodeKind::FilePath(_) => display_file_path_node::get_display_output_ports(outputs),
+        NodeKind::ShowImage => display_show_image_node::get_display_node_output_ports(outputs),
     }
 }
 
@@ -130,6 +135,7 @@ pub fn show(ui: &mut egui::Ui, node_kind: &NodeKind, display_state: &DisplayStat
             display_vector_node::show(ui, state, display_vector_state);
         },
         NodeKind::FilePath( state ) => display_file_path_node::show(ui, state),
+        NodeKind::ShowImage => {}
     };
 
     if *node_kind == node_kind_to_modify && *display_state == display_state_to_modify

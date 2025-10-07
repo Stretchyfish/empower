@@ -12,7 +12,6 @@ fn main() -> Result<(), eframe::Error>
     .with_active(true)
     .with_clamp_size_to_monitor_size(true)
     .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
-    .with_always_on_top()
     .with_maximized(true); // @TODO, improve the maximized approach
     
     let native_options = eframe::NativeOptions { 
