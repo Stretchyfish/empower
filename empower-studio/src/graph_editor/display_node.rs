@@ -2,6 +2,7 @@ use crate::graph_editor::display_node::display_node_kind::DisplayState;
 
 pub mod display_node_kind;
 
+#[derive(Clone)]
 pub struct DisplayNode
 {
     pub title: &'static str,

@@ -65,6 +65,8 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
         drag_pan_button = egui::DragPanButtons::empty();
     }
 
+    let mut interaction_happened_this_loop = false; // @TODO, find a better way of doing this
+
     egui::Scene::new()
     .zoom_range(0.01..=2.0)
     .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
@@ -125,6 +127,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
             if clicked_quick_menu_button
             {
                 graph_viewport.quick_menu = None;
+                interaction_happened_this_loop = true;
             }
         }
 
@@ -133,7 +136,6 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, graph_viewport: &
 
     graph_viewport.scene_rect = scene_rect;
 
-    let mut interaction_happened_this_loop = false; // @TODO, find a better way of doing this
     let mut nodes_inside_selection_rect = Vec::new();
     let mut port_was_clicked = false; // @TODO, find a better way to approach this
     for node_widget_response in node_widgets_responses
@@ -366,6 +368,8 @@ fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_posit
 
     let mut button_clicked = false;
 
+    let mut potentially_new_selected_nodes = Vec::new();
+
     let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
     ui.scope_builder(quick_menu_ui_builder, |ui|
     {
@@ -382,6 +386,21 @@ fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_posit
                 }
             }
 
+            if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+            {
+                let mut new_node_keys = Vec::new();
+                new_node_keys.reserve(selected_nodes.len());
+
+                for node_key in selected_nodes.clone()
+                {
+                    let copied_node_key = graph_editor.create_node_copy(&node_key);
+
+                    new_node_keys.push(copied_node_key);
+                }
+
+                potentially_new_selected_nodes = new_node_keys;
+                button_clicked = true;
+            }
 
             if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
             {
@@ -398,7 +417,7 @@ fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_posit
 
     if button_clicked
     {
-        graph_editor.selected_nodes = Vec::new(); // @TODO, find a more elegant way of doing this
+        graph_editor.selected_nodes = potentially_new_selected_nodes; // @TODO, find a more elegant way of doing this
     }
 
     button_clicked

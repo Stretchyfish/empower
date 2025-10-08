@@ -6,6 +6,7 @@ pub use node_kind::NodeKind;
 pub mod node_handle;
 pub use node_handle::NodeHandle;
 
+#[derive(Clone)]
 pub struct Node
 {
     pub key: NodeGraphKey,
