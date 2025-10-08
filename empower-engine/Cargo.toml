@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 once_cell = "1.21.3" # This is not used anymore
 open = "5.0"
+pgfplots = "0.5"

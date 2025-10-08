@@ -18,6 +18,7 @@ pub use vector_node::VectorState;
 pub mod file_path_node;
 pub use file_path_node::FilePathState;
 pub mod show_image_node;
+pub mod math_graph_node;
 
 #[derive(Default, Clone, PartialEq, Eq, Debug)]
 pub enum NodeKind {
@@ -32,6 +33,7 @@ pub enum NodeKind {
     Vector(VectorState),
     FilePath(FilePathState),
     ShowImage,
+    MathGraph,
 }
 
 impl fmt::Display for NodeKind {
@@ -53,6 +55,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::get_name(),
             NodeKind::FilePath(_) => file_path_node::get_name(),
             NodeKind::ShowImage => show_image_node::get_name(),
+            NodeKind::MathGraph => math_graph_node::get_name(),
         }
     }
 
@@ -70,6 +73,7 @@ impl NodeKind {
             NodeKind::Vector( state ) => vector_node::get_input_ports_compatabilities(state),
             NodeKind::FilePath(_) => file_path_node::get_node_input_ports_compatabilities(),
             NodeKind::ShowImage => show_image_node::get_node_input_ports_compatabilities(),
+            NodeKind::MathGraph => math_graph_node::get_node_input_ports_compatabilities(),
         }
     }
 
@@ -87,6 +91,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::get_output_ports_compatabilities(),
             NodeKind::FilePath(_) => file_path_node::get_node_output_ports_compatabilities(),
             NodeKind::ShowImage => show_image_node::get_node_output_ports_compatabilities(),
+            NodeKind::MathGraph => math_graph_node::get_node_output_ports_compatabilities(),
         }
     }
 
@@ -103,6 +108,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
             NodeKind::FilePath( state ) => file_path_node::execute(state),
             NodeKind::ShowImage => show_image_node::execute(inputs),
+            NodeKind::MathGraph => math_graph_node::execute(inputs),
         }
     }
 }
