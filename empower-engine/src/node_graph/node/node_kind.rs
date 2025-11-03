@@ -19,8 +19,9 @@ pub mod file_path_node;
 pub use file_path_node::FilePathState;
 pub mod show_image_node;
 pub mod math_graph_node;
+pub use math_graph_node::MathGraphState;
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug)]
 pub enum NodeKind {
     #[default]
     Start,
@@ -33,7 +34,7 @@ pub enum NodeKind {
     Vector(VectorState),
     FilePath(FilePathState),
     ShowImage,
-    MathGraph,
+    MathGraph(MathGraphState),
 }
 
 impl fmt::Display for NodeKind {
@@ -55,7 +56,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::get_name(),
             NodeKind::FilePath(_) => file_path_node::get_name(),
             NodeKind::ShowImage => show_image_node::get_name(),
-            NodeKind::MathGraph => math_graph_node::get_name(),
+            NodeKind::MathGraph(_) => math_graph_node::get_name(),
         }
     }
 
@@ -73,7 +74,7 @@ impl NodeKind {
             NodeKind::Vector( state ) => vector_node::get_input_ports_compatabilities(state),
             NodeKind::FilePath(_) => file_path_node::get_node_input_ports_compatabilities(),
             NodeKind::ShowImage => show_image_node::get_node_input_ports_compatabilities(),
-            NodeKind::MathGraph => math_graph_node::get_node_input_ports_compatabilities(),
+            NodeKind::MathGraph(_) => math_graph_node::get_node_input_ports_compatabilities(),
         }
     }
 
@@ -91,11 +92,29 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::get_output_ports_compatabilities(),
             NodeKind::FilePath(_) => file_path_node::get_node_output_ports_compatabilities(),
             NodeKind::ShowImage => show_image_node::get_node_output_ports_compatabilities(),
-            NodeKind::MathGraph => math_graph_node::get_node_output_ports_compatabilities(),
+            NodeKind::MathGraph(_) => math_graph_node::get_node_output_ports_compatabilities(),
         }
     }
 
-    pub fn execute(&self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Vec<PortValue> {
+    pub fn setup(&mut self, inputs: Vec<&PortValue>)
+    {
+        match self
+        {
+            NodeKind::Start => {},
+            NodeKind::Number(number_node_state) => {},
+            NodeKind::Bool => {},
+            NodeKind::Text => {},
+            NodeKind::Addition => {},
+            NodeKind::Multiply => {},
+            NodeKind::Print => {},
+            NodeKind::Vector(vector_state) => {},
+            NodeKind::FilePath(file_path_state) => {},
+            NodeKind::ShowImage => {},
+            NodeKind::MathGraph(state) => math_graph_node::setup(state, inputs),
+        }
+    }
+
+    pub fn execute(&self, inputs: Vec<&PortValue>, ui: &mut egui::Ui, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
         // @TODO, consider changing these names to just say execute and same for the compatabilities
         match self {
             NodeKind::Start => start_node::execute_start_node(),
@@ -108,7 +127,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
             NodeKind::FilePath( state ) => file_path_node::execute(state),
             NodeKind::ShowImage => show_image_node::execute(inputs),
-            NodeKind::MathGraph => math_graph_node::execute(inputs),
+            NodeKind::MathGraph( state ) => math_graph_node::execute(inputs, ui),
         }
     }
 }

@@ -24,8 +24,8 @@ pub fn get_multiply_node_output_ports_compatabilities() -> Vec<PortCompatability
     )
 }
 
-pub fn execute_multiply_node(inputs: Vec<&PortValue>) -> Vec<PortValue> 
+pub fn execute_multiply_node(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
 {
     let output_value = inputs[0].clone() * inputs[1].clone();
-    Vec::from( [ output_value ] )
+    Some( Vec::from( [ output_value ] ))
 }

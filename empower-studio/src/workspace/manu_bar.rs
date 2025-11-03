@@ -24,7 +24,8 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         if ui.button("Compile nodes").clicked()
         {
             // @TODO, combine these
-            studio_context.graph_editor.node_graph.execute_node_graph();
+            // studio_context.graph_editor.node_graph.execute_node_graph();
+            studio_context.graph_editor.node_graph.start_node_graph();
             studio_context.graph_editor.refresh_all_node_display();
             // @TODO, condier adding a check, that all display port values are valid?
         }

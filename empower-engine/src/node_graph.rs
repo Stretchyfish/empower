@@ -24,6 +24,9 @@ pub struct NodeGraph
     output_ports: HashMap<NodeGraphKey, Port>,
     connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
     connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
+    
+    last_executed_node: NodeGraphKey,
+    execution_queue: VecDeque<NodeGraphKey>,
     log: TextBuffer,
 }
 
@@ -38,6 +41,8 @@ impl NodeGraph
             output_ports: HashMap::new(),
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
+            last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
+            execution_queue: VecDeque::new(),
             log: TextBuffer::new(),
         }
     }
@@ -513,99 +518,178 @@ impl NodeGraph
         self.nodes.keys().cloned().collect()
     }
 
-    pub fn execute_node_graph(&mut self) -> bool
+    pub fn start_node_graph(&mut self) 
     {
-        if self.node_count() == 0 { return false; }
+        if self.node_count() == 0 { return; }
 
         let start_node_key: NodeGraphKey = 1; // @TODO, find a better approach
-        self.execute_node_graph_from_entry(&start_node_key)
+        self.start_node_graph_from_entry(&start_node_key);
     }
 
-    pub fn execute_node_graph_from_entry(&mut self, node_key: &NodeGraphKey) -> bool
+    pub fn start_node_graph_from_entry(&mut self, node_key: &NodeGraphKey)
     {
-        if !self.nodes.contains_key(node_key) { return false; }
+        self.execution_queue.clear();
 
-        let mut node_keys_to_execute_queue: VecDeque<NodeGraphKey> = VecDeque::new();
-
-        // @TODO, find a better place for these, consider making a execute_node_graphies_entries for list of nodes
         let rouge_nodes = analysis::detect_rouge_nodes(self);
-        println!("Rouge nodes: {:?}", rouge_nodes);
- 
-        node_keys_to_execute_queue.extend(rouge_nodes);
 
-        node_keys_to_execute_queue.push_back( *node_key );
-    
-        while !node_keys_to_execute_queue.is_empty()
-        {
-            println!("{:?}", node_keys_to_execute_queue); // @TODO, remove this and add a debug mode
-
-            let node_to_execute_key: NodeGraphKey = node_keys_to_execute_queue[0];
-
-            let next_nodes_to_execute: Vec<NodeGraphKey> = self.execute_node(&node_to_execute_key);
-
-            node_keys_to_execute_queue.extend(next_nodes_to_execute);
-            node_keys_to_execute_queue.pop_front();
-        }
-
-        true
+        self.execution_queue.extend(rouge_nodes);
+        self.execution_queue.push_back(*node_key);
     }
 
-    pub fn execute_node(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey>
+    pub fn stop_node_graph(&mut self)
     {
-        let node_to_execute;
-        match self.nodes.get_mut(node_key)
+        self.execution_queue.clear();
+    }
+
+    pub fn is_running(&self) -> bool
+    {
+       !self.execution_queue.is_empty() 
+    }
+
+    pub fn view_node_graph(&mut self, ui: &mut egui::Ui)
+    {
+        if self.execution_queue.is_empty() { return; }
+
+        let node_to_execute = self.execution_queue[0]; // @TODO, consider if it should be rewritten with .front instead
+
+        let execution_response = self.view_node(&node_to_execute, ui);
+
+        if execution_response.is_none()
         {
-            Some( value ) => node_to_execute = value,
-            None => return Vec::new(),
+            return;
         }
-        
+
+        self.execution_queue.extend(execution_response.unwrap());
+        self.execution_queue.pop_front();
+    }
+
+    pub fn view_node(&mut self, node_key: &NodeGraphKey, ui: &mut egui::Ui) -> Option<Vec<NodeGraphKey>>
+    {
+        let node_to_execute = self.nodes.get_mut(node_key).expect("View node tried to fetch a node that doesn't exist");
+
+        // let input_port_values = self.get_node_input_port_values(node_key).clone(); // @Consider if there is a way to avoid this clone
         let mut input_port_values = Vec::with_capacity(node_to_execute.input_port_keys.len());
         for input_port_key in &node_to_execute.input_port_keys
         {
-            let input_port;
-            match self.input_ports.get(input_port_key)
-            {
-                Some( value ) => input_port = value,
-                None => return Vec::new(),
-            }
-
+            let input_port = self.input_ports.get(input_port_key).unwrap();
             input_port_values.push(&input_port.value);
         } 
 
-        let executed_output_values = node_to_execute.kind.execute(input_port_values, &mut self.log);
-
-        if executed_output_values.len() != node_to_execute.output_port_keys.len()
+        if self.last_executed_node != *node_key
         {
-            println!("Executed output and node output does not match");
-            return Vec::new();
+            node_to_execute.kind.setup(input_port_values);
+            self.last_executed_node = *node_key;
+            return None; // Only happens once to deal with borrower issues
         }
 
-        for (output_port_index, output_port_key) in node_to_execute.output_port_keys.iter().enumerate()
+        let mut logging = TextBuffer::new();
+        let executed_output_values = node_to_execute.kind.execute(input_port_values, ui, &mut logging);
+
+        if executed_output_values.is_none()
         {
-            let output_port = self.output_ports.get_mut(output_port_key).expect("ERROR in execute node, unable to fetch output port");
-
-            let executed_output_value = &executed_output_values[output_port_index];
-
-            if !output_port.compatability.contains_port_value_type(executed_output_value)
-            {
-                println!("Executed node, and tried to set output port, but types are incompatible");
-                return Vec::new();
-            }
-
-            output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
+            return None;
         }
 
+        let test = executed_output_values.unwrap();
+        self.set_output_port_values(node_key, &test);
+        
         let distribution_result = self.distribute_outputs(node_key); 
-        match distribution_result
-        {
-            Ok( new_nodes_to_execute ) => new_nodes_to_execute,
-            Err( error_text ) =>
-            {
-                println!("{}", error_text); // @TODO, printing should be part of a debug mode
-                Vec::new()
-            },
-        }
+        return Some( distribution_result );
     }
+
+    // pub fn execute_node_graph(&mut self) -> bool
+    // {
+    //     if self.node_count() == 0 { return false; }
+
+    //     let start_node_key: NodeGraphKey = 1; // @TODO, find a better approach
+    //     self.execute_node_graph_from_entry(&start_node_key)
+    // }
+
+    // pub fn execute_node_graph_from_entry(&mut self, node_key: &NodeGraphKey) -> bool
+    // {
+    //     if !self.nodes.contains_key(node_key) { return false; }
+
+    //     let mut node_keys_to_execute_queue: VecDeque<NodeGraphKey> = VecDeque::new();
+
+    //     // @TODO, find a better place for these, consider making a execute_node_graphies_entries for list of nodes
+    //     let rouge_nodes = analysis::detect_rouge_nodes(self);
+    //     println!("Rouge nodes: {:?}", rouge_nodes);
+ 
+    //     node_keys_to_execute_queue.extend(rouge_nodes);
+
+    //     node_keys_to_execute_queue.push_back( *node_key );
+    
+    //     while !node_keys_to_execute_queue.is_empty()
+    //     {
+    //         println!("{:?}", node_keys_to_execute_queue); // @TODO, remove this and add a debug mode
+
+    //         let node_to_execute_key: NodeGraphKey = node_keys_to_execute_queue[0];
+
+    //         let next_nodes_to_execute: Vec<NodeGraphKey> = self.execute_node(&node_to_execute_key);
+
+    //         node_keys_to_execute_queue.extend(next_nodes_to_execute);
+    //         node_keys_to_execute_queue.pop_front();
+    //     }
+
+    //     true
+    // }
+
+    // pub fn execute_node(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey>
+    // {
+    //     let node_to_execute;
+    //     match self.nodes.get_mut(node_key)
+    //     {
+    //         Some( value ) => node_to_execute = value,
+    //         None => return Vec::new(),
+    //     }
+        
+    //     let mut input_port_values = Vec::with_capacity(node_to_execute.input_port_keys.len());
+    //     for input_port_key in &node_to_execute.input_port_keys
+    //     {
+    //         let input_port;
+    //         match self.input_ports.get(input_port_key)
+    //         {
+    //             Some( value ) => input_port = value,
+    //             None => return Vec::new(),
+    //         }
+
+    //         input_port_values.push(&input_port.value);
+    //     } 
+
+    //     let executed_output_values = node_to_execute.kind.execute(input_port_values, &mut self.log);
+
+    //     if executed_output_values.len() != node_to_execute.output_port_keys.len()
+    //     {
+    //         println!("Executed output and node output does not match");
+    //         return Vec::new();
+    //     }
+
+    //     for (output_port_index, output_port_key) in node_to_execute.output_port_keys.iter().enumerate()
+    //     {
+    //         let output_port = self.output_ports.get_mut(output_port_key).expect("ERROR in execute node, unable to fetch output port");
+
+    //         let executed_output_value = &executed_output_values[output_port_index];
+
+    //         if !output_port.compatability.contains_port_value_type(executed_output_value)
+    //         {
+    //             println!("Executed node, and tried to set output port, but types are incompatible");
+    //             return Vec::new();
+    //         }
+
+    //         output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
+    //     }
+
+    //     let distribution_result = self.distribute_outputs(node_key); 
+    //     match distribution_result
+    //     {
+    //         Ok( new_nodes_to_execute ) => new_nodes_to_execute,
+    //         Err( error_text ) =>
+    //         {
+    //             println!("{}", error_text); // @TODO, printing should be part of a debug mode
+    //             Vec::new()
+    //         },
+    //     }
+    // }
 
     pub fn get_node_input_port_values(&self, node_key: &NodeGraphKey) -> Vec<&PortValue>
     {
@@ -651,6 +735,32 @@ impl NodeGraph
         output_port_values
     }
 
+    pub fn set_output_port_values(&mut self, node_key: &NodeGraphKey, new_values: &Vec<PortValue>)
+    {
+        let node = self.nodes.get(node_key).unwrap();
+
+        if node.output_port_keys.len() != new_values.len()
+        {
+            println!("Executed output and node output does not match");
+            return;
+        }
+
+        for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
+        {
+            let output_port = self.output_ports.get_mut(output_port_key).expect("ERROR in execute node, unable to fetch output port");
+
+            let executed_output_value = &new_values[output_port_index];
+
+            if !output_port.compatability.contains_port_value_type(executed_output_value)
+            {
+                println!("Executed node, and tried to set output port, but types are incompatible");
+                return;
+            }
+
+            output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
+        }
+    }
+
     fn get_available_node_key(&self) -> NodeGraphKey
     {
         self.nodes.keys().max().unwrap_or(&0) + 1
@@ -666,17 +776,17 @@ impl NodeGraph
         self.output_ports.keys().max().unwrap_or(&0) + 1
     }
 
-    fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Result<Vec<NodeGraphKey>, String>
+    fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey> 
     {
         let node = match self.nodes.get(node_key)
         {
             Some( node ) => node,
-            None => return Err( format!("Failed to retrieve node with key {} in distribute outputs", node_key) ),
+            None => return Vec::new()
         };
 
         if node.output_port_keys.is_empty()
         {
-            return Ok( Vec::new() );
+            return Vec::new();
         }
 
         let mut next_nodes_to_execute = Vec::new(); // @TODO, fill this out
@@ -693,7 +803,7 @@ impl NodeGraph
             let output_port = match self.output_ports.get(output_port_key)
             {
                 Some( port ) => port,
-                None => return Err( format!("Failed to retrieve output port with key {} in distribute outputs", output_port_key) ),
+                None => return Vec::new(),
             };
 
             for connected_input_port_key in connected_ports
@@ -701,7 +811,7 @@ impl NodeGraph
                 let input_port = match self.input_ports.get_mut(connected_input_port_key)
                 {
                     Some ( port ) => port,
-                    None => return Err( format!("Failed to retrieve input port with key {} in distribute outputs", connected_input_port_key)),
+                    None => return Vec::new(),
                 };
 
                 let mut new_input_port_value = output_port.value.clone();
@@ -725,7 +835,7 @@ impl NodeGraph
             }
         }
 
-        Ok( next_nodes_to_execute )
+        next_nodes_to_execute
     }
 
     pub fn get_logs(&self) -> &TextBuffer

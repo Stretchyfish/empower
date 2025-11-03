@@ -36,11 +36,12 @@ pub fn get_node_output_ports_compatabilities() -> Vec<PortCompatability>
         )
 }
 
-pub fn execute(state: &FilePathState) -> Vec<PortValue> 
+pub fn execute(state: &FilePathState) -> Option<Vec<PortValue>>
 {
+    Some(
     Vec::from(
         [
             PortValue::Text( state.path.clone() )
         ]
-    )
+    ))
 }
