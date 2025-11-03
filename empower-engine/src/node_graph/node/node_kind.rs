@@ -114,7 +114,7 @@ impl NodeKind {
         }
     }
 
-    pub fn execute(&self, inputs: Vec<&PortValue>, ui: &mut egui::Ui, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    pub fn execute(&self, inputs: Vec<&PortValue>, ctx: &egui::Context, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
         // @TODO, consider changing these names to just say execute and same for the compatabilities
         match self {
             NodeKind::Start => start_node::execute_start_node(),
@@ -127,7 +127,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
             NodeKind::FilePath( state ) => file_path_node::execute(state),
             NodeKind::ShowImage => show_image_node::execute(inputs),
-            NodeKind::MathGraph( state ) => math_graph_node::execute(state, ui),
+            NodeKind::MathGraph( state ) => math_graph_node::execute(state, ctx),
         }
     }
 }

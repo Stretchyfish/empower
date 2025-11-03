@@ -11,7 +11,7 @@ impl Empower
         Self {  }
     }
 
-    pub fn execute(&mut self, node_graph: NodeGraph)
+    pub fn execute(&mut self, mut node_graph: NodeGraph)
     {
         let viewport_builder = egui::ViewportBuilder::default()
         .with_always_on_top()
@@ -24,6 +24,8 @@ impl Empower
                                                         vsync: false, 
                                                         viewport: viewport_builder,
                                                         ..Default::default()};
+
+        node_graph.start_node_graph();
         
         eframe::run_native(
             "empower",
@@ -61,15 +63,26 @@ impl EmpowerRuntime
 
 impl eframe::App for EmpowerRuntime
 {
-    fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) 
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) 
     {
+        if !self.node_graph.is_running()
+        {
+            // This is a very harsh way to stop, so consider if there are better options
+            std::process::exit(0);
+        }
+
         update_node_graph(&mut self.node_graph, ctx);
     }
 }
 
 fn update_node_graph(node_graph: &mut NodeGraph, ctx: &egui::Context)
 {
-
+    if !node_graph.is_running()
+    {
+        return;
+    }
+    
+    node_graph.view_node_graph(ctx);
 }
 
 fn update_node_graph_from_entry(node_graph: &mut NodeGraph, ctx: &egui::Context, node_key: &NodeGraphKey)

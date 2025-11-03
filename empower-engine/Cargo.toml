@@ -7,5 +7,6 @@ edition = "2024"
 once_cell = "1.21.3" # This is not used anymore
 open = "5.0"
 pgfplots = "0.5"
+eframe = "0.32.0"
 egui = "0.32.0" 
 egui_plot = "0.33.0" # Compatible with egui 0.32

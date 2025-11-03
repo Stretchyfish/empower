@@ -100,7 +100,7 @@ pub fn setup(state: &mut MathGraphState, inputs: Vec<&PortValue>)
     state.graph = Some( graph );
 } 
 
-pub fn execute(state: &MathGraphState, ui: &mut egui::Ui) -> Option<Vec<PortValue>>
+pub fn execute(state: &MathGraphState, ctx: &egui::Context) -> Option<Vec<PortValue>>
 {
     let state_clone = state.clone();
 
@@ -110,7 +110,7 @@ pub fn execute(state: &MathGraphState, ui: &mut egui::Ui) -> Option<Vec<PortValu
     .collapsible(true)
     .title_bar(true)
     .open(&mut open)
-    .show(ui.ctx(), |window_ui|
+    .show(ctx, |window_ui|
     {
         Plot::new("My Plot")
         .legend(Legend::default())

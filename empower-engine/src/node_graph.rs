@@ -546,13 +546,13 @@ impl NodeGraph
        !self.execution_queue.is_empty() 
     }
 
-    pub fn view_node_graph(&mut self, ui: &mut egui::Ui)
+    pub fn view_node_graph(&mut self, ctx: &egui::Context)
     {
         if self.execution_queue.is_empty() { return; }
 
         let node_to_execute = self.execution_queue[0]; // @TODO, consider if it should be rewritten with .front instead
 
-        let execution_response = self.view_node(&node_to_execute, ui);
+        let execution_response = self.view_node(&node_to_execute, ctx);
 
         if execution_response.is_none()
         {
@@ -563,7 +563,7 @@ impl NodeGraph
         self.execution_queue.pop_front();
     }
 
-    pub fn view_node(&mut self, node_key: &NodeGraphKey, ui: &mut egui::Ui) -> Option<Vec<NodeGraphKey>>
+    pub fn view_node(&mut self, node_key: &NodeGraphKey, ctx: &egui::Context) -> Option<Vec<NodeGraphKey>>
     {
         let node_to_execute = self.nodes.get_mut(node_key).expect("View node tried to fetch a node that doesn't exist");
 
@@ -583,7 +583,7 @@ impl NodeGraph
         }
 
         let mut logging = TextBuffer::new();
-        let executed_output_values = node_to_execute.kind.execute(input_port_values, ui, &mut logging);
+        let executed_output_values = node_to_execute.kind.execute(input_port_values, ctx, &mut logging);
 
         if executed_output_values.is_none()
         {
