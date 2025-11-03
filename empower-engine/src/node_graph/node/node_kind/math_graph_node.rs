@@ -100,55 +100,16 @@ pub fn setup(state: &mut MathGraphState, inputs: Vec<&PortValue>)
     state.graph = Some( graph );
 } 
 
-pub fn execute(inputs: Vec<&PortValue>, ui: &mut egui::Ui) -> Option<Vec<PortValue>>
+pub fn execute(state: &MathGraphState, ui: &mut egui::Ui) -> Option<Vec<PortValue>>
 {
-    let x_values = match inputs[1]
-    {
-        PortValue::Vector(port_values) => port_values,
-        _ => panic!("ERROR, invalid vector value"),
-    };
+    let state_clone = state.clone();
 
-    let y_values = match inputs[2]
-    {
-        PortValue::Vector(port_values) => port_values,
-        _ => panic!("ERROR, invalid vector value"),
-    };
-
-    if x_values.len() != y_values.len()
-    {
-        // println!("ERROR, math graph values are not same size");
-        // return Some( Vec::new() );
-        panic!("ERROR, math graph values are not same size");
-    }
-
-    let mut x = Vec::new();
-    let mut y = Vec::new();
-    for i in 0..x_values.len()
-    {
-        let x_value = match x_values[i]
-        {
-            PortValue::Float( value ) => value,
-            PortValue::Integer( value ) => value as f32,
-            _ => panic!("ERROR, invalid value type"),
-        };
-
-        x.push(x_value);
-
-        let y_value = match y_values[i]
-        {
-            PortValue::Float( value ) => value,
-            PortValue::Integer( value ) => value as f32,
-            _ => panic!("ERROR, invalid value type"),
-        };
-
-        y.push(y_value);
-    }
-
-    let graph: Vec<[f64; 2]> = x.iter().zip(y.iter()).map(|(&x1, &y1)| [x1 as f64, y1 as f64]).collect();
+    let mut open = true;
 
     egui::Window::new("Math Graph")
     .collapsible(true)
     .title_bar(true)
+    .open(&mut open)
     .show(ui.ctx(), |window_ui|
     {
         Plot::new("My Plot")
@@ -157,12 +118,15 @@ pub fn execute(inputs: Vec<&PortValue>, ui: &mut egui::Ui) -> Option<Vec<PortVal
         {
             plot_ui.line(Line::new(
                 "3rd Curve",
-                PlotPoints::from(graph),
+                PlotPoints::from(state_clone.graph.unwrap()),
             ));
         });
     });
  
-    println!("test");
+    if open == false
+    {
+        return Some( Vec::new() );
+    }
 
     None
 

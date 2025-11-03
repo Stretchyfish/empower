@@ -127,7 +127,7 @@ impl NodeKind {
             NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
             NodeKind::FilePath( state ) => file_path_node::execute(state),
             NodeKind::ShowImage => show_image_node::execute(inputs),
-            NodeKind::MathGraph( state ) => math_graph_node::execute(inputs, ui),
+            NodeKind::MathGraph( state ) => math_graph_node::execute(state, ui),
         }
     }
 }
