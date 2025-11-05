@@ -1,5 +1,8 @@
 use empower_engine;
-use empower_engine::node_graph::node::node_kind::{NodeKind, NumberNodeState};
+use empower_engine::node_graph::node;
+use empower_engine::node_graph::node::node_kind::{MathGraphState, NodeKind, NumberNodeState};
+
+use empower_engine::empower::Empower;
 
 fn main()
 {
@@ -76,8 +79,13 @@ fn main()
         Err(e) => println!("{}", e ),
     }
 
+    let math_graph_node = node_graph.add_node(&NodeKind::MathGraph(MathGraphState::new()));
+    node_graph.add_connection(start_node.output_port_keys[0], math_graph_node.input_port_keys[0]);
+
     empower_engine::analyser::graph_overview::node_graph_quick_overview(&node_graph);
 
-    node_graph.execute_node_graph();
+    // node_graph.execute_node_graph();
 
+    let mut empower = Empower::new();
+    empower.execute(node_graph);
 }

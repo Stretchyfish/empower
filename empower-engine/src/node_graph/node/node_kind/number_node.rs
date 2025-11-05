@@ -59,8 +59,8 @@ pub fn get_number_node_output_ports_compatabilities(state: &NumberNodeState) -> 
     }
 }
 
-pub fn execute_number_node(inputs: Vec<&PortValue>) -> Vec<PortValue> 
+pub fn execute_number_node(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
 {
     let output_port_value = inputs[0].clone();
-    Vec::from( [ output_port_value ] )
+    Some( Vec::from( [ output_port_value ] ) )
 }

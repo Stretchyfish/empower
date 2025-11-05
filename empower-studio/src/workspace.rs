@@ -82,6 +82,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 },
             );
 
+
         // @TODO, find a better location for this?
         let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
         if clicked_backspace
@@ -100,4 +101,10 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
         }
 
     });
+
+    if studio_context.graph_editor.node_graph.is_running()
+    {
+        studio_context.graph_editor.node_graph.view_node_graph(ctx);
+    }
+
 }

@@ -381,7 +381,9 @@ fn show_quick_menu(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, menu_posit
             {
                 if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                 {
-                    graph_editor.node_graph.execute_node_graph_from_entry(&selected_nodes[0]);
+                    // graph_editor.node_graph.execute_node_graph_from_entry(&selected_nodes[0]);
+                    graph_editor.node_graph.start_node_graph_from_entry(&selected_nodes[0]);
+
                     button_clicked = true;
                 }
             }

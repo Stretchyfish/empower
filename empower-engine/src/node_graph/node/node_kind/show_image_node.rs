@@ -22,7 +22,7 @@ pub fn get_node_output_ports_compatabilities() -> Vec<PortCompatability>
     Vec::new()
 }
 
-pub fn execute(inputs: Vec<&PortValue>) -> Vec<PortValue> 
+pub fn execute(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
 {
     let input0 = inputs[1].clone();
 
@@ -42,7 +42,7 @@ pub fn execute(inputs: Vec<&PortValue>) -> Vec<PortValue>
         }
     });
     
-    Vec::new()
+    Some( Vec::new() )
 }
 
 // struct ImageShow

@@ -41,7 +41,7 @@ pub fn get_output_ports_compatabilities() -> Vec<PortCompatability>
     )
 }
 
-pub fn execute_vector_node(inputs: Vec<&PortValue>) -> Vec<PortValue> 
+pub fn execute_vector_node(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
 {
     let mut port_values_vector = Vec::new();
     port_values_vector.reserve(inputs.len());
@@ -51,7 +51,7 @@ pub fn execute_vector_node(inputs: Vec<&PortValue>) -> Vec<PortValue>
         port_values_vector.push(port_value.clone());
     }
 
-    vec![ PortValue::Vector( port_values_vector ) ]
+    Some( vec![ PortValue::Vector( port_values_vector ) ] )
 }
 
 

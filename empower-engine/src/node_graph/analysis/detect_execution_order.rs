@@ -24,7 +24,7 @@ pub fn detect_execution_order(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
         // @TODO, handle this result better
         let next_nodes_to_execute = node_graph.distribute_outputs(&node_execution_order[number_of_nodes_checked]);
 
-        node_execution_order.extend(next_nodes_to_execute.unwrap());
+        node_execution_order.extend(next_nodes_to_execute);
 
         number_of_nodes_checked += 1;
     }

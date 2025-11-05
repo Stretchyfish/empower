@@ -19,8 +19,8 @@ pub fn get_start_node_output_ports_compatabilities() -> Vec<PortCompatability>
         )
 }
 
-pub fn execute_start_node() -> Vec<PortValue> 
+pub fn execute_start_node() -> Option<Vec<PortValue>>
 {
     println!("Ran start node");
-    Vec::from( [ PortValue::Trigger ] )
+    Some( Vec::from( [ PortValue::Trigger ] ) )
 }

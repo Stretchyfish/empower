@@ -20,11 +20,11 @@ pub fn get_print_node_output_ports_compatabilities() -> Vec<PortCompatability>
     Vec::new()
 }
 
-pub fn execute_print_node(inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Vec<PortValue> 
+pub fn execute_print_node(inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>> 
 {
         let text_to_print = inputs[1].to_string();
         println!("PRINTING: {}", inputs[1]);
         log.add_line(&text_to_print);
         
-        Vec::new()
+        Some( Vec::new() )
 }
