@@ -65,10 +65,11 @@ impl eframe::App for EmpowerRuntime
 {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) 
     {
+        // @TODO, find a smart approach for how to handle windows
+        
         if !self.node_graph.is_running()
         {
-            // This is a very harsh way to stop, so consider if there are better options
-            std::process::exit(0);
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
         update_node_graph(&mut self.node_graph, ctx);
