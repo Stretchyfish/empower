@@ -1,4 +1,5 @@
 use std::fmt;
+use std::collections::HashMap;
 
 use crate::analyser::TextBuffer;
 use crate::node_graph::PortValue;
@@ -131,3 +132,24 @@ impl NodeKind {
         }
     }
 }
+
+trait NodeKindTrait
+{
+    fn new() -> Self;
+    fn name() -> &'static str;
+    fn input_compatabilities(self) -> Vec<PortCompatability>;
+    fn output_compatabilities(self) -> Vec<PortCompatability>;
+    fn state(&mut self, ui: &mut egui::Ui);
+    fn setup(&mut self, inputs: Vec<&PortValue>);
+    fn update(&mut self, ctx: &egui::Context) -> Option<Vec<PortValue>>;
+}
+
+pub fn create_node_kind_registry() -> HashMap<&'static str, start_node::StartNode>
+{
+    let mut node_registry = HashMap::new();
+
+    node_registry.insert(start_node::StartNode::name(), start_node::StartNode::new());
+
+    node_registry
+}
+
