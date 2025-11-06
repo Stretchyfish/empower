@@ -1,6 +1,4 @@
-use std::collections::btree_map::Range;
-
-use crate::node_graph::port::{PortCompatability, PortValue};
+use crate::node_graph::node::{PortCompatability, PortValue};
 use pgfplots::{axis::plot::{Plot2D}, Engine, Picture};
 // use egui;
 use egui_plot::{Legend, Line, Plot, PlotPoints};

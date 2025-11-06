@@ -1,4 +1,4 @@
-use crate::node_graph::port::{PortCompatability, PortValue};
+use crate::node_graph::node::{PortCompatability, PortValue};
 use super::NodeKindTrait;
 
 pub fn get_name() -> &'static str
@@ -33,19 +33,24 @@ pub struct StartNode
 
 impl NodeKindTrait for StartNode
 {
-    fn new() -> Self {
+    fn new() -> Box<dyn NodeKindTrait> where
+        Self: Sized {
         todo!()
     }
 
-    fn name() -> &'static str {
+    fn name(&self) -> &'static str {
         todo!()
     }
 
-    fn input_compatabilities(self) -> Vec<PortCompatability> {
+    fn input_compatabilities(&self) -> Vec<PortCompatability> {
         todo!()
     }
 
-    fn output_compatabilities(self) -> Vec<PortCompatability> {
+    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+        todo!()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
         todo!()
     }
 

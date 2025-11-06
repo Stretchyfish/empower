@@ -5,12 +5,10 @@ pub type NodeGraphKey = i32;
 
 pub mod node;
 use node::Node;
+use node::port::Port;
+use node::port::PortValue;
 use node::NodeHandle;
 use node::node_kind::NodeKind; // @TODO, make this include better
-
-pub mod port;
-use port::Port;
-use port::PortValue;
 
 use crate::analyser::TextBuffer;
 

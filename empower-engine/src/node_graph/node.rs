@@ -6,6 +6,11 @@ pub use node_kind::NodeKind;
 pub mod node_handle;
 pub use node_handle::NodeHandle;
 
+pub mod port;
+pub use port::Port;
+pub use port::PortValue;
+pub use port::PortCompatability;
+
 #[derive(Clone)]
 pub struct Node
 {

@@ -1,4 +1,4 @@
-use crate::{analyser::TextBuffer, node_graph::port::{PortCompatability, PortValue}};
+use crate::{analyser::TextBuffer, node_graph::node::{PortCompatability, PortValue}};
 
 pub fn get_name() -> &'static str
 {

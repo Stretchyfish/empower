@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::node_graph::port::{PortCompatability, PortValue};
+use crate::node_graph::node::{PortCompatability, PortValue};
 
 #[derive(Default, Clone, PartialEq, Eq, Debug)]
 pub struct NumberNodeState

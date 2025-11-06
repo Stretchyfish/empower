@@ -1,10 +1,12 @@
+use std::any::Any;
 use std::fmt;
 use std::collections::HashMap;
 
 use crate::analyser::TextBuffer;
 use crate::node_graph::PortValue;
-use crate::node_graph::port::PortCompatability;
-
+use crate::node_graph::node::node_kind::start_node::StartNode;
+use super::PortCompatability;
+use once_cell::sync::Lazy;
 // @TODO, make these private again?
 pub mod number_node;
 pub mod start_node;
@@ -135,21 +137,22 @@ impl NodeKind {
 
 trait NodeKindTrait
 {
-    fn new() -> Self;
-    fn name() -> &'static str;
-    fn input_compatabilities(self) -> Vec<PortCompatability>;
-    fn output_compatabilities(self) -> Vec<PortCompatability>;
+    fn new() -> Box<dyn NodeKindTrait> // This constructor is to allow for dyn
+    where
+        Self: Sized;
+    fn name(&self) -> &'static str;
+    fn input_compatabilities(&self) -> Vec<PortCompatability>;
+    fn output_compatabilities(&self) -> Vec<PortCompatability>;
+    fn as_any(&self) -> &dyn Any; 
     fn state(&mut self, ui: &mut egui::Ui);
     fn setup(&mut self, inputs: Vec<&PortValue>);
     fn update(&mut self, ctx: &egui::Context) -> Option<Vec<PortValue>>;
 }
 
-pub fn create_node_kind_registry() -> HashMap<&'static str, start_node::StartNode>
-{
-    let mut node_registry = HashMap::new();
+type NodeConstructor = fn() -> Box<dyn NodeKindTrait>;
 
-    node_registry.insert(start_node::StartNode::name(), start_node::StartNode::new());
-
-    node_registry
-}
-
+pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
+    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKindTrait>> = HashMap::new();
+    m.insert(StartNode::new().name(), || StartNode::new() );
+    m
+});
