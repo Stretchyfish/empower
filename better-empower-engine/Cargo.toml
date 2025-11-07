@@ -1,0 +1,10 @@
+[package]
+name = "better-empower-engine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+once_cell = "1.21.3"
+eframe = "0.32.0"
+egui = "0.32.0" 
+egui_plot = "0.33.0" # Compatible with egui 0.32
