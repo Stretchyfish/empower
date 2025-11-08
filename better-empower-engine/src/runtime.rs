@@ -103,7 +103,7 @@ impl eframe::App for EmpowerVisualizer
             .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
             .show(ctx, |ui| 
         {
-
+            self.node_graph_executor.execute_node_graph( Some( ui ));
         });
     }
 }
