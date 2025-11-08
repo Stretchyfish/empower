@@ -9,6 +9,7 @@ pub use port_compatability::PortCompatability;
 pub mod port_kind;
 pub use port_kind::PortKind;
 
+#[derive(Clone)]
 pub struct Port
 {
     pub key: NodeGraphKey, 

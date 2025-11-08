@@ -4,6 +4,7 @@ use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortV
 
 use super::NodeKind;
 
+#[derive(Clone)]
 pub struct NumberNode
 {
     pub desired_value: NumberNodeValueKind,
@@ -25,6 +26,10 @@ impl NodeKind for NumberNode
 
     fn name(&self) -> &'static str {
         "number"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new(self.clone())
     }
 
     fn function(&self) -> NodeFunction {
@@ -78,7 +83,7 @@ impl NodeKind for NumberNode
         self.port_value_to_send = inputs[0].clone();
     }
 
-    fn update(&mut self, _: &mut egui::Ui) -> Option<Vec<PortValue>> {
+    fn update(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
         Some( Vec::from( [ self.port_value_to_send.clone() ] ))
     }
 }

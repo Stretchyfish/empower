@@ -2,6 +2,7 @@ use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortV
 
 use super::NodeKind;
 
+#[derive(Clone)]
 pub struct StartNode
 {
 
@@ -17,6 +18,10 @@ impl NodeKind for StartNode
 
     fn name(&self) -> &'static str {
         "start"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new(self.clone())
     }
 
     fn function(&self) -> NodeFunction {
@@ -45,8 +50,9 @@ impl NodeKind for StartNode
     fn setup(&mut self, _: Vec<&PortValue>) {
     }
 
-    fn update(&mut self, _: &mut egui::Ui) -> Option<Vec<PortValue>> {
+    fn update(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
         Some( Vec::from( [ PortValue::Trigger ] ) )
     }
+    
     
 }

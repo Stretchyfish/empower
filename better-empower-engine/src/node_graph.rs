@@ -3,27 +3,23 @@ use std::collections::VecDeque;
 
 pub type NodeGraphKey = i32;
 
-mod node;
+pub mod node; // @TODO, consider making this private
 use node::Node;
 use node::NodeHandle;
 use node::node_kind::NODE_REGISTRY;
 use node::port::Port;
 
+pub use crate::node_graph::node::port::PortValue;
 use crate::node_graph::node::port::PortCompatability;
 
-pub mod analysis;
-
+#[derive(Clone)]
 pub struct NodeGraph
 {
-    nodes: HashMap<NodeGraphKey, Node>,
-    input_ports: HashMap<NodeGraphKey, Port>,
-    output_ports: HashMap<NodeGraphKey, Port>,
-    connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
-    connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
-    
-    last_executed_node: NodeGraphKey,
-    execution_queue: VecDeque<NodeGraphKey>,
-    // log: TextBuffer,
+    pub(crate) nodes: HashMap<NodeGraphKey, Node>,
+    pub(crate) input_ports: HashMap<NodeGraphKey, Port>,
+    pub(crate) output_ports: HashMap<NodeGraphKey, Port>,
+    pub(crate) connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
+    pub(crate) connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
 }
 
 impl NodeGraph
@@ -37,9 +33,6 @@ impl NodeGraph
             output_ports: HashMap::new(),
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
-            last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
-            execution_queue: VecDeque::new(),
-            // log: TextBuffer::new(),
         }
     }
 
@@ -262,22 +255,70 @@ impl NodeGraph
         self.nodes.keys().cloned().collect()
     }
 
-    pub fn start_node_graph(&mut self) 
+    pub fn set_output_port_values(&mut self, node_key: &NodeGraphKey, new_values: &Vec<PortValue>)
     {
-        if self.node_count() == 0 { return; }
+        let node = self.nodes.get(node_key).unwrap();
 
-        let start_node_key: NodeGraphKey = 1; // @TODO, find a better approach
-        self.start_node_graph_from_entry(&start_node_key);
+        if node.output_port_keys.len() != new_values.len()
+        {
+            println!("Executed output and node output does not match");
+            return;
+        }
+
+        for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
+        {
+            let output_port = self.output_ports.get_mut(output_port_key).expect("ERROR in execute node, unable to fetch output port");
+
+            let executed_output_value = &new_values[output_port_index];
+
+            if !output_port.compatability.contains_port_value_type(executed_output_value)
+            {
+                println!("Executed node, and tried to set output port, but types are incompatible");
+                return;
+            }
+
+            output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
+        }
     }
 
-    pub fn start_node_graph_from_entry(&mut self, node_key: &NodeGraphKey)
+    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey> 
     {
-        self.execution_queue.clear();
+        let node = self.nodes.get(node_key).unwrap();
 
-        let rouge_nodes = analysis::detect_rouge_nodes(self);
+        if node.output_port_keys.is_empty()
+        {
+            return Vec::new();
+        }
 
-        self.execution_queue.extend(rouge_nodes);
-        self.execution_queue.push_back(*node_key);
+        let mut next_nodes_to_execute = Vec::new(); // @TODO, fill this out
+
+        for output_port_key in &node.output_port_keys
+        {
+            let connected_ports = match self.connections_out.get(output_port_key)
+            {
+                Some( connections ) => connections,
+                None => continue,
+            };
+
+            let output_port = self.output_ports.get(output_port_key).unwrap();
+
+            for connected_input_port_key in connected_ports
+            {
+                let input_port = self.input_ports.get_mut(connected_input_port_key).unwrap();
+
+                let new_input_port_value = output_port.value.clone();
+
+                if !input_port.compatability.contains_port_value_type(&output_port.value)
+                {
+                    panic!("Unable to distribute value between node");
+                }
+
+                input_port.value = new_input_port_value;
+                next_nodes_to_execute.push(input_port.node_key);
+            }
+        }
+
+        next_nodes_to_execute
     }
 
 }

@@ -18,13 +18,22 @@ pub trait NodeKind
     where
         Self: Sized;
     fn name(&self) -> &'static str;
-    fn function(&self) -> NodeFunction;
+    fn clone_box(&self) -> Box<dyn NodeKind>; // This is needed to enable trait cloning
+    fn function(&self) -> NodeFunction; // @TODO, maybe rename it behavior?
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
     fn as_any(&self) -> &dyn Any; 
     fn state(&mut self, ui: &mut egui::Ui);
     fn setup(&mut self, inputs: Vec<&PortValue>);
-    fn update(&mut self, ui: &mut egui::Ui) -> Option<Vec<PortValue>>;
+    fn update(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>>;
+}
+
+impl Clone for Box<dyn NodeKind>
+{
+    fn clone(&self) -> Self
+    {
+        self.clone_box()
+    }
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;

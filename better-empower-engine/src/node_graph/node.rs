@@ -11,6 +11,7 @@ pub mod port;
 pub mod node_kind;
 pub use node_kind::NodeKind;
 
+#[derive(Clone)]
 pub struct Node
 {
     pub key: NodeGraphKey,
