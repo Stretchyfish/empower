@@ -140,6 +140,60 @@ impl NodeGraph
         Ok(())
     }
 
+    pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeHandle
+    {
+        let mut node_to_copy = self.nodes.get(node_key).expect("ERROR in create_node_copy, asked to get node with incorrect key")
+                                                            .clone();
+
+        let new_node_key = self.get_available_node_key();
+
+        node_to_copy.key = new_node_key;
+
+        // @TODO, consider finding a way of utilizing the create input and output port function here
+        let mut new_input_port_keys = Vec::with_capacity(node_to_copy.input_port_keys.len());
+        for input_port_key in &node_to_copy.input_port_keys
+        {
+            let mut input_port_copy = self.input_ports.get(input_port_key).expect("ERROR in create_node_copy, requested to fetch input port with a key not in the input port list")
+                                                                                .clone();
+            let new_copied_input_port_key = self.get_available_input_port_key();
+            input_port_copy.key = new_copied_input_port_key;
+            input_port_copy.node_key = new_node_key;
+
+            new_input_port_keys.push(input_port_copy.key);
+            self.input_ports.insert(input_port_copy.key, input_port_copy);
+
+            if self.connections_in.contains_key(input_port_key)
+            {
+                let connection = self.connections_in.get(input_port_key).unwrap().clone();
+                let add_connection_result = self.add_connection(connection, new_copied_input_port_key);
+
+                if add_connection_result.is_err()
+                {
+                    println!("{:?}", add_connection_result.err());
+                }
+            }
+        }
+
+        let mut new_output_port_keys = Vec::with_capacity(node_to_copy.output_port_keys.len());
+        for output_port_key in &node_to_copy.output_port_keys
+        {
+            let mut output_port_copy = self.output_ports.get(output_port_key).expect("ERROR in create_node_copy, requested to fetch output port with a key not in the output port list")
+                                                                                    .clone();
+            output_port_copy.key = self.get_available_output_port_key();
+            output_port_copy.node_key = new_node_key;
+
+            new_output_port_keys.push(output_port_copy.key);
+            self.output_ports.insert(output_port_copy.key, output_port_copy);
+        }
+
+        node_to_copy.input_port_keys = new_input_port_keys.clone();
+        node_to_copy.output_port_keys = new_output_port_keys.clone();
+
+        self.nodes.insert(node_to_copy.key, node_to_copy);
+
+        NodeHandle::new(new_node_key, new_input_port_keys, new_output_port_keys)
+    }
+
     fn get_available_node_key(&self) -> NodeGraphKey
     {
         self.nodes.keys().max().unwrap_or(&0) + 1
