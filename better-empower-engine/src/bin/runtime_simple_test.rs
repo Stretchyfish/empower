@@ -4,8 +4,11 @@ fn main()
 
     let number_node_1 = node_graph.add_node("number");
     let number_node_2 = node_graph.add_node("number");
+    let addition_node = node_graph.add_node("addition");
 
     let connection_response = node_graph.add_connection(number_node_1.output_port_keys[0], number_node_2.input_port_keys[0]);
+    node_graph.add_connection(number_node_1.output_port_keys[0], addition_node.input_port_keys[0]);
+    node_graph.add_connection(number_node_2.output_port_keys[0], addition_node.input_port_keys[1]);
 
     if connection_response.is_err()
     {
