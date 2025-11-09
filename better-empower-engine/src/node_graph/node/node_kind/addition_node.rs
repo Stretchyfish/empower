@@ -1,3 +1,4 @@
+use core::panic;
 use std::ops::Add;
 
 use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
@@ -65,6 +66,6 @@ impl NodeKind for AdditionNode
     }
 
     fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
-        None
+        panic!("Entered execute for addition node, which should not happend");
     }
 }

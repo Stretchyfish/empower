@@ -114,6 +114,7 @@ pub struct EmpowerExecutor
     node_graph: NodeGraph,
     debug_mode: bool,
     last_executed_node: NodeGraphKey, // @TODO, consider doing this as a clone, to avoid changed persisting between execution in studio
+    executing_new_node: bool, // @TODO, consider if this is the best way of triggering the setup functions
     execution_queue: VecDeque<NodeGraphKey>,
     // log: TextBuffer,
 }
@@ -127,6 +128,7 @@ impl EmpowerExecutor
             node_graph,
             debug_mode,
             last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
+            executing_new_node: true,
             execution_queue: VecDeque::new(),
         }
     }
@@ -155,6 +157,8 @@ impl EmpowerExecutor
                 panic!("Node Graph is missing start node, will not execute");
             }
         }
+
+        self.executing_new_node = true;
 
         self.execution_queue.clear();
 
@@ -209,9 +213,11 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
-        let executed_output_values = if self.last_executed_node != *node_key
+        // let executed_output_values = if self.last_executed_node != *node_key
+        let executed_output_values = if self.executing_new_node == true
         {
             self.last_executed_node = *node_key;
+            self.executing_new_node = false;
             node_to_execute.kind.setup(input_port_values)
         }
         else 
@@ -226,6 +232,8 @@ impl EmpowerExecutor
         {
             return None;
         }
+
+        self.executing_new_node = true;
 
         let output_values = executed_output_values.unwrap();
         self.node_graph.set_output_port_values(node_key, &output_values);
