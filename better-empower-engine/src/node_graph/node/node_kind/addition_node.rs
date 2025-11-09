@@ -1,5 +1,4 @@
 use core::panic;
-use std::ops::Add;
 
 use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
 
@@ -8,7 +7,6 @@ use super::NodeKind;
 #[derive(Clone)]
 pub struct AdditionNode
 {
-    added_value_to_send: PortValue,
 }
 
 impl NodeKind for AdditionNode
@@ -18,7 +16,6 @@ impl NodeKind for AdditionNode
 
         Box::new(
             Self {
-                added_value_to_send: PortValue::Integer(0),
             }
         )
     }
