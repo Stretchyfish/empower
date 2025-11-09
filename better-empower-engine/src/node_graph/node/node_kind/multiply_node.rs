@@ -3,27 +3,25 @@ use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortV
 use super::NodeKind;
 
 #[derive(Clone)]
-pub struct AdditionNode
+pub struct MultiplyNode
 {
+
 }
 
-impl NodeKind for AdditionNode
+impl NodeKind for MultiplyNode
 {
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new(
-            Self {
-            }
-        )
+        Box::new( Self {} )
     }
 
     fn name(&self) -> &'static str {
-        "addition"
+        "multiply"
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
-        Box::new(self.clone())
+        Box::new( self.clone() )
     }
 
     fn function(&self) -> NodeFunction {
@@ -31,7 +29,7 @@ impl NodeKind for AdditionNode
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
-            Vec::from(
+        Vec::from(
             [
                 PortCompatability::OneOf( vec![PortValue::Integer( 0 ), PortValue::Float( 0.0 )] ),
                 PortCompatability::OneOf( vec![PortValue::Integer( 0 ), PortValue::Float( 0.0 )] ),
@@ -55,12 +53,11 @@ impl NodeKind for AdditionNode
     }
 
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
-
-        let output_value = inputs[0].clone() + inputs[1].clone();
-        Some( Vec::from([ output_value ]) )
+        let output_value = inputs[0].clone() * inputs[1].clone();
+        Some( Vec::from( [ output_value ] ))
     }
 
     fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
-        panic!("Entered execute for addition node, which should not happend");
+        panic!("Multiply node execute got run, should never happen");
     }
 }

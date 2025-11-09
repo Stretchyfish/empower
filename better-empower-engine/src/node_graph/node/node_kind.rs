@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::any::Any;
+use std::ops::Mul;
 
 use once_cell::sync::Lazy;
 
@@ -14,6 +15,9 @@ use number_node::NumberNode;
 
 mod addition_node;
 use addition_node::AdditionNode;
+
+mod multiply_node;
+use multiply_node::MultiplyNode;
 
 pub trait NodeKind
 {
@@ -47,6 +51,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(StartNode::new().name(), || StartNode::new());
     m.insert(NumberNode::new().name(), || NumberNode::new());
     m.insert(AdditionNode::new().name(), || AdditionNode::new());
+    m.insert(MultiplyNode::new().name(), || MultiplyNode::new());
 
     m
 });
