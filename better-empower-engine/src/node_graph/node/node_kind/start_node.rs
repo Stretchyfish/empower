@@ -51,7 +51,7 @@ impl NodeKind for StartNode
         Some( Vec::from( [ PortValue::Trigger ] ) )
     }
 
-    fn update(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
         None
     }
     

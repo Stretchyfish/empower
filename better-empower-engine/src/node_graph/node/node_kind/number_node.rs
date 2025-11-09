@@ -81,7 +81,7 @@ impl NodeKind for NumberNode
         Some( Vec::from( [ inputs[0].clone() ] ))
     }
 
-    fn update(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
         None
     }
 }
