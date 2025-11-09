@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::collections::VecDeque;
 
 pub type NodeGraphKey = i32;
 
@@ -373,6 +372,24 @@ impl NodeGraph
         }
 
         next_nodes_to_execute
+    }
+
+    pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, port_value: PortValue) -> bool
+    {
+        let input_port = match self.input_ports.get_mut(port_key)
+        {
+            Some( port ) => port,
+            None => return false,
+        };
+
+        if !input_port.compatability.contains_port_value_type(&port_value)
+        {
+            return false;
+        }
+
+        input_port.value = port_value;
+
+        true
     }
 
 }
