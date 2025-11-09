@@ -144,7 +144,16 @@ impl EmpowerExecutor
         let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
 
         self.execution_queue.extend(rouge_nodes);
-        self.execution_queue.push_back(*node_key);
+
+        if *node_key == 1 // Start node key (This check is only for debugging of node graph without a start node, should get removed later)
+        {
+            let start_node = self.node_graph.nodes.get(node_key).unwrap();
+
+            if start_node.kind.name() == "start"
+            {
+                self.execution_queue.push_back(*node_key);
+            }
+        }
     }
 
     pub fn stop_node_graph(&mut self)
@@ -186,14 +195,14 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
-        let executed_output_values = if self.last_executed_node == *node_key
+        let executed_output_values = if self.last_executed_node != *node_key
         {
             self.last_executed_node = *node_key;
             node_to_execute.kind.setup(input_port_values)
         }
         else 
         {
-            node_to_execute.kind.update(ui)
+            node_to_execute.kind.execute(ui)
         };
 
         // let mut logging = TextBuffer::new();
@@ -204,11 +213,11 @@ impl EmpowerExecutor
             return None;
         }
 
-        let test = executed_output_values.unwrap();
-        self.node_graph.set_output_port_values(node_key, &test);
+        let output_values = executed_output_values.unwrap();
+        self.node_graph.set_output_port_values(node_key, &output_values);
         
         let distribution_result = self.node_graph.distribute_outputs(node_key); 
-        return Some( distribution_result );
+        Some( distribution_result )
     }
 
 }
