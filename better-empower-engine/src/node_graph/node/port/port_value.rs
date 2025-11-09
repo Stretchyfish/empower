@@ -1,4 +1,5 @@
 use std::mem::discriminant;
+use std::fmt;
 use std::ops;
 
 #[derive(Default, Clone, Debug, PartialEq)]
@@ -18,6 +19,23 @@ impl PortValue
     pub fn is_same_type_as(&self, value: &PortValue) -> bool
     {
         discriminant(self) == discriminant(value)
+    }
+}
+
+impl fmt::Display for PortValue
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        match self
+        {
+            PortValue::Trigger => write!(f, "trigger"),
+            PortValue::Integer(value) => write!(f, "{}", value),
+            PortValue::Float(value) => write!(f, "{}", value),
+            PortValue::Text(value) => write!(f, "{}", value),
+            PortValue::Bool(value) => write!(f, "{}", value),
+            PortValue::None => write!(f, "none"),
+            PortValue::Vector(port_values) => write!(f, "{:?}", port_values)
+        }
     }
 }
 

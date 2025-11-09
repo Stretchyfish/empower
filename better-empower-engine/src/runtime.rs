@@ -18,9 +18,9 @@ pub struct EmpowerRuntime
 
 impl EmpowerRuntime
 {
-    pub fn new(node_graph: NodeGraph) -> Self
+    pub fn new(node_graph: NodeGraph, debug_mode: bool) -> Self
     {
-        let mut node_graph_executor = EmpowerExecutor::new(node_graph);
+        let mut node_graph_executor = EmpowerExecutor::new(node_graph, debug_mode);
         node_graph_executor.start_node_graph();
  
         Self
@@ -112,6 +112,7 @@ impl eframe::App for EmpowerVisualizer
 pub struct EmpowerExecutor
 {
     node_graph: NodeGraph,
+    debug_mode: bool,
     last_executed_node: NodeGraphKey, // @TODO, consider doing this as a clone, to avoid changed persisting between execution in studio
     execution_queue: VecDeque<NodeGraphKey>,
     // log: TextBuffer,
@@ -119,11 +120,12 @@ pub struct EmpowerExecutor
 
 impl EmpowerExecutor
 {
-    pub fn new(node_graph: NodeGraph) -> Self
+    pub fn new(node_graph: NodeGraph, debug_mode: bool) -> Self
     {
         Self
         {
             node_graph,
+            debug_mode,
             last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
             execution_queue: VecDeque::new(),
         }
@@ -139,21 +141,28 @@ impl EmpowerExecutor
 
     pub fn start_node_graph_from_entry(&mut self, node_key: &NodeGraphKey)
     {
-        self.execution_queue.clear();
-
-        let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
-
-        self.execution_queue.extend(rouge_nodes);
+        if self.debug_mode
+        {
+            analysis::start_debugging(self);
+        }
 
         if *node_key == 1 // Start node key (This check is only for debugging of node graph without a start node, should get removed later)
         {
             let start_node = self.node_graph.nodes.get(node_key).unwrap();
 
-            if start_node.kind.name() == "start"
+            if start_node.kind.name() != "start"
             {
-                self.execution_queue.push_back(*node_key);
+                panic!("Node Graph is missing start node, will not execute");
             }
         }
+
+        self.execution_queue.clear();
+
+        let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
+
+        self.execution_queue.extend(rouge_nodes);
+        self.execution_queue.push_back(*node_key);
+
     }
 
     pub fn stop_node_graph(&mut self)
@@ -177,6 +186,11 @@ impl EmpowerExecutor
         if execution_response.is_none()
         {
             return;
+        }
+
+        if self.debug_mode
+        {
+            analysis::runtime_debugging(self);
         }
 
         self.execution_queue.extend(execution_response.unwrap());

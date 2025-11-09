@@ -2,6 +2,7 @@ fn main()
 {
     let mut node_graph = better_empower_engine::NodeGraph::new();
 
+    let number_node_1 = node_graph.add_node("start");
     let number_node_1 = node_graph.add_node("number");
     let number_node_2 = node_graph.add_node("number");
     let addition_node = node_graph.add_node("addition");
@@ -15,9 +16,6 @@ fn main()
         println!("{}", connection_response.err().unwrap());
     }
 
-    better_empower_engine::analyser::node_graph_quick_overview(&node_graph);
-
-
-    let mut runtime = better_empower_engine::EmpowerRuntime::new(node_graph);
+    let mut runtime = better_empower_engine::EmpowerRuntime::new(node_graph, true);
     runtime.execute();
 }

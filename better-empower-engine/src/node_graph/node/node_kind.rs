@@ -46,6 +46,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
 
     m.insert(StartNode::new().name(), || StartNode::new());
     m.insert(NumberNode::new().name(), || NumberNode::new());
+    m.insert(AdditionNode::new().name(), || AdditionNode::new());
 
     m
 });
