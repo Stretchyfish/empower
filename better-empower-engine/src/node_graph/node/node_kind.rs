@@ -12,6 +12,9 @@ use start_node::StartNode;
 mod number_node;
 use number_node::NumberNode;
 
+mod addition_node;
+use addition_node::AdditionNode;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -24,7 +27,7 @@ pub trait NodeKind
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
     fn as_any(&self) -> &dyn Any; 
     fn state(&mut self, ui: &mut egui::Ui);
-    fn setup(&mut self, inputs: Vec<&PortValue>);
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>;
     fn update(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>>;
 }
 

@@ -8,7 +8,6 @@ use super::NodeKind;
 pub struct NumberNode
 {
     pub desired_value: NumberNodeValueKind,
-    port_value_to_send: PortValue,
 }
 
 impl NodeKind for NumberNode
@@ -19,7 +18,6 @@ impl NodeKind for NumberNode
         Box::new(
             Self {
                 desired_value: NumberNodeValueKind::Automatic,
-                port_value_to_send: PortValue::Integer(0),
             }
         )
     }
@@ -79,12 +77,12 @@ impl NodeKind for NumberNode
         });
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) {
-        self.port_value_to_send = inputs[0].clone();
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+        Some( Vec::from( [ inputs[0].clone() ] ))
     }
 
     fn update(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
-        Some( Vec::from( [ self.port_value_to_send.clone() ] ))
+        None
     }
 }
 

@@ -186,17 +186,18 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
-        if self.last_executed_node != *node_key
+        let executed_output_values = if self.last_executed_node == *node_key
         {
-            node_to_execute.kind.setup(input_port_values);
             self.last_executed_node = *node_key;
-            return None; // Only happens once to deal with borrower issues
+            node_to_execute.kind.setup(input_port_values)
         }
+        else 
+        {
+            node_to_execute.kind.update(ui)
+        };
 
         // let mut logging = TextBuffer::new();
         // let executed_output_values = node_to_execute.kind.execute(input_port_values, ctx, &mut logging);
-
-        let executed_output_values = node_to_execute.kind.update(ui);
 
         if executed_output_values.is_none()
         {
