@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::any::Any;
-use std::ops::Mul;
 
 use once_cell::sync::Lazy;
 
@@ -18,6 +17,27 @@ use addition_node::AdditionNode;
 
 mod multiply_node;
 use multiply_node::MultiplyNode;
+
+mod boolean_node;
+use boolean_node::BooleanNode;
+
+mod print_node;
+use print_node::PrintNode;
+
+mod text_node;
+use text_node::TextNode;
+
+mod vector_node;
+use vector_node::VectorNode;
+
+mod math_graph_node;
+use math_graph_node::MathGraphNode;
+
+mod file_path_node;
+use file_path_node::FilePathNode;
+
+mod show_image_node;
+use show_image_node::ShowImageNode;
 
 pub trait NodeKind
 {
@@ -52,6 +72,13 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(NumberNode::new().name(), || NumberNode::new());
     m.insert(AdditionNode::new().name(), || AdditionNode::new());
     m.insert(MultiplyNode::new().name(), || MultiplyNode::new());
+    m.insert(BooleanNode::new().name(), || BooleanNode::new());
+    m.insert(PrintNode::new().name(), || PrintNode::new());
+    m.insert(TextNode::new().name(), || TextNode::new());
+    m.insert(VectorNode::new().name(), || VectorNode::new());
+    m.insert(MathGraphNode::new().name(), || MathGraphNode::new());
+    m.insert(FilePathNode::new().name(), || FilePathNode::new());
+    m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
 
     m
 });

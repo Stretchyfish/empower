@@ -192,10 +192,6 @@ impl EmpowerExecutor
             return;
         }
 
-        if self.debug_mode
-        {
-            analysis::runtime_debugging(self);
-        }
 
         self.execution_queue.extend(execution_response.unwrap());
         self.execution_queue.pop_front();
@@ -203,6 +199,11 @@ impl EmpowerExecutor
 
     fn execute_node(&mut self, node_key: &NodeGraphKey, ui: Option<&mut egui::Ui>) -> Option<Vec<NodeGraphKey>>
     {
+        if self.debug_mode && self.executing_new_node // This statement is for debug only
+        {
+            analysis::runtime_debugging(self);
+        }
+
         let node_to_execute = self.node_graph.nodes.get_mut(node_key).expect("View node tried to fetch a node that doesn't exist");
 
         // let input_port_values = self.get_node_input_port_values(node_key).clone(); // @Consider if there is a way to avoid this clone
@@ -212,6 +213,7 @@ impl EmpowerExecutor
             let input_port = self.node_graph.input_ports.get(input_port_key).unwrap();
             input_port_values.push(&input_port.value);
         } 
+
 
         // let executed_output_values = if self.last_executed_node != *node_key
         let executed_output_values = if self.executing_new_node == true
@@ -224,6 +226,7 @@ impl EmpowerExecutor
         {
             node_to_execute.kind.execute(ui)
         };
+
 
         // let mut logging = TextBuffer::new();
         // let executed_output_values = node_to_execute.kind.execute(input_port_values, ctx, &mut logging);
