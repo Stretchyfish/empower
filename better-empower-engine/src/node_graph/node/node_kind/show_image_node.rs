@@ -69,14 +69,15 @@ impl NodeKind for ShowImageNode
 
         let ui = ui.unwrap();
 
-        // let full_file_path = format!("file://{}", self.image_path.clone().unwrap());
         let full_file_path = self.image_path.clone().unwrap();
-        
-        egui::Image::new(full_file_path)
-        .corner_radius(5)
-        .tint(egui::Color32::LIGHT_BLUE)
-        .paint_at(ui, egui::Rect::from_min_size(egui::Pos2 { x: 0.0, y: 0.0 }, egui::Vec2 { x: 400.0, y: 400.0 }));
 
+        let image = egui::Image::new( format!(
+           "file://{}",
+           full_file_path 
+        ));
+
+        ui.add(image).on_hover_text_at_pointer(full_file_path);
+        
         None
     }
 }

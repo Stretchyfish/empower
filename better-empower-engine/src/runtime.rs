@@ -65,10 +65,14 @@ impl EmpowerRuntime
 
         let executor = self.node_graph_executor.clone(); // @TODO, this can be potentially be a very expensive call, find a better way
         
-        eframe::run_native(
+        let _ = eframe::run_native(
             "empower app",
             native_options,
-            Box::new(|_| Ok(Box::new(EmpowerVisualizer::new(executor)))),
+            Box::new(|cc| 
+            {
+                egui_extras::install_image_loaders(&&cc.egui_ctx);
+                Ok(Box::new(EmpowerVisualizer::new(executor)))
+            }),
         );
      }
 
