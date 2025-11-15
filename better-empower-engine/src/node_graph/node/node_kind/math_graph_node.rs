@@ -112,29 +112,15 @@ impl NodeKind for MathGraphNode
 
         let graph_clone = self.graph.clone().unwrap();
 
-        let mut open = true;
-
-        egui::Window::new("Math Graph")
-        .collapsible(true)
-        .title_bar(true)
-        .open(&mut open)
-        .show(ui.ctx(), |window_ui|
+        Plot::new("My Plot")
+        .legend(Legend::default())
+        .show(ui, |plot_ui| 
         {
-            Plot::new("My Plot")
-            .legend(Legend::default())
-            .show(window_ui, |plot_ui| 
-            {
-                plot_ui.line(Line::new(
-                    "3rd Curve",
-                    PlotPoints::from(graph_clone),
-                ));
-            });
+            plot_ui.line(Line::new(
+                "3rd Curve",
+                PlotPoints::from(graph_clone),
+            ));
         });
-    
-        if open == false
-        {
-            return Some( Vec::new() );
-        }
 
         None
     }

@@ -231,6 +231,7 @@ impl EmpowerExecutor
 
         let mut executed_output_values = None;
 
+        // @TODO, fix these nested if statement
         if self.executing_new_node == true
         {
             self.last_executed_node = *node_key;
@@ -248,11 +249,19 @@ impl EmpowerExecutor
         {
             if node_needs_seperate_window
             {
+                let mut window_open = true;
+
                 egui::Window::new("Debug Panel")
+                .open(&mut window_open)
                 .show(ui.unwrap().ctx(), |window_ui|
                 {
                     executed_output_values = node_to_execute.kind.execute(Some( window_ui ));
                 });
+
+                if !window_open
+                {
+                    executed_output_values = Some( Vec::new() );
+                }
             }
             else 
             {
