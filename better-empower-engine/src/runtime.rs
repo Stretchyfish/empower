@@ -1,4 +1,4 @@
-use crate::{NodeGraph, NodeGraphKey, node_graph};
+use crate::{NodeGraph, NodeGraphKey, node_graph::{self, node::Node}};
 
 use node_graph::node::NodeFunction;
 
@@ -103,6 +103,11 @@ impl eframe::App for EmpowerVisualizer
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
+        if !self.node_graph_executor.is_running()
+        {
+            // Implement termination behavior here
+        }
+
         egui::CentralPanel::default()
             .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
             .show(ctx, |ui| 
@@ -120,6 +125,7 @@ pub struct EmpowerExecutor
     last_executed_node: NodeGraphKey, // @TODO, consider doing this as a clone, to avoid changed persisting between execution in studio
     executing_new_node: bool, // @TODO, consider if this is the best way of triggering the setup functions
     execution_queue: VecDeque<NodeGraphKey>,
+    window_counter: i32,
     // log: TextBuffer,
 }
 
@@ -134,6 +140,7 @@ impl EmpowerExecutor
             last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
             executing_new_node: true,
             execution_queue: VecDeque::new(),
+            window_counter: 0,
         }
     }
 
@@ -189,6 +196,7 @@ impl EmpowerExecutor
 
         let node_to_execute = self.execution_queue[0]; // @TODO, consider if it should be rewritten with .front instead
 
+
         let execution_response = self.execute_node(&node_to_execute, ui);
 
         if execution_response.is_none()
@@ -218,18 +226,110 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
+        let node_needs_seperate_window = self.window_counter > 1;
+        println!("Need window : {}", node_needs_seperate_window);
 
-        // let executed_output_values = if self.last_executed_node != *node_key
-        let executed_output_values = if self.executing_new_node == true
+        let mut executed_output_values = None;
+
+        if self.executing_new_node == true
         {
             self.last_executed_node = *node_key;
             self.executing_new_node = false;
-            node_to_execute.kind.setup(input_port_values)
+
+            match node_to_execute.kind.function()
+            {
+                NodeFunction::Window => self.window_counter += 1,
+                _ => {},
+            }
+
+            executed_output_values = node_to_execute.kind.setup(input_port_values);
         }
         else 
         {
-            node_to_execute.kind.execute(ui)
-        };
+            if node_needs_seperate_window
+            {
+                egui::Window::new("Debug Panel")
+                .show(ui.unwrap().ctx(), |window_ui|
+                {
+                    executed_output_values = node_to_execute.kind.execute(Some( window_ui ));
+                });
+            }
+            else 
+            {
+                executed_output_values = node_to_execute.kind.execute(ui);
+            }
+        }
+
+        // executed_output_values = 
+        // if node_needs_seperate_window
+        // {
+        //     let ui = ui.expect("Program was instantiated with window nodes, but a ui was not created");
+
+        //     egui::Window::new("Debug Panel")
+        //     .show(ui.ctx(), |window_ui|
+        //     {
+        //         if self.executing_new_node == true
+        //         {
+        //             self.last_executed_node = *node_key;
+        //             self.executing_new_node = false;
+
+        //             match node_to_execute.kind.function()
+        //             {
+        //                 NodeFunction::Window => self.window_counter += 1,
+        //                 _ => {},
+        //             }
+
+        //             node_to_execute.kind.setup(input_port_values)
+        //         }
+        //         else 
+        //         {
+        //             node_to_execute.kind.execute(window_ui)
+        //         };
+
+        //     });
+        // }
+        // else 
+        // {
+        //     if self.executing_new_node == true
+        //     {
+        //         self.last_executed_node = *node_key;
+        //         self.executing_new_node = false;
+
+        //         match node_to_execute.kind.function()
+        //         {
+        //             NodeFunction::Window => self.window_counter += 1,
+        //             _ => {},
+        //         }
+
+        //         node_to_execute.kind.setup(input_port_values)
+        //     }
+        //     else 
+        //     {
+        //         node_to_execute.kind.execute(window_ui)
+        //     };
+
+        // };
+
+
+
+        // let executed_output_values = if self.last_executed_node != *node_key
+        // let executed_output_values = if self.executing_new_node == true
+        // {
+        //     self.last_executed_node = *node_key;
+        //     self.executing_new_node = false;
+
+        //     match node_to_execute.kind.function()
+        //     {
+        //         NodeFunction::Window => self.window_counter += 1,
+        //         _ => {},
+        //     }
+
+        //     node_to_execute.kind.setup(input_port_values)
+        // }
+        // else 
+        // {
+        //     node_to_execute.kind.execute(ui)
+        // };
 
 
         // let mut logging = TextBuffer::new();
@@ -248,6 +348,5 @@ impl EmpowerExecutor
         let distribution_result = self.node_graph.distribute_outputs(node_key); 
         Some( distribution_result )
     }
-
 }
 
