@@ -65,9 +65,12 @@ impl NodeKind for ShowImageNode
         None
     }
 
-    fn execute(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
 
-        let ui = ui.unwrap();
+    fn execute(&mut self, ui: &mut egui::Ui) {
+    // fn execute(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
 
         let full_file_path = self.image_path.clone().unwrap();
 
@@ -77,7 +80,5 @@ impl NodeKind for ShowImageNode
         ));
 
         ui.add(image).on_hover_text_at_pointer(full_file_path);
-        
-        None
     }
 }

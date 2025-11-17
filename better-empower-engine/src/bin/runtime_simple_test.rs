@@ -14,6 +14,8 @@ fn main()
     let multiply_node = node_graph.add_node("multiply");
     let print_node = node_graph.add_node("print");
     let math_graph_node = node_graph.add_node("math graph");
+    let math_graph_node_2 = node_graph.add_node("math graph");
+    let math_graph_node_3 = node_graph.add_node("math graph");
 
     let connection_response = node_graph.add_connection(number_node_1.output_port_keys[0], number_node_2.input_port_keys[0]);
     let _ = node_graph.add_connection(number_node_1.output_port_keys[0], addition_node.input_port_keys[0]);
@@ -24,6 +26,8 @@ fn main()
     let _ = node_graph.add_connection(start_node.output_port_keys[0], print_node.input_port_keys[0]);
     let _ = node_graph.add_connection(multiply_node.output_port_keys[0], print_node.input_port_keys[1]);
     let _ = node_graph.add_connection(start_node.output_port_keys[0], math_graph_node.input_port_keys[0]);
+    let _ = node_graph.add_connection(start_node.output_port_keys[0], math_graph_node_2.input_port_keys[0]);
+    let _ = node_graph.add_connection(start_node.output_port_keys[0], math_graph_node_3.input_port_keys[0]);
 
     if connection_response.is_err()
     {

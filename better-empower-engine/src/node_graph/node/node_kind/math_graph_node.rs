@@ -101,14 +101,17 @@ impl NodeKind for MathGraphNode
         None
     }
 
-    fn execute(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        None
+        
+    }
 
-        if ui.is_none() || self.graph.is_none()
+    fn execute(&mut self, ui: &mut egui::Ui) {
+
+        if self.graph.is_none()
         {
-            return None;
+            return;
         }
-
-        let ui = ui.unwrap();
 
         let graph_clone = self.graph.clone().unwrap();
 
@@ -121,7 +124,5 @@ impl NodeKind for MathGraphNode
                 PlotPoints::from(graph_clone),
             ));
         });
-
-        None
     }
 }

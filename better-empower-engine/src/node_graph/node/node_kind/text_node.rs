@@ -56,7 +56,11 @@ impl NodeKind for TextNode
         Some(Vec::from( [ output_value ] ))
     }
 
-    fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
+
+    fn execute(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

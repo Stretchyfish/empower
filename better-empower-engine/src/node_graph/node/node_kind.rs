@@ -52,7 +52,8 @@ pub trait NodeKind
     fn as_any(&self) -> &dyn Any; 
     fn state(&mut self, ui: &mut egui::Ui);
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>;
-    fn execute(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>>;
+    fn update(&mut self) -> Option<Vec<PortValue>>;
+    fn execute(&mut self, ui: &mut egui::Ui);
 }
 
 impl Clone for Box<dyn NodeKind>

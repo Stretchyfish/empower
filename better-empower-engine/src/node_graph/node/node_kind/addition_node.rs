@@ -60,7 +60,12 @@ impl NodeKind for AdditionNode
         Some( Vec::from([ output_value ]) )
     }
 
-    fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
+
+    fn execute(&mut self, _: &mut egui::Ui) {
         panic!("Entered execute for addition node, which should not happend");
     }
+    
 }

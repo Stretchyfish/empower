@@ -57,7 +57,11 @@ impl NodeKind for MultiplyNode
         Some( Vec::from( [ output_value ] ))
     }
 
-    fn execute(&mut self, _: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
-        panic!("Multiply node execute got run, should never happen");
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
+
+    fn execute(&mut self, _: &mut egui::Ui) {
+        todo!()
     }
 }
