@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
-use egui::TextBuffer;
-
 use crate::NodeGraph;
 use crate::NodeGraphKey;
 use crate::PortValue;
@@ -21,7 +19,7 @@ pub struct EmpowerExecutor
     pub window_execution: Vec<NodeGraphKey>, // @Find better names for these
     pub background_execution: Vec<NodeGraphKey>,
     pub window_counter: i32, // @TODO, this might not be needed anymore!
-    pub window_manager: WindowManager,
+    window_manager: WindowManager,
     // log: TextBuffer,
 }
 
