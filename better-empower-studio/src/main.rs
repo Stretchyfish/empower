@@ -4,6 +4,9 @@ use egui_extras;
 mod studio_context;
 use studio_context::StudioContext;
 
+mod graph_editor;
+use graph_editor::GraphEditor;
+
 mod workspace;
 
 fn main() -> Result<(), eframe::Error>

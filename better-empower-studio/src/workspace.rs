@@ -1,16 +1,20 @@
 use egui;
 
 use super::StudioContext;
-use crate::studio_context::layout::Viewport;
 
 mod tab_viewer;
 use tab_viewer::TabViewer;
+
+pub mod layout;
+pub use layout::Layout;
+
+mod menu_bar;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
-
+        menu_bar::show(ui, studio_context);
     });
 
     egui::CentralPanel::default()
@@ -30,7 +34,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             .show_inside(
                 ui,
                 &mut TabViewer {
-                    // graph_editor: &mut studio_context.graph_editor,
+                    graph_editor: &mut studio_context.graph_editor,
                     viewports: &mut studio_context.layout.viewports,
                 },
             );

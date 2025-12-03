@@ -1,3 +1,5 @@
+use crate::GraphEditor;
+
 use super::Viewport;
 
 pub struct EmptyViewport
@@ -19,6 +21,6 @@ impl Viewport for EmptyViewport
         "empty viewport"
     }
 
-    fn show(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui, _: &mut GraphEditor) {
     }
 }

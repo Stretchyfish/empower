@@ -1,8 +1,11 @@
 use std::collections::HashMap;
-use crate::studio_context::layout::Viewport;
+use crate::graph_editor::GraphEditor;
+
+use super::layout::Viewport;
 
 pub struct TabViewer<'a>
 {
+    pub graph_editor: &'a mut GraphEditor,
     pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
 }
 
@@ -25,6 +28,6 @@ impl egui_dock::TabViewer for TabViewer<'_>
         }
 
         let viewport = self.viewports.get_mut(&tab_name).unwrap();
-        viewport.show(ui);
+        viewport.show(ui, self.graph_editor);
     }
 }
