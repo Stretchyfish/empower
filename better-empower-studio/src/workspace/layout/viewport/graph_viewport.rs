@@ -7,14 +7,15 @@ use super::Viewport;
 
 mod user_inputs;
 mod node_widget;
+mod node_area_select;
+use node_area_select::NodeAreaSelect;
 
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
-    node_selection_rect: Option<egui::Rect>,
-    nodes_inside_selection_rect: Vec<NodeGraphKey>, // @TODO, find a better approach for this
+    node_area_select: Option<NodeAreaSelect>,
 }
 
 impl Viewport for GraphViewport
@@ -29,8 +30,10 @@ impl Viewport for GraphViewport
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
                 mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
-                node_selection_rect: None,
-                nodes_inside_selection_rect: Vec::new(),
+                node_area_select: None,
+                // node_selection_start_point: None,
+                // node_selection_rect: egui::Rect::ZERO,
+                // nodes_inside_selection_rect: Vec::new(),
             } 
         )
     }
@@ -96,7 +99,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
             {
-                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name(), &self.node_selection_rect);
+                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name(), &self.node_area_select);
 
                 if node_widget_response.is_some()
                 {
@@ -104,9 +107,9 @@ impl GraphViewport
                 }
             }
 
-            if self.node_selection_rect.is_some()
+            if self.node_area_select.is_some()
             {
-                scene_ui.painter().rect_filled(self.node_selection_rect.unwrap(), 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
+                scene_ui.painter().rect_filled(self.node_area_select.as_ref().unwrap().rect, 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
             }
 
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
@@ -149,23 +152,26 @@ impl GraphViewport
             graph_editor.refresh_display_node(selected_node_key);
         }
 
-        if user_inputs.left_is_down && user_inputs.left_shift_is_down && self.node_selection_rect.is_none()
+        if user_inputs.left_is_down && user_inputs.left_shift_is_down && self.node_area_select.is_none()
         {
             // In this case its fine to use last frame, as last frame will be current frame
-            self.node_selection_rect = Some( egui::Rect::from_min_max(self.mouse_scene_position_last_frame, self.mouse_scene_position_last_frame) );
+            // self.node_selection_rect = Some( egui::Rect::from_min_max(self.mouse_scene_position_last_frame, self.mouse_scene_position_last_frame) );
+            self.node_area_select = Some( NodeAreaSelect { start_point: self.mouse_scene_position_last_frame, rect: egui::Rect::ZERO, nodes_inside_rect: Vec::new() } );
             return;
         } 
 
-        if self.node_selection_rect.is_some() && (!user_inputs.left_is_down || !user_inputs.left_shift_is_down)
+        if self.node_area_select.is_some() && (!user_inputs.left_is_down || !user_inputs.left_shift_is_down)
         {
-            graph_editor.selected_nodes = self.nodes_inside_selection_rect.clone();
-            self.node_selection_rect = None;
+            graph_editor.selected_nodes = self.node_area_select.clone().unwrap().nodes_inside_rect;
+            self.node_area_select = None;
             return;
         }
 
-        if self.node_selection_rect.is_some()
+        if self.node_area_select.is_some()
         {
-            self.node_selection_rect = Some( egui::Rect::from_two_pos(self.node_selection_rect.unwrap().min, self.mouse_scene_position_last_frame) );
+            let node_area_select = self.node_area_select.as_mut().unwrap();
+            node_area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
+
             return;
         }
 
@@ -197,11 +203,19 @@ impl GraphViewport
 
     fn check_or_add_node_to_nodes_inside_selection_area(&mut self, node_key: &NodeGraphKey)
     {
-        if self.nodes_inside_selection_rect.contains(node_key)
+        if self.node_area_select.is_none()
         {
             return;
         }
 
-        self.nodes_inside_selection_rect.push(*node_key);
+        let node_area_select = self.node_area_select.as_mut().unwrap();
+
+        if node_area_select.nodes_inside_rect.contains(node_key)
+        {
+            return;
+        }
+
+        node_area_select.nodes_inside_rect.push(*node_key);
     }
 }
+

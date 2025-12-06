@@ -2,6 +2,8 @@ use better_empower_engine::NodeGraphKey;
 
 use crate::{graph_editor::GraphEditor, workspace::layout::viewport::graph_viewport::GraphViewport};
 
+use super::NodeAreaSelect;
+
 mod node_widget_body;
 mod node_widget_input_ports;
 mod node_widget_output_ports;
@@ -27,7 +29,7 @@ pub fn show(
                 graph_editor: &GraphEditor, 
                 node_key: &NodeGraphKey,
                 graph_viewport_title: &'static str, // @TODO, consider finding a way to combine these?
-                node_selection_rect: &Option<egui::Rect>,
+                node_area_select: &Option<NodeAreaSelect>,
             ) -> Option<NodeWidgetResponse>
 {
     let mut node_widget_response = None;
@@ -38,7 +40,7 @@ pub fn show(
 
     let debug_mode = false; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
 
-    node_widget_body::show_node_body(ui, node, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &node_selection_rect);
+    node_widget_body::show_node_body(ui, node, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &node_area_select);
 
     // Show node input ports
     for input_port_key in &node.input_port_keys

@@ -2,6 +2,8 @@ use better_empower_engine::NodeGraphKey;
 use better_empower_engine::node_graph::node::Node;
 use crate::graph_editor::DisplayNode; 
 
+use super::NodeAreaSelect;
+
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
 
@@ -14,7 +16,7 @@ pub fn show_node_body(
                         node_key: &NodeGraphKey, 
                         node_widget_response: &mut Option<NodeWidgetResponse>, 
                         debug_mode: &bool, 
-                        node_selection_rect: &Option<egui::Rect>,
+                        node_area_select: &Option<NodeAreaSelect>,
                     )
 {
     // Determine the nodes widgets size
@@ -55,9 +57,10 @@ pub fn show_node_body(
     // Determine and show node highlight outline
 
     let mut node_is_inside_selection_rect = false;
-    if node_selection_rect.is_some()
+    if node_area_select.is_some()
     {
-        node_is_inside_selection_rect = node_selection_rect.unwrap().contains_rect(node_rect);
+        let node_area_select = node_area_select.as_ref().unwrap();
+        node_is_inside_selection_rect = node_area_select.rect.contains_rect(node_rect);
         
         if node_is_inside_selection_rect
         {
