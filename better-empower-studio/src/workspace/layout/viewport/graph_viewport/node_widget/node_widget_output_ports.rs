@@ -29,7 +29,7 @@ pub fn show_output_port(
     output_port_response.on_hover_text( format!("{:?}, {:?}", output_port.value, output_port.compatability ));
 
     // let port_color = display_port.display_value.color;
-    let port_color = egui::Color32::BLUE;
+    let port_color = egui::Color32::YELLOW;
 
     ui.painter().circle(
         output_port_position,

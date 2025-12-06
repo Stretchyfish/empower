@@ -1,7 +1,7 @@
 use better_empower_engine::NodeGraphKey;
 use egui;
 
-use crate::{GraphEditor, workspace::layout::viewport::graph_viewport::node_widget::NodeWidgetResponse};
+use crate::{GraphEditor, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
 
 use super::Viewport;
 
@@ -13,6 +13,8 @@ pub struct GraphViewport
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
+    node_selection_rect: Option<egui::Rect>,
+    nodes_inside_selection_rect: Vec<NodeGraphKey>, // @TODO, find a better approach for this
 }
 
 impl Viewport for GraphViewport
@@ -27,6 +29,8 @@ impl Viewport for GraphViewport
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
                 mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
+                node_selection_rect: None,
+                nodes_inside_selection_rect: Vec::new(),
             } 
         )
     }
@@ -36,16 +40,20 @@ impl Viewport for GraphViewport
     }
 
     fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) {
- 
-        let widget_responses = self.view_canvas(ui, graph_editor);
-        self.process_widget_responses(&widget_responses, graph_editor);
-        self.process_user_actions(graph_editor);
+
+        // @TODO, this is not a great way to approach user inputs, so fix in the future!
+        let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
+
+        let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor);
+
+        let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
+        self.process_user_actions(&user_inputs, graph_editor, wideget_interaction_happened);
     }
 }
 
 impl GraphViewport
 {
-    fn view_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) -> Vec<NodeWidgetResponse>
+    fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor) -> Vec<NodeWidgetResponse>
     {
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
 
@@ -54,9 +62,6 @@ impl GraphViewport
         // let mut node_widgets_responses = Vec::new();
 
         let mouse_pointer_inside_viewport = ui.rect_contains_pointer(ui.min_rect());
-
-        // @TODO, this is not a great way to approach user inputs, so fix in the future!
-        let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.left_shift_is_down
@@ -91,7 +96,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
             {
-                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name());
+                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name(), &self.node_selection_rect);
 
                 if node_widget_response.is_some()
                 {
@@ -99,28 +104,41 @@ impl GraphViewport
                 }
             }
 
+            if self.node_selection_rect.is_some()
+            {
+                scene_ui.painter().rect_filled(self.node_selection_rect.unwrap(), 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
+            }
+
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
         });
+
+        self.scene_rect = scene_rect;
 
         widget_responses
     }
 
 
-    fn process_widget_responses(&mut self, widget_responses: &Vec<NodeWidgetResponse>, graph_editor: &mut GraphEditor)
+    fn process_widget_responses(&mut self, widget_responses: &Vec<NodeWidgetResponse>, graph_editor: &mut GraphEditor) -> bool
     {
+        let mut interaction_happened = false;
+
         for response in widget_responses
         {
             match response.kind
             {
-                node_widget::NodeWidgetResponseType::ClickedTitle => self.add_node_to_selected_nodes(&response.key, graph_editor),
+                node_widget::NodeWidgetResponseType::ClickedTitle => self.toggle_node_in_selected_nodes(&response.key, graph_editor),
                 node_widget::NodeWidgetResponseType::ClickedInputPort(_) => println!("Clicked input port"),
                 node_widget::NodeWidgetResponseType::ClickedOutputPort(_) => println!("Clicked output port"),
-                node_widget::NodeWidgetResponseType::InsideSelectionRect => println!("Is inside selection rect"),
+                node_widget::NodeWidgetResponseType::InsideSelectionRect => self.check_or_add_node_to_nodes_inside_selection_area(&response.key),
             }
+
+            interaction_happened = true; // This just detect any widget has been interacted with
         }
+
+        interaction_happened
     }
 
-    fn process_user_actions(&mut self, graph_editor: &mut GraphEditor)
+    fn process_user_actions(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor, widget_interaction_happened_same_loop: bool)
     {
         // @TODO This action now can potentially be applied double!
         for selected_node_key in graph_editor.selected_nodes.clone()
@@ -130,10 +148,42 @@ impl GraphViewport
 
             graph_editor.refresh_display_node(selected_node_key);
         }
+
+        if user_inputs.left_is_down && user_inputs.left_shift_is_down && self.node_selection_rect.is_none()
+        {
+            // In this case its fine to use last frame, as last frame will be current frame
+            self.node_selection_rect = Some( egui::Rect::from_min_max(self.mouse_scene_position_last_frame, self.mouse_scene_position_last_frame) );
+            return;
+        } 
+
+        if self.node_selection_rect.is_some() && (!user_inputs.left_is_down || !user_inputs.left_shift_is_down)
+        {
+            graph_editor.selected_nodes = self.nodes_inside_selection_rect.clone();
+            self.node_selection_rect = None;
+            return;
+        }
+
+        if self.node_selection_rect.is_some()
+        {
+            self.node_selection_rect = Some( egui::Rect::from_two_pos(self.node_selection_rect.unwrap().min, self.mouse_scene_position_last_frame) );
+            return;
+        }
+
+        if widget_interaction_happened_same_loop
+        {
+            return;
+        }
+
+        if user_inputs.left_clicked
+        {
+            graph_editor.selected_nodes = Vec::new();
+            return;
+        }
+
     }
 
     // @TODO, consider where this function should be (maybe it should be in graph editor?)
-    fn add_node_to_selected_nodes(&self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
+    fn toggle_node_in_selected_nodes(&self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
     {
         if graph_editor.selected_nodes.contains(node_key) // @TODO, figure out if this is the most performance apporaach.
         {
@@ -143,5 +193,15 @@ impl GraphViewport
         {
             graph_editor.selected_nodes.push(*node_key);
         }
+    }
+
+    fn check_or_add_node_to_nodes_inside_selection_area(&mut self, node_key: &NodeGraphKey)
+    {
+        if self.nodes_inside_selection_rect.contains(node_key)
+        {
+            return;
+        }
+
+        self.nodes_inside_selection_rect.push(*node_key);
     }
 }
