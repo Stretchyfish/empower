@@ -9,7 +9,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             if ui.button("Add default node").clicked()
             {
-
+                studio_context.graph_editor.add_node("addition", egui::Pos2 { x: 0.0, y: 0.0 });
             }
         });
     });

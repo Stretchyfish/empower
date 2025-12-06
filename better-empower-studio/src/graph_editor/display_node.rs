@@ -1,14 +1,36 @@
+use egui;
+
+mod display_node_kind;
+use display_node_kind::DisplayNodeKind;
+use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;
 
 pub struct DisplayNode
 {
-    title: &'static str,
-    
+    pub title: &'static str,
+    pub position: egui::Pos2,
+    pub display_kind: Box<dyn DisplayNodeKind>,
 }
 
 impl DisplayNode
 {
-    pub fn new(title: &'static str) -> Self
+    pub fn new(title: &'static str, position: egui::Pos2) -> Self
     {
-        Self { title }
+        let display_node_kind_constructor = DISPLAY_NODE_KIND_REGISTRY.get(title);
+
+        let display_kind = match display_node_kind_constructor
+        {
+            Some( constructor ) => constructor(),
+            None => 
+            {
+                DISPLAY_NODE_KIND_REGISTRY.get("default").unwrap()()
+            },
+        };
+
+        Self 
+        { 
+            title, 
+            position,
+            display_kind,
+        }
     }
 }

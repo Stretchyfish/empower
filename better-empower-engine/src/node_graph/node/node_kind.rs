@@ -66,6 +66,7 @@ impl Clone for Box<dyn NodeKind>
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;
 
+// @TODO, rename this to node_kind_registry
 pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
     let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKind>> = HashMap::new();
 

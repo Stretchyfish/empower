@@ -76,7 +76,7 @@ impl Viewport for GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
             {
-                node_widget::show(scene_ui, graph_editor, &node_key, self.name());
+                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name());
             }
    
         });

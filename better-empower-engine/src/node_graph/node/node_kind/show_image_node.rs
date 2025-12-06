@@ -1,5 +1,4 @@
 use core::panic;
-use std::thread;
 
 use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
 
@@ -70,7 +69,6 @@ impl NodeKind for ShowImageNode
     }
 
     fn execute(&mut self, ui: &mut egui::Ui) {
-    // fn execute(&mut self, ui: Option<&mut egui::Ui>) -> Option<Vec<PortValue>> {
 
         let full_file_path = self.image_path.clone().unwrap();
 
