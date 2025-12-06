@@ -12,5 +12,10 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 studio_context.graph_editor.add_node("addition", egui::Pos2 { x: 0.0, y: 0.0 });
             }
         });
+
+        if ui.button("Toggle debug window").clicked()
+        {
+            studio_context.layout.debug_window_active = !studio_context.layout.debug_window_active;
+        }
     });
 }

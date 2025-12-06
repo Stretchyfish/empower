@@ -9,9 +9,12 @@ pub mod layout;
 pub use layout::Layout;
 
 mod menu_bar;
+mod debug_window;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
+    debug_window::show(ctx, studio_context);
+
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
         menu_bar::show(ui, studio_context);

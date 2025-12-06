@@ -13,6 +13,7 @@ pub struct GraphEditor
     pub display_nodes: HashMap<NodeGraphKey, DisplayNode>,
     pub display_input_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
+    pub selected_nodes: Vec<NodeGraphKey>,
 }
 
 impl GraphEditor
@@ -25,6 +26,7 @@ impl GraphEditor
         display_nodes: HashMap::new(),
         display_input_ports: HashMap::new(),
         display_output_ports: HashMap::new(),
+        selected_nodes: Vec::new(),
        } 
     }
 

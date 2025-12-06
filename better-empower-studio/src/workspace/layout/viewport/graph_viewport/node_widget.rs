@@ -37,9 +37,8 @@ pub fn show(
 
     let debug_mode = false; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
 
-    let selected_nodes = Vec::new();
     let node_selection_rect = None;
-    node_widget_body::show_node_body(ui, node, display_node, &selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &node_selection_rect);
+    node_widget_body::show_node_body(ui, node, display_node, &graph_editor.selected_nodes, graph_viewport_title, node_key, &mut node_widget_response, &debug_mode, &node_selection_rect);
 
     // Show node input ports
     for input_port_key in &node.input_port_keys
