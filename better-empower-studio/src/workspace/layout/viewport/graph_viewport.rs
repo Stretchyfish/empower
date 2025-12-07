@@ -9,6 +9,8 @@ mod user_inputs;
 mod node_widget;
 mod node_area_select;
 use node_area_select::NodeAreaSelect;
+mod node_select_panel;
+use node_select_panel::NodeSelectionPanel;
 
 pub struct GraphViewport
 {
@@ -16,6 +18,7 @@ pub struct GraphViewport
     mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
     node_area_select: Option<NodeAreaSelect>,
+    node_select_panel: Option<NodeSelectionPanel>,
 }
 
 impl Viewport for GraphViewport
@@ -31,9 +34,7 @@ impl Viewport for GraphViewport
                 mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
                 node_area_select: None,
-                // node_selection_start_point: None,
-                // node_selection_rect: egui::Rect::ZERO,
-                // nodes_inside_selection_rect: Vec::new(),
+                node_select_panel: None,
             } 
         )
     }
@@ -62,7 +63,6 @@ impl GraphViewport
 
         let mut mouse_position_in_scene = self.mouse_scene_position_last_frame; // Set to last frame, in case there is no new position in the scene
         let mut mouse_scene_delta = egui::Vec2::ZERO; // @TODO, take another look at this placement
-        // let mut node_widgets_responses = Vec::new();
 
         let mouse_pointer_inside_viewport = ui.rect_contains_pointer(ui.min_rect());
 
@@ -82,6 +82,7 @@ impl GraphViewport
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
+            // @TODO, take another investigation into this
             if mouse_pointer_inside_viewport // Is needed to avoid applying double delta position to selected nodes
             {
                 let scene_transform = scene_ui.ctx().layer_transform_from_global(scene_ui.painter().layer_id());
@@ -112,10 +113,20 @@ impl GraphViewport
                 scene_ui.painter().rect_filled(self.node_area_select.as_ref().unwrap().rect, 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
             }
 
+
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
         });
-
         self.scene_rect = scene_rect;
+
+        if self.node_select_panel.is_some()
+        {
+            let added_node = self.node_select_panel.as_mut().unwrap().show(ui, graph_editor, &self.mouse_scene_position_last_frame);
+
+            if added_node
+            {
+                self.node_select_panel = None;
+            }
+        }
 
         widget_responses
     }
@@ -183,6 +194,19 @@ impl GraphViewport
         if user_inputs.left_clicked
         {
             graph_editor.selected_nodes = Vec::new();
+            return;
+        }
+
+        if user_inputs.right_clicked && self.node_select_panel.is_none()
+        {
+            // self.node_select_panel = Some( NodeSelectionPanel::new(self.mouse_scene_position_last_frame) );
+            self.node_select_panel = Some( NodeSelectionPanel::new(user_inputs.mouse_position) );
+            return;
+        }
+
+        if user_inputs.right_clicked && self.node_select_panel.is_some()
+        {
+            self.node_select_panel = None;
             return;
         }
 
