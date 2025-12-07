@@ -118,7 +118,7 @@ impl NodeGraph
             return Err( format!( "Cannot connect two incompatible ports (key out: {}, key in: {})", output_port_key, input_port_key) );
         }
 
-        // If the current output port already has atleast one connection, add add to the existing one instead
+        // If the current output port already has atleast one connection, add to the existing one instead
         if self.connections_out.contains_key(&output_port_key)
         {
             let current_output_connections = self.connections_out.get_mut(&output_port_key).unwrap(); // This is a safe call due to the check above

@@ -2,21 +2,29 @@ use better_empower_engine::NodeGraphKey;
 use egui;
 
 use crate::{GraphEditor, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
+use better_empower_engine::node_graph::node::port::PortKind; 
 
 use super::Viewport;
 
 mod user_inputs;
 mod node_widget;
+mod connection_widget;
+
 mod node_area_select;
 use node_area_select::NodeAreaSelect;
+
 mod node_select_panel;
 use node_select_panel::NodeSelectionPanel;
+
+mod port_searcher;
+use port_searcher::PortSearcher;
 
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
+    port_searcher: Option<PortSearcher>,
     node_area_select: Option<NodeAreaSelect>,
     node_select_panel: Option<NodeSelectionPanel>,
 }
@@ -33,6 +41,7 @@ impl Viewport for GraphViewport
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
                 mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
+                port_searcher: None,
                 node_area_select: None,
                 node_select_panel: None,
             } 
@@ -97,6 +106,13 @@ impl GraphViewport
             mouse_scene_delta = mouse_position_in_scene - self.mouse_scene_position_last_frame; 
             self.mouse_scene_delta = mouse_scene_delta;
 
+
+            let connection_keys = graph_editor.node_graph.get_all_connections();
+            for connection in connection_keys
+            {
+                connection_widget::show(scene_ui, graph_editor, connection);
+            }
+
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
             {
@@ -111,6 +127,11 @@ impl GraphViewport
             if self.node_area_select.is_some()
             {
                 scene_ui.painter().rect_filled(self.node_area_select.as_ref().unwrap().rect, 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
+            }
+
+            if self.port_searcher.is_some()
+            {
+                connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &mouse_position_in_scene);
             }
 
 
@@ -141,8 +162,8 @@ impl GraphViewport
             match response.kind
             {
                 node_widget::NodeWidgetResponseType::ClickedTitle => self.toggle_node_in_selected_nodes(&response.key, graph_editor),
-                node_widget::NodeWidgetResponseType::ClickedInputPort(_) => println!("Clicked input port"),
-                node_widget::NodeWidgetResponseType::ClickedOutputPort(_) => println!("Clicked output port"),
+                node_widget::NodeWidgetResponseType::ClickedInputPort( port_key ) => self.toggle_input_port_search_or_add_connection(&port_key, graph_editor),
+                node_widget::NodeWidgetResponseType::ClickedOutputPort( port_key ) => self.toggle_output_port_search_or_add_connection(&port_key, graph_editor),
                 node_widget::NodeWidgetResponseType::InsideSelectionRect => self.check_or_add_node_to_nodes_inside_selection_area(&response.key),
             }
 
@@ -188,6 +209,12 @@ impl GraphViewport
 
         if widget_interaction_happened_same_loop
         {
+            return;
+        }
+
+        if user_inputs.left_clicked && self.port_searcher.is_some()
+        {
+            self.port_searcher = None;
             return;
         }
 
@@ -241,5 +268,77 @@ impl GraphViewport
 
         node_area_select.nodes_inside_rect.push(*node_key);
     }
+
+    fn toggle_input_port_search_or_add_connection(&mut self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
+    {   
+        // @TODO, look into simplifying this function by assigning the mayority of responsibility to add_connection
+
+        if self.port_searcher.is_none()
+        {
+            self.port_searcher = Some( PortSearcher::input_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap();
+
+        match port_searcher.port_kind
+        {
+            PortKind::Input => // Detect if user clicked another input port while port searching from input
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None; // @TODO, expand this functionality to be more complex
+                }
+            },
+            PortKind::Output => // Detect if ports can be connected
+            {
+                let add_connection_result = graph_editor.node_graph.add_connection(port_searcher.port_key, *port_key);
+
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
+        }
+
+    }
+
+    fn toggle_output_port_search_or_add_connection(&mut self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
+    {
+        if self.port_searcher.is_none()
+        {
+            self.port_searcher = Some( PortSearcher::output_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap(); 
+
+        match  port_searcher.port_kind 
+        {
+            PortKind::Output =>
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None;
+                }
+            }
+            PortKind::Input =>
+            {
+                let add_connection_result = graph_editor.node_graph.add_connection(*port_key, port_searcher.port_key); 
+
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", *port_key, port_searcher.port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
+        }
+    }
+
 }
 
