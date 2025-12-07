@@ -271,10 +271,18 @@ impl GraphViewport
 
     fn toggle_input_port_search_or_add_connection(&mut self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
     {   
-        // @TODO, look into simplifying this function by assigning the mayority of responsibility to add_connection
-
         if self.port_searcher.is_none()
         {
+            // First check if the input port already has a connection, remove that connection, and either convert that to a port search or overtake it
+            if graph_editor.node_graph.input_port_has_connection(port_key)
+            {
+                let connect_output_port_key = graph_editor.node_graph.get_input_port_connection_key(port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+                graph_editor.node_graph.remove_connection(port_key, &connect_output_port_key);
+
+                self.port_searcher = Some( PortSearcher::output_port_searching(connect_output_port_key) );
+                return;
+            }
+
             self.port_searcher = Some( PortSearcher::input_port_searching(*port_key) );
             return;
         }

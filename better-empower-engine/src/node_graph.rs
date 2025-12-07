@@ -118,6 +118,13 @@ impl NodeGraph
             return Err( format!( "Cannot connect two incompatible ports (key out: {}, key in: {})", output_port_key, input_port_key) );
         }
 
+        // If the input port is already connected remove the connection to allow for a new connection
+        if self.input_port_has_connection(&input_port_key)
+        {
+            let connect_output_port_key = self.get_input_port_connection_key(&input_port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+            self.remove_connection(&input_port_key, &connect_output_port_key);
+        }
+
         // If the current output port already has atleast one connection, add to the existing one instead
         if self.connections_out.contains_key(&output_port_key)
         {
@@ -137,6 +144,38 @@ impl NodeGraph
         self.connections_in.insert(input_port_key, output_port_key);
 
         Ok(())
+    }
+
+    pub fn remove_connection(&mut self, input_port_key: &NodeGraphKey, output_port_key: &NodeGraphKey) -> bool
+    {
+        if !self.connections_in.contains_key(input_port_key) || !self.connections_out.contains_key(output_port_key)
+        {
+            return false;
+        }
+
+        self.connections_in.remove(input_port_key);
+
+        let mut no_more_elements_in_connection_out = false;
+
+        {
+            let connections_going_out = self.connections_out.get_mut(output_port_key).expect("failed");
+
+            let element_to_remove_index = connections_going_out.iter().position(|p| p == input_port_key).expect("remove connection was asked to remove a output port that should exist, but doesn't");
+
+            connections_going_out.remove(element_to_remove_index);
+
+            if connections_going_out.is_empty()
+            {
+                no_more_elements_in_connection_out = true;
+            }
+        }
+
+        if no_more_elements_in_connection_out
+        {
+            self.connections_out.remove(output_port_key);
+        }
+
+        true
     }
 
     pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeHandle
