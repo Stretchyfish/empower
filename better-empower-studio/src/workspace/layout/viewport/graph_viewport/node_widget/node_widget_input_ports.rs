@@ -32,8 +32,7 @@ pub fn show_input_port(
     }
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
 
-    // let port_color = display_port.display_value.color;
-    let port_color = egui::Color32::YELLOW;
+    let port_color = display_port.color;
 
     ui.painter().circle(
         input_port_position,

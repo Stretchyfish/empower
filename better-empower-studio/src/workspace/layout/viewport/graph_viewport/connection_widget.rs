@@ -12,8 +12,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, connection: (Node
     let display_output_port = graph_editor.display_output_ports.get(&connection.0).expect("Tried to show connection but output port was not available");
     let display_input_port = graph_editor.display_input_ports.get(&connection.1).expect("Tried to show connection but output port was not available");
 
-    // let connection_color = display_output_port.display_value.color;
-    let connection_color = egui::Color32::YELLOW;
+    let connection_color = display_output_port.color;
 
     ui.painter().line_segment([display_output_port.position, display_input_port.position], egui::Stroke::new(10.0, connection_color));
 }
@@ -22,9 +21,9 @@ pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &mut GraphEditor,
 {
     let display_port = match port_searcher.port_kind // @TODO, make this more safe
     {
-        better_empower_engine::node_graph::node::port::PortKind::Input => graph_editor.display_input_ports.get(&port_searcher.port_key).unwrap(),
-        better_empower_engine::node_graph::node::port::PortKind::Output => graph_editor.display_output_ports.get(&port_searcher.port_key).unwrap(),
+        PortKind::Input => graph_editor.display_input_ports.get(&port_searcher.port_key).unwrap(),
+        PortKind::Output => graph_editor.display_output_ports.get(&port_searcher.port_key).unwrap(),
     };
  
-    ui.painter().line_segment([ display_port.position, *mouse_scene_position], egui::Stroke::new(10.0, egui::Color32::YELLOW));
+    ui.painter().line_segment([ display_port.position, *mouse_scene_position], egui::Stroke::new(10.0, display_port.color));
 }

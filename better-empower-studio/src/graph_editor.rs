@@ -19,14 +19,20 @@ impl GraphEditor
 {
     pub fn new() -> Self
     {
-       Self
+       let mut graph_editor = Self
        {
         node_graph: NodeGraph::new(),
         display_nodes: HashMap::new(),
         display_input_ports: HashMap::new(),
         display_output_ports: HashMap::new(),
         selected_nodes: Vec::new(),
-       } 
+       };
+
+        let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
+
+        graph_editor.add_node("start", start_node_left_offset);
+
+        graph_editor
     }
 
     pub fn add_node(&mut self, node_kind: &'static str, position: egui::Pos2) -> bool
@@ -55,7 +61,8 @@ impl GraphEditor
         // create display output ports
         for output_port_key in &node.output_port_keys
         {
-            let display_port = DisplayPort::nothing(position); // The position is just defaulted here, because it will be correct in refresh display node
+            let output_port = self.node_graph.get_output_port(output_port_key).unwrap();
+            let display_port = DisplayPort::nothing(position, &output_port.value); // The position is just defaulted here, because it will be correct in refresh display node
             self.display_output_ports.insert(*output_port_key, display_port);
         }
         self.display_nodes.insert(node_handle.node_key, display_node);
