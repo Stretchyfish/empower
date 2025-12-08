@@ -1,7 +1,7 @@
 use better_empower_engine::NodeGraphKey;
 use egui;
 
-use crate::{GraphEditor, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
+use crate::{GraphEditor, graph_editor::display_value::DisplayValue, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
 use better_empower_engine::node_graph::node::port::PortKind; 
 
 use super::Viewport;
@@ -81,8 +81,6 @@ impl GraphViewport
             drag_pan_button = egui::DragPanButtons::empty();
         }
 
-        let mut interaction_happened_this_loop = false; // @TODO, find a better way of doing this
-
         let mut widget_responses = Vec::new();
 
         egui::Scene::new()
@@ -159,11 +157,12 @@ impl GraphViewport
 
         for response in widget_responses
         {
-            match response.kind
+            match &response.kind
             {
                 node_widget::NodeWidgetResponseType::ClickedTitle => self.toggle_node_in_selected_nodes(&response.key, graph_editor),
                 node_widget::NodeWidgetResponseType::ClickedInputPort( port_key ) => self.toggle_input_port_search_or_add_connection(&port_key, graph_editor),
                 node_widget::NodeWidgetResponseType::ClickedOutputPort( port_key ) => self.toggle_output_port_search_or_add_connection(&port_key, graph_editor),
+                node_widget::NodeWidgetResponseType::ChangedInputPortDisplayValue( port_key, modified_port_value) => self.set_input_port_value_if_display_value_can_convert(port_key, graph_editor, modified_port_value),
                 node_widget::NodeWidgetResponseType::InsideSelectionRect => self.check_or_add_node_to_nodes_inside_selection_area(&response.key),
             }
 
@@ -346,6 +345,25 @@ impl GraphViewport
                 self.port_searcher = None;
             },
         }
+    }
+
+    fn set_input_port_value_if_display_value_can_convert(&self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_value: &DisplayValue)
+    {
+        let input_port = graph_editor.node_graph.get_input_port_mut(port_key).unwrap();
+        let display_input_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
+
+        display_input_port.value = new_value.clone();
+
+        let new_port_value = display_input_port.value.to_port_value(&input_port.value);
+
+        if new_port_value.is_none()
+        {
+            display_input_port.convertable = false;
+            return;
+        }
+        display_input_port.convertable = true;
+
+        input_port.value = new_port_value.unwrap();
     }
 
 }

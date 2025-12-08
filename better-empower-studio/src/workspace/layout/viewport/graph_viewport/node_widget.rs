@@ -1,6 +1,7 @@
 use better_empower_engine::NodeGraphKey;
 
 use crate::{graph_editor::GraphEditor, workspace::layout::viewport::graph_viewport::GraphViewport};
+use crate::graph_editor::display_value::DisplayValue;
 
 use super::NodeAreaSelect;
 
@@ -19,7 +20,7 @@ pub enum NodeWidgetResponseType
     ClickedTitle,
     ClickedInputPort(NodeGraphKey), 
     ClickedOutputPort(NodeGraphKey),
-    // ChangedInputPortDisplayValue(i32, DisplayPortValue),
+    ChangedInputPortDisplayValue(NodeGraphKey, DisplayValue),
     // ChangedState(NodeKind, DisplayState),
     InsideSelectionRect,
 }

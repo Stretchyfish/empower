@@ -312,6 +312,11 @@ impl NodeGraph
         self.input_ports.get(port_key)
     }
 
+    pub fn get_input_port_mut(&mut self, port_key: &NodeGraphKey) -> Option<&mut Port>
+    {
+        self.input_ports.get_mut(port_key)
+    }
+
     pub fn get_mut_input_port(&mut self, port_key: &NodeGraphKey) -> Option<&mut Port>
     {
         self.input_ports.get_mut(port_key)

@@ -7,6 +7,10 @@ pub use display_node::DisplayNode;
 pub mod display_port;
 pub use display_port::DisplayPort;
 
+use crate::graph_editor::display_value::DisplayValue;
+
+pub mod display_value;
+
 pub struct GraphEditor
 {
     pub node_graph: NodeGraph,
@@ -39,7 +43,30 @@ impl GraphEditor
         let display_node_title = node.kind.name();
         let display_node = DisplayNode::new(display_node_title, position);
 
+
+        let display_input_ports = display_node.display_kind.display_inputs(&node.kind);
+
+        if node.input_port_keys.len() != display_input_ports.len()
+        {
+            panic!("Tried to create node, but display input ports doesn't match number of actual input ports");
+        } 
+
+
+        for index in 0..node.input_port_keys.len()
+        {
+            self.display_input_ports.insert(node.input_port_keys[index], display_input_ports[index].clone() );
+        }
+
+        // for input_port_key in &node.input_port_keys
+        // {
+        //     self.display_input_ports.insert(*input_port_key, display_port);
+        // }
+
+
+
         self.display_nodes.insert(node_handle.node_key, display_node);
+
+
 
         // create display ports
         for input_port_key in &node.input_port_keys
@@ -89,5 +116,15 @@ impl GraphEditor
 
             output_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
         }
+    }
+
+    pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, display_value: &DisplayValue)
+    {
+        let input_port = self.node_graph.get_mut_input_port(port_key).unwrap();
+        let display_input_port = self.display_input_ports.get_mut(port_key).unwrap();
+
+
+
+
     }
 }
