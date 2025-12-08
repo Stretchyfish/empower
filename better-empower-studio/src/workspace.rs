@@ -13,6 +13,7 @@ mod debug_window;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
+
     debug_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
@@ -41,6 +42,17 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                     viewports: &mut studio_context.layout.viewports,
                 },
             );
+
+            // @TODO, this needs to be moved elsewhere!
+        if studio_context.executor.is_some()
+        {
+            let executor = studio_context.executor.as_mut().unwrap();
+            executor.execute_node_graph(Some( ui ));
+
+            if !executor.is_running()
+            {
+                studio_context.executor = None;
+            }
+        }
     });
- 
 }
