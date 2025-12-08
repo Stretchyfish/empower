@@ -1,7 +1,7 @@
 use better_empower_engine::NodeGraphKey;
 use egui;
 
-use crate::{GraphEditor, graph_editor::display_value::DisplayValue, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
+use crate::{GraphEditor, graph_editor::display_node::DisplayValue, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
 use better_empower_engine::node_graph::node::port::PortKind; 
 
 use super::Viewport;

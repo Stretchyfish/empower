@@ -3,13 +3,8 @@ use better_empower_engine::{NodeGraph, NodeGraphKey};
 
 pub mod display_node;
 pub use display_node::DisplayNode;
-
-pub mod display_port;
-pub use display_port::DisplayPort;
-
-use crate::graph_editor::display_value::DisplayValue;
-
-pub mod display_value;
+pub use display_node::DisplayPort;
+pub use display_node::DisplayValue;
 
 pub struct GraphEditor
 {
@@ -83,7 +78,14 @@ impl GraphEditor
 
         for input_port_key in &node.input_port_keys
         {
+            let input_port = self.node_graph.get_input_port(input_port_key).unwrap();
             let display_input_port = self.display_input_ports.get_mut(input_port_key).unwrap();
+
+            // Updating the display value is done in here to have one function with update behavior, this 
+            // has the side effect of updating the display value to the last valid valid if the box is moved
+            display_input_port.value = DisplayValue::from_port_value(&input_port.value);
+            display_input_port.convertable = true;
+
             display_input_port.position = display_node.position + egui::Vec2 { x: 0.0, y: input_ports_vertical_offset + display_node_state_size.y };
 
             input_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
@@ -97,15 +99,5 @@ impl GraphEditor
 
             output_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
         }
-    }
-
-    pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, display_value: &DisplayValue)
-    {
-        let input_port = self.node_graph.get_mut_input_port(port_key).unwrap();
-        let display_input_port = self.display_input_ports.get_mut(port_key).unwrap();
-
-
-
-
     }
 }

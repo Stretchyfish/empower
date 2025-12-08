@@ -1,6 +1,7 @@
 use better_empower_engine::{NodeGraphKey, node_graph::node::port::Port};
 use crate::graph_editor::display_node::DisplayNode; 
-use crate::graph_editor::display_port::DisplayPort;
+use crate::graph_editor::display_node::DisplayPort;
+use crate::graph_editor::display_node::DisplayValue;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;
@@ -73,8 +74,8 @@ pub fn show_input_port(
     let mut potentially_modified_display_value= display_port.value.clone(); // @TODO, find a better name
     match &mut potentially_modified_display_value
     {
-        crate::graph_editor::display_value::DisplayValue::Nothing => {},
-        crate::graph_editor::display_value::DisplayValue::Text( text ) => 
+        DisplayValue::Nothing => {},
+        DisplayValue::Text( text ) => 
         {
             let input_port_value_box_size = egui::Vec2{ x: 120.0, y: painted_text_size.y };
             let input_port_value_box_rect = egui::Rect::from_min_size(input_port_value_position, input_port_value_box_size);
@@ -92,7 +93,7 @@ pub fn show_input_port(
             {
                 text_edit_color = egui::Color32::RED;
             }
-            
+
             let text_edit = egui::TextEdit::singleline(text)
             .char_limit(5)
             .font(egui::FontId::proportional(35.0))
@@ -102,7 +103,7 @@ pub fn show_input_port(
 
             ui.put(input_port_value_box_rect, text_edit);
         },
-        crate::graph_editor::display_value::DisplayValue::Checkbox( toggle ) => 
+        DisplayValue::Checkbox( toggle ) => 
         {
             let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
             let input_port_checkbox_rect = egui::Rect::from_min_size(input_port_value_position, input_port_checkbox_size);

@@ -1,6 +1,6 @@
 use better_empower_engine::{NodeGraphKey, node_graph::node::port::Port};
 use crate::graph_editor::display_node::DisplayNode; 
-use crate::graph_editor::display_port::DisplayPort;
+use crate::graph_editor::display_node::DisplayPort;
 
 use super::NodeWidgetResponse;
 use super::NodeWidgetResponseType;

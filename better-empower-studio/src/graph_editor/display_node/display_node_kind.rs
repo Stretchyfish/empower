@@ -1,9 +1,6 @@
 use std::collections::HashMap;
-use std::any::Any; // @TODO, think I can remove this now and its affect on the traits
 
 use better_empower_engine::PortValue;
-use better_empower_engine::node_graph::node::NodeKind;
-use better_empower_engine::node_graph::node::port::Port;
 use once_cell::sync::Lazy;
 
 mod default_display_node;

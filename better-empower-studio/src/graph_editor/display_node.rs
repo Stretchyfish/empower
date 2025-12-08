@@ -1,5 +1,9 @@
 use egui;
 
+pub mod display_port;
+pub use display_port::DisplayPort;
+pub use display_port::DisplayValue;
+
 mod display_node_kind;
 use display_node_kind::DisplayNodeKind;
 use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;

@@ -1,7 +1,7 @@
 use better_empower_engine::NodeGraphKey;
 
-use crate::{graph_editor::GraphEditor, workspace::layout::viewport::graph_viewport::GraphViewport};
-use crate::graph_editor::display_value::DisplayValue;
+use crate::graph_editor::GraphEditor;
+use crate::graph_editor::display_node::DisplayValue;
 
 use super::NodeAreaSelect;
 

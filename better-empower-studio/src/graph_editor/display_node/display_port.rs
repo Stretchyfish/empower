@@ -1,7 +1,8 @@
 use better_empower_engine::PortValue;
 use egui;
 
-use super::display_value::DisplayValue;
+pub mod display_value;
+pub use display_value::DisplayValue;
 
 #[derive(Clone, PartialEq)]
 pub struct DisplayPort

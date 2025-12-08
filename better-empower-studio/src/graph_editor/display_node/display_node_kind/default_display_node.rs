@@ -1,12 +1,8 @@
 use better_empower_engine::PortValue;
-use better_empower_engine::node_graph::node::NodeKind;
-use better_empower_engine::node_graph::node::port::Port;
-
-use crate::graph_editor::display_value::DisplayValue;
 
 use super::DisplayNodeKind;
 
-use super::DisplayPort;
+use super::super::DisplayPort;
 
 #[derive(Clone)]
 pub struct DefaultDisplayNode
