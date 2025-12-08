@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::any::Any; // @TODO, think I can remove this now and its affect on the traits
 
+use better_empower_engine::PortValue;
 use better_empower_engine::node_graph::node::NodeKind;
+use better_empower_engine::node_graph::node::port::Port;
 use once_cell::sync::Lazy;
 
 mod default_display_node;
@@ -16,7 +18,7 @@ pub trait DisplayNodeKind
         Self: Sized;
     fn clone_box(&self) -> Box<dyn DisplayNodeKind>; // This is needed to enable trait cloning
     fn node_size(&self) -> egui::Vec2;
-    fn display_inputs(&self, node_kind: &Box<dyn NodeKind>) -> Vec<DisplayPort>;
+    fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
     fn state_show(&mut self, ui: &mut Option<egui::Ui>) -> bool; // The bool indicates a change 
 }

@@ -14,16 +14,13 @@ pub struct DisplayPort
 
 impl DisplayPort
 {
-    pub fn new(text: &'static str, position: egui::Pos2) -> Self
+    pub fn new(text: &'static str, position: egui::Pos2, port_value: &PortValue) -> Self
     {
-        // Self { text, position, value: DisplayValue::Nothing }
-        // Self { text, position, value: DisplayValue::checkbox(true) }
-        Self { text, position, value: DisplayValue::Text(String::new()), convertable: true }
+        Self { text, position, value: DisplayValue::from_port_value(port_value), convertable: true }
     }
 
-    pub fn try_to_convert_to_port_value(&mut self, port_value: &PortValue)
+    pub fn nothing(position: egui::Pos2) -> Self
     {
-
+        Self { text: "", position, value: DisplayValue::Nothing, convertable: true }
     }
-
 }

@@ -1,4 +1,8 @@
+use better_empower_engine::PortValue;
 use better_empower_engine::node_graph::node::NodeKind;
+use better_empower_engine::node_graph::node::port::Port;
+
+use crate::graph_editor::display_value::DisplayValue;
 
 use super::DisplayNodeKind;
 
@@ -30,15 +34,18 @@ impl DisplayNodeKind for DefaultDisplayNode
         egui::Vec2 { x: 0.0, y: 0.0 }
     }
 
-    fn display_inputs(&self, node_kind: &Box<dyn NodeKind>) -> Vec<DisplayPort> {
-
-        let input_compatabilities = node_kind.input_compatabilities();
+    fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
 
         let mut display_inputs = Vec::new();
-        display_inputs.reserve(input_compatabilities.len());
-        for compatability in input_compatabilities
+
+        display_inputs.reserve(input_port_values.len());
+        for input_port_value in input_port_values
         {
-            let display_port = DisplayPort::new("A", egui::pos2(0.0, 0.0));
+            let display_port = DisplayPort::new(
+                                                            "A", 
+                                                            egui::pos2(0.0, 0.0), 
+                                                            &input_port_value
+                                                        );
             display_inputs.push(display_port);
         }
 

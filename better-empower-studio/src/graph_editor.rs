@@ -43,46 +43,27 @@ impl GraphEditor
         let display_node_title = node.kind.name();
         let display_node = DisplayNode::new(display_node_title, position);
 
-
-        let display_input_ports = display_node.display_kind.display_inputs(&node.kind);
+        // Create display input ports
+        let node_input_port_values = self.node_graph.get_node_input_port_values(&node.key);
+        let display_input_ports = display_node.display_kind.display_input_ports(node_input_port_values);
 
         if node.input_port_keys.len() != display_input_ports.len()
         {
             panic!("Tried to create node, but display input ports doesn't match number of actual input ports");
         } 
 
-
         for index in 0..node.input_port_keys.len()
         {
             self.display_input_ports.insert(node.input_port_keys[index], display_input_ports[index].clone() );
         }
 
-        // for input_port_key in &node.input_port_keys
-        // {
-        //     self.display_input_ports.insert(*input_port_key, display_port);
-        // }
-
-
-
-        self.display_nodes.insert(node_handle.node_key, display_node);
-
-
-
-        // create display ports
-        for input_port_key in &node.input_port_keys
-        {
-            let input_port = self.node_graph.get_input_port(input_port_key).unwrap();
-            let display_port = DisplayPort::new("a", position); // The position is just defaulted here, because it will be correct in refresh display node
-            self.display_input_ports.insert(*input_port_key, display_port);
-        }
-
-        // create display ports
+        // create display output ports
         for output_port_key in &node.output_port_keys
         {
-            let output_port = self.node_graph.get_input_port(output_port_key).unwrap();
-            let display_port = DisplayPort::new("a", position); // The position is just defaulted here, because it will be correct in refresh display node
+            let display_port = DisplayPort::nothing(position); // The position is just defaulted here, because it will be correct in refresh display node
             self.display_output_ports.insert(*output_port_key, display_port);
         }
+        self.display_nodes.insert(node_handle.node_key, display_node);
 
         // Correct position and etc to avoid unessesary code duplication
         self.refresh_display_node(node_handle.node_key);

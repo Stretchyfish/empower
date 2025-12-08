@@ -15,6 +15,20 @@ pub enum DisplayValue
 
 impl DisplayValue
 {
+    pub fn from_port_value(port_value: &PortValue) -> Self
+    {
+        match port_value
+        {
+            PortValue::Trigger => Self::Nothing,
+            PortValue::Integer( int ) => Self::Text( int.to_string() ),
+            PortValue::Float( float ) => Self::Text( float.to_string() ),
+            PortValue::Text(_) => Self::Text( String::new() ),
+            PortValue::Bool( boolean) => Self::Checkbox( *boolean ),
+            PortValue::Vector(port_values) => Self::Nothing,
+            PortValue::None => Self::Nothing,
+        }
+    }
+
     pub fn to_port_value(&self, port_value: &PortValue) -> Option<PortValue>
     {
         let parsed_value = match (self, port_value)
