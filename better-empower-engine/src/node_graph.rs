@@ -306,6 +306,11 @@ impl NodeGraph
     {
         self.nodes.get(node_key)
     }
+    
+    pub fn get_node_mut(&mut self, node_key: &NodeGraphKey) -> Option<&mut Node>
+    {
+        self.nodes.get_mut(node_key)
+    }
 
     pub fn get_input_port(&self, port_key: &NodeGraphKey) -> Option<&Port>
     {

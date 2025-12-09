@@ -182,7 +182,32 @@ pub fn show_node_body(
  
     let mut kind_copy = node.kind.clone();
 
-    let a = kind_copy.state(ui);
+
+    let state_size = display_node.display_kind.state_size();
+
+    let node_state_margin = 5.0;
+    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + node_state_margin, y: title_box_rect.max.y + node_state_margin };
+    let state_max_rect = egui::Rect::from_min_size(state_top_left_corner, state_size); 
+
+    let state_ui_builder = egui::UiBuilder::new()
+    .max_rect(state_max_rect);
+
+    let mut kind_copy = node.kind.clone();
+    let mut display_kind_copy = display_node.display_kind.clone();
+
+    let mut modified_states = false;
+    ui.scope_builder(state_ui_builder, |ui|
+    {
+        let style = ui.style_mut();
+        style.override_font_id = Some ( egui::FontId::proportional(35.0));
+
+        modified_states = display_kind_copy.state_show(ui, &mut kind_copy);
+    });
+
+    if modified_states
+    {
+        *node_widget_response = Some( NodeWidgetResponse { key: *node_key, kind: NodeWidgetResponseType::ChangedState(kind_copy, display_kind_copy)});
+    }
 
     // Show node body
     // ui.painter().rect(

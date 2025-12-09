@@ -1,7 +1,6 @@
 use better_empower_engine::PortValue;
-
+use better_empower_engine::node_graph::node::NodeKind;
 use super::DisplayNodeKind;
-
 use super::super::DisplayPort;
 
 #[derive(Clone)]
@@ -48,7 +47,7 @@ impl DisplayNodeKind for DefaultDisplayNode
         display_inputs
     }
 
-    fn state_show(&mut self, _: &mut Option<egui::Ui>) -> bool {
+    fn state_show(&mut self, _: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
         false
     }
 }

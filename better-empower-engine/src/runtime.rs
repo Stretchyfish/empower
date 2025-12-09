@@ -5,7 +5,7 @@ mod visualizer;
 use visualizer::EmpowerVisualizer;
 
 mod executor;
-use executor::EmpowerExecutor;
+pub use executor::EmpowerExecutor;
 
 pub struct EmpowerRuntime
 {

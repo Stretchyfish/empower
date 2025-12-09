@@ -5,8 +5,6 @@ use crate::graph_editor::GraphEditor;
 
 use super::PortSearcher;
 
-// use super::port_searcher::{PortSearcher, PortKind};
-
 pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, connection: (NodeGraphKey, NodeGraphKey))
 {
     let display_output_port = graph_editor.display_output_ports.get(&connection.0).expect("Tried to show connection but output port was not available");

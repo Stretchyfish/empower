@@ -5,7 +5,7 @@ use super::NodeKind;
 #[derive(Clone)]
 pub struct FilePathNode
 {
-    path: String,
+    pub path: String,
 
 }
 
@@ -41,8 +41,8 @@ impl NodeKind for FilePathNode
         )
     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        todo!()
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 
     fn state(&mut self, ui: &mut egui::Ui) {

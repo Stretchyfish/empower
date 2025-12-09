@@ -1,7 +1,7 @@
-use better_empower_engine::NodeGraphKey;
+use better_empower_engine::{NodeGraphKey, node_graph::node::NodeKind};
 use egui;
 
-use crate::{GraphEditor, graph_editor::display_node::DisplayValue, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
+use crate::{GraphEditor, graph_editor::display_node::{DisplayNodeKind, DisplayValue}, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
 use better_empower_engine::node_graph::node::port::PortKind; 
 
 use super::Viewport;
@@ -163,6 +163,7 @@ impl GraphViewport
                 node_widget::NodeWidgetResponseType::ClickedInputPort( port_key ) => self.toggle_input_port_search_or_add_connection(&port_key, graph_editor),
                 node_widget::NodeWidgetResponseType::ClickedOutputPort( port_key ) => self.toggle_output_port_search_or_add_connection(&port_key, graph_editor),
                 node_widget::NodeWidgetResponseType::ChangedInputPortDisplayValue( port_key, modified_port_value) => self.set_input_port_value_if_display_value_can_convert(port_key, graph_editor, modified_port_value),
+                node_widget::NodeWidgetResponseType::ChangedState(new_node_kind, new_display_node_kind) => self.set_state_changes(&response.key, graph_editor, &new_node_kind, &new_display_node_kind),
                 node_widget::NodeWidgetResponseType::InsideSelectionRect => self.check_or_add_node_to_nodes_inside_selection_area(&response.key),
             }
 
@@ -366,5 +367,13 @@ impl GraphViewport
         input_port.value = new_port_value.unwrap();
     }
 
+    fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
+    {
+        let mut node = graph_editor.node_graph.get_node_mut(node_key).unwrap();
+        let mut display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
+
+        node.kind = new_node_kind.clone();
+        display_node.display_kind = new_display_node_kind.clone();
+    }
 }
 

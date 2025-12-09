@@ -50,6 +50,10 @@ impl NodeSelectionPanel
                     {
                         self.node_to_add = Some( "addition" );
                     };
+                    if ui.add(egui::Button::new("file path").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                    {
+                        self.node_to_add = Some( "file path" );
+                    };
                 });
             });
         });

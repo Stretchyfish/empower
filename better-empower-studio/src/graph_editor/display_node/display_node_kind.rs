@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
-use better_empower_engine::PortValue;
+use better_empower_engine::{PortValue, node_graph::node::node_kind::NodeKind};
 use once_cell::sync::Lazy;
 
 mod default_display_node;
 use default_display_node::DefaultDisplayNode;
+
+mod file_path_display_node;
+use file_path_display_node::FilePathDisplayNode;
 
 use super::super::DisplayPort; // @TODO, improve this include
 
@@ -17,7 +20,7 @@ pub trait DisplayNodeKind
     fn node_size(&self) -> egui::Vec2;
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
-    fn state_show(&mut self, ui: &mut Option<egui::Ui>) -> bool; // The bool indicates a change 
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool; // The bool indicates a change 
 }
 
 impl Clone for Box<dyn DisplayNodeKind>
@@ -35,6 +38,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
 
     // This one cannot be removed, or it will cause a crash in display node generation
     m.insert("default", || DefaultDisplayNode::new() ); 
+    m.insert("file path", || FilePathDisplayNode::new() ); 
 
     m
 });

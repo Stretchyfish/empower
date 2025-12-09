@@ -1,4 +1,7 @@
 use better_empower_engine::NodeGraphKey;
+use better_empower_engine::node_graph::node::NodeKind;
+
+use crate::graph_editor::display_node::DisplayNodeKind;
 
 use crate::graph_editor::GraphEditor;
 use crate::graph_editor::display_node::DisplayValue;
@@ -21,7 +24,7 @@ pub enum NodeWidgetResponseType
     ClickedInputPort(NodeGraphKey), 
     ClickedOutputPort(NodeGraphKey),
     ChangedInputPortDisplayValue(NodeGraphKey, DisplayValue),
-    // ChangedState(NodeKind, DisplayState),
+    ChangedState(Box<dyn NodeKind>, Box<dyn DisplayNodeKind>),
     InsideSelectionRect,
 }
 

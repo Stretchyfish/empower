@@ -44,7 +44,7 @@ impl NodeKind for ShowImageNode
         Vec::new()
     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
 

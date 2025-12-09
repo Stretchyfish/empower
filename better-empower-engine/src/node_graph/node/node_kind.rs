@@ -34,7 +34,7 @@ mod math_graph_node;
 use math_graph_node::MathGraphNode;
 
 mod file_path_node;
-use file_path_node::FilePathNode;
+pub use file_path_node::FilePathNode;
 
 mod show_image_node;
 use show_image_node::ShowImageNode;
@@ -49,7 +49,7 @@ pub trait NodeKind
     fn function(&self) -> NodeFunction; // @TODO, maybe rename it behavior?
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
-    fn as_any(&self) -> &dyn Any; 
+    fn as_any(&mut self) -> &mut dyn Any; 
     fn state(&mut self, ui: &mut egui::Ui);
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>;
     fn update(&mut self) -> Option<Vec<PortValue>>;
