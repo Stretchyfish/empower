@@ -1,4 +1,4 @@
-use better_empower_engine::PortValue;
+use better_empower_engine::{PortValue, node_graph::node::port::{PortCompatability, port_compatability}};
 
 #[derive(Clone, PartialEq)]
 pub enum DisplayValue
@@ -24,17 +24,28 @@ impl DisplayValue
         }
     }
 
-    pub fn to_port_value(&self, port_value: &PortValue) -> Option<PortValue>
+    pub fn to_port_value(&self, port_compatabilities: &PortCompatability) -> Option<PortValue>
     {
-        let parsed_value = match (self, port_value)
+        for compatible_value in port_compatabilities.get_compatability_list()
         {
-            (DisplayValue::Text( text_to_parse ), PortValue::Integer(_)) => self.text_to_int(&text_to_parse),
-            (DisplayValue::Text( text_to_parse ), PortValue::Float(_)) => self.text_to_float(&text_to_parse),
-            (DisplayValue::Text( text_send ), PortValue::Text(_)) => Some( PortValue::Text( text_send.to_string() ) ),
-            (DisplayValue::Checkbox( boolean_to_parse), PortValue::Bool(_)) => Some( PortValue::Bool( *boolean_to_parse )),
-            _ => panic!("Tried to pass two incompatible values"),
-        };
-        return parsed_value;
+            let parsed_value = match (self, compatible_value)
+            {
+                (DisplayValue::Text( text_to_parse ), PortValue::Integer(_)) => self.text_to_int(&text_to_parse),
+                (DisplayValue::Text( text_to_parse ), PortValue::Float(_)) => self.text_to_float(&text_to_parse),
+                (DisplayValue::Text( text_send ), PortValue::Text(_)) => Some( PortValue::Text( text_send.to_string() ) ),
+                (DisplayValue::Checkbox( boolean_to_parse), PortValue::Bool(_)) => Some( PortValue::Bool( *boolean_to_parse )),
+                _ => panic!("Tried to pass two incompatible values"),
+            };
+
+            if parsed_value.is_none()
+            {
+                continue;
+            }
+
+            return parsed_value;
+        }
+ 
+        None
     }
 
     pub fn text_to_int(&self, text_to_parse: &String) -> Option<PortValue>

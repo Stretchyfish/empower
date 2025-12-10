@@ -80,7 +80,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                             ui.horizontal(|ui|
                             {
                                 ui.label(port.key.to_string());
-                                ui.label(port.value.to_string());
+                                ui.label(port.value.type_name());
                                 ui.label(port.value.to_string());
                            });
 
@@ -102,7 +102,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                             ui.horizontal(|ui|
                             {
                                 ui.label(port.key.to_string());
-                                ui.label(port.value.to_string());
+                                ui.label(port.value.type_name());
                                 ui.label(port.value.to_string());
                             });
                         }

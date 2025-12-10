@@ -9,6 +9,9 @@ use default_display_node::DefaultDisplayNode;
 mod file_path_display_node;
 use file_path_display_node::FilePathDisplayNode;
 
+mod number_display_node;
+use number_display_node::NumberDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -38,7 +41,9 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
 
     // This one cannot be removed, or it will cause a crash in display node generation
     m.insert("default", || DefaultDisplayNode::new() ); 
+    
     m.insert("file path", || FilePathDisplayNode::new() ); 
+    m.insert("number", || NumberDisplayNode::new() ); 
 
     m
 });

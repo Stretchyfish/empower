@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use better_empower_engine::node_graph::node::NodeKind;
 use better_empower_engine::{NodeGraph, NodeGraphKey};
 
 pub mod display_node;
@@ -8,6 +9,8 @@ pub use display_node::DisplayValue;
 
 mod debug_info;
 use debug_info::DebugInfo;
+
+use crate::graph_editor::display_node::DisplayNodeKind;
 
 pub struct GraphEditor
 {
@@ -111,5 +114,52 @@ impl GraphEditor
 
             output_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
         }
+    }
+
+    // @TODO, consider if functions here can be combined to reduce code re-use
+    pub fn refresh_node_structure(&mut self, node_key: NodeGraphKey, node_kind: &Box<dyn NodeKind>, display_node_kind: &Box<dyn DisplayNodeKind>)
+    {
+        self.node_graph.refresh_node_structure(&node_key, node_kind); // @TODO, find a better name for this
+
+        return;
+
+        let node_handle_before_update = self.node_graph.get_node_handle(&node_key);
+
+        let display_node = self.display_nodes.get_mut(&node_key).unwrap();
+        display_node.display_kind = display_node_kind.clone();
+
+        let updated_input_port_values = self.node_graph.get_node_input_port_values(&node_key);
+        let updated_output_port_values = self.node_graph.get_node_output_port_values(&node_key);
+
+        let updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);
+
+        let node_handle_after_update = self.node_graph.get_node_handle(&node_key);
+
+        // If the update caused there to be less input ports than before, remove the extra once
+        if node_handle_before_update.input_port_keys.len() > updated_input_display_ports_values.len()
+        {
+            let mut index_to_remove = updated_input_display_ports_values.len();
+            while index_to_remove < node_handle_before_update.input_port_keys.len() 
+            {
+                let key_to_remove = node_handle_before_update.input_port_keys[index_to_remove]; 
+                self.display_input_ports.remove(&key_to_remove);
+                index_to_remove += 1;
+            }
+        }
+
+        // if node_handle_before_update.output_port_keys.len() > updated_output_display_ports_values.len()
+        // {
+        //     let mut index_to_remove = updated_output_display_ports_values.len();
+        //     while index_to_remove < node_handle_before_update.output_port_keys.len()
+        //     {
+        //         let key_to_remove = node_handle_before_update.output_port_keys[index_to_remove];
+        //         self.display_output_ports.remove(&key_to_remove);
+        //         index_to_remove += 1;
+        //     }
+        // }
+
+
+
+
     }
 }

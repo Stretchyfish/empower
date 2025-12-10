@@ -10,7 +10,8 @@ mod start_node;
 use start_node::StartNode;
 
 mod number_node;
-use number_node::NumberNode;
+pub use number_node::NumberNode;
+pub use number_node::NumberNodeValueKind;
 
 mod addition_node;
 use addition_node::AdditionNode;

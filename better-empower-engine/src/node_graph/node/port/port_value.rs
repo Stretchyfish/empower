@@ -20,6 +20,20 @@ impl PortValue
     {
         discriminant(self) == discriminant(value)
     }
+
+    pub fn type_name(&self) -> &'static str
+    {
+        match self
+        {
+            PortValue::Trigger => "trigger",
+            PortValue::Integer(_) => "integer",
+            PortValue::Float(_) => "float",
+            PortValue::Text(_) => "text",
+            PortValue::Bool(_) => "bool",
+            PortValue::Vector(_) => "vector",
+            PortValue::None => "none",
+        }
+    }
 }
 
 impl fmt::Display for PortValue

@@ -319,6 +319,7 @@ impl GraphViewport
 
     }
 
+    // @TODO, figure out if some of these functions should get added to graph_editor instead
     fn toggle_output_port_search_or_add_connection(&mut self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor)
     {
         if self.port_searcher.is_none()
@@ -360,11 +361,11 @@ impl GraphViewport
 
         display_input_port.value = new_value.clone();
 
-        let new_port_value = display_input_port.value.to_port_value(&input_port.value);
+        let new_port_value = display_input_port.value.to_port_value(&input_port.compatability);
 
         if new_port_value.is_none()
         {
-            display_input_port.convertable = false;
+            display_input_port.convertable = false; // @TODO, consider a better name, like "valid"
             return;
         }
         display_input_port.convertable = true;
@@ -374,11 +375,7 @@ impl GraphViewport
 
     fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
     {
-        let node = graph_editor.node_graph.get_node_mut(node_key).unwrap();
-        let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
-
-        node.kind = new_node_kind.clone();
-        display_node.display_kind = new_display_node_kind.clone();
+        graph_editor.refresh_node_structure(*node_key, new_node_kind, new_display_node_kind);
     }
 }
 
