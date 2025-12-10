@@ -65,7 +65,7 @@ impl NodeKind for ShowImageNode
     }
 
     fn update(&mut self) -> Option<Vec<PortValue>> {
-        todo!()
+        None
     }
 
     fn execute(&mut self, ui: &mut egui::Ui) {

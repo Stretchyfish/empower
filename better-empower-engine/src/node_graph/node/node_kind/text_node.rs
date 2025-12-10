@@ -57,7 +57,7 @@ impl NodeKind for TextNode
     }
 
     fn update(&mut self) -> Option<Vec<PortValue>> {
-        todo!()
+        None
     }
 
     fn execute(&mut self, _: &mut egui::Ui) {

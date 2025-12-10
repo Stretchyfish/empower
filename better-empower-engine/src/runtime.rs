@@ -1,6 +1,6 @@
 use crate::{NodeGraph, node_graph::node::NodeFunction};
 
-mod analysis;
+pub mod analysis;
 mod visualizer;
 use visualizer::EmpowerVisualizer;
 

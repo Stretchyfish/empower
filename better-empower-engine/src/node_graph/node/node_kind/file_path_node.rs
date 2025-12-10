@@ -66,6 +66,8 @@ impl NodeKind for FilePathNode
     }
 
     fn setup(&mut self, _: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+
+        println!("Ran this with path: {}", self.path.clone());
         Some( Vec::from([PortValue::Text( self.path.clone() )]))
     }
 

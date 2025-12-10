@@ -7,8 +7,10 @@ use better_empower_engine::node_graph::node::port::PortKind;
 use super::Viewport;
 
 mod user_inputs;
+
 mod node_widget;
 mod connection_widget;
+mod debug_info_widget;
 
 mod node_area_select;
 use node_area_select::NodeAreaSelect;
@@ -105,11 +107,6 @@ impl GraphViewport
             self.mouse_scene_delta = mouse_scene_delta;
 
 
-            let connection_keys = graph_editor.node_graph.get_all_connections();
-            for connection in connection_keys
-            {
-                connection_widget::show(scene_ui, graph_editor, connection);
-            }
 
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
@@ -120,6 +117,14 @@ impl GraphViewport
                 {
                     widget_responses.push(node_widget_response.unwrap());
                 }
+            }
+
+            debug_info_widget::nodes_debug_info_show(scene_ui, &graph_editor);
+
+            let connection_keys = graph_editor.node_graph.get_all_connections();
+            for connection in connection_keys
+            {
+                connection_widget::show(scene_ui, graph_editor, connection);
             }
 
             if self.node_area_select.is_some()
@@ -369,8 +374,8 @@ impl GraphViewport
 
     fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
     {
-        let mut node = graph_editor.node_graph.get_node_mut(node_key).unwrap();
-        let mut display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
+        let node = graph_editor.node_graph.get_node_mut(node_key).unwrap();
+        let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
 
         node.kind = new_node_kind.clone();
         display_node.display_kind = new_display_node_kind.clone();

@@ -117,10 +117,18 @@ impl EmpowerExecutor
         }
 
         // Setup next nodes in execution queue
-        if !self.execution_queue.is_empty()
+        if !self.execution_queue.is_empty() // @TODO, change this if statement to return instead
         {
             let node_key_to_setup = self.execution_queue[0];
             let response = self.setup_node(&node_key_to_setup);
+
+
+            if response.is_some()// change this to return when you move it back
+            {
+                self.node_graph.set_output_port_values(&node_key_to_setup, &response.as_ref().unwrap());
+                let distribution_result = self.node_graph.distribute_outputs(&node_key_to_setup); 
+                self.execution_queue.extend(distribution_result);
+            }
 
             if self.debug_mode 
             {
@@ -129,13 +137,6 @@ impl EmpowerExecutor
 
             self.execution_queue.pop_front(); // @TODO, add a way to remove running nodes
             responses.push(response.clone()); // @TODO, remove this clone and below
-
-            if !response.is_none()// change this to return when you move it back
-            {
-                self.node_graph.set_output_port_values(&node_key_to_setup, &response.unwrap());
-                let distribution_result = self.node_graph.distribute_outputs(&node_key_to_setup); 
-                self.execution_queue.extend(distribution_result);
-            }
         }
 
         // @TODO, make this work!

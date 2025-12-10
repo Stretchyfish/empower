@@ -6,6 +6,9 @@ pub use display_node::DisplayNode;
 pub use display_node::DisplayPort;
 pub use display_node::DisplayValue;
 
+mod debug_info;
+use debug_info::DebugInfo;
+
 pub struct GraphEditor
 {
     pub node_graph: NodeGraph,
@@ -13,6 +16,7 @@ pub struct GraphEditor
     pub display_input_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub selected_nodes: Vec<NodeGraphKey>,
+    pub debug_info: DebugInfo,
 }
 
 impl GraphEditor
@@ -26,6 +30,7 @@ impl GraphEditor
         display_input_ports: HashMap::new(),
         display_output_ports: HashMap::new(),
         selected_nodes: Vec::new(),
+        debug_info: DebugInfo::new(),
        };
 
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left

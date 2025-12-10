@@ -180,9 +180,6 @@ pub fn show_node_body(
             egui::StrokeKind::Inside,
     );
  
-    let mut kind_copy = node.kind.clone();
-
-
     let state_size = display_node.display_kind.state_size();
 
     let node_state_margin = 5.0;
