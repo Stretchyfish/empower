@@ -45,26 +45,6 @@ impl NodeKind for FilePathNode
         self
     }
 
-    fn state(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui|
-        {
-            let text_edit = egui::TextEdit::singleline(&mut self.path)
-            .min_size( egui::Vec2 { x: 480.0, y: 50.0 });
-
-            ui.add( text_edit);
-
-            if ui.button("Find File").clicked()
-            {
-                let file_path = rfd::FileDialog::new().pick_file();
-
-                if file_path.is_some()
-                {
-                    self.path = file_path.unwrap().to_str().unwrap().to_string()
-                }
-            }
-        }); 
-    }
-
     fn setup(&mut self, _: Vec<&PortValue>) -> Option<Vec<PortValue>> {
 
         println!("Ran this with path: {}", self.path.clone());

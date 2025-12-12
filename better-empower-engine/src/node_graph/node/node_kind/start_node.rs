@@ -44,9 +44,6 @@ impl NodeKind for StartNode
         self
     }
 
-    fn state(&mut self, _: &mut egui::Ui) {
-    }
-
     fn setup(&mut self, _: Vec<&PortValue>) -> Option<Vec<PortValue>>{
         Some( Vec::from( [ PortValue::Trigger ] ) )
     }

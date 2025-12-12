@@ -45,9 +45,6 @@ impl NodeKind for PrintNode
         self
     }
 
-    fn state(&mut self, _: &mut egui::Ui) {
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
         // let text_to_print = inputs[1].to_string();
         println!("PRINTING: {}", inputs[1]);

@@ -58,25 +58,6 @@ impl NodeKind for NumberNode
         self
     }
 
-    fn state(&mut self, ui: &mut egui::Ui) {
-        
-        ui.menu_button(self.desired_value.to_string(), |ui|
-        {
-            if ui.button("Automatic").clicked()
-            {
-                self.desired_value = NumberNodeValueKind::Automatic;
-            }
-            if ui.button("Integer").clicked()
-            {
-                self.desired_value = NumberNodeValueKind::Integer;
-            }
-            if ui.button("Float").clicked()
-            {
-                self.desired_value = NumberNodeValueKind::Float;
-            }
-        });
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
         Some( Vec::from( [ inputs[0].clone() ] ))
     }

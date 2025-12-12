@@ -48,16 +48,13 @@ impl NodeKind for TextNode
         self
     }
 
-    fn state(&mut self, _: &mut egui::Ui) {
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
         let output_value = inputs[0].clone();
         Some(Vec::from( [ output_value ] ))
     }
 
     fn update(&mut self) -> Option<Vec<PortValue>> {
-        None
+        todo!()
     }
 
     fn execute(&mut self, _: &mut egui::Ui) {

@@ -51,10 +51,6 @@ impl NodeKind for AdditionNode
         self
     }
 
-    fn state(&mut self, ui: &mut egui::Ui) {
-        ui.button("Text");
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
 
         let output_value = inputs[0].clone() + inputs[1].clone();

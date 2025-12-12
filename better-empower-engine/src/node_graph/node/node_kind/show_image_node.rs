@@ -48,9 +48,6 @@ impl NodeKind for ShowImageNode
         self
     }
 
-    fn state(&mut self, _: &mut egui::Ui) {
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
 
         let input_text = match inputs[1]

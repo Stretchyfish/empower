@@ -5,8 +5,6 @@ use super::NodeKind;
 #[derive(Clone)]
 pub struct VectorNode
 {
-    show_n: bool, // This bool is tied to visualization, probably can't get rid off
-    number_text: String, // Same for this
     number_of_input_ports: i32,
 }
 
@@ -15,7 +13,7 @@ impl NodeKind for VectorNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
         
-        Box::new( Self { number_of_input_ports: 2, show_n: false, number_text: String::new() } )
+        Box::new( Self { number_of_input_ports: 2 } )
     }
 
     fn name(&self) -> &'static str {
@@ -50,96 +48,6 @@ impl NodeKind for VectorNode
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
-    }
-
-    fn state(&mut self, ui: &mut egui::Ui) {
-
-        ui.horizontal(|ui|
-        {
-            ui.horizontal_centered(|ui|
-            {
-                ui.label("size: ");
-
-                let mut number_to_show = self.number_of_input_ports.to_string();
-                if self.show_n
-                {
-                    number_to_show = "n".to_string();
-                }
-
-                ui.menu_button(number_to_show, |ui|
-                {
-                    if ui.button("2").clicked()
-                    {
-                        self.number_of_input_ports = 2;
-                        self.show_n = false; 
-                    }
-                    if ui.button("3").clicked()
-                    {
-                        self.number_of_input_ports = 3;
-                        self.show_n = false; 
-                    }
-                    if ui.button("4").clicked()
-                    {
-                        self.number_of_input_ports = 4;
-                        self.show_n = false; 
-                    }
-                    if ui.button("5").clicked()
-                    {
-                        self.number_of_input_ports = 5;
-                        self.show_n = false; 
-                    }
-                    if ui.button("6").clicked()
-                    {
-                        self.number_of_input_ports = 6;
-                        self.show_n = false; 
-                    }
-                    if ui.button("n").clicked()
-                    {
-                        self.show_n = true; 
-                    }
-                });
-
-                if self.show_n
-                {
-                    let parse_result = self.number_text.parse::<i32>();
-
-                    let parsed_successfully;
-
-                    let parsed_number = match parse_result
-                    {
-                        Ok( parsed_value) => 
-                        {
-                            parsed_successfully = true;
-                            parsed_value
-                        },
-                        Err(_) => 
-                        {
-                            parsed_successfully = false;
-                            self.number_of_input_ports
-                        }
-                    };
-
-                    let mut text_edit_color = egui::Color32::WHITE;
-                    if !parsed_successfully
-                    {
-                        text_edit_color = egui::Color32::RED;
-                    }
-
-                    if parsed_number >= 2
-                    {
-                        self.number_of_input_ports = parsed_number;
-                    }
-
-                    let text_edit = egui::TextEdit::singleline(&mut self.number_text)
-                    .char_limit(5)
-                    .text_color(text_edit_color);
-                    // .background_color(text_background_color);
-
-                    ui.add( text_edit);
-                    
-                }
-            });
-        });
     }
 
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {

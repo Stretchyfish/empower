@@ -48,9 +48,6 @@ impl NodeKind for BooleanNode
         self
     }
 
-    fn state(&mut self, _: &mut egui::Ui) {
-    }
-
     fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
         let output_value = inputs[0].clone();
         Some( Vec::from( [ output_value ] ) )
