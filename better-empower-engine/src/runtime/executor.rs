@@ -4,6 +4,7 @@ use std::collections::VecDeque;
 use crate::NodeGraph;
 use crate::NodeGraphKey;
 use crate::PortValue;
+use crate::utility::text_buffer::TextBuffer;
 use super::analysis;
 
 use crate::node_graph::node::NodeFunction;
@@ -20,6 +21,7 @@ pub struct EmpowerExecutor
     pub background_execution: Vec<NodeGraphKey>,
     pub window_counter: i32, // @TODO, this might not be needed anymore!
     window_manager: WindowManager,
+    pub log: TextBuffer,
     // log: TextBuffer,
 }
 
@@ -38,6 +40,7 @@ impl EmpowerExecutor
             background_execution: Vec::new(),
             window_counter: 0,
             window_manager: WindowManager::new(),
+            log: TextBuffer::new(),
         }
     }
 
@@ -187,7 +190,7 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
-        node.kind.setup(input_port_values)
+        node.kind.setup(input_port_values, &mut self.log)
     }
 
     fn update_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<PortValue>>

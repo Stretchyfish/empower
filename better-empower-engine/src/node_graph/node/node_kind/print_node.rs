@@ -1,4 +1,4 @@
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -45,10 +45,11 @@ impl NodeKind for PrintNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
-        // let text_to_print = inputs[1].to_string();
+    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
+
         println!("PRINTING: {}", inputs[1]);
-        // log.add_line(&text_to_print);
+        let text = format!("{}", inputs[1]);
+        log.add_line(&text);
         
         Some( Vec::new() )
     }

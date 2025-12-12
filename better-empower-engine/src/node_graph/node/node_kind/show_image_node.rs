@@ -1,6 +1,6 @@
 use core::panic;
 
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -48,7 +48,7 @@ impl NodeKind for ShowImageNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
 
         let input_text = match inputs[1]
         {

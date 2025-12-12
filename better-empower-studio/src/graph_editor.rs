@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use better_empower_engine::node_graph::node::NodeKind;
 use better_empower_engine::{NodeGraph, NodeGraphKey};
+use better_empower_engine::runtime::EmpowerExecutor;
 
 pub mod display_node;
 pub use display_node::DisplayNode;
@@ -20,6 +21,7 @@ pub struct GraphEditor
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub selected_nodes: Vec<NodeGraphKey>,
     pub debug_info: DebugInfo,
+    pub executor: Option<EmpowerExecutor>,
 }
 
 impl GraphEditor
@@ -34,7 +36,8 @@ impl GraphEditor
         display_output_ports: HashMap::new(),
         selected_nodes: Vec::new(),
         debug_info: DebugInfo::new(),
-       };
+        executor: None,
+        };
 
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left
 

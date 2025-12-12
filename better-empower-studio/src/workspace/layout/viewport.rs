@@ -9,6 +9,9 @@ use empty_viewport::EmptyViewport;
 mod graph_viewport;
 use graph_viewport::GraphViewport;
 
+mod terminal_viewport;
+use terminal_viewport::TerminalViewport;
+
 pub trait Viewport
 {
     fn new() -> Box<dyn Viewport> 
@@ -26,6 +29,7 @@ pub static VIEWPORT_REGISTRY: Lazy<HashMap<&'static str, ViewportConstructor>> =
 
     m.insert(EmptyViewport::new().name(), || EmptyViewport::new());
     m.insert(GraphViewport::new().name(), || GraphViewport::new());
+    m.insert(TerminalViewport::new().name(), || TerminalViewport::new());
  
     m
 });

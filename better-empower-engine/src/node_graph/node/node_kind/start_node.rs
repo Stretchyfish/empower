@@ -1,4 +1,4 @@
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -44,7 +44,7 @@ impl NodeKind for StartNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> Option<Vec<PortValue>>{
+    fn setup(&mut self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>>{
         Some( Vec::from( [ PortValue::Trigger ] ) )
     }
 

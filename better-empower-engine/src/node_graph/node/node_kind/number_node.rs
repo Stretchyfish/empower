@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -58,7 +58,7 @@ impl NodeKind for NumberNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
         Some( Vec::from( [ inputs[0].clone() ] ))
     }
 

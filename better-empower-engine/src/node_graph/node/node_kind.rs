@@ -3,6 +3,8 @@ use std::any::Any; // @TODO, think I can remove this now and its affect on the t
 
 use once_cell::sync::Lazy;
 
+use crate::utility::text_buffer::TextBuffer;
+
 use super::port::{PortValue, PortCompatability};
 use super::NodeFunction;
 
@@ -51,7 +53,7 @@ pub trait NodeKind
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
     fn as_any(&mut self) -> &mut dyn Any; 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>;
+    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>>;
     fn update(&mut self) -> Option<Vec<PortValue>>;
     fn execute(&mut self, ui: &mut egui::Ui);
 }

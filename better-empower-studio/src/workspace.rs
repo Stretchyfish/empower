@@ -44,15 +44,17 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             );
 
         // @TODO, this needs to be moved elsewhere!
-        if studio_context.executor.is_some()
+        if studio_context.graph_editor.executor.is_some()
         {
-            let executor = studio_context.executor.as_mut().unwrap();
-            executor.execute_node_graph(Some( ui ));
+            let executor = studio_context.graph_editor.executor.as_mut().unwrap();
 
             if !executor.is_running()
             {
-                studio_context.executor = None;
+                studio_context.graph_editor.executor = None;
+                return; // @TODO, figure out a better way than returning here
             }
+
+            executor.execute_node_graph(Some( ui ));
         }
     });
 }

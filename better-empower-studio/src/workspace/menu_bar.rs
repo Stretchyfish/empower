@@ -21,14 +21,14 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         }
     });
 
-    if studio_context.executor.is_none()
+    if studio_context.graph_editor.executor.is_none()
     {
         if ui.button("▶ Start").clicked()
         {
             let mut empower_executor = EmpowerExecutor::new(studio_context.graph_editor.node_graph.clone(), true);
             empower_executor.start_node_graph();
 
-            studio_context.executor = Some( empower_executor );
+            studio_context.graph_editor.executor = Some( empower_executor );
         }
     }
     else 
@@ -37,7 +37,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             if ui.button("⏹ Stop").clicked()
             {
-                studio_context.executor = None;
+                studio_context.graph_editor.executor = None;
             }
             ui.spinner(); 
         });

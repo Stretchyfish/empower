@@ -22,7 +22,7 @@ impl Layout
         };
 
         let graph_viewport = new_layout.add_viewport("graph viewport");
-        let terminal_viewport = new_layout.add_viewport("empty viewport");
+        let terminal_viewport = new_layout.add_viewport("terminal viewport");
 
         // This is all to place the initial docking configuration
         let graph_viewport_index = new_layout.docking_state.find_tab(&graph_viewport).expect("Unable to find initial graph viewport tab");

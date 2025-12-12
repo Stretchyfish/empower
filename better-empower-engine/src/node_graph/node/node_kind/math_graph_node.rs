@@ -1,6 +1,6 @@
 use egui_plot::{Legend, Line, Plot, PlotPoints};
 
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -48,7 +48,7 @@ impl NodeKind for MathGraphNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
         let x_values = match inputs[1]
         {
             PortValue::Vector(port_values) => port_values,

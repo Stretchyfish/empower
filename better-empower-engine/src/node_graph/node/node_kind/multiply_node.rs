@@ -1,4 +1,4 @@
-use crate::node_graph::node::{NodeFunction, port::PortCompatability, port::PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
 
@@ -49,7 +49,7 @@ impl NodeKind for MultiplyNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
         let output_value = inputs[0].clone() * inputs[1].clone();
         Some( Vec::from( [ output_value ] ))
     }
