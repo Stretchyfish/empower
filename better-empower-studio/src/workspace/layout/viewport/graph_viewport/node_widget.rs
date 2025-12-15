@@ -53,8 +53,10 @@ pub fn show(
         let input_port = graph_editor.node_graph.get_input_port(input_port_key).unwrap();
         let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
 
+        let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key);
+
         // @TODO, these inputs can be simplified now
-        node_widget_input_ports::show_input_port(ui, display_node, display_input_port, input_port, &String::from(graph_viewport_title), false, node_key, input_port_key, &mut node_widget_response, &debug_mode);
+        node_widget_input_ports::show_input_port(ui, display_node, display_input_port, input_port, &String::from(graph_viewport_title), port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
     }
 
     // Show node output ports

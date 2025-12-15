@@ -66,6 +66,12 @@ pub fn show_input_port(
     );
 
     let painted_text_size = painted_text.size();
+
+    if port_has_connection
+    {
+        return;
+    }
+
     let text_and_display_value_buffer = 20.0;
 
     let input_port_value_position = input_port_text_position + egui::Vec2 { x: painted_text_size.x + text_and_display_value_buffer, y: -painted_text_size.y / 2.0 };
