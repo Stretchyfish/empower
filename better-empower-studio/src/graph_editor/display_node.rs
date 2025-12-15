@@ -8,6 +8,7 @@ mod display_node_kind;
 pub use display_node_kind::DisplayNodeKind;
 use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;
 
+#[derive(Clone)]
 pub struct DisplayNode
 {
     pub title: &'static str,

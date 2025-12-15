@@ -84,6 +84,33 @@ impl GraphEditor
         true
     }
 
+    pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeGraphKey
+    {
+        let original_node_handle = self.node_graph.get_node_handle(node_key);
+
+        let copied_node_handle= self.node_graph.create_node_copy(node_key);
+
+        let copied_display_node = self.display_nodes.get(&original_node_handle.node_key).unwrap().clone();
+
+        self.display_nodes.insert(copied_node_handle.node_key, copied_display_node);
+
+        for (index, input_port_key) in original_node_handle.input_port_keys.iter().enumerate()
+        {
+            let copied_display_input_port = self.display_input_ports.get(&input_port_key).unwrap().clone();
+            self.display_input_ports.insert(copied_node_handle.input_port_keys[index], copied_display_input_port);
+        }
+
+        for (index, output_port_key) in original_node_handle.output_port_keys.iter().enumerate()
+        {
+            let copied_display_output_port = self.display_output_ports.get(&output_port_key).unwrap().clone();
+            self.display_output_ports.insert(copied_node_handle.output_port_keys[index], copied_display_output_port);
+        }
+
+        self.refresh_display_node(copied_node_handle.node_key);
+
+        copied_node_handle.node_key.clone()
+    }
+
     pub fn refresh_display_node(&mut self, node_key: NodeGraphKey)
     {
         let node = self.node_graph.get_node(&node_key).unwrap();

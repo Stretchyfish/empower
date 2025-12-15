@@ -26,6 +26,7 @@ pub enum NodeWidgetResponseType
     ChangedInputPortDisplayValue(NodeGraphKey, DisplayValue),
     ChangedState(Box<dyn NodeKind>, Box<dyn DisplayNodeKind>),
     InsideSelectionRect,
+    ToggledQuickMenu, // @TODO, this is not a great approach to detect this, and should be handled differently!
 }
 
 pub fn show(

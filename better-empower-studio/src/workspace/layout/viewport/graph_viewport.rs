@@ -27,6 +27,7 @@ pub struct GraphViewport
     mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
     port_searcher: Option<PortSearcher>,
+    quick_menu: Option<egui::Pos2>,
     node_area_select: Option<NodeAreaSelect>,
     node_select_panel: Option<NodeSelectionPanel>,
 }
@@ -44,6 +45,7 @@ impl Viewport for GraphViewport
                 mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
                 port_searcher: None,
+                quick_menu: None,
                 node_area_select: None,
                 node_select_panel: None,
             } 
@@ -136,6 +138,18 @@ impl GraphViewport
                 connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &mouse_position_in_scene);
             }
 
+            if self.quick_menu.is_some()
+            {
+                let clicked_quick_menu_button = self.show_quick_menu(scene_ui, graph_editor);
+
+                if clicked_quick_menu_button
+                {
+                    // @TODO, this is a really bad way to detect the interaction in the loop, find a better way!
+                    widget_responses.push( NodeWidgetResponse { key: 0, kind: node_widget::NodeWidgetResponseType::ToggledQuickMenu });
+                    self.quick_menu = None;
+                }
+            }
+
 
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
         });
@@ -169,6 +183,7 @@ impl GraphViewport
                 node_widget::NodeWidgetResponseType::ChangedInputPortDisplayValue( port_key, modified_port_value) => self.set_input_port_value_if_display_value_can_convert(port_key, graph_editor, modified_port_value),
                 node_widget::NodeWidgetResponseType::ChangedState(new_node_kind, new_display_node_kind) => self.set_state_changes(&response.key, graph_editor, &new_node_kind, &new_display_node_kind),
                 node_widget::NodeWidgetResponseType::InsideSelectionRect => self.check_or_add_node_to_nodes_inside_selection_area(&response.key),
+                node_widget::NodeWidgetResponseType::ToggledQuickMenu => self.quick_menu = None,
             }
 
             interaction_happened = true; // This just detect any widget has been interacted with
@@ -213,6 +228,13 @@ impl GraphViewport
 
         if widget_interaction_happened_same_loop
         {
+            return;
+        }
+
+        // @TODO, this is not the desired behavior, but will work for now
+        if user_inputs.right_clicked && graph_editor.selected_nodes.len() > 1 && self.quick_menu.is_none()
+        {
+            self.quick_menu = Some( self.mouse_scene_position_last_frame );
             return;
         }
 
@@ -375,6 +397,63 @@ impl GraphViewport
     fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
     {
         graph_editor.refresh_node_structure(*node_key, new_node_kind, new_display_node_kind);
+    }
+
+    fn show_quick_menu(&self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) -> bool
+    {
+        if self.quick_menu.is_none()
+        {
+            return false; // @TODO, this check is not really needed, make a decision on that
+        }
+
+        let menu_position = self.quick_menu.unwrap();
+        let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
+
+        let mut button_clicked = false;
+
+        let mut potentially_new_selected_nodes = Vec::new();
+
+        let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
+        ui.scope_builder(quick_menu_ui_builder, |ui|
+        {
+            egui::Frame::popup(ui.style()).show(ui, |ui| 
+            {
+                let selected_nodes = graph_editor.selected_nodes.clone();
+
+                if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+                {
+                    let mut new_node_keys = Vec::new();
+                    new_node_keys.reserve(selected_nodes.len());
+
+                    for node_key in selected_nodes.clone()
+                    {
+                        let copied_node_key = graph_editor.create_node_copy(&node_key);
+
+                        new_node_keys.push(copied_node_key);
+                    }
+
+                    potentially_new_selected_nodes = new_node_keys;
+                    button_clicked = true;
+                }
+
+                if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+                {
+                    // @TODO, I think this will cause a crash when multiple graph viewports are open
+                    for selected_node_key in selected_nodes
+                    {
+                        // graph_editor.remove_node(&selected_node_key);
+                    }
+                    button_clicked = true;
+                }
+            });
+        });
+
+        if button_clicked
+        {
+            graph_editor.selected_nodes = potentially_new_selected_nodes; // @TODO, find a more elegant way of doing this
+        }
+
+        button_clicked
     }
 
     // @TODO, this function is not tested
