@@ -31,7 +31,7 @@ mod text_node;
 use text_node::TextNode;
 
 mod vector_node;
-use vector_node::VectorNode;
+pub use vector_node::VectorNode;
 
 mod math_graph_node;
 use math_graph_node::MathGraphNode;
@@ -52,7 +52,8 @@ pub trait NodeKind
     fn function(&self) -> NodeFunction; // @TODO, maybe rename it behavior?
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
-    fn as_any(&mut self) -> &mut dyn Any; 
+    fn as_any_mut(&mut self) -> &mut dyn Any; 
+    fn as_any(&self) -> &dyn Any; 
     fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>>;
     fn update(&mut self) -> Option<Vec<PortValue>>;
     fn execute(&mut self, ui: &mut egui::Ui);

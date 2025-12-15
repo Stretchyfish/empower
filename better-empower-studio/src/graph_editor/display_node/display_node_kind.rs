@@ -12,6 +12,9 @@ use file_path_display_node::FilePathDisplayNode;
 mod number_display_node;
 use number_display_node::NumberDisplayNode;
 
+mod vector_display_node;
+use vector_display_node::VectorDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -20,7 +23,7 @@ pub trait DisplayNodeKind
     where
         Self: Sized;
     fn clone_box(&self) -> Box<dyn DisplayNodeKind>; // This is needed to enable trait cloning
-    fn node_size(&self) -> egui::Vec2;
+    fn node_size(&self, node_kind: &Box<dyn NodeKind>) -> egui::Vec2;
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool; // The bool indicates a change 
@@ -44,6 +47,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     
     m.insert("file path", || FilePathDisplayNode::new() ); 
     m.insert("number", || NumberDisplayNode::new() ); 
+    m.insert("vector", || VectorDisplayNode::new() ); 
 
     m
 });

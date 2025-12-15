@@ -5,7 +5,7 @@ use super::NodeKind;
 #[derive(Clone)]
 pub struct VectorNode
 {
-    number_of_input_ports: i32,
+    pub number_of_input_ports: i32,
 }
 
 impl NodeKind for VectorNode
@@ -46,8 +46,12 @@ impl NodeKind for VectorNode
         )
     }
 
-    fn as_any(&mut self) -> &mut dyn std::any::Any {
+    fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+       self 
     }
 
     fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
@@ -70,4 +74,5 @@ impl NodeKind for VectorNode
     fn execute(&mut self, _: &mut egui::Ui) {
         todo!()
     }
+    
 }

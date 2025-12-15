@@ -23,14 +23,14 @@ impl DisplayNodeKind for NumberDisplayNode
         Box::new( self.clone() )
     }
 
-    fn node_size(&self) -> egui::Vec2 {
+    fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
         egui::Vec2 { x: 320.0, y: 210.0 }
      }
 
     fn display_input_ports(&self, input_port_values: Vec<&better_empower_engine::PortValue>) -> Vec<DisplayPort> {
         vec![
             DisplayPort::new(
-                                                            "A", 
+                                                            "A".to_string(), 
                                                             egui::pos2(0.0, 0.0), 
                                                             &input_port_values[0]
                                                         )
@@ -43,7 +43,7 @@ impl DisplayNodeKind for NumberDisplayNode
 
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
 
-        let number_node_state = node_kind.as_any().downcast_mut::<NumberNode>().expect("Number display node tried to unwrap a node_kind that is not the number node kind");
+        let number_node_state = node_kind.as_any_mut().downcast_mut::<NumberNode>().expect("Number display node tried to unwrap a node_kind that is not the number node kind");
 
         let original_desired_value = number_node_state.desired_value.clone();
 

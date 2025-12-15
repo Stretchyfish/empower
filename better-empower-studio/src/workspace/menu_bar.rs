@@ -25,7 +25,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         if ui.button("▶ Start").clicked()
         {
-            let mut empower_executor = EmpowerExecutor::new(studio_context.graph_editor.node_graph.clone(), true);
+            let mut empower_executor = EmpowerExecutor::new(studio_context.graph_editor.node_graph.clone(), true, true);
             empower_executor.start_node_graph();
 
             studio_context.graph_editor.executor = Some( empower_executor );

@@ -16,7 +16,7 @@ impl EmpowerRuntime
 {
     pub fn new(node_graph: NodeGraph, debug_mode: bool) -> Self
     {
-        let mut node_graph_executor = EmpowerExecutor::new(node_graph, debug_mode);
+        let mut node_graph_executor = EmpowerExecutor::new(node_graph, false, debug_mode);
         node_graph_executor.start_node_graph();
  
         Self

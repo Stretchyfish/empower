@@ -26,6 +26,7 @@ pub fn nodes_debug_info_show(ui: &mut egui::Ui, graph_editor: &GraphEditor)
             continue;
         }
 
+        let node = graph_editor.node_graph.get_node(&node_key).unwrap();
         let display_node = graph_editor.display_nodes.get(&node_key).unwrap();
 
         let mut i = 0; // Bad naming
@@ -47,12 +48,12 @@ pub fn nodes_debug_info_show(ui: &mut egui::Ui, graph_editor: &GraphEditor)
 
         let number_rect_top_left_corner = egui::Pos2
         {
-            x: display_node.position.x + display_node.display_kind.node_size().x - number_box_lengths - number_box_horizontal_offset,
+            x: display_node.position.x + display_node.display_kind.node_size(&node.kind).x - number_box_lengths - number_box_horizontal_offset,
             y: display_node.position.y
         };
         let number_rect_bottom_right_corner = egui::Pos2
         {
-            x: display_node.position.x + display_node.display_kind.node_size().x - number_box_horizontal_offset,
+            x: display_node.position.x + display_node.display_kind.node_size(&node.kind).x - number_box_horizontal_offset,
             y: display_node.position.y + number_box_lengths,
         };
 

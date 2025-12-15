@@ -7,7 +7,7 @@ pub use display_value::DisplayValue;
 #[derive(Clone, PartialEq)]
 pub struct DisplayPort
 {
-    pub text: &'static str,
+    pub text: String,
     pub position: egui::Pos2,
     pub color: egui::Color32,
     pub value: DisplayValue,
@@ -16,14 +16,14 @@ pub struct DisplayPort
 
 impl DisplayPort
 {
-    pub fn new(text: &'static str, position: egui::Pos2, port_value: &PortValue) -> Self
+    pub fn new(text: String, position: egui::Pos2, port_value: &PortValue) -> Self
     {
         Self { text, position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), convertable: true }
     }
 
     pub fn nothing(position: egui::Pos2, port_value: &PortValue) -> Self
     {
-        Self { text: "", position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, convertable: true }
+        Self { text: String::new(), position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, convertable: true }
     }
 }
 

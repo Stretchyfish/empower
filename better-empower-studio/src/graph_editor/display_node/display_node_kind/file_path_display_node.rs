@@ -23,7 +23,7 @@ impl DisplayNodeKind for FilePathDisplayNode
         Box::new( self.clone() )
     }
 
-    fn node_size(&self) -> egui::Vec2 {
+    fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
         egui::Vec2 { x: 650.0, y: 210.0 }
     }
 
@@ -38,7 +38,7 @@ impl DisplayNodeKind for FilePathDisplayNode
 
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
 
-        let file_path_state = node_kind.as_any().downcast_mut::<FilePathNode>().expect("File path display node tried to unwrap a node_kind that is not the file path node kind");
+        let file_path_state = node_kind.as_any_mut().downcast_mut::<FilePathNode>().expect("File path display node tried to unwrap a node_kind that is not the file path node kind");
         let original_file_path = file_path_state.path.clone();
 
         ui.horizontal(|ui|

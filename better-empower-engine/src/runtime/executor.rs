@@ -27,8 +27,11 @@ pub struct EmpowerExecutor
 
 impl EmpowerExecutor
 {
-    pub fn new(node_graph: NodeGraph, debug_mode: bool) -> Self
+    pub fn new(node_graph: NodeGraph, running_in_editor: bool, debug_mode: bool) -> Self
     {
+        let mut window_manager = WindowManager::new();
+        window_manager.main_window = Some( 0 );
+
         Self
         {
             node_graph,
@@ -39,7 +42,7 @@ impl EmpowerExecutor
             window_execution: Vec::new(),
             background_execution: Vec::new(),
             window_counter: 0,
-            window_manager: WindowManager::new(),
+            window_manager,
             log: TextBuffer::new(),
         }
     }

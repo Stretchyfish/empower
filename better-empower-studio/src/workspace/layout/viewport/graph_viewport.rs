@@ -68,6 +68,7 @@ impl Viewport for GraphViewport
 
 impl GraphViewport
 {
+    // @TODO, these functions can be simplified down using Canvas structs for example
     fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor) -> Vec<NodeWidgetResponse>
     {
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
@@ -94,19 +95,17 @@ impl GraphViewport
             // @TODO, take another investigation into this
             if mouse_pointer_inside_viewport // Is needed to avoid applying double delta position to selected nodes
             {
-                let scene_transform = scene_ui.ctx().layer_transform_from_global(scene_ui.painter().layer_id());
                 let scene_latest_pos = scene_ui.input(|i| i.pointer.latest_pos());
-                
-                if scene_transform.is_some() && scene_latest_pos.is_some()
+
+                // @TODO, this whole if statement can be simplified!
+                if scene_latest_pos.is_some()
                 {
-                    mouse_position_in_scene = scene_transform.unwrap() * scene_latest_pos.unwrap();
+                    mouse_position_in_scene = self.screen_to_scene(&mut scene_latest_pos.unwrap(), scene_ui);
                 }
             }
 
             mouse_scene_delta = mouse_position_in_scene - self.mouse_scene_position_last_frame; 
             self.mouse_scene_delta = mouse_scene_delta;
-
-
 
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
@@ -376,6 +375,17 @@ impl GraphViewport
     fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
     {
         graph_editor.refresh_node_structure(*node_key, new_node_kind, new_display_node_kind);
+    }
+
+    // @TODO, this function is not tested
+    fn scene_to_screen(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
+    {
+        return ui.ctx().layer_transform_to_global(ui.painter().layer_id()).unwrap() * *scene_position;
+    }
+
+    fn screen_to_scene(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
+    {
+        return ui.ctx().layer_transform_from_global(ui.painter().layer_id()).unwrap() * *scene_position;
     }
 }
 

@@ -22,7 +22,7 @@ pub fn show_node_body(
     // Determine the nodes widgets size
 
     let node_position = display_node.position;
-    let node_size = display_node.display_kind.node_size();
+    let node_size = display_node.display_kind.node_size(&node.kind);
 
     // let port_gap = 20.0; // @TODO, move this to elsewhere
     // let port_height = 50.0; // @TODO and this

@@ -21,7 +21,7 @@ impl DisplayNodeKind for DefaultDisplayNode
         Box::new( self.clone() )
     }
 
-    fn node_size(&self) -> egui::Vec2 {
+    fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
         egui::Vec2 { x: 350.0, y: 230.0 }
     }
 
@@ -37,7 +37,7 @@ impl DisplayNodeKind for DefaultDisplayNode
         for input_port_value in input_port_values
         {
             let display_port = DisplayPort::new(
-                                                            "A", 
+                                                            "A".to_string(), 
                                                             egui::pos2(0.0, 0.0), 
                                                             &input_port_value
                                                         );
