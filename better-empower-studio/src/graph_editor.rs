@@ -111,6 +111,25 @@ impl GraphEditor
         copied_node_handle.node_key.clone()
     }
 
+    pub fn remove_node(&mut self, node_key: &NodeGraphKey)
+    {
+        let node_handle = self.node_graph.get_node_handle(node_key);
+
+        self.node_graph.remove_node(node_key);
+
+        for input_port_key in node_handle.input_port_keys
+        {
+            self.display_input_ports.remove(&input_port_key);
+        }
+
+        for output_port_key in node_handle.output_port_keys
+        {
+            self.display_output_ports.remove(&output_port_key);
+        }
+
+        self.display_nodes.remove(node_key);
+    }
+
     pub fn refresh_display_node(&mut self, node_key: NodeGraphKey)
     {
         let node = self.node_graph.get_node(&node_key).unwrap();

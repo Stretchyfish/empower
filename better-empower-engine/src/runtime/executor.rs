@@ -30,7 +30,12 @@ impl EmpowerExecutor
     pub fn new(node_graph: NodeGraph, running_in_editor: bool, debug_mode: bool) -> Self
     {
         let mut window_manager = WindowManager::new();
-        window_manager.main_window = Some( 0 );
+
+        if running_in_editor
+        {
+            // @TODO, find a better approach for this
+            window_manager.main_window = Some( 0 );
+        }
 
         Self
         {

@@ -197,6 +197,11 @@ impl GraphViewport
         // @TODO This action now can potentially be applied double!
         for selected_node_key in graph_editor.selected_nodes.clone()
         {
+            if self.quick_menu.is_some() // @TODO, this is not a great apporach to stop movement
+            {
+                continue;
+            }
+            
             let display_node = graph_editor.display_nodes.get_mut(&selected_node_key).unwrap();
             display_node.position += self.mouse_scene_delta; 
 
@@ -232,7 +237,7 @@ impl GraphViewport
         }
 
         // @TODO, this is not the desired behavior, but will work for now
-        if user_inputs.right_clicked && graph_editor.selected_nodes.len() > 1 && self.quick_menu.is_none()
+        if user_inputs.right_clicked && graph_editor.selected_nodes.len() >= 1 && self.quick_menu.is_none()
         {
             self.quick_menu = Some( self.mouse_scene_position_last_frame );
             return;
@@ -441,7 +446,7 @@ impl GraphViewport
                     // @TODO, I think this will cause a crash when multiple graph viewports are open
                     for selected_node_key in selected_nodes
                     {
-                        // graph_editor.remove_node(&selected_node_key);
+                        graph_editor.remove_node(&selected_node_key);
                     }
                     button_clicked = true;
                 }

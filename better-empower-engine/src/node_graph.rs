@@ -65,6 +65,25 @@ impl NodeGraph
         NodeHandle::new(new_node_key, new_input_ports_keys, new_output_ports_keys)
     }
 
+    pub fn remove_node(&mut self, node_key: &NodeGraphKey)
+    {
+        let node_handle = self.get_node_handle(node_key);
+
+        self.nodes.remove(node_key);
+
+        for input_port_key in node_handle.input_port_keys
+        {
+            self.input_ports.remove(&input_port_key);
+            self.remove_input_port_connections(&input_port_key);
+        }
+
+        for output_port_key in node_handle.output_port_keys
+        {
+            self.output_ports.remove(&output_port_key);
+            self.remove_output_port_connections(&output_port_key);
+        }
+    }
+
     pub fn get_node_handle(&self, node_key: &NodeGraphKey) -> NodeHandle
     {
         let node = self.nodes.get(node_key).unwrap();
@@ -602,6 +621,30 @@ impl NodeGraph
         }
 
         input_port.value = port_value;
+
+        true
+    }
+
+    pub fn remove_input_port_connections(&mut self, input_port_key: &NodeGraphKey) -> bool
+    {
+        if !self.connections_in.contains_key(input_port_key) { return false; }
+
+        let connected_port = self.connections_in.get(input_port_key).expect("Tried to fetch non existing connection_in").clone();
+        self.remove_connection(input_port_key, &connected_port);
+
+        true
+    }
+
+    pub fn remove_output_port_connections(&mut self, output_port_key: &NodeGraphKey) -> bool
+    {
+        if !self.connections_out.contains_key(output_port_key) { return false; }
+
+        let connected_ports = self.connections_out.get(output_port_key).expect("Tried to feth non-existing connection_out").clone();
+
+        for connected_port in connected_ports
+        {
+            self.remove_connection(&connected_port, output_port_key);
+        }
 
         true
     }
