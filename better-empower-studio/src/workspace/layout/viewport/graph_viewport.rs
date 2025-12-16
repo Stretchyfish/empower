@@ -1,4 +1,4 @@
-use better_empower_engine::{NodeGraphKey, node_graph::node::NodeKind};
+use better_empower_engine::{NodeGraphKey, node_graph::node::NodeKind, runtime::EmpowerExecutor};
 use egui;
 
 use crate::{GraphEditor, graph_editor::display_node::{DisplayNodeKind, DisplayValue}, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
@@ -423,6 +423,20 @@ impl GraphViewport
             egui::Frame::popup(ui.style()).show(ui, |ui| 
             {
                 let selected_nodes = graph_editor.selected_nodes.clone();
+
+                if selected_nodes.len() == 1
+                {
+                    if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+                    {
+                        // @TODO, move this out from here, when implementing the event system
+                        let mut executor = EmpowerExecutor::new(graph_editor.node_graph.clone(), true, true);
+                        executor.start_node_graph_from_entry(&selected_nodes[0]);
+
+                        graph_editor.executor = Some( executor );
+
+                        button_clicked = true;
+                    }
+                }
 
                 if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                 {
