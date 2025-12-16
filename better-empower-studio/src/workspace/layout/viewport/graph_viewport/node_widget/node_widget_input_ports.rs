@@ -1,5 +1,4 @@
 use better_empower_engine::{NodeGraphKey, node_graph::node::port::Port};
-use crate::graph_editor::display_node::DisplayNode; 
 use crate::graph_editor::display_node::DisplayPort;
 use crate::graph_editor::display_node::DisplayValue;
 
@@ -9,7 +8,6 @@ use super::NodeWidgetResponseType;
 // @TODO, find a way to reduce the number of inputs in this function?
 pub fn show_input_port(
                         ui: &mut egui::Ui, 
-                        display_node: &DisplayNode, 
                         display_port: &DisplayPort, 
                         input_port: &Port, 
                         graph_viewport_title: &String, 

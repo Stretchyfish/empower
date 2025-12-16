@@ -1,5 +1,4 @@
 use better_empower_engine::{NodeGraphKey, node_graph::node::port::Port};
-use crate::graph_editor::display_node::DisplayNode; 
 use crate::graph_editor::display_node::DisplayPort;
 
 use super::NodeWidgetResponse;
@@ -7,7 +6,6 @@ use super::NodeWidgetResponseType;
 
 pub fn show_output_port(
                         ui: &mut egui::Ui, 
-                        display_node: &DisplayNode, 
                         display_port: &DisplayPort, 
                         output_port: &Port, 
                         graph_viewport_title: &String, 

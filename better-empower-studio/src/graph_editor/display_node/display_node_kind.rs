@@ -15,6 +15,9 @@ use number_display_node::NumberDisplayNode;
 mod vector_display_node;
 use vector_display_node::VectorDisplayNode;
 
+mod math_graph_display_node;
+use math_graph_display_node::MathGraphDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -48,6 +51,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("file path", || FilePathDisplayNode::new() ); 
     m.insert("number", || NumberDisplayNode::new() ); 
     m.insert("vector", || VectorDisplayNode::new() ); 
+    m.insert("math graph", || MathGraphDisplayNode::new() ); 
 
     m
 });

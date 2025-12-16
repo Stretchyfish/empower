@@ -33,7 +33,7 @@ pub fn show(
                 ui: &mut egui::Ui, 
                 graph_editor: &GraphEditor, 
                 node_key: &NodeGraphKey,
-                graph_viewport_title: &'static str, // @TODO, consider finding a way to combine these?
+                graph_viewport_title: &String, // @TODO, consider finding a way to combine these?
                 node_area_select: &Option<NodeAreaSelect>,
             ) -> Option<NodeWidgetResponse>
 {
@@ -56,7 +56,7 @@ pub fn show(
         let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key);
 
         // @TODO, these inputs can be simplified now
-        node_widget_input_ports::show_input_port(ui, display_node, display_input_port, input_port, &String::from(graph_viewport_title), port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
+        node_widget_input_ports::show_input_port(ui, display_input_port, input_port, &String::from(graph_viewport_title), port_has_connection, node_key, input_port_key, &mut node_widget_response, &debug_mode);
     }
 
     // Show node output ports
@@ -64,7 +64,7 @@ pub fn show(
     {
         let output_port = graph_editor.node_graph.get_output_port(output_port_key).unwrap();
         let display_output_port = graph_editor.display_output_ports.get(output_port_key).unwrap();
-        node_widget_output_ports::show_output_port(ui, display_node, display_output_port, output_port, &String::from(graph_viewport_title), node_key, output_port_key, &mut node_widget_response, &debug_mode);
+        node_widget_output_ports::show_output_port(ui, display_output_port, output_port, &String::from(graph_viewport_title), node_key, output_port_key, &mut node_widget_response, &debug_mode);
     }
 
     node_widget_response

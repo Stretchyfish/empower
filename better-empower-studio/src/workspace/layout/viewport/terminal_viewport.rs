@@ -1,6 +1,6 @@
 use better_empower_engine::utility::text_buffer::TextBuffer;
 
-use crate::{GraphEditor, graph_editor};
+use crate::GraphEditor;
 
 use super::Viewport;
 
@@ -30,7 +30,7 @@ impl Viewport for TerminalViewport
         "terminal viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) {
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, _: &String) {
         self.show_text_in_buffer(ui);
         self.add_more_text_if_executer_generated_some(graph_editor);
     }
@@ -83,8 +83,6 @@ impl TerminalViewport
 
         let log = &graph_editor.executor.as_ref().unwrap().log;
 
-        println!("Log size: {}", log.lines.len());
-
         if self.last_logging_size.is_none()
         {
             self.last_logging_size = Some( 0 );
@@ -94,7 +92,6 @@ impl TerminalViewport
 
         for i in start_looking_index..log.lines.len()
         {
-            println!("Added a line");
             let new_line = log.lines[i].clone();
             self.text.add_line(&new_line);
 

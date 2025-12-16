@@ -12,7 +12,7 @@ pub fn show_node_body(
                         node: &Node,
                         display_node: &DisplayNode, 
                         selected_nodes: &Vec<NodeGraphKey>, 
-                        graph_viewport_title: &'static str, 
+                        graph_viewport_title: &String, 
                         node_key: &NodeGraphKey, 
                         node_widget_response: &mut Option<NodeWidgetResponse>, 
                         debug_mode: &bool, 
@@ -215,7 +215,6 @@ pub fn show_node_body(
     //         egui::StrokeKind::Inside,
     // );
 
-
-    let node_body_color = egui::Color32::from_rgb(63, 63, 63);
+    // let node_body_color = egui::Color32::from_rgb(63, 63, 63);
  
 }

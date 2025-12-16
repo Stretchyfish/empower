@@ -1,15 +1,16 @@
-use better_empower_engine::PortValue;
-use better_empower_engine::node_graph::node::NodeKind;
 use super::DisplayNodeKind;
-use super::super::DisplayPort;
+
+use better_empower_engine::{PortValue, node_graph::node::{NodeKind}};
+
+use crate::graph_editor::DisplayPort;
 
 #[derive(Clone)]
-pub struct DefaultDisplayNode
+pub struct MathGraphDisplayNode
 {
 
 }
 
-impl DisplayNodeKind for DefaultDisplayNode
+impl DisplayNodeKind for MathGraphDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where
         Self: Sized {
@@ -18,19 +19,15 @@ impl DisplayNodeKind for DefaultDisplayNode
     }
 
     fn clone_box(&self) -> Box<dyn DisplayNodeKind> {
+
         Box::new( self.clone() )
     }
 
     fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
-        egui::Vec2 { x: 350.0, y: 230.0 }
-    }
-
-    fn state_size(&self) -> egui::Vec2 {
-        egui::Vec2 { x: 0.0, y: 0.0 }
+        egui::Vec2 { x: 350.0, y: 300.0 }
     }
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
-
         let mut display_inputs = Vec::new();
 
         display_inputs.reserve(input_port_values.len());
@@ -45,6 +42,10 @@ impl DisplayNodeKind for DefaultDisplayNode
         }
 
         display_inputs
+    }
+
+    fn state_size(&self) -> egui::Vec2 {
+        egui::Vec2 { x: 0.0, y: 0.0 }
     }
 
     fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> bool {

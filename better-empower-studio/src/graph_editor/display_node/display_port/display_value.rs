@@ -1,4 +1,4 @@
-use better_empower_engine::{PortValue, node_graph::node::port::{PortCompatability, port_compatability}};
+use better_empower_engine::{PortValue, node_graph::node::port::PortCompatability};
 
 #[derive(Clone, PartialEq)]
 pub enum DisplayValue

@@ -27,7 +27,7 @@ impl DisplayNodeKind for FilePathDisplayNode
         egui::Vec2 { x: 650.0, y: 210.0 }
     }
 
-    fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
+    fn display_input_ports(&self, _: Vec<&PortValue>) -> Vec<DisplayPort> {
 
         Vec::new()
     }

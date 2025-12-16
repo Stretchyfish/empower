@@ -1,4 +1,4 @@
-use better_empower_engine::{EmpowerRuntime, runtime::EmpowerExecutor};
+use better_empower_engine::runtime::EmpowerExecutor;
 
 use crate::StudioContext;
 
@@ -19,6 +19,22 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             studio_context.layout.debug_window_active = !studio_context.layout.debug_window_active;
         }
+
+        ui.menu_button("Add viewport", |ui|
+        {
+            if ui.button("Graph viewport").clicked()
+            {
+                studio_context.layout.add_viewport("graph viewport");
+            }
+            if ui.button("Terminal Viewport").clicked()
+            {
+                studio_context.layout.add_viewport("terminal viewport");
+            }
+            if ui.button("Empty Viewport").clicked()
+            {
+                studio_context.layout.add_viewport("empty viewport");
+            }
+        });
     });
 
     if studio_context.graph_editor.executor.is_none()

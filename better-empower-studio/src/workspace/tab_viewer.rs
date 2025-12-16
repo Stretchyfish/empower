@@ -28,6 +28,6 @@ impl egui_dock::TabViewer for TabViewer<'_>
         }
 
         let viewport = self.viewports.get_mut(&tab_name).unwrap();
-        viewport.show(ui, self.graph_editor);
+        viewport.show(ui, self.graph_editor, &tab_name);
     }
 }

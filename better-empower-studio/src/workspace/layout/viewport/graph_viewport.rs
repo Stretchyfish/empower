@@ -56,12 +56,12 @@ impl Viewport for GraphViewport
         "graph viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) {
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String) {
 
         // @TODO, this is not a great way to approach user inputs, so fix in the future!
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
-        let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor);
+        let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor, viewport_name);
 
         let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
         self.process_user_actions(&user_inputs, graph_editor, wideget_interaction_happened);
@@ -71,7 +71,7 @@ impl Viewport for GraphViewport
 impl GraphViewport
 {
     // @TODO, these functions can be simplified down using Canvas structs for example
-    fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor) -> Vec<NodeWidgetResponse>
+    fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor, viewport_name: &String) -> Vec<NodeWidgetResponse>
     {
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
 
@@ -112,7 +112,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
             {
-                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, self.name(), &self.node_area_select);
+                let node_widget_response = node_widget::show(scene_ui, graph_editor, &node_key, &viewport_name, &self.node_area_select);
 
                 if node_widget_response.is_some()
                 {
@@ -149,7 +149,6 @@ impl GraphViewport
                     self.quick_menu = None;
                 }
             }
-
 
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
         });
@@ -462,10 +461,10 @@ impl GraphViewport
     }
 
     // @TODO, this function is not tested
-    fn scene_to_screen(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
-    {
-        return ui.ctx().layer_transform_to_global(ui.painter().layer_id()).unwrap() * *scene_position;
-    }
+    // fn scene_to_screen(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
+    // {
+    //     return ui.ctx().layer_transform_to_global(ui.painter().layer_id()).unwrap() * *scene_position;
+    // }
 
     fn screen_to_scene(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
     {
