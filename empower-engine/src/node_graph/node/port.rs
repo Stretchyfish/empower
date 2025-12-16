@@ -1,15 +1,15 @@
-use crate::node_graph::NodeGraphKey;
-
-mod port_kind;
-use port_kind::PortKind;
-
-pub mod port_compatability;
-pub use port_compatability::PortCompatability;
+use super::NodeGraphKey;
 
 pub mod port_value;
 pub use port_value::PortValue;
 
-#[derive(Default, Clone)]
+pub mod port_compatability;
+pub use port_compatability::PortCompatability;
+
+pub mod port_kind;
+pub use port_kind::PortKind;
+
+#[derive(Clone)]
 pub struct Port
 {
     pub key: NodeGraphKey, 

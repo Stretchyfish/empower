@@ -1,157 +1,129 @@
-use crate::node_graph::node::{PortCompatability, PortValue};
-use pgfplots::{axis::plot::{Plot2D}, Engine, Picture};
-// use egui;
 use egui_plot::{Legend, Line, Plot, PlotPoints};
 
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
-#[derive(Default, Clone, Debug)]
-pub struct MathGraphState
+use super::NodeKind;
+
+#[derive(Clone)]
+pub struct MathGraphNode
 {
     graph: Option<Vec<[f64; 2]>>
 }
 
-impl PartialEq for MathGraphState
+impl NodeKind for MathGraphNode
 {
-    fn eq(&self, other: &Self) -> bool {
-        self.graph == other.graph
+    fn new() -> Box<dyn NodeKind> where
+        Self: Sized {
+        
+        Box::new( Self { graph: None } )
     }
-}
 
-impl MathGraphState
-{
-    pub fn new() -> Self
-    {
-        Self 
-        { 
-            graph: None,
+    fn name(&self) -> &'static str {
+        "math graph"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new( self.clone() )
+    }
+
+    fn function(&self) -> NodeFunction {
+        NodeFunction::Window
+    }
+
+    fn input_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::from(
+                [ 
+                    PortCompatability::Exatch( PortValue::Trigger ),
+                    PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
+                    PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
+                ]
+            )
+    }
+
+    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::new()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+        let x_values = match inputs[1]
+        {
+            PortValue::Vector(port_values) => port_values,
+            _ => panic!("ERROR, invalid vector value"),
+        };
+
+        let y_values = match inputs[2]
+        {
+            PortValue::Vector(port_values) => port_values,
+            _ => panic!("ERROR, invalid vector value"),
+        };
+
+        if x_values.len() != y_values.len()
+        {
+            println!("ERROR, math graph values are not same size");
+            // return Some( Vec::new() );
+            return None;
         }
-    }
-}
 
-pub fn get_name() -> &'static str
-{
-    "math graph"
-}
-
-pub fn get_node_input_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::from(
-            [ 
-                PortCompatability::Exatch( PortValue::Trigger ),
-                PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
-                PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
-            ]
-        )
-}
-
-pub fn get_node_output_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::new()
-}
-
-pub fn setup(state: &mut MathGraphState, inputs: Vec<&PortValue>)
-{
-    let x_values = match inputs[1]
-    {
-        PortValue::Vector(port_values) => port_values,
-        _ => panic!("ERROR, invalid vector value"),
-    };
-
-    let y_values = match inputs[2]
-    {
-        PortValue::Vector(port_values) => port_values,
-        _ => panic!("ERROR, invalid vector value"),
-    };
-
-    if x_values.len() != y_values.len()
-    {
-        println!("ERROR, math graph values are not same size");
-        // return Some( Vec::new() );
-        return;
-    }
-
-    let mut x = Vec::new();
-    let mut y = Vec::new();
-    for i in 0..x_values.len()
-    {
-        let x_value = match x_values[i]
+        let mut x = Vec::new();
+        let mut y = Vec::new();
+        for i in 0..x_values.len()
         {
-            PortValue::Float( value ) => value,
-            PortValue::Integer( value ) => value as f32,
-            _ => panic!("ERROR, invalid value type"),
-        };
+            let x_value = match x_values[i]
+            {
+                PortValue::Float( value ) => value,
+                PortValue::Integer( value ) => value as f32,
+                _ => panic!("ERROR, invalid value type"),
+            };
 
-        x.push(x_value);
+            x.push(x_value);
 
-        let y_value = match y_values[i]
-        {
-            PortValue::Float( value ) => value,
-            PortValue::Integer( value ) => value as f32,
-            _ => panic!("ERROR, invalid value type"),
-        };
+            let y_value = match y_values[i]
+            {
+                PortValue::Float( value ) => value,
+                PortValue::Integer( value ) => value as f32,
+                _ => panic!("ERROR, invalid value type"),
+            };
 
-        y.push(y_value);
+            y.push(y_value);
+        }
+
+        let graph = x.iter().zip(y.iter()).map(|(&x1, &y1)| [x1 as f64, y1 as f64]).collect();
+
+        self.graph = Some( graph );
+
+        None
     }
 
-    let graph = x.iter().zip(y.iter()).map(|(&x1, &y1)| [x1 as f64, y1 as f64]).collect();
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        None
+        
+    }
 
-    state.graph = Some( graph );
-} 
+    fn execute(&mut self, ui: &mut egui::Ui) {
 
-pub fn execute(state: &MathGraphState, ctx: &egui::Context) -> Option<Vec<PortValue>>
-{
-    let state_clone = state.clone();
+        if self.graph.is_none()
+        {
+            return;
+        }
 
-    let mut open = true;
+        let graph_clone = self.graph.clone().unwrap();
 
-    egui::Window::new("Math Graph")
-    .collapsible(true)
-    .title_bar(true)
-    .open(&mut open)
-    .show(ctx, |window_ui|
-    {
         Plot::new("My Plot")
         .legend(Legend::default())
-        .show(window_ui, |plot_ui| 
+        .show(ui, |plot_ui| 
         {
             plot_ui.line(Line::new(
                 "3rd Curve",
-                PlotPoints::from(state_clone.graph.unwrap()),
+                PlotPoints::from(graph_clone),
             ));
         });
-    });
- 
-    if open == false
-    {
-        return Some( Vec::new() );
     }
-
-    None
-
-    // let mut plot = Plot2D::new();
-
-    // plot.coordinates = ( 0..y_values.len() )
-    // .into_iter()
-    // .map(|i|
-    // {
-    //     let x_value = match x_values[i]
-    //     {
-    //         PortValue::Float( value ) => value,
-    //         PortValue::Integer( value ) => value as f32,
-    //         _ => panic!("ERROR, invalid value type"),
-    //     };
-
-    //     let y_value = match y_values[i]
-    //     {
-    //         PortValue::Float( value ) => value,
-    //         PortValue::Integer( value ) => value as f32,
-    //         _ => panic!("ERROR, invalid value type"),
-    //     };
-
-    //     (x_value as f64, y_value as f64).into()
-    // }).collect();
-
-    // Picture::from(plot).show_pdf(Engine::PdfLatex);
-
-    // Some( Vec::new() )
 }

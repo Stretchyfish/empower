@@ -1,73 +1,83 @@
-use std::thread;
+use core::panic;
 
-use crate::node_graph::node::{PortCompatability, PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
-pub fn get_name() -> &'static str
+use super::NodeKind;
+
+#[derive(Clone)]
+pub struct ShowImageNode
 {
-    "show image"
+    image_path: Option<String>,
 }
 
-pub fn get_node_input_ports_compatabilities() -> Vec<PortCompatability>
+impl NodeKind for ShowImageNode
 {
-    Vec::from(
+    fn new() -> Box<dyn NodeKind> where
+        Self: Sized {
+        
+        Box::new( Self { image_path: None } )
+    }
+
+    fn name(&self) -> &'static str {
+        "show image"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new( self.clone() )
+    }
+
+    fn function(&self) -> NodeFunction {
+        NodeFunction::Window
+    }
+
+    fn input_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::from(
         [
             PortCompatability::Exatch( PortValue::Trigger ), 
             PortCompatability::Exatch( PortValue::Text( String::new() ) ), 
         ]
     )
-}
+ 
+    }
 
-pub fn get_node_output_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::new()
-}
+    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::new()
+    }
 
-pub fn execute(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
-{
-    let input0 = inputs[1].clone();
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 
-    thread::spawn(move ||
-    {
-        let file_path = match input0
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+
+        let input_text = match inputs[1]
         {
-            PortValue::Text(text) => text,
-            _ => panic!("ERROR"),
+            PortValue::Text( text ) => text,
+            _ => panic!("show image node was requested to show an image without a path"), 
         };
 
-        let show_result = open::that(file_path);
+        self.image_path = Some( input_text.clone() );
 
-        if show_result.is_err()
-        {
-            println!("{:?}", show_result.err());
-        }
-    });
-    
-    Some( Vec::new() )
+        None
+    }
+
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        None
+    }
+
+    fn execute(&mut self, ui: &mut egui::Ui) {
+
+        let full_file_path = self.image_path.clone().unwrap();
+
+        let image = egui::Image::new( format!(
+           "file://{}",
+           full_file_path 
+        ));
+
+        ui.add(image).on_hover_text_at_pointer(full_file_path);
+    }
 }
-
-// struct ImageShow
-// {
-
-// }
-
-// impl ImageShow
-// {
-//     pub fn new() -> Self
-//     {
-//         Self {  }
-//     }
-// }
-
-// impl eframe::App for ImageShow
-// {
-//     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
-//     {
-//         println!("Does this appear 1?");
-//         egui::CentralPanel::default()
-//         .show(ctx, |ui|
-//         {
-//             println!("Does this appear 2?");
-//             ui.heading("My egui Application");
-//         });
-//     }
-// }

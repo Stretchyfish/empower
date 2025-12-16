@@ -1,158 +1,89 @@
-use std::any::Any;
-use std::fmt;
 use std::collections::HashMap;
+use std::any::Any; // @TODO, think I can remove this now and its affect on the traits
 
-use crate::analyser::TextBuffer;
-use crate::node_graph::PortValue;
-use crate::node_graph::node::node_kind::start_node::StartNode;
-use super::PortCompatability;
 use once_cell::sync::Lazy;
-// @TODO, make these private again?
-pub mod number_node;
-pub mod start_node;
-pub use number_node::NumberNodeState;
-pub mod addition_node;
-pub mod bool_node;
-pub mod multiply_node;
-pub mod print_node;
-pub mod text_node;
-pub mod vector_node;
-pub use vector_node::VectorState;
-pub mod file_path_node;
-pub use file_path_node::FilePathState;
-pub mod show_image_node;
-pub mod math_graph_node;
-pub use math_graph_node::MathGraphState;
 
-#[derive(Default, Clone, PartialEq, Debug)]
-pub enum NodeKind {
-    #[default]
-    Start,
-    Number(NumberNodeState),
-    Bool,
-    Text,
-    Addition,
-    Multiply,
-    Print,
-    Vector(VectorState),
-    FilePath(FilePathState),
-    ShowImage,
-    MathGraph(MathGraphState),
-}
+use crate::utility::text_buffer::TextBuffer;
 
-impl fmt::Display for NodeKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
+use super::port::{PortValue, PortCompatability};
+use super::NodeFunction;
 
-impl NodeKind {
-    pub fn name(&self) -> &'static str {
-        match self {
-            NodeKind::Start => start_node::get_name(),
-            NodeKind::Number(_) => number_node::get_name(),
-            NodeKind::Bool => bool_node::get_name(),
-            NodeKind::Text => text_node::get_name(),
-            NodeKind::Addition => addition_node::get_name(),
-            NodeKind::Multiply => multiply_node::get_name(),
-            NodeKind::Print => print_node::get_name(),
-            NodeKind::Vector(_) => vector_node::get_name(),
-            NodeKind::FilePath(_) => file_path_node::get_name(),
-            NodeKind::ShowImage => show_image_node::get_name(),
-            NodeKind::MathGraph(_) => math_graph_node::get_name(),
-        }
-    }
+mod start_node;
+use start_node::StartNode;
 
-    pub fn input_ports_compatabilities(&self) -> Vec<PortCompatability> {
-        match self {
-            NodeKind::Start => start_node::get_start_node_input_ports_compatabilities(),
-            NodeKind::Number(state) => {
-                number_node::get_number_node_input_ports_compatabilities(state)
-            }
-            NodeKind::Bool => bool_node::get_bool_node_input_ports_compatabilities(),
-            NodeKind::Text => text_node::get_text_node_input_ports_compatabilities(),
-            NodeKind::Addition => addition_node::get_addition_node_input_ports_compatabilities(),
-            NodeKind::Multiply => multiply_node::get_multiply_node_input_ports_compatabilities(),
-            NodeKind::Print => print_node::get_print_node_input_ports_compatabilities(),
-            NodeKind::Vector( state ) => vector_node::get_input_ports_compatabilities(state),
-            NodeKind::FilePath(_) => file_path_node::get_node_input_ports_compatabilities(),
-            NodeKind::ShowImage => show_image_node::get_node_input_ports_compatabilities(),
-            NodeKind::MathGraph(_) => math_graph_node::get_node_input_ports_compatabilities(),
-        }
-    }
+mod number_node;
+pub use number_node::NumberNode;
+pub use number_node::NumberNodeValueKind;
 
-    pub fn output_ports_compatabilities(&self) -> Vec<PortCompatability> {
-        match self {
-            NodeKind::Start => start_node::get_start_node_output_ports_compatabilities(),
-            NodeKind::Number(state) => {
-                number_node::get_number_node_output_ports_compatabilities(state)
-            }
-            NodeKind::Bool => bool_node::get_bool_node_output_ports_compatabilities(),
-            NodeKind::Text => text_node::get_text_node_output_ports_compatabilities(),
-            NodeKind::Addition => addition_node::get_addition_node_output_ports_compatabilities(),
-            NodeKind::Multiply => multiply_node::get_multiply_node_output_ports_compatabilities(),
-            NodeKind::Print => print_node::get_print_node_output_ports_compatabilities(),
-            NodeKind::Vector(_) => vector_node::get_output_ports_compatabilities(),
-            NodeKind::FilePath(_) => file_path_node::get_node_output_ports_compatabilities(),
-            NodeKind::ShowImage => show_image_node::get_node_output_ports_compatabilities(),
-            NodeKind::MathGraph(_) => math_graph_node::get_node_output_ports_compatabilities(),
-        }
-    }
+mod addition_node;
+use addition_node::AdditionNode;
 
-    pub fn setup(&mut self, inputs: Vec<&PortValue>)
-    {
-        match self
-        {
-            NodeKind::Start => {},
-            NodeKind::Number(number_node_state) => {},
-            NodeKind::Bool => {},
-            NodeKind::Text => {},
-            NodeKind::Addition => {},
-            NodeKind::Multiply => {},
-            NodeKind::Print => {},
-            NodeKind::Vector(vector_state) => {},
-            NodeKind::FilePath(file_path_state) => {},
-            NodeKind::ShowImage => {},
-            NodeKind::MathGraph(state) => math_graph_node::setup(state, inputs),
-        }
-    }
+mod multiply_node;
+use multiply_node::MultiplyNode;
 
-    pub fn execute(&self, inputs: Vec<&PortValue>, ctx: &egui::Context, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
-        // @TODO, consider changing these names to just say execute and same for the compatabilities
-        match self {
-            NodeKind::Start => start_node::execute_start_node(),
-            NodeKind::Number(_) => number_node::execute_number_node(inputs),
-            NodeKind::Bool => bool_node::execute_bool_node(inputs),
-            NodeKind::Text => text_node::execute_text_node(inputs),
-            NodeKind::Addition => addition_node::execute_addition_node(inputs),
-            NodeKind::Multiply => multiply_node::execute_multiply_node(inputs),
-            NodeKind::Print => print_node::execute_print_node(inputs, log),
-            NodeKind::Vector(_) => vector_node::execute_vector_node(inputs),
-            NodeKind::FilePath( state ) => file_path_node::execute(state),
-            NodeKind::ShowImage => show_image_node::execute(inputs),
-            NodeKind::MathGraph( state ) => math_graph_node::execute(state, ctx),
-        }
-    }
-}
+mod boolean_node;
+use boolean_node::BooleanNode;
 
-trait NodeKindTrait
+mod print_node;
+use print_node::PrintNode;
+
+mod text_node;
+use text_node::TextNode;
+
+mod vector_node;
+pub use vector_node::VectorNode;
+
+mod math_graph_node;
+use math_graph_node::MathGraphNode;
+
+mod file_path_node;
+pub use file_path_node::FilePathNode;
+
+mod show_image_node;
+use show_image_node::ShowImageNode;
+
+pub trait NodeKind
 {
-    fn new() -> Box<dyn NodeKindTrait> // This constructor is to allow for dyn
+    fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
     where
         Self: Sized;
     fn name(&self) -> &'static str;
+    fn clone_box(&self) -> Box<dyn NodeKind>; // This is needed to enable trait cloning
+    fn function(&self) -> NodeFunction; // @TODO, maybe rename it behavior?
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
+    fn as_any_mut(&mut self) -> &mut dyn Any; 
     fn as_any(&self) -> &dyn Any; 
-    fn state(&mut self, ui: &mut egui::Ui);
-    fn setup(&mut self, inputs: Vec<&PortValue>);
-    fn update(&mut self, ctx: &egui::Context) -> Option<Vec<PortValue>>;
+    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>>;
+    fn update(&mut self) -> Option<Vec<PortValue>>;
+    fn execute(&mut self, ui: &mut egui::Ui);
 }
 
-type NodeConstructor = fn() -> Box<dyn NodeKindTrait>;
+impl Clone for Box<dyn NodeKind>
+{
+    fn clone(&self) -> Self
+    {
+        self.clone_box()
+    }
+}
 
+type NodeConstructor = fn() -> Box<dyn NodeKind>;
+
+// @TODO, rename this to node_kind_registry
 pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
-    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKindTrait>> = HashMap::new();
-    m.insert(StartNode::new().name(), || StartNode::new() );
+    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKind>> = HashMap::new();
+
+    m.insert(StartNode::new().name(), || StartNode::new());
+    m.insert(NumberNode::new().name(), || NumberNode::new());
+    m.insert(AdditionNode::new().name(), || AdditionNode::new());
+    m.insert(MultiplyNode::new().name(), || MultiplyNode::new());
+    m.insert(BooleanNode::new().name(), || BooleanNode::new());
+    m.insert(PrintNode::new().name(), || PrintNode::new());
+    m.insert(TextNode::new().name(), || TextNode::new());
+    m.insert(VectorNode::new().name(), || VectorNode::new());
+    m.insert(MathGraphNode::new().name(), || MathGraphNode::new());
+    m.insert(FilePathNode::new().name(), || FilePathNode::new());
+    m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
+
     m
 });

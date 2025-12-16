@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = [ "empower-engine","better-empower-engine","empower-studio", "better-empower-studio"]
+members = [ "empower-engine","empower-studio"]

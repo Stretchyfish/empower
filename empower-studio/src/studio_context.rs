@@ -1,10 +1,11 @@
+
 use crate::graph_editor::GraphEditor;
-use crate::workspace::Workspace;
+use crate::workspace::Layout; 
 
 pub struct StudioContext
 {
-    pub graph_editor: GraphEditor, // @TODO, determine if they all needs to be public
-    pub workspace: Workspace,
+    pub graph_editor: GraphEditor,
+    pub layout: Layout,
 }
 
 impl StudioContext
@@ -14,7 +15,7 @@ impl StudioContext
         Self
         {
             graph_editor: GraphEditor::new(),
-            workspace: Workspace::new(),
+            layout: Layout::new(),
         }
     }
 }

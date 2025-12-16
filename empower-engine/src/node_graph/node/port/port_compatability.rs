@@ -7,7 +7,6 @@ pub enum PortCompatability
 {
     Exatch(PortValue),
     OneOf(Vec<PortValue>),
-    Any,
     #[default] None,
 }
 
@@ -27,7 +26,6 @@ impl PortCompatability
                 }
                 port_value
             }
-            PortCompatability::Any => PortValue::Undefined( String::new() ), 
             PortCompatability::None => PortValue::None,
         }
     }
@@ -38,7 +36,6 @@ impl PortCompatability
         {
             PortCompatability::Exatch( value ) => vec![ value.clone() ], 
             PortCompatability::OneOf( value_list ) => value_list.clone(),
-            PortCompatability::Any => Vec::new(), // @TODO, consider a better approach for Any
             PortCompatability::None => Vec::new()
         }
     }
@@ -60,7 +57,6 @@ impl PortCompatability
 
                 false
             },
-            PortCompatability::Any => true,
             PortCompatability::None => false, 
         }
     }
@@ -79,6 +75,7 @@ impl PortCompatability
 
         false
     }
+ 
 }
 
 impl fmt::Display for PortCompatability

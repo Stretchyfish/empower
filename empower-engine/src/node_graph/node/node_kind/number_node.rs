@@ -1,20 +1,77 @@
 use std::fmt;
-use crate::node_graph::node::{PortCompatability, PortValue};
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
-pub struct NumberNodeState
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+
+use super::NodeKind;
+
+#[derive(Clone)]
+pub struct NumberNode
 {
-    pub desired_value: NumberNodeValueKind
+    pub desired_value: NumberNodeValueKind,
 }
 
-impl NumberNodeState
+impl NodeKind for NumberNode
 {
-    pub fn new() -> Self
-    {
-        Self 
-        {  
-            desired_value: NumberNodeValueKind::Automatic
+    fn new() -> Box<dyn NodeKind> where
+        Self: Sized {
+
+        Box::new(
+            Self {
+                desired_value: NumberNodeValueKind::Automatic,
+            }
+        )
+    }
+
+    fn name(&self) -> &'static str {
+        "number"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new(self.clone())
+    }
+
+    fn function(&self) -> NodeFunction {
+        NodeFunction::Instant
+    }
+
+    fn input_compatabilities(&self) -> Vec<PortCompatability> {
+
+        match self.desired_value
+        {
+            NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
+            NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
+            NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
         }
+    }
+
+    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+
+        match self.desired_value
+        {
+            NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
+            NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
+            NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
+        }
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+        Some( Vec::from( [ inputs[0].clone() ] ))
+    }
+
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
+
+    fn execute(&mut self, _: &mut egui::Ui) {
+        todo!()
     }
 }
 
@@ -32,35 +89,4 @@ impl fmt::Display for NumberNodeValueKind
     {
         write!(f, "{:?}", self)
     }
-}
-
-pub fn get_name() -> &'static str
-{
-    "number"
-}
-
-pub fn get_number_node_input_ports_compatabilities(state: &NumberNodeState) -> Vec<PortCompatability>
-{
-    match state.desired_value
-    {
-        NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
-        NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
-        NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
-    }
-}
-
-pub fn get_number_node_output_ports_compatabilities(state: &NumberNodeState) -> Vec<PortCompatability>
-{
-    match state.desired_value
-    {
-        NumberNodeValueKind::Automatic => Vec::from( [ PortCompatability::OneOf( vec!( PortValue::Integer(0), PortValue::Float(0.0)  ) ) ]),
-        NumberNodeValueKind::Integer => Vec::from( [ PortCompatability::Exatch( PortValue::Integer(0) ) ]),
-        NumberNodeValueKind::Float => Vec::from( [ PortCompatability::Exatch( PortValue::Float(0.0) ) ]),
-    }
-}
-
-pub fn execute_number_node(inputs: Vec<&PortValue>) -> Option<Vec<PortValue>>
-{
-    let output_port_value = inputs[0].clone();
-    Some( Vec::from( [ output_port_value ] ) )
 }

@@ -1,68 +1,64 @@
-use crate::node_graph::node::{PortCompatability, PortValue};
-use super::NodeKindTrait;
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
-pub fn get_name() -> &'static str
-{
-    "start"
-}
+use super::NodeKind;
 
-pub fn get_start_node_input_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::new()
-}
-
-pub fn get_start_node_output_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::from(
-            [ 
-                PortCompatability::Exatch( PortValue::Trigger )
-            ]
-        )
-}
-
-pub fn execute_start_node() -> Option<Vec<PortValue>>
-{
-    println!("Ran start node");
-    Some( Vec::from( [ PortValue::Trigger ] ) )
-}
-
+#[derive(Clone)]
 pub struct StartNode
 {
 
 }
 
-impl NodeKindTrait for StartNode
+impl NodeKind for StartNode
 {
-    fn new() -> Box<dyn NodeKindTrait> where
+    fn new() -> Box<dyn NodeKind> where
         Self: Sized {
-        todo!()
+
+            Box::new(Self {} )
     }
 
     fn name(&self) -> &'static str {
-        todo!()
+        "start"
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new(self.clone())
+    }
+
+    fn function(&self) -> NodeFunction {
+        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        todo!()
+        Vec::new()
     }
 
     fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        todo!()
+        Vec::from(
+            [
+                PortCompatability::Exatch( PortValue::Trigger )
+            ]
+        )
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn setup(&mut self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>>{
+        Some( Vec::from( [ PortValue::Trigger ] ) )
+    }
+
+    fn update(&mut self) -> Option<Vec<PortValue>> {
         todo!()
     }
 
-    fn state(&mut self, ui: &mut egui::Ui) {
+    fn execute(&mut self, _: &mut egui::Ui) {
         todo!()
     }
-
-    fn setup(&mut self, inputs: Vec<&PortValue>) {
-        todo!()
-    }
-
-    fn update(&mut self, ctx: &egui::Context) -> Option<Vec<PortValue>> {
-        todo!()
-    }
+    
+    
 }
