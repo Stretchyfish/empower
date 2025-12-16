@@ -1,4 +1,4 @@
-use empower_engine::node_graph;
+// use empower_engine::node_graph;
 
 use crate::studio_context::StudioContext;
 
@@ -7,7 +7,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
     egui::Window::new("Debug Panel")
     .collapsible(true)
     .resizable(false)
-    .open(&mut studio_context.workspace.debug_window_active)
+    .open(&mut studio_context.layout.debug_window_active)
     .show(ctx, |ui| 
     {
         ui.horizontal(|ui| {
@@ -80,7 +80,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                             ui.horizontal(|ui|
                             {
                                 ui.label(port.key.to_string());
-                                ui.label(port.value.to_string());
+                                ui.label(port.value.type_name());
                                 ui.label(port.value.to_string());
                            });
 
@@ -102,7 +102,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                             ui.horizontal(|ui|
                             {
                                 ui.label(port.key.to_string());
-                                ui.label(port.value.to_string());
+                                ui.label(port.value.type_name());
                                 ui.label(port.value.to_string());
                             });
                         }
@@ -254,8 +254,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 
             if ui.button("Refresh execution order").clicked()
             {
-                let node_execution_order = node_graph::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
-
+                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
                 studio_context.graph_editor.debug_info.node_execution_order = node_execution_order;
             }
         });

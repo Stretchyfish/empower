@@ -1,70 +1,31 @@
-mod manu_bar;
-pub mod viewports;
+use egui;
+
+use super::StudioContext;
+
 mod tab_viewer;
+use tab_viewer::TabViewer;
+
+pub mod layout;
+pub use layout::Layout;
+
+mod menu_bar;
 mod debug_window;
-use tab_viewer::TabsViewer;
-use viewports::Viewports;
-use viewports::viewport_type::ViewportType;
-
-use crate::studio_context::StudioContext;
-
-pub struct Workspace
-{
-    docking_state: egui_dock::DockState<String>,
-    pub viewports: Viewports, // @TODO, find a way to make these private?
-    debug_window_active: bool
-}
-
-impl Workspace
-{
-   pub fn new() -> Self
-   {
-        let mut new_workspace = Self 
-        { 
-            docking_state: egui_dock::DockState::new(Vec::new()), 
-            viewports: Viewports::new(), 
-            debug_window_active: false,
-        };
-
-        let graph_viewport_type = ViewportType::GraphViewport;
-        let graph_viewport_title = new_workspace.add_viewport(graph_viewport_type);
-
-        let terminal_viewport_type = ViewportType::TerminalViewport;
-        let terminal_viewport_title = new_workspace.add_viewport(terminal_viewport_type);
-
-        // This setup is needed to instantiate split docking state (consider in the future to abstract this)
-        let graph_viewport_index = new_workspace.docking_state.find_tab(&graph_viewport_title).expect("Unable to find initial graph viewport tab");
-        let terminal_viewport_index = new_workspace.docking_state.find_tab(&terminal_viewport_title).expect("Unable to find initial terminal viewport tab");
-
-        new_workspace.docking_state.remove_tab(terminal_viewport_index).expect("Terminal viewport missing from docking state");
-        new_workspace.docking_state.main_surface_mut().split_below(graph_viewport_index.1, 0.7, vec![terminal_viewport_title]);
-
-        new_workspace
-   } 
-
-   pub fn add_viewport(&mut self, viewport_type: ViewportType) -> String // @TODO, look into deletion of tabs, and naming of newly generated tabs after deletion
-   {
-        let new_viewport_name = self.viewports.add_viewport(viewport_type);
-        self.docking_state.push_to_focused_leaf(new_viewport_name.clone());
-
-        new_viewport_name
-   }
-}
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
+
     debug_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
-        manu_bar::show(ui, studio_context);
+        menu_bar::show(ui, studio_context);
     });
 
     egui::CentralPanel::default()
-        .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
-        .show(ctx, |ui| 
+    .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))
+    .show(ctx, |ui| 
     {
-        egui_dock::DockArea::new(&mut studio_context.workspace.docking_state)
+        egui_dock::DockArea::new(&mut studio_context.layout.docking_state)
             .style({
                 let mut style = egui_dock::Style::from_egui(ctx.style().as_ref());
                 style.tab_bar.fill_tab_bar = true;
@@ -76,12 +37,25 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             .show_leaf_collapse_buttons(false)
             .show_inside(
                 ui,
-                &mut TabsViewer {
+                &mut TabViewer {
                     graph_editor: &mut studio_context.graph_editor,
-                    viewports: &mut studio_context.workspace.viewports,
+                    viewports: &mut studio_context.layout.viewports,
                 },
             );
 
+        // @TODO, this needs to be moved elsewhere!
+        if studio_context.graph_editor.executor.is_some()
+        {
+            let executor = studio_context.graph_editor.executor.as_mut().unwrap();
+
+            if !executor.is_running()
+            {
+                studio_context.graph_editor.executor = None;
+                return; // @TODO, figure out a better way than returning here
+            }
+
+            executor.execute_node_graph(Some( ui ));
+        }
 
         // @TODO, find a better location for this?
         let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
@@ -99,12 +73,5 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 studio_context.graph_editor.selected_nodes = Vec::new();
             }
         }
-
     });
-
-    if studio_context.graph_editor.node_graph.is_running()
-    {
-        studio_context.graph_editor.node_graph.view_node_graph(ctx);
-    }
-
 }

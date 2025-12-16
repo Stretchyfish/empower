@@ -1,7 +1,11 @@
-mod graph_editor;
+use egui;
+use egui_extras;
 
 mod studio_context;
 use studio_context::StudioContext;
+
+mod graph_editor;
+use graph_editor::GraphEditor;
 
 mod workspace;
 
@@ -22,7 +26,12 @@ fn main() -> Result<(), eframe::Error>
     eframe::run_native(
         "empower studio",
         native_options,
-        Box::new(|_| Ok(Box::new(EmpowerStudioApplication::new()))),
+        Box::new(|cc| 
+            {
+                egui_extras::install_image_loaders(&&cc.egui_ctx);
+                Ok(Box::new(EmpowerStudioApplication::new()))
+            }
+        ),
     )
 }
 

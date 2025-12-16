@@ -1,155 +1,58 @@
-use empower_engine::node_graph::{port::PortValue};
+use std::collections::HashMap;
 
-use crate::graph_editor::{display_port::display_port_value::DisplayPortValue};
+use empower_engine::{PortValue, node_graph::node::node_kind::NodeKind};
+use once_cell::sync::Lazy;
 
-use empower_engine::node_graph::node::node_kind::NodeKind;
+mod default_display_node;
+use default_display_node::DefaultDisplayNode;
 
-pub mod display_start_node;
-pub mod display_number_node;
-pub mod display_print_node;
-pub mod display_text_node;
-pub mod display_bool_node;
-pub mod display_addition_node;
-pub mod display_multiplication_node;
-pub mod display_vector_node;
-pub use display_vector_node::DisplayVectorState;
-pub mod display_file_path_node;
-pub mod display_show_image_node;
-pub mod display_math_graph_node;
+mod file_path_display_node;
+use file_path_display_node::FilePathDisplayNode;
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum DisplayState
+mod number_display_node;
+use number_display_node::NumberDisplayNode;
+
+mod vector_display_node;
+use vector_display_node::VectorDisplayNode;
+
+mod math_graph_display_node;
+use math_graph_display_node::MathGraphDisplayNode;
+
+use super::super::DisplayPort; // @TODO, improve this include
+
+pub trait DisplayNodeKind
 {
-    None,
-    Vector(DisplayVectorState),
+    fn new() -> Box<dyn DisplayNodeKind> // This constructor is to allow for dyn
+    where
+        Self: Sized;
+    fn clone_box(&self) -> Box<dyn DisplayNodeKind>; // This is needed to enable trait cloning
+    fn node_size(&self, node_kind: &Box<dyn NodeKind>) -> egui::Vec2;
+    fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
+    fn state_size(&self) -> egui::Vec2;
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool; // The bool indicates a change 
 }
 
-pub fn get_display_state(node_kind: &NodeKind) -> DisplayState
+impl Clone for Box<dyn DisplayNodeKind>
 {
-    match  node_kind
+    fn clone(&self) -> Self
     {
-        NodeKind::Start => DisplayState::None,
-        NodeKind::Number(_) => DisplayState::None,
-        NodeKind::Bool => DisplayState::None,
-        NodeKind::Text => DisplayState::None,
-        NodeKind::Addition => DisplayState::None,
-        NodeKind::Multiply => DisplayState::None,
-        NodeKind::Print => DisplayState::None,
-        NodeKind::Vector(_) => DisplayState::Vector( DisplayVectorState::new() ),
-        NodeKind::FilePath(_) => DisplayState::None,
-        NodeKind::ShowImage => DisplayState::None,
-        NodeKind::MathGraph(_) => DisplayState::None,
+        self.clone_box()
     }
 }
 
-pub fn get_display_node_size(node_kind: &NodeKind) -> egui::Vec2
-{
-    match node_kind
-    {
-        NodeKind::Start => display_start_node::get_start_display_node_size(),
-        NodeKind::Number(_) => display_number_node::get_display_node_size(),
-        NodeKind::Bool => display_bool_node::get_display_node_size(),
-        NodeKind::Text => display_text_node::get_display_text_node_size(),
-        NodeKind::Addition => display_addition_node::get_display_node_size(),
-        NodeKind::Multiply => display_multiplication_node::get_display_node_size(),
-        NodeKind::Print => display_print_node::get_display_node_size(),
-        NodeKind::Vector( state ) => display_vector_node::get_display_node_size(state),
-        NodeKind::FilePath(_) => display_file_path_node::get_display_node_size(),
-        NodeKind::ShowImage => display_show_image_node::get_display_node_size(),
-        NodeKind::MathGraph(_) => display_math_graph_node::get_display_node_size(),
-    }
-}
+type DisplayNodeConstructor = fn() -> Box<dyn DisplayNodeKind>;
 
-pub fn get_state_size(node_kind: &NodeKind) -> egui::Vec2
-{
-    match node_kind
-    {
-        NodeKind::Start => display_start_node::get_start_node_state_size(),
-        NodeKind::Number(_) => display_number_node::get_state_size(),
-        NodeKind::Bool => display_bool_node::get_state_size(),
-        NodeKind::Text => display_text_node::get_display_text_node_state_size(),
-        NodeKind::Addition => display_addition_node::get_state_size(),
-        NodeKind::Multiply => display_multiplication_node::get_state_size(), // @TODO, fix file naming
-        NodeKind::Print => display_print_node::get_display_node_state_size(),
-        NodeKind::Vector(_) => display_vector_node::get_display_node_state_size(),
-        NodeKind::FilePath(_) => display_file_path_node::get_state_size(),
-        NodeKind::ShowImage => display_show_image_node::get_display_node_state_size(),
-        NodeKind::MathGraph(_) => display_math_graph_node::get_display_node_state_size(),
-    }
-}
+pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeConstructor>> = Lazy::new(|| {
+    let mut m: HashMap<&'static str, DisplayNodeConstructor> = HashMap::new();
 
-pub fn get_display_input_ports(node_kind: &NodeKind, inputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
-{
-    match node_kind
-    {
-        NodeKind::Start => display_start_node::get_start_node_display_input_ports(),
-        NodeKind::Number(_) => display_number_node::get_display_input_ports(inputs),
-        NodeKind::Bool => display_bool_node::get_display_input_ports(inputs),
-        NodeKind::Text => display_text_node::get_display_text_node_input_ports(inputs),
-        NodeKind::Addition => display_addition_node::get_display_input_ports(inputs),
-        NodeKind::Multiply => display_multiplication_node::get_display_input_ports(inputs),
-        NodeKind::Print => display_print_node::get_display_node_input_ports(inputs),
-        NodeKind::Vector(_) => display_vector_node::get_display_node_input_ports(inputs),
-        NodeKind::FilePath(_) => display_file_path_node::get_display_input_ports(),
-        NodeKind::ShowImage => display_show_image_node::get_display_node_input_ports(inputs),
-        NodeKind::MathGraph(_) => display_math_graph_node::get_display_node_input_ports(inputs),
-
-    }
-}
-
-pub fn get_display_output_ports(node_kind: &NodeKind, outputs: Vec<&PortValue>) -> Vec<DisplayPortValue>
-{
-    match node_kind
-    {
-        NodeKind::Start => display_start_node::get_start_node_display_output_ports(outputs),
-        NodeKind::Number(_) => display_number_node::get_display_output_ports(outputs),
-        NodeKind::Bool => display_bool_node::get_display_output_ports(outputs),
-        NodeKind::Text => display_text_node::get_display_text_node_output_ports(outputs),
-        NodeKind::Addition => display_addition_node::get_display_output_ports(outputs),
-        NodeKind::Multiply => display_multiplication_node::get_display_output_ports(outputs),
-        NodeKind::Print => display_print_node::get_display_node_output_ports(),
-        NodeKind::Vector(_) => display_vector_node::get_display_node_output_ports(outputs),
-        NodeKind::FilePath(_) => display_file_path_node::get_display_output_ports(outputs),
-        NodeKind::ShowImage => display_show_image_node::get_display_node_output_ports(outputs),
-        NodeKind::MathGraph(_) => display_math_graph_node::get_display_node_output_ports(outputs),
-    }
-}
-
-// @TODO, update the naming between view and show
-pub fn show(ui: &mut egui::Ui, node_kind: &NodeKind, display_state: &DisplayState) -> Option<(NodeKind, DisplayState)>
-{
-    // @TODO, this could potentially be expensive, be aware of that!
-    let mut node_kind_to_modify = node_kind.clone(); 
-    let mut display_state_to_modify = display_state.clone();
+    // This one cannot be removed, or it will cause a crash in display node generation
+    m.insert("default", || DefaultDisplayNode::new() ); 
     
-    match &mut node_kind_to_modify
-    {
-        NodeKind::Start => {},
-        NodeKind::Number( state ) => display_number_node::show(ui, state),
-        NodeKind::Bool => {},
-        NodeKind::Text => {},
-        NodeKind::Addition => {},
-        NodeKind::Multiply => {},
-        NodeKind::Print => {},
-        NodeKind::Vector( state ) => 
-        {
-            let display_vector_state = match &mut display_state_to_modify
-            {
-                DisplayState::Vector( state ) => state,
-                _ => panic!("The display state of the vector is wrong!"),
-            };
+    m.insert("file path", || FilePathDisplayNode::new() ); 
+    m.insert("number", || NumberDisplayNode::new() ); 
+    m.insert("vector", || VectorDisplayNode::new() ); 
+    m.insert("math graph", || MathGraphDisplayNode::new() ); 
 
-            display_vector_node::show(ui, state, display_vector_state);
-        },
-        NodeKind::FilePath( state ) => display_file_path_node::show(ui, state),
-        NodeKind::ShowImage => {},
-        NodeKind::MathGraph(_) => {},
-    };
+    m
+});
 
-    if *node_kind == node_kind_to_modify && *display_state == display_state_to_modify
-    {
-        return None;
-    }
-
-    return Some( (node_kind_to_modify, display_state_to_modify) )
-}

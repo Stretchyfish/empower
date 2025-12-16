@@ -4,9 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-once_cell = "1.21.3" # This is not used anymore
-open = "5.0"
-pgfplots = "0.5"
+# Lazy loading
+once_cell = "1.21.3"
+
+# Visualization
 eframe = "0.32.0"
-egui = "0.32.0" 
+egui = "0.32.0"
+
+# Math graphs
 egui_plot = "0.33.0" # Compatible with egui 0.32
+
+# File loading
+rfd = "0.15.4"
+
+# Image
+egui_extras = { version = "0.32.0", features = ["default", "all_loaders"] } 
+image = { version = "0.25", features = ["jpeg", "png"] } 

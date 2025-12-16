@@ -1,13 +1,15 @@
+use std::collections::HashMap;
 use crate::graph_editor::GraphEditor;
-use super::viewports::{self, Viewports};
 
-pub struct TabsViewer<'a>
+use super::layout::Viewport;
+
+pub struct TabViewer<'a>
 {
     pub graph_editor: &'a mut GraphEditor,
-    pub viewports: &'a mut Viewports,
+    pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
 }
 
-impl egui_dock::TabViewer for TabsViewer<'_>
+impl egui_dock::TabViewer for TabViewer<'_>
 {
     type Tab = String;
 
@@ -18,7 +20,14 @@ impl egui_dock::TabViewer for TabsViewer<'_>
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) 
     {
-        let tab_name: String = tab.clone().into();
-        viewports::show_single_viewport(ui, self.graph_editor, self.viewports, tab_name);
+        let tab_name: String = tab.clone();
+
+        if !self.viewports.contains_key(&tab_name)
+        {
+            panic!("Requested a viewport not in the viewport that doesn't exist");
+        }
+
+        let viewport = self.viewports.get_mut(&tab_name).unwrap();
+        viewport.show(ui, self.graph_editor, &tab_name);
     }
 }

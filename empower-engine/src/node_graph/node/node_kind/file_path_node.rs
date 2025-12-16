@@ -1,47 +1,65 @@
-use crate::node_graph::port::{PortCompatability, PortValue};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
-pub struct FilePathState
+use super::NodeKind;
+
+#[derive(Clone)]
+pub struct FilePathNode
 {
     pub path: String,
+
 }
 
-impl FilePathState
+impl NodeKind for FilePathNode
 {
-    pub fn new() -> Self
-    {
-        Self 
-        { 
-            path: String::new() 
-        }
+    fn new() -> Box<dyn NodeKind> where
+        Self: Sized {
+        
+        Box::new( Self { path: String::new() } )
     }
-}
 
-pub fn get_name() -> &'static str
-{
-    "file path"
-}
+    fn name(&self) -> &'static str {
+        "file path"
+    }
 
-pub fn get_node_input_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::new()
-}
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new( self.clone() )
+    }
 
-pub fn get_node_output_ports_compatabilities() -> Vec<PortCompatability>
-{
-    Vec::from(
+    fn function(&self) -> NodeFunction {
+        NodeFunction::Instant
+    }
+
+    fn input_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::new()
+    }
+
+    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+        Vec::from(
             [ 
                 PortCompatability::Exatch( PortValue::Text( String::new() ))
             ]
         )
-}
+    }
 
-pub fn execute(state: &FilePathState) -> Option<Vec<PortValue>>
-{
-    Some(
-    Vec::from(
-        [
-            PortValue::Text( state.path.clone() )
-        ]
-    ))
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
+    fn setup(&mut self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+
+        println!("Ran this with path: {}", self.path.clone());
+        Some( Vec::from([PortValue::Text( self.path.clone() )]))
+    }
+
+    fn update(&mut self) -> Option<Vec<PortValue>> {
+        todo!()
+    }
+
+    fn execute(&mut self, _: &mut egui::Ui) {
+        todo!()
+    }
 }
