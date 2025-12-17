@@ -1,16 +1,17 @@
-use super::DisplayNodeKind;
 
-use empower_engine::{PortValue, node_graph::node::{NodeKind}};
+use empower_engine::{PortValue, node_graph::node::NodeKind};
 
 use crate::graph_editor::DisplayPort;
 
+use super::DisplayNodeKind;
+
 #[derive(Clone)]
-pub struct MathGraphDisplayNode
+pub struct ShowImageDisplayNode
 {
 
 }
 
-impl DisplayNodeKind for MathGraphDisplayNode
+impl DisplayNodeKind for ShowImageDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where
         Self: Sized {
@@ -24,10 +25,11 @@ impl DisplayNodeKind for MathGraphDisplayNode
     }
 
     fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
-        egui::Vec2 { x: 350.0, y: 300.0 }
+        egui::Vec2 { x: 350.0, y: 230.0 }
     }
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
+
         let mut display_inputs = Vec::new();
 
         display_inputs.reserve(input_port_values.len());
@@ -39,18 +41,11 @@ impl DisplayNodeKind for MathGraphDisplayNode
         display_inputs.push(display_port_trigger);
 
         let display_port_x = DisplayPort::new(
-                                                        "X".to_string(), 
+                                                        "file path".to_string(), 
                                                         egui::pos2(0.0, 0.0), 
                                                         &input_port_values[1]
                                                     );
         display_inputs.push(display_port_x);
-
-        let display_port_y = DisplayPort::new(
-                                                        "Y".to_string(), 
-                                                        egui::pos2(0.0, 0.0), 
-                                                        &input_port_values[2]
-                                                    );
-        display_inputs.push(display_port_y);
 
         display_inputs
     }
@@ -63,3 +58,5 @@ impl DisplayNodeKind for MathGraphDisplayNode
         false
     }
 }
+
+

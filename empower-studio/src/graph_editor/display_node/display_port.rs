@@ -34,8 +34,8 @@ fn color_of_port_value(port_value: &PortValue) -> egui::Color32
         PortValue::Trigger => egui::Color32::WHITE,
         PortValue::Integer(_) => egui::Color32::YELLOW,
         PortValue::Float(_) => egui::Color32::YELLOW,
-        PortValue::Text(_) => egui::Color32::BLUE,
-        PortValue::Bool(_) => egui::Color32::GREEN,
+        PortValue::Text(_) => egui::Color32::YELLOW,
+        PortValue::Bool(_) => egui::Color32::YELLOW,
         PortValue::Vector(_) => egui::Color32::YELLOW,
         PortValue::None => egui::Color32::YELLOW,
     }
