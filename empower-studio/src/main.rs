@@ -11,11 +11,24 @@ mod workspace;
 
 fn main() -> Result<(), eframe::Error>
 {
+    let app_image = image::load_from_memory( include_bytes!("../../media/empower_icon.png"))
+    .expect("Failed to load icon")
+    .into_rgba8();
+    let (app_image_width, app_image_height) = app_image.dimensions();
+
+    let app_icon = egui::IconData
+    {
+        rgba: app_image.into_raw(),
+        width: app_image_width,
+        height: app_image_height,
+    };
+
     let viewport_builder = egui::ViewportBuilder::default()
     .with_always_on_top()
     .with_active(true)
     .with_clamp_size_to_monitor_size(true)
     .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
+    .with_icon(app_icon)
     .with_maximized(true); // @TODO, improve the maximized approach
     
     let native_options = eframe::NativeOptions { 
