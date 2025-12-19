@@ -14,15 +14,6 @@ Make sure to have the rust toolchain running on your system
 
 https://rust-lang.org/tools/install/
 
-### Linux
-#### Ubuntu
-
-Make sure the system has the following packages installed.
-
-~~~
-sudo apt-get install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
-~~~
-
 ## Building
 
 The project is build using rust cargo.
