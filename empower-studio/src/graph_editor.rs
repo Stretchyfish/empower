@@ -57,7 +57,9 @@ impl GraphEditor
 
         // Create display input ports
         let node_input_port_values = self.node_graph.get_node_input_port_values(&node.key);
+        // let node_output_port_values = self.node_graph.get_node_output_port_values(&node.key);
         let display_input_ports = display_node.display_kind.display_input_ports(node_input_port_values);
+        // let display_output_ports = display_node.display_kind.display_output_ports(node_output_port_values);
 
         if node.input_port_keys.len() != display_input_ports.len()
         {
@@ -69,13 +71,20 @@ impl GraphEditor
             self.display_input_ports.insert(node.input_port_keys[index], display_input_ports[index].clone() );
         }
 
+        // for index in 0..node.output_port_keys.len()
+        // {
+        //     self.display_output_ports.insert(node.output_port_keys[index], display_output_ports[index].clone() );
+        // }
+
         // create display output ports
         for output_port_key in &node.output_port_keys
         {
             let output_port = self.node_graph.get_output_port(output_port_key).unwrap();
+
             let display_port = DisplayPort::nothing(position, &output_port.value); // The position is just defaulted here, because it will be correct in refresh display node
             self.display_output_ports.insert(*output_port_key, display_port);
         }
+        // @TODO, this function needs a second look!
         self.display_nodes.insert(node_handle.node_key, display_node);
 
         // Correct position and etc to avoid unessesary code duplication
@@ -148,7 +157,7 @@ impl GraphEditor
             // Updating the display value is done in here to have one function with update behavior, this 
             // has the side effect of updating the display value to the last valid valid if the box is moved
             display_input_port.value = DisplayValue::from_port_value(&input_port.value);
-            display_input_port.convertable = true;
+            display_input_port.valid  = true;
 
             display_input_port.position = display_node.position + egui::Vec2 { x: 0.0, y: input_ports_vertical_offset + display_node_state_size.y };
 
@@ -206,5 +215,28 @@ impl GraphEditor
         }
 
         self.refresh_display_node(node_key);
+    }
+
+    pub fn toggle_node_selection(&mut self, node_key: &NodeGraphKey)
+    {
+        if self.selected_nodes.contains(node_key)
+        {
+            self.selected_nodes.retain(|x| x != node_key ); // Removes all elements with this value
+            return;
+        }
+
+        self.selected_nodes.push( *node_key );
+    }
+
+    pub fn move_selected_nodes(&mut self, canvas_delta_position: &egui::Vec2)
+    {
+        for node_key in &self.selected_nodes
+        {
+            let display_node = self.display_nodes.get_mut(node_key).unwrap();
+            display_node.position += *canvas_delta_position;
+        }
+
+        // @TODO, this whole refresh needs a rework
+        // graph_editor.refresh_display_node(selected_node_key);
     }
 }

@@ -4,6 +4,8 @@ pub fn get_graph_viewport_user_inputs(ui: &mut egui::Ui) -> GraphViewportUserInp
 {
     let ui_rect = ui.max_rect();
 
+    let mouse_is_inside_viewport = ui.ui_contains_pointer();
+
     let mouse_position = ui.input(|i| i.pointer.hover_pos()).unwrap_or(egui::Pos2 {x: 0.0, y: 0.0});
     let mut left_clicked = false;
     let mut left_is_down = false;
@@ -20,6 +22,7 @@ pub fn get_graph_viewport_user_inputs(ui: &mut egui::Ui) -> GraphViewportUserInp
 
     GraphViewportUserInputs
     {
+        mouse_is_inside_viewport,
         mouse_position: mouse_position,
         left_clicked: left_clicked, 
         left_is_down: left_is_down,
@@ -31,6 +34,7 @@ pub fn get_graph_viewport_user_inputs(ui: &mut egui::Ui) -> GraphViewportUserInp
 #[derive(Default)]
 pub struct GraphViewportUserInputs
 {
+    pub mouse_is_inside_viewport: bool,
     pub mouse_position: egui::Pos2,
     pub left_clicked: bool,
     pub left_is_down: bool,

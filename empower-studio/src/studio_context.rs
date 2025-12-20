@@ -1,6 +1,8 @@
+use empower_engine::runtime::EmpowerExecutor;
 
 use crate::graph_editor::GraphEditor;
 use crate::workspace::Layout; 
+use crate::actions::Action;
 
 pub struct StudioContext
 {
@@ -17,5 +19,30 @@ impl StudioContext
             graph_editor: GraphEditor::new(),
             layout: Layout::new(),
         }
+    }
+
+    pub fn process_actions(&mut self, action_queue: Vec<Action>)
+    {
+        for action in action_queue
+        {
+            match action
+            {
+                Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },
+                Action::ToggleNodeSelection { node_key } => self.graph_editor.toggle_node_selection(&node_key), 
+                Action::MoveSelectedNodes { canvas_delta_position } => self.graph_editor.move_selected_nodes(&canvas_delta_position),
+                Action::CreateViewport { name } => { self.layout.add_viewport( name ); },
+                Action::ToggleDebugWindow => self.layout.debug_window_active = !self.layout.debug_window_active,
+                Action::StartNodeGraphExecution =>
+                {
+                    let mut empower_executor = EmpowerExecutor::new(self.graph_editor.node_graph.clone(), true, true);
+                    empower_executor.start_node_graph();
+
+                    self.graph_editor.executor = Some( empower_executor );
+                },
+                Action::StopNodeGraphExecution => self.graph_editor.executor = None,
+                Action::None => todo!(),
+            }
+        }
+        
     }
 }

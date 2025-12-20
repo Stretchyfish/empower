@@ -1,6 +1,7 @@
 use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::NodeKind;
 
+use crate::actions::Action;
 use crate::graph_editor::display_node::DisplayNodeKind;
 
 use crate::graph_editor::GraphEditor;
@@ -68,4 +69,29 @@ pub fn show(
     }
 
     node_widget_response
+}
+
+pub fn show_2(
+    ui: &mut egui::Ui, 
+    node_key: &NodeGraphKey,
+    graph_editor: &mut GraphEditor, 
+    graph_viewport_title: &String, // @TODO, consider finding a way to combine these?
+    action_queue: &mut Vec<Action>,
+)
+{
+    let debug_mode = false; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
+
+    node_widget_body::show_node_body2(ui, node_key, graph_editor, graph_viewport_title, &debug_mode, action_queue);
+    
+    let node_handle = graph_editor.node_graph.get_node_handle(node_key);
+
+    for input_port_key in &node_handle.input_port_keys
+    {
+        node_widget_input_ports::show_input_port2(ui, input_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode);
+    }
+
+    for output_port_key in &node_handle.output_port_keys
+    {
+        node_widget_output_ports::show_output_port2(ui, output_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode);
+    }
 }

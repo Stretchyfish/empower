@@ -1,7 +1,7 @@
 use empower_engine::{NodeGraphKey, node_graph::node::NodeKind, runtime::EmpowerExecutor};
 use egui;
 
-use crate::{GraphEditor, graph_editor::display_node::{DisplayNodeKind, DisplayValue}, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
+use crate::{GraphEditor, actions::Action, graph_editor::display_node::{DisplayNodeKind, DisplayValue}, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
 use empower_engine::node_graph::node::port::PortKind; 
 
 use super::Viewport;
@@ -24,7 +24,6 @@ use port_searcher::PortSearcher;
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
-    mouse_scene_delta: egui::Vec2, // @TODO, consider a better approach for storing this, istead of at struck level?
     scene_rect: egui::Rect,
     port_searcher: Option<PortSearcher>,
     quick_menu: Option<egui::Pos2>,
@@ -42,7 +41,6 @@ impl Viewport for GraphViewport
             Self 
             {
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
-                mouse_scene_delta: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
                 port_searcher: None,
                 quick_menu: None,
@@ -56,22 +54,63 @@ impl Viewport for GraphViewport
         "graph viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String) {
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
         // @TODO, this is not a great way to approach user inputs, so fix in the future!
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
-        let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor, viewport_name);
+        self.show_canvas(ui, graph_editor, &user_inputs, viewport_name, action_queue);
+        // let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor, viewport_name, action_queue);
 
-        let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
-        self.process_user_actions(&user_inputs, graph_editor, wideget_interaction_happened);
+        // let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
+        // self.process_user_actions(&user_inputs, graph_editor, wideget_interaction_happened);
     }
 }
 
 impl GraphViewport
 {
+    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>)
+    {
+        let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
+
+        let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
+        if user_inputs.left_shift_is_down
+        {
+            drag_pan_button = egui::DragPanButtons::empty();
+        }
+        
+        let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
+        egui::Scene::new()
+        .zoom_range(0.01..=2.0)
+        .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
+        .drag_pan_buttons(drag_pan_button)
+        .show(ui, &mut scene_rect, |scene_ui|
+        {
+            if user_inputs.mouse_is_inside_viewport
+            {
+                let mouse_scene_position = self.screen_position_to_scene_position(&user_inputs.mouse_position, &scene_ui);
+                let mouse_scene_delta_position = mouse_scene_position - self.mouse_scene_position_last_frame; 
+
+                if !graph_editor.selected_nodes.is_empty()
+                {
+                    action_queue.push( Action::MoveSelectedNodes { canvas_delta_position: mouse_scene_delta_position } );
+                }
+
+                self.mouse_scene_position_last_frame = mouse_scene_position;
+            }
+
+            let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect();
+            for node_key in node_keys
+            {
+                node_widget::show_2(scene_ui, &node_key, graph_editor, &viewport_name, action_queue);
+            }
+
+            
+        });
+    }
+
     // @TODO, these functions can be simplified down using Canvas structs for example
-    fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor, viewport_name: &String) -> Vec<NodeWidgetResponse>
+    fn view_canvas(&mut self, ui: &mut egui::Ui, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) -> Vec<NodeWidgetResponse>
     {
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
 
@@ -102,12 +141,12 @@ impl GraphViewport
                 // @TODO, this whole if statement can be simplified!
                 if scene_latest_pos.is_some()
                 {
-                    mouse_position_in_scene = self.screen_to_scene(&mut scene_latest_pos.unwrap(), scene_ui);
+                    mouse_position_in_scene = self.screen_position_to_scene_position(&mut scene_latest_pos.unwrap(), scene_ui);
                 }
             }
 
             mouse_scene_delta = mouse_position_in_scene - self.mouse_scene_position_last_frame; 
-            self.mouse_scene_delta = mouse_scene_delta;
+            // self.mouse_scene_delta = mouse_scene_delta;
 
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect(); // @TODO, find a more elegant way of writting this
             for node_key in node_keys
@@ -202,7 +241,7 @@ impl GraphViewport
             }
             
             let display_node = graph_editor.display_nodes.get_mut(&selected_node_key).unwrap();
-            display_node.position += self.mouse_scene_delta; 
+            // display_node.position += self.mouse_scene_delta; 
 
             graph_editor.refresh_display_node(selected_node_key);
         }
@@ -390,10 +429,10 @@ impl GraphViewport
 
         if new_port_value.is_none()
         {
-            display_input_port.convertable = false; // @TODO, consider a better name, like "valid"
+            display_input_port.valid = false; // @TODO, consider a better name, like "valid"
             return;
         }
-        display_input_port.convertable = true;
+        display_input_port.valid = true;
 
         input_port.value = new_port_value.unwrap();
     }
@@ -480,7 +519,7 @@ impl GraphViewport
     //     return ui.ctx().layer_transform_to_global(ui.painter().layer_id()).unwrap() * *scene_position;
     // }
 
-    fn screen_to_scene(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
+    fn screen_position_to_scene_position(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
     {
         return ui.ctx().layer_transform_from_global(ui.painter().layer_id()).unwrap() * *scene_position;
     }
