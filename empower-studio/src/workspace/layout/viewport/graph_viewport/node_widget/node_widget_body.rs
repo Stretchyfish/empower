@@ -387,8 +387,7 @@ pub fn show_node_body2(
 
     if generate_node_hash(&node.kind) != hash_before_potential_modification
     {
-        graph_editor.update_node_structure(node_key);
-        graph_editor.refresh_display_node(*node_key);
+        action_queue.push( Action::UpdateNode { node_key: node.key });
     }
 }
 

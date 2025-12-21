@@ -29,7 +29,11 @@ impl StudioContext
             {
                 Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },
                 Action::DeleteNode { node_key } => { self.graph_editor.remove_node(&node_key); },
-                Action::CopyNode { node_key } => { todo!() },
+                Action::UpdateNode { node_key } =>
+                {
+                    self.graph_editor.update_node_structure(&node_key); // @TODO, take a second look at this
+                    self.graph_editor.refresh_display_node(node_key);
+                },
                 Action::CopySelectedNodes =>
                 {
                     for node_key in self.graph_editor.selected_nodes.clone()
@@ -40,7 +44,6 @@ impl StudioContext
                     }
                 },
                 Action::ToggleNodeSelection { node_key } => self.graph_editor.toggle_node_selection(&node_key), 
-                Action::AddNodeToSelectedNodes { node_key } => self.graph_editor.add_node_to_selection(&node_key),
                 Action::AddNodesToSelectedNodes { node_keys } => for node_key in node_keys { self.graph_editor.add_node_to_selection(&node_key); },
                 Action::ClearAllNodesFromSelectedNodes => self.graph_editor.clear_node_selection(), // @TOOD, this should be renamed clear?
                 Action::MoveSelectedNodes { canvas_delta_position } => self.graph_editor.move_selected_nodes(&canvas_delta_position),
@@ -64,7 +67,6 @@ impl StudioContext
                     self.graph_editor.executor = Some( empower_executor );
                 },
                 Action::StopNodeGraphExecution => self.graph_editor.executor = None,
-                Action::None => todo!(),
             }
         }
         
