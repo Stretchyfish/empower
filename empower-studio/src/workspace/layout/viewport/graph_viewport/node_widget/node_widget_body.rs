@@ -1,5 +1,9 @@
 use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::Node;
+use empower_engine::node_graph::node::NodeKind;
+use empower_engine::node_graph::node::node_kind;
+use empower_engine::node_graph::node::port::PortCompatability;
+use empower_engine::node_graph::node::port::port_compatability;
 use crate::actions::Action;
 use crate::graph_editor::DisplayNode;
 use crate::graph_editor::GraphEditor;
@@ -370,17 +374,58 @@ pub fn show_node_body2(
     let state_ui_builder = egui::UiBuilder::new()
     .max_rect(state_max_rect);
 
+    let hash_before_potential_modification = generate_node_hash(&node.kind);
+
     ui.scope_builder(state_ui_builder, |ui|
     {
+        // This is to ensure the styles and sizes match the rest of the UI
         let style = ui.style_mut();
         style.override_font_id = Some ( egui::FontId::proportional(35.0));
 
         display_node.display_kind.state_show(ui, &mut node.kind);
     });
 
-    // if compatibilities_before_change != node.kind.input_compatabilities()
-    // {
-    //     graph_editor.update_node_structure(node_key);
-    //     // graph_editor.refresh_node_structure(node_key, node_kind, display_node_kind);
-    // }
+    if generate_node_hash(&node.kind) != hash_before_potential_modification
+    {
+        graph_editor.update_node_structure(node_key);
+        graph_editor.refresh_display_node(*node_key);
+    }
+}
+
+fn generate_node_hash(node_kind: &Box<dyn NodeKind>) -> u64
+{
+    let mut hash = 0;
+    for port_compatability in &node_kind.as_ref().input_compatabilities()
+    {
+        hash += port_compatibility_hash(port_compatability);
+    }
+
+    for port_compatability in &node_kind.as_ref().output_compatabilities()
+    {
+        hash += port_compatibility_hash(port_compatability);
+    }
+
+    hash
+}
+
+fn port_compatibility_hash(port_compatability: &PortCompatability) -> u64
+{
+    let mut hash = 0;
+    for port_value in port_compatability.get_compatability_list()
+    {
+        let hash_add = match port_value
+        {
+            empower_engine::PortValue::Trigger => 0,
+            empower_engine::PortValue::Integer(_) => 1,
+            empower_engine::PortValue::Float(_) => 2,
+            empower_engine::PortValue::Text(_) => 3,
+            empower_engine::PortValue::Bool(_) => 4,
+            empower_engine::PortValue::Vector(_) => 5,
+            empower_engine::PortValue::None => 6,
+        };
+
+        hash += hash_add;
+    }
+
+    hash
 }
