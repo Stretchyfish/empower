@@ -1,8 +1,7 @@
-use empower_engine::{NodeGraphKey, node_graph::node::NodeKind, runtime::EmpowerExecutor};
+use empower_engine::NodeGraphKey;
 use egui;
 
-use crate::{GraphEditor, actions::Action, graph_editor::display_node::{DisplayNodeKind, DisplayValue}, workspace::layout::viewport::graph_viewport::{node_widget::NodeWidgetResponse, user_inputs::GraphViewportUserInputs}};
-use empower_engine::node_graph::node::port::PortKind; 
+use crate::{GraphEditor, actions::Action, workspace::layout::viewport::graph_viewport::user_inputs::GraphViewportUserInputs};
 
 use super::Viewport;
 
@@ -57,20 +56,7 @@ impl Viewport for GraphViewport
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
         self.show_canvas(ui, graph_editor, &user_inputs, viewport_name, action_queue);
-
-        self.process_user_inputs2(&user_inputs, graph_editor, action_queue);
-
-        // if !action_queue.is_empty()
-        // {
-        //     return;
-        // }
-        //
-
-        
-        // let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor, viewport_name, action_queue);
-
-        // let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
-        // self.process_user_actions(&user_inputs, graph_editor, wideget_interaction_happened);
+        self.process_user_inputs(&user_inputs, graph_editor, action_queue);
     }
 }
 
@@ -78,8 +64,6 @@ impl GraphViewport
 {
     fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>)
     {
-        let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
-
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.left_shift_is_down
         {
@@ -122,7 +106,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect();
             for node_key in node_keys
             {
-                node_widget::show_2(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue);
+                node_widget::show(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue);
             }
 
             debug_info_widget::nodes_debug_info_show(scene_ui, &graph_editor);
@@ -150,7 +134,7 @@ impl GraphViewport
 
             if self.node_select_panel.is_some()
             {
-                let added_node = self.node_select_panel.as_mut().unwrap().show(scene_ui, graph_editor, &self.mouse_scene_position_last_frame, action_queue);
+                let added_node = self.node_select_panel.as_mut().unwrap().show(scene_ui, &self.mouse_scene_position_last_frame, action_queue);
 
                 if added_node
                 {
@@ -162,7 +146,7 @@ impl GraphViewport
         self.scene_rect = scene_rect;
     }
 
-    fn process_user_inputs2(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &GraphEditor, action_queue: &mut Vec<Action>)
+    fn process_user_inputs(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &GraphEditor, action_queue: &mut Vec<Action>)
     {
         if !user_inputs.mouse_is_inside_viewport
         {
@@ -243,108 +227,6 @@ impl GraphViewport
             return;
         }
     }
-
-    fn set_input_port_value_if_display_value_can_convert(&self, port_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_value: &DisplayValue)
-    {
-        let input_port = graph_editor.node_graph.get_input_port_mut(port_key).unwrap();
-        let display_input_port = graph_editor.display_input_ports.get_mut(port_key).unwrap();
-
-        display_input_port.value = new_value.clone();
-
-        let new_port_value = display_input_port.value.to_port_value(&input_port.compatability);
-
-        if new_port_value.is_none()
-        {
-            display_input_port.valid = false; // @TODO, consider a better name, like "valid"
-            return;
-        }
-        display_input_port.valid = true;
-
-        input_port.value = new_port_value.unwrap();
-    }
-
-    fn set_state_changes(&mut self, node_key: &NodeGraphKey, graph_editor: &mut GraphEditor, new_node_kind: &Box<dyn NodeKind>, new_display_node_kind: &Box<dyn DisplayNodeKind>)
-    {
-        graph_editor.refresh_node_structure(*node_key, new_node_kind, new_display_node_kind);
-    }
-
-    // @TODO, find a better way to do this behavior
-    fn show_quick_menu(&self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, action_queue: &mut Vec<Action>)
-    {
-        // if self.quick_menu.is_none()
-        // {
-        //     return false; // @TODO, this check is not really needed, make a decision on that
-        // }
-
-        // let menu_position = self.quick_menu.unwrap();
-        // let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
-
-        let mut button_clicked = false;
-
-        // let mut potentially_new_selected_nodes = Vec::new();
-
-        // let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
-        // ui.scope_builder(quick_menu_ui_builder, |ui|
-        // {
-        //     egui::Frame::popup(ui.style()).show(ui, |ui| 
-        //     {
-        //         let selected_nodes = graph_editor.selected_nodes.clone();
-
-        //         if selected_nodes.len() == 1
-        //         {
-        //             if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-        //             {
-        //                 action_queue.push( Action::StartNodeGraphExecutionFromEntry { node_key: selected_nodes[0] });
-        //                 // @TODO, move this out from here, when implementing the event system
-
-        //                 button_clicked = true;
-        //             }
-        //         }
-
-        //         if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-        //         {
-        //             let mut new_node_keys = Vec::new();
-        //             new_node_keys.reserve(selected_nodes.len());
-
-        //             for node_key in selected_nodes.clone()
-        //             {
-        //                 // @TODO, this needs to be updated based on action system
-        //                 let copied_node_key = graph_editor.create_node_copy(&node_key);
-
-        //                 new_node_keys.push(copied_node_key);
-        //             }
-
-        //             potentially_new_selected_nodes = new_node_keys;
-        //             println!("Number of selected nodes added: {}, {}", potentially_new_selected_nodes.len(), potentially_new_selected_nodes[0]);
-        //             button_clicked = true;
-        //         }
-
-        //         if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-        //         {
-        //             // @TODO, I think this will cause a crash when multiple graph viewports are open
-        //             for selected_node_key in selected_nodes
-        //             {
-        //                 action_queue.push( Action::RemoveNode { node_key: selected_node_key });
-        //             }
-        //             button_clicked = true;
-        //         }
-        //     });
-        // });
-
-        // if button_clicked
-        // {
-        //     action_queue.push( Action::AddNodesToSelectedNodes { node_keys: potentially_new_selected_nodes });
-        //     // graph_editor.selected_nodes = potentially_new_selected_nodes; // @TODO, find a more elegant way of doing this
-        // }
-
-        // button_clicked
-    }
-
-    // @TODO, this function is not tested
-    // fn scene_to_screen(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
-    // {
-    //     return ui.ctx().layer_transform_to_global(ui.painter().layer_id()).unwrap() * *scene_position;
-    // }
 
     fn screen_position_to_scene_position(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
     {

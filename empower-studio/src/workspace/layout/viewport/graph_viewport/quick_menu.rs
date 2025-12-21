@@ -1,5 +1,4 @@
-use crate::{actions::Action, graph_editor::{self, GraphEditor}};
-
+use crate::{actions::Action, graph_editor::GraphEditor};
 
 pub struct QuickMenu
 {
