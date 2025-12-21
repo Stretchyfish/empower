@@ -10,6 +10,8 @@ pub enum Action
     AddNodesToSelectedNodes { node_keys: Vec<NodeGraphKey> },
     RemoveAllNodesFromSelectedNodes,
     MoveSelectedNodes { canvas_delta_position: egui::Vec2 },
+    ClickedInputPort { port_key: NodeGraphKey },
+    ClickedOutputPort { port_key: NodeGraphKey },
     CreateViewport { name: &'static str },
     ToggleDebugWindow,
     StartNodeGraphExecution,

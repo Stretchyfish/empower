@@ -35,6 +35,8 @@ impl StudioContext
                 Action::AddNodesToSelectedNodes { node_keys } => for node_key in node_keys { self.graph_editor.add_node_to_selection(&node_key); },
                 Action::RemoveAllNodesFromSelectedNodes => self.graph_editor.clear_node_selection(), // @TOOD, this should be renamed clear?
                 Action::MoveSelectedNodes { canvas_delta_position } => self.graph_editor.move_selected_nodes(&canvas_delta_position),
+                Action::ClickedInputPort { port_key } => self.graph_editor.clicked_input_port( &port_key ),
+                Action::ClickedOutputPort { port_key } => self.graph_editor.clicked_output_port( &port_key ),
                 Action::CreateViewport { name } => { self.layout.add_viewport( name ); },
                 Action::ToggleDebugWindow => self.layout.debug_window_active = !self.layout.debug_window_active,
                 Action::StartNodeGraphExecution =>

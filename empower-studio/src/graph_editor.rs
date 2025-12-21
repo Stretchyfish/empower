@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use empower_engine::node_graph::node::NodeKind;
+use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
 
@@ -11,6 +12,9 @@ pub use display_node::DisplayValue;
 mod debug_info;
 use debug_info::DebugInfo;
 
+mod port_searcher;
+use port_searcher::PortSearcher;
+
 use crate::graph_editor::display_node::DisplayNodeKind;
 
 pub struct GraphEditor
@@ -20,6 +24,7 @@ pub struct GraphEditor
     pub display_input_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub selected_nodes: Vec<NodeGraphKey>,
+    pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
     pub executor: Option<EmpowerExecutor>,
 }
@@ -35,6 +40,7 @@ impl GraphEditor
         display_input_ports: HashMap::new(),
         display_output_ports: HashMap::new(),
         selected_nodes: Vec::new(),
+        port_searcher: None,
         debug_info: DebugInfo::new(),
         executor: None,
         };
@@ -258,6 +264,86 @@ impl GraphEditor
 
             // @TODO, this whole refresh needs a rework
             self.refresh_display_node(*node_key);
+        }
+    }
+
+    pub fn clicked_input_port(&mut self, port_key: &NodeGraphKey)
+    {
+        if self.port_searcher.is_none()
+        {
+            // First check if the input port already has a connection, remove that connection, and either convert that to a port search or overtake it
+            if self.node_graph.input_port_has_connection(port_key)
+            {
+                let connect_output_port_key = self.node_graph.get_input_port_connection_key(port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+                self.node_graph.remove_connection(port_key, &connect_output_port_key);
+
+                self.port_searcher = Some( PortSearcher::output_port_searching(connect_output_port_key) );
+                return;
+            }
+
+            self.port_searcher = Some( PortSearcher::input_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap();
+
+        match port_searcher.port_kind
+        {
+            PortKind::Input => // Detect if user clicked another input port while port searching from input
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None; // @TODO, expand this functionality to be more complex
+                }
+            },
+            PortKind::Output => // Detect if ports can be connected
+            {
+                let add_connection_result = self.node_graph.add_connection(port_searcher.port_key, *port_key);
+
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
+        }
+        
+    }
+
+    pub fn clicked_output_port(&mut self, port_key: &NodeGraphKey)
+    {
+        if self.port_searcher.is_none()
+        {
+            self.port_searcher = Some( PortSearcher::output_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap(); 
+
+        match  port_searcher.port_kind 
+        {
+            PortKind::Output =>
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None;
+                }
+            }
+            PortKind::Input =>
+            {
+                let add_connection_result = self.node_graph.add_connection(*port_key, port_searcher.port_key); 
+
+                // @TODO, remove this, currently its mostly debug info
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", *port_key, port_searcher.port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
         }
     }
 }

@@ -144,9 +144,9 @@ impl GraphViewport
                 scene_ui.painter().rect_filled(self.node_area_select.as_ref().unwrap().rect, 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
             }
 
-            if self.port_searcher.is_some()
+            if graph_editor.port_searcher.is_some()
             {
-                connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &self.mouse_scene_position_last_frame);
+                connection_widget::show_connection_search(scene_ui, graph_editor, &self.mouse_scene_position_last_frame);
             }
             
             if self.quick_menu.is_some()
@@ -308,7 +308,7 @@ impl GraphViewport
 
             if self.port_searcher.is_some()
             {
-                connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &mouse_position_in_scene);
+                // connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &mouse_position_in_scene);
             }
 
             if self.quick_menu.is_some()
@@ -505,6 +505,7 @@ impl GraphViewport
             {
                 let add_connection_result = graph_editor.node_graph.add_connection(port_searcher.port_key, *port_key);
 
+                // @TODO, remove or rewrite this, only used for debugging
                 match add_connection_result
                 {
                     Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),

@@ -88,12 +88,12 @@ pub fn show_2(
 
     for input_port_key in &node_handle.input_port_keys
     {
-        node_widget_input_ports::show_input_port2(ui, input_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode);
+        node_widget_input_ports::show_input_port2(ui, input_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode, action_queue);
     }
 
     for output_port_key in &node_handle.output_port_keys
     {
-        node_widget_output_ports::show_output_port2(ui, output_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode);
+        node_widget_output_ports::show_output_port2(ui, output_port_key, graph_editor, &String::from(graph_viewport_title), &debug_mode, action_queue);
     }
 }
 

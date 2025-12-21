@@ -135,6 +135,7 @@ pub fn show_input_port2(
                         graph_editor: &mut GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
+                        action_queue: &mut Vec<Action>,
                     )
 {
     let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key); // This needs to be placed here for the borrow checker 
@@ -156,7 +157,7 @@ pub fn show_input_port2(
     let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click());
     if input_port_response.clicked()
     {
-        println!("Clicked input port");
+        action_queue.push( Action::ClickedInputPort { port_key: *input_port_key });
     }
 
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));

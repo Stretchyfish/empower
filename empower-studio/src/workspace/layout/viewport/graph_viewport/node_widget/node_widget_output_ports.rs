@@ -1,4 +1,5 @@
 use empower_engine::{NodeGraphKey, node_graph::node::port::Port};
+use crate::actions::Action;
 use crate::graph_editor::GraphEditor;
 use crate::graph_editor::display_node::DisplayPort;
 
@@ -55,6 +56,7 @@ pub fn show_output_port2(
                         graph_editor: &mut GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
+                        action_queue: &mut Vec<Action>,
                     )
 {
     let output_port = graph_editor.node_graph.get_output_port(output_port_key).unwrap();
@@ -69,7 +71,7 @@ pub fn show_output_port2(
     let output_port_response = ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + output_port_key.to_string().as_str()), egui::Sense::click());
     if output_port_response.clicked()
     {
-        println!("Clicked output port key");
+        action_queue.push( Action::ClickedOutputPort { port_key: *output_port_key });
     }
     output_port_response.on_hover_text( format!("{:?}, {:?}", output_port.value, output_port.compatability ));
 
