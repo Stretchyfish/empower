@@ -121,6 +121,6 @@ pub fn show_input_port(
 
     if potentially_modified_display_value != display_input_port.value
     {
-        graph_editor.set_input_port_value_if_display_value_can_convert(input_port_key, &potentially_modified_display_value);
+        action_queue.push( Action::SetInputPortValue { port_key: *input_port_key, display_value: potentially_modified_display_value });
     } 
 }

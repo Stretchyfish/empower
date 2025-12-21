@@ -44,6 +44,7 @@ impl StudioContext
                 Action::ClearAllNodesFromSelectedNodes => self.graph_editor.clear_node_selection(), // @TOOD, this should be renamed clear?
                 Action::MoveSelectedNodes { canvas_delta_position } => self.graph_editor.move_selected_nodes(&canvas_delta_position),
                 Action::ClickedInputPort { port_key } => self.graph_editor.clicked_input_port( &port_key ),
+                Action::SetInputPortValue { port_key, display_value } => self.graph_editor.set_input_port_value_if_display_value_can_convert(&port_key, &display_value),
                 Action::ClickedOutputPort { port_key } => self.graph_editor.clicked_output_port( &port_key ),
                 Action::StopPortSearch => self.graph_editor.stop_port_search(),
                 Action::CreateViewport { name } => { self.layout.add_viewport( name ); },

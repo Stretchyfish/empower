@@ -1,4 +1,5 @@
 use empower_engine::NodeGraphKey;
+use crate::graph_editor::DisplayValue;
 
 pub enum Action
 {
@@ -11,6 +12,7 @@ pub enum Action
     ClearAllNodesFromSelectedNodes,
     MoveSelectedNodes { canvas_delta_position: egui::Vec2 },
     ClickedInputPort { port_key: NodeGraphKey },
+    SetInputPortValue { port_key: NodeGraphKey, display_value: DisplayValue},
     ClickedOutputPort { port_key: NodeGraphKey },
     StopPortSearch,
     CreateViewport { name: &'static str },
