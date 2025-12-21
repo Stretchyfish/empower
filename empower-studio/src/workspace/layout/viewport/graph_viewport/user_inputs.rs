@@ -11,6 +11,7 @@ pub fn get_graph_viewport_user_inputs(ui: &mut egui::Ui) -> GraphViewportUserInp
     let mut left_is_down = false;
     let mut right_clicked = false;
     let mut left_shift_is_down = false;
+    let mut clicked_backspace = false;
 
     if ui_rect.contains(mouse_position) == true
     {
@@ -18,16 +19,18 @@ pub fn get_graph_viewport_user_inputs(ui: &mut egui::Ui) -> GraphViewportUserInp
         left_is_down = ui.input(|i| i.pointer.primary_down());
         right_clicked = ui.input(|i| i.pointer.secondary_clicked());
         left_shift_is_down = ui.input(|i| i.modifiers.shift);
+        clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
     }
 
     GraphViewportUserInputs
     {
         mouse_is_inside_viewport,
-        mouse_position: mouse_position,
-        left_clicked: left_clicked, 
-        left_is_down: left_is_down,
-        right_clicked: right_clicked,
-        left_shift_is_down: left_shift_is_down,
+        mouse_position,
+        left_clicked, 
+        left_is_down,
+        right_clicked,
+        left_shift_is_down,
+        clicked_backspace,
     }
 }
 
@@ -40,4 +43,5 @@ pub struct GraphViewportUserInputs
     pub left_is_down: bool,
     pub right_clicked: bool,
     pub left_shift_is_down: bool,
+    pub clicked_backspace: bool,
 }

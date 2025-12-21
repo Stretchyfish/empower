@@ -60,12 +60,7 @@ pub fn show_output_port2(
     let output_port = graph_editor.node_graph.get_output_port(output_port_key).unwrap();
     let display_output_port = graph_editor.display_output_ports.get(output_port_key).unwrap();
   
-    let output_port_position =
-    {
-        let display_node = graph_editor.display_nodes.get(&output_port.node_key).unwrap();
-        // display_node.position + display_output_port.position.to_vec2()
-        display_node.position
-    };
+    let output_port_position = display_output_port.position;
 
     // @TODO, make this const
     let output_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 

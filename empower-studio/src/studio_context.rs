@@ -28,7 +28,12 @@ impl StudioContext
             match action
             {
                 Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },
+                Action::RemoveNode { node_key } => { self.graph_editor.remove_node(&node_key); },
+                Action::CopyNode { node_key } => { todo!() },
                 Action::ToggleNodeSelection { node_key } => self.graph_editor.toggle_node_selection(&node_key), 
+                Action::AddNodeToSelectedNodes { node_key } => self.graph_editor.add_node_to_selection(&node_key),
+                Action::AddNodesToSelectedNodes { node_keys } => for node_key in node_keys { self.graph_editor.add_node_to_selection(&node_key); },
+                Action::RemoveAllNodesFromSelectedNodes => self.graph_editor.clear_node_selection(), // @TOOD, this should be renamed clear?
                 Action::MoveSelectedNodes { canvas_delta_position } => self.graph_editor.move_selected_nodes(&canvas_delta_position),
                 Action::CreateViewport { name } => { self.layout.add_viewport( name ); },
                 Action::ToggleDebugWindow => self.layout.debug_window_active = !self.layout.debug_window_active,
@@ -36,6 +41,13 @@ impl StudioContext
                 {
                     let mut empower_executor = EmpowerExecutor::new(self.graph_editor.node_graph.clone(), true, true);
                     empower_executor.start_node_graph();
+
+                    self.graph_editor.executor = Some( empower_executor );
+                },
+                Action::StartNodeGraphExecutionFromEntry { node_key } =>
+                {
+                    let mut empower_executor = EmpowerExecutor::new(self.graph_editor.node_graph.clone(), true, true);
+                    empower_executor.start_node_graph_from_entry( &node_key );
 
                     self.graph_editor.executor = Some( empower_executor );
                 },

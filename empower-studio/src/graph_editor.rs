@@ -122,6 +122,12 @@ impl GraphEditor
 
     pub fn remove_node(&mut self, node_key: &NodeGraphKey)
     {
+        // First check and remove the node key from selected nodes
+        if self.selected_nodes.contains(node_key)
+        {
+            self.selected_nodes.retain(|x| x != node_key ); // Removes all elements with this value
+        }
+
         let node_handle = self.node_graph.get_node_handle(node_key);
 
         self.node_graph.remove_node(node_key);
@@ -217,6 +223,16 @@ impl GraphEditor
         self.refresh_display_node(node_key);
     }
 
+    pub fn add_node_to_selection(&mut self, node_key: &NodeGraphKey)
+    {
+        if self.selected_nodes.contains(node_key)
+        {
+            return;
+        }
+
+        self.selected_nodes.push( *node_key );
+    }
+
     pub fn toggle_node_selection(&mut self, node_key: &NodeGraphKey)
     {
         if self.selected_nodes.contains(node_key)
@@ -228,15 +244,20 @@ impl GraphEditor
         self.selected_nodes.push( *node_key );
     }
 
+    pub fn clear_node_selection(&mut self)
+    {
+        self.selected_nodes.clear();
+    }
+
     pub fn move_selected_nodes(&mut self, canvas_delta_position: &egui::Vec2)
     {
-        for node_key in &self.selected_nodes
+        for node_key in &self.selected_nodes.clone() // This is needed for borrow with refresh display node
         {
             let display_node = self.display_nodes.get_mut(node_key).unwrap();
             display_node.position += *canvas_delta_position;
-        }
 
-        // @TODO, this whole refresh needs a rework
-        // graph_editor.refresh_display_node(selected_node_key);
+            // @TODO, this whole refresh needs a rework
+            self.refresh_display_node(*node_key);
+        }
     }
 }

@@ -7,6 +7,7 @@ pub use display_port::DisplayValue;
 mod display_node_kind;
 pub use display_node_kind::DisplayNodeKind;
 use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;
+use empower_engine::node_graph::node::NodeKind;
 
 #[derive(Clone)]
 pub struct DisplayNode

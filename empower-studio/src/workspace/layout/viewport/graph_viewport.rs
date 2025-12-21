@@ -21,12 +21,15 @@ use node_select_panel::NodeSelectionPanel;
 mod port_searcher;
 use port_searcher::PortSearcher;
 
+mod quick_menu;
+use quick_menu::QuickMenu;
+
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
     scene_rect: egui::Rect,
     port_searcher: Option<PortSearcher>,
-    quick_menu: Option<egui::Pos2>,
+    quick_menu: Option<QuickMenu>,
     node_area_select: Option<NodeAreaSelect>,
     node_select_panel: Option<NodeSelectionPanel>,
 }
@@ -60,6 +63,16 @@ impl Viewport for GraphViewport
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
         self.show_canvas(ui, graph_editor, &user_inputs, viewport_name, action_queue);
+
+        self.process_user_inputs2(&user_inputs, graph_editor, action_queue);
+
+        // if !action_queue.is_empty()
+        // {
+        //     return;
+        // }
+        //
+
+        
         // let widget_responses = self.view_canvas(ui, &user_inputs, graph_editor, viewport_name, action_queue);
 
         // let wideget_interaction_happened = self.process_widget_responses(&widget_responses, graph_editor);
@@ -99,14 +112,135 @@ impl GraphViewport
                 self.mouse_scene_position_last_frame = mouse_scene_position;
             }
 
+            for node_key in graph_editor.selected_nodes.clone()
+            {
+                node_widget::highlight(scene_ui, &node_key, graph_editor);
+            }
+
+            if self.node_area_select.is_some()
+            {
+                for node_key in self.node_area_select.as_ref().unwrap().get_nodes_inside_of_area_select()
+                {
+                    node_widget::highlight(scene_ui, &node_key, graph_editor);
+                }
+            }
+
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect();
             for node_key in node_keys
             {
-                node_widget::show_2(scene_ui, &node_key, graph_editor, &viewport_name, action_queue);
+                node_widget::show_2(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue);
             }
 
+            debug_info_widget::nodes_debug_info_show(scene_ui, &graph_editor);
             
+            let connection_keys = graph_editor.node_graph.get_all_connections();
+            for connection in connection_keys
+            {
+                connection_widget::show(scene_ui, graph_editor, connection);
+            }
+
+            if self.node_area_select.is_some()
+            {
+                scene_ui.painter().rect_filled(self.node_area_select.as_ref().unwrap().rect, 0.5, egui::Color32::from_rgba_unmultiplied(255, 140, 0, 70));
+            }
+
+            if self.port_searcher.is_some()
+            {
+                connection_widget::show_connection_search(scene_ui, graph_editor, &self.port_searcher.as_ref().unwrap(), &self.mouse_scene_position_last_frame);
+            }
+            
+            if self.quick_menu.is_some()
+            {
+                self.quick_menu.as_mut().unwrap().show(scene_ui, graph_editor, action_queue);
+            }
+
+            if self.node_select_panel.is_some()
+            {
+                let added_node = self.node_select_panel.as_mut().unwrap().show(scene_ui, graph_editor, &self.mouse_scene_position_last_frame, action_queue);
+
+                if added_node
+                {
+                    self.node_select_panel = None;
+                }
+            }
         });
+
+        self.scene_rect = scene_rect;
+    }
+
+    fn process_user_inputs2(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &GraphEditor, action_queue: &mut Vec<Action>)
+    {
+        if !user_inputs.mouse_is_inside_viewport
+        {
+            return;
+        }
+
+        // Process quick menu behavior
+        if user_inputs.right_clicked && graph_editor.selected_nodes.len() > 0 && self.quick_menu.is_none()
+        {
+            self.quick_menu = Some( QuickMenu::new(self.mouse_scene_position_last_frame.clone()) );
+            return;
+        }
+
+        if (user_inputs.left_clicked || user_inputs.right_clicked) && self.quick_menu.is_some()
+        {
+            self.quick_menu = None;
+            return;
+        }
+
+        // Process toggling of node selection panel
+        if user_inputs.right_clicked && self.node_select_panel.is_some()
+        {
+            self.node_select_panel = None;
+            return;
+        }
+
+        if user_inputs.right_clicked && self.node_select_panel.is_none() && self.quick_menu.is_none()
+        {
+            self.node_select_panel = Some( NodeSelectionPanel::new(user_inputs.mouse_position) );
+            return;
+        }
+
+        // Process node area select behavior
+        if user_inputs.left_is_down && user_inputs.left_shift_is_down && self.node_area_select.is_none()
+        {
+            // In this case its fine to use last frame, as last frame will be current frame
+            self.node_area_select = Some( NodeAreaSelect::new(self.mouse_scene_position_last_frame) );
+            return;
+        } 
+
+        if self.node_area_select.is_some()
+        {
+            let node_area_select = self.node_area_select.as_mut().unwrap();
+            node_area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
+        }
+
+        if self.node_area_select.is_some() && (!user_inputs.left_is_down || !user_inputs.left_shift_is_down)
+        {
+            action_queue.push( Action::AddNodesToSelectedNodes { node_keys: self.node_area_select.as_ref().unwrap().get_nodes_inside_of_area_select() });
+            self.node_area_select = None;
+            return;
+        }
+
+        // Deselect selected nodes
+        if user_inputs.left_clicked && graph_editor.selected_nodes.len() > 0
+        {
+            action_queue.push( Action::RemoveAllNodesFromSelectedNodes );
+            return;
+        }
+
+        // Detect keyboard actions
+        if user_inputs.clicked_backspace
+        {
+            let nodes_to_delete = graph_editor.selected_nodes.clone();
+
+            action_queue.push( Action::RemoveAllNodesFromSelectedNodes );
+            for node_key in nodes_to_delete
+            {
+                action_queue.push( Action::RemoveNode { node_key });
+            }
+            return;
+        }
     }
 
     // @TODO, these functions can be simplified down using Canvas structs for example
@@ -179,14 +313,14 @@ impl GraphViewport
 
             if self.quick_menu.is_some()
             {
-                let clicked_quick_menu_button = self.show_quick_menu(scene_ui, graph_editor);
+                let clicked_quick_menu_button = self.show_quick_menu(scene_ui, graph_editor, &mut Vec::new());
 
-                if clicked_quick_menu_button
-                {
-                    // @TODO, this is a really bad way to detect the interaction in the loop, find a better way!
-                    widget_responses.push( NodeWidgetResponse { key: 0, kind: node_widget::NodeWidgetResponseType::ToggledQuickMenu });
-                    self.quick_menu = None;
-                }
+                // if clicked_quick_menu_button
+                // {
+                //     // @TODO, this is a really bad way to detect the interaction in the loop, find a better way!
+                //     widget_responses.push( NodeWidgetResponse { key: 0, kind: node_widget::NodeWidgetResponseType::ToggledQuickMenu });
+                //     self.quick_menu = None;
+                // }
             }
 
             self.mouse_scene_position_last_frame = mouse_position_in_scene;
@@ -195,7 +329,7 @@ impl GraphViewport
 
         if self.node_select_panel.is_some()
         {
-            let added_node = self.node_select_panel.as_mut().unwrap().show(ui, graph_editor, &self.mouse_scene_position_last_frame);
+            let added_node = self.node_select_panel.as_mut().unwrap().show(ui, graph_editor, &self.mouse_scene_position_last_frame, &mut Vec::new());
 
             if added_node
             {
@@ -277,7 +411,7 @@ impl GraphViewport
         // @TODO, this is not the desired behavior, but will work for now
         if user_inputs.right_clicked && graph_editor.selected_nodes.len() >= 1 && self.quick_menu.is_none()
         {
-            self.quick_menu = Some( self.mouse_scene_position_last_frame );
+            // self.quick_menu = Some( self.mouse_scene_position_last_frame );
             return;
         }
 
@@ -442,75 +576,76 @@ impl GraphViewport
         graph_editor.refresh_node_structure(*node_key, new_node_kind, new_display_node_kind);
     }
 
-    fn show_quick_menu(&self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor) -> bool
+    // @TODO, find a better way to do this behavior
+    fn show_quick_menu(&self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, action_queue: &mut Vec<Action>)
     {
-        if self.quick_menu.is_none()
-        {
-            return false; // @TODO, this check is not really needed, make a decision on that
-        }
+        // if self.quick_menu.is_none()
+        // {
+        //     return false; // @TODO, this check is not really needed, make a decision on that
+        // }
 
-        let menu_position = self.quick_menu.unwrap();
-        let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
+        // let menu_position = self.quick_menu.unwrap();
+        // let quick_menu_rect = egui::Rect::from_min_size(menu_position, egui::Vec2::splat(500.0));
 
         let mut button_clicked = false;
 
-        let mut potentially_new_selected_nodes = Vec::new();
+        // let mut potentially_new_selected_nodes = Vec::new();
 
-        let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
-        ui.scope_builder(quick_menu_ui_builder, |ui|
-        {
-            egui::Frame::popup(ui.style()).show(ui, |ui| 
-            {
-                let selected_nodes = graph_editor.selected_nodes.clone();
+        // let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
+        // ui.scope_builder(quick_menu_ui_builder, |ui|
+        // {
+        //     egui::Frame::popup(ui.style()).show(ui, |ui| 
+        //     {
+        //         let selected_nodes = graph_editor.selected_nodes.clone();
 
-                if selected_nodes.len() == 1
-                {
-                    if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-                    {
-                        // @TODO, move this out from here, when implementing the event system
-                        let mut executor = EmpowerExecutor::new(graph_editor.node_graph.clone(), true, true);
-                        executor.start_node_graph_from_entry(&selected_nodes[0]);
+        //         if selected_nodes.len() == 1
+        //         {
+        //             if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+        //             {
+        //                 action_queue.push( Action::StartNodeGraphExecutionFromEntry { node_key: selected_nodes[0] });
+        //                 // @TODO, move this out from here, when implementing the event system
 
-                        graph_editor.executor = Some( executor );
+        //                 button_clicked = true;
+        //             }
+        //         }
 
-                        button_clicked = true;
-                    }
-                }
+        //         if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+        //         {
+        //             let mut new_node_keys = Vec::new();
+        //             new_node_keys.reserve(selected_nodes.len());
 
-                if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-                {
-                    let mut new_node_keys = Vec::new();
-                    new_node_keys.reserve(selected_nodes.len());
+        //             for node_key in selected_nodes.clone()
+        //             {
+        //                 // @TODO, this needs to be updated based on action system
+        //                 let copied_node_key = graph_editor.create_node_copy(&node_key);
 
-                    for node_key in selected_nodes.clone()
-                    {
-                        let copied_node_key = graph_editor.create_node_copy(&node_key);
+        //                 new_node_keys.push(copied_node_key);
+        //             }
 
-                        new_node_keys.push(copied_node_key);
-                    }
+        //             potentially_new_selected_nodes = new_node_keys;
+        //             println!("Number of selected nodes added: {}, {}", potentially_new_selected_nodes.len(), potentially_new_selected_nodes[0]);
+        //             button_clicked = true;
+        //         }
 
-                    potentially_new_selected_nodes = new_node_keys;
-                    button_clicked = true;
-                }
+        //         if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
+        //         {
+        //             // @TODO, I think this will cause a crash when multiple graph viewports are open
+        //             for selected_node_key in selected_nodes
+        //             {
+        //                 action_queue.push( Action::RemoveNode { node_key: selected_node_key });
+        //             }
+        //             button_clicked = true;
+        //         }
+        //     });
+        // });
 
-                if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
-                {
-                    // @TODO, I think this will cause a crash when multiple graph viewports are open
-                    for selected_node_key in selected_nodes
-                    {
-                        graph_editor.remove_node(&selected_node_key);
-                    }
-                    button_clicked = true;
-                }
-            });
-        });
+        // if button_clicked
+        // {
+        //     action_queue.push( Action::AddNodesToSelectedNodes { node_keys: potentially_new_selected_nodes });
+        //     // graph_editor.selected_nodes = potentially_new_selected_nodes; // @TODO, find a more elegant way of doing this
+        // }
 
-        if button_clicked
-        {
-            graph_editor.selected_nodes = potentially_new_selected_nodes; // @TODO, find a more elegant way of doing this
-        }
-
-        button_clicked
+        // button_clicked
     }
 
     // @TODO, this function is not tested

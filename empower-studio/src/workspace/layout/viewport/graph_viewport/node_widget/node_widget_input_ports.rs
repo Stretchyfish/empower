@@ -142,11 +142,11 @@ pub fn show_input_port2(
     let input_port = graph_editor.node_graph.get_input_port_mut(input_port_key).unwrap();
     let display_input_port = graph_editor.display_input_ports.get_mut(input_port_key).unwrap();
 
-    let input_port_position =
-    {
-        let display_node = graph_editor.display_nodes.get(&input_port.node_key).unwrap();
-        display_node.position + display_input_port.position.to_vec2()
-    };
+    let input_port_position = display_input_port.position;
+    // {
+    //     let display_node = graph_editor.display_nodes.get(&input_port.node_key).unwrap();
+    //     display_node.position + display_input_port.position.to_vec2()
+    // };
     
     // @TODO, make global!
     let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 

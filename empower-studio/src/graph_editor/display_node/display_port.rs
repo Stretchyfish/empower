@@ -11,19 +11,19 @@ pub struct DisplayPort
     pub position: egui::Pos2,
     pub color: egui::Color32,
     pub value: DisplayValue,
-    pub convertable: bool,
+    pub valid: bool,
 }
 
 impl DisplayPort
 {
     pub fn new(text: String, position: egui::Pos2, port_value: &PortValue) -> Self
     {
-        Self { text, position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), convertable: true }
+        Self { text, position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), valid: true }
     }
 
     pub fn nothing(position: egui::Pos2, port_value: &PortValue) -> Self
     {
-        Self { text: String::new(), position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, convertable: true }
+        Self { text: String::new(), position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, valid: true }
     }
 }
 

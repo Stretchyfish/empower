@@ -2,7 +2,8 @@ use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::Node;
 use crate::actions::Action;
 use crate::graph_editor::DisplayNode;
-use crate::graph_editor::GraphEditor; 
+use crate::graph_editor::GraphEditor;
+use crate::workspace::layout::viewport::graph_viewport::node_area_select; 
 
 use super::NodeAreaSelect;
 
@@ -231,6 +232,7 @@ pub fn show_node_body2(
                         graph_editor: &mut GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
+                        node_area_select: &mut Option<NodeAreaSelect>,
                         action_queue: &mut Vec<Action>,
                     )
 {
@@ -239,10 +241,15 @@ pub fn show_node_body2(
     
     let node_position = display_node.position;
     let node_size = display_node.display_kind.node_size(&node.kind);
-    let node_rect= egui::Rect::from_min_size(
+    let node_rect = egui::Rect::from_min_size(
         node_position,
         node_size,
     );
+
+    if node_area_select.is_some()
+    {
+        node_area_select.as_mut().unwrap().check_if_node_is_inside_area_select_and_add_if_it_is(node_key, &node_rect);
+    }
 
     let title_text_font_size = 40.0;
 
@@ -290,7 +297,7 @@ pub fn show_node_body2(
         title_rect_color= egui::Color32::from_rgb(40, 40, 40);
     }
     
-    if node_title_reponse.clicked() || node_title_reponse.secondary_clicked()
+    if node_title_reponse.clicked()
     {
         action_queue.push( Action::ToggleNodeSelection { node_key: node.key });
     }
