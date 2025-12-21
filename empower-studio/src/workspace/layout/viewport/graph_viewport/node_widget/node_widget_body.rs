@@ -377,4 +377,10 @@ pub fn show_node_body2(
 
         display_node.display_kind.state_show(ui, &mut node.kind);
     });
+
+    // if compatibilities_before_change != node.kind.input_compatabilities()
+    // {
+    //     graph_editor.update_node_structure(node_key);
+    //     // graph_editor.refresh_node_structure(node_key, node_kind, display_node_kind);
+    // }
 }

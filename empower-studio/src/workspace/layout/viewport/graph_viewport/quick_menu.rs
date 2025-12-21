@@ -37,19 +37,7 @@ impl QuickMenu
 
                 if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                 {
-                    let mut new_node_keys = Vec::new();
-                    new_node_keys.reserve(selected_nodes.len());
-
-                    for node_key in selected_nodes.clone()
-                    {
-                        // @TODO, this needs to be updated based on action system
-
-                        graph_editor.toggle_node_selection(&node_key);
-                        let copied_node_key = graph_editor.create_node_copy(&node_key);
-                        graph_editor.toggle_node_selection(&copied_node_key);
-
-                        new_node_keys.push(copied_node_key);
-                    }
+                    action_queue.push( Action::CopySelectedNodes );
                 }
 
                 if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
@@ -57,7 +45,7 @@ impl QuickMenu
                     // @WARNING, this could potentially cause problems with multiple windows, so be carefull
                     for selected_node_key in selected_nodes
                     {
-                        action_queue.push( Action::RemoveNode { node_key: selected_node_key });
+                        action_queue.push( Action::DeleteNode { node_key: selected_node_key });
                     }
                 }
 

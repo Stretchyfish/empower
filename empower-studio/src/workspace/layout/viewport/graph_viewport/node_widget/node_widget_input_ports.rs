@@ -242,15 +242,11 @@ pub fn show_input_port2(
                                             toggle, 
                                             egui::RichText::new("").font(egui::FontId::proportional(35.0)));
             ui.put(input_port_checkbox_rect, checkbox);
-
-            // @TODO, do a check here?
-            
         },
     }
 
     if potentially_modified_display_value != display_input_port.value
     {
-        display_input_port.value = potentially_modified_display_value;
-        input_port.value = display_input_port.value.to_port_value(&input_port.compatability).unwrap();
+        graph_editor.set_input_port_value_if_display_value_can_convert(input_port_key, &potentially_modified_display_value);
     } 
 }
