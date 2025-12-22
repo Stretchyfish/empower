@@ -24,6 +24,8 @@ impl DisplayValue
         }
     }
 
+    // Converting to a port value should be done using port compatability, because even if the current value fails,
+    // another one might be compatible
     pub fn to_port_value(&self, port_compatabilities: &PortCompatability) -> Option<PortValue>
     {
         for compatible_value in port_compatabilities.get_compatability_list()

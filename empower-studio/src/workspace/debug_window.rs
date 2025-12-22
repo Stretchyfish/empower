@@ -1,5 +1,7 @@
 // use empower_engine::node_graph;
 
+use empower_engine::node_graph::node::port::PortKind;
+
 use crate::studio_context::StudioContext;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
@@ -12,7 +14,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
     {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.heading("Empower Node Graph");
+                ui.heading("Node Graph");
 
                 ui.label(format!("Input ports: {}", studio_context.graph_editor.node_graph.input_port_count()));
                 ui.label(format!("Output ports: {}", studio_context.graph_editor.node_graph.output_port_count()));
@@ -220,6 +222,41 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                             }
                     });
 
+                    let port_searcher_show =
+                    {
+                        match studio_context.graph_editor.port_searcher
+                        {
+                            Some(_) => "active",
+                            None => "inactive",
+                        }
+                    };
+
+                    egui::CollapsingHeader::new(format!("Port Searcher: {}", port_searcher_show))
+                    .default_open(true)
+                    .show(ui, |ui|
+                    {
+                        if studio_context.graph_editor.port_searcher.is_none()
+                        {
+                            return;
+                        }
+
+                        let port_searcher = studio_context.graph_editor.port_searcher.as_ref().unwrap();
+                        ui.horizontal(|ui|
+                        {
+                            ui.label(format!("Key: {}", port_searcher.port_key));
+
+                            let port_kind_text =
+                            {
+                                match port_searcher.port_kind
+                                {
+                                    PortKind::Input => "input",
+                                    PortKind::Output => "output",
+                                }
+                            };
+
+                            ui.label(format!("Kind: {}", port_kind_text));
+                        });
+                    });
                 });
  
                 ui.add_space(0.5);

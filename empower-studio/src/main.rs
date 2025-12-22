@@ -8,6 +8,7 @@ mod graph_editor;
 use graph_editor::GraphEditor;
 
 mod workspace;
+mod actions;
 
 fn main() -> Result<(), eframe::Error>
 {
@@ -68,6 +69,9 @@ impl eframe::App for EmpowerStudioApplication
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
-        workspace::show(ctx, &mut self.studio_context);        
+        let mut action_queue = Vec::new();
+        workspace::show(ctx, &mut self.studio_context, &mut action_queue);
+
+        self.studio_context.process_actions(action_queue);
     }
 }

@@ -1,5 +1,7 @@
 use egui;
 
+use crate::actions::Action;
+
 use super::StudioContext;
 
 mod tab_viewer;
@@ -11,14 +13,13 @@ pub use layout::Layout;
 mod menu_bar;
 mod debug_window;
 
-pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
+pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queue: &mut Vec<Action>)
 {
-
     debug_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
-        menu_bar::show(ui, studio_context);
+        menu_bar::show(ui, studio_context, action_queue);
     });
 
     egui::CentralPanel::default()
@@ -38,8 +39,9 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             .show_inside(
                 ui,
                 &mut TabViewer {
-                    graph_editor: &mut studio_context.graph_editor,
+                    graph_editor: &studio_context.graph_editor,
                     viewports: &mut studio_context.layout.viewports,
+                    action_queue,
                 },
             );
 
@@ -55,23 +57,6 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             }
 
             executor.execute_node_graph(Some( ui ));
-        }
-
-        // @TODO, find a better location for this?
-        let clicked_backspace = ui.input(|i| i.key_pressed(egui::Key::Backspace));
-        if clicked_backspace
-        {
-            let mut nodes_to_delete = Vec::new();
-            for node_key in studio_context.graph_editor.selected_nodes.iter() // @TODO, find a more effecient way of writting this
-            {
-                nodes_to_delete.push(node_key.clone()); 
-            }
-
-            for node_key in nodes_to_delete
-            {
-                studio_context.graph_editor.remove_node(&node_key);
-                studio_context.graph_editor.selected_nodes = Vec::new();
-            }
         }
     });
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use empower_engine::node_graph::node::NodeKind;
+use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
 
@@ -11,6 +12,9 @@ pub use display_node::DisplayValue;
 mod debug_info;
 use debug_info::DebugInfo;
 
+mod port_searcher;
+use port_searcher::PortSearcher;
+
 use crate::graph_editor::display_node::DisplayNodeKind;
 
 pub struct GraphEditor
@@ -20,6 +24,7 @@ pub struct GraphEditor
     pub display_input_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub selected_nodes: Vec<NodeGraphKey>,
+    pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
     pub executor: Option<EmpowerExecutor>,
 }
@@ -35,6 +40,7 @@ impl GraphEditor
         display_input_ports: HashMap::new(),
         display_output_ports: HashMap::new(),
         selected_nodes: Vec::new(),
+        port_searcher: None,
         debug_info: DebugInfo::new(),
         executor: None,
         };
@@ -57,7 +63,9 @@ impl GraphEditor
 
         // Create display input ports
         let node_input_port_values = self.node_graph.get_node_input_port_values(&node.key);
+        // let node_output_port_values = self.node_graph.get_node_output_port_values(&node.key);
         let display_input_ports = display_node.display_kind.display_input_ports(node_input_port_values);
+        // let display_output_ports = display_node.display_kind.display_output_ports(node_output_port_values);
 
         if node.input_port_keys.len() != display_input_ports.len()
         {
@@ -69,13 +77,20 @@ impl GraphEditor
             self.display_input_ports.insert(node.input_port_keys[index], display_input_ports[index].clone() );
         }
 
+        // for index in 0..node.output_port_keys.len()
+        // {
+        //     self.display_output_ports.insert(node.output_port_keys[index], display_output_ports[index].clone() );
+        // }
+
         // create display output ports
         for output_port_key in &node.output_port_keys
         {
             let output_port = self.node_graph.get_output_port(output_port_key).unwrap();
+
             let display_port = DisplayPort::nothing(position, &output_port.value); // The position is just defaulted here, because it will be correct in refresh display node
             self.display_output_ports.insert(*output_port_key, display_port);
         }
+        // @TODO, this function needs a second look!
         self.display_nodes.insert(node_handle.node_key, display_node);
 
         // Correct position and etc to avoid unessesary code duplication
@@ -113,6 +128,12 @@ impl GraphEditor
 
     pub fn remove_node(&mut self, node_key: &NodeGraphKey)
     {
+        // First check and remove the node key from selected nodes
+        if self.selected_nodes.contains(node_key)
+        {
+            self.selected_nodes.retain(|x| x != node_key ); // Removes all elements with this value
+        }
+
         let node_handle = self.node_graph.get_node_handle(node_key);
 
         self.node_graph.remove_node(node_key);
@@ -148,7 +169,7 @@ impl GraphEditor
             // Updating the display value is done in here to have one function with update behavior, this 
             // has the side effect of updating the display value to the last valid valid if the box is moved
             display_input_port.value = DisplayValue::from_port_value(&input_port.value);
-            display_input_port.convertable = true;
+            display_input_port.valid  = true;
 
             display_input_port.position = display_node.position + egui::Vec2 { x: 0.0, y: input_ports_vertical_offset + display_node_state_size.y };
 
@@ -165,13 +186,12 @@ impl GraphEditor
         }
     }
 
-    // @TODO, consider if functions here can be combined to reduce code re-use
-    pub fn refresh_node_structure(&mut self, node_key: NodeGraphKey, node_kind: &Box<dyn NodeKind>, display_node_kind: &Box<dyn DisplayNodeKind>)
+    pub fn update_node_structure(&mut self, node_key: &NodeGraphKey, node_kind: Box<dyn NodeKind>, display_node_kind: Box<dyn DisplayNodeKind>)
     {
         // @TODO, this whole thing is a mess... Needs to be redone, and add output ports
         let node_handle_before_update = self.node_graph.get_node_handle(&node_key);
 
-        self.node_graph.refresh_node_structure(&node_key, node_kind); // @TODO, find a better name for this
+        self.node_graph.refresh_node_structure(&node_key, &node_kind); // @TODO, find a better name for this
 
         let node_handle_after_update = self.node_graph.get_node_handle(&node_key);
 
@@ -205,6 +225,149 @@ impl GraphEditor
             *self.display_input_ports.get_mut(&display_port_key).unwrap() = updated_input_display_ports_values[index].clone();
         }
 
-        self.refresh_display_node(node_key);
+        self.refresh_display_node(*node_key);
+    }
+
+    pub fn add_node_to_selection(&mut self, node_key: &NodeGraphKey)
+    {
+        if self.selected_nodes.contains(node_key)
+        {
+            return;
+        }
+
+        self.selected_nodes.push( *node_key );
+    }
+
+    pub fn toggle_node_selection(&mut self, node_key: &NodeGraphKey)
+    {
+        if self.selected_nodes.contains(node_key)
+        {
+            self.selected_nodes.retain(|x| x != node_key ); // Removes all elements with this value
+            return;
+        }
+
+        self.selected_nodes.push( *node_key );
+    }
+
+    pub fn clear_node_selection(&mut self)
+    {
+        self.selected_nodes.clear();
+    }
+
+    pub fn move_selected_nodes(&mut self, canvas_delta_position: &egui::Vec2)
+    {
+        for node_key in &self.selected_nodes.clone() // This is needed for borrow with refresh display node
+        {
+            let display_node = self.display_nodes.get_mut(node_key).unwrap();
+            display_node.position += *canvas_delta_position;
+
+            // @TODO, this whole refresh needs a rework
+            self.refresh_display_node(*node_key);
+        }
+    }
+
+    pub fn clicked_input_port(&mut self, port_key: &NodeGraphKey)
+    {
+        if self.port_searcher.is_none()
+        {
+            // First check if the input port already has a connection, remove that connection, and either convert that to a port search or overtake it
+            if self.node_graph.input_port_has_connection(port_key)
+            {
+                let connect_output_port_key = self.node_graph.get_input_port_connection_key(port_key).expect("Tried to access ouptut port in connection-in, not available").clone();
+                self.node_graph.remove_connection(port_key, &connect_output_port_key);
+
+                self.port_searcher = Some( PortSearcher::output_port_searching(connect_output_port_key) );
+                return;
+            }
+
+            self.port_searcher = Some( PortSearcher::input_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap();
+
+        match port_searcher.port_kind
+        {
+            PortKind::Input => // Detect if user clicked another input port while port searching from input
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None; // @TODO, expand this functionality to be more complex
+                }
+            },
+            PortKind::Output => // Detect if ports can be connected
+            {
+                let add_connection_result = self.node_graph.add_connection(port_searcher.port_key, *port_key);
+
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", port_searcher.port_key, *port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
+        }
+        
+    }
+
+    pub fn clicked_output_port(&mut self, port_key: &NodeGraphKey)
+    {
+        if self.port_searcher.is_none()
+        {
+            self.port_searcher = Some( PortSearcher::output_port_searching(*port_key) );
+            return;
+        }
+
+        let port_searcher = self.port_searcher.as_ref().unwrap(); 
+
+        match  port_searcher.port_kind 
+        {
+            PortKind::Output =>
+            {
+                if port_searcher.port_key == *port_key
+                {
+                    self.port_searcher = None;
+                }
+            }
+            PortKind::Input =>
+            {
+                let add_connection_result = self.node_graph.add_connection(*port_key, port_searcher.port_key); 
+
+                // @TODO, remove this, currently its mostly debug info
+                match add_connection_result
+                {
+                    Ok(()) => println!("Added connection: {}, {}", *port_key, port_searcher.port_key),
+                    Err( text ) => println!("Failed to add connection because: {}", text),
+                }
+
+                self.port_searcher = None;
+            },
+        }
+    }
+
+    // @TODO, find a better name
+    pub fn set_input_port_value_if_display_value_can_convert(&mut self, port_key: &NodeGraphKey, new_value: &DisplayValue)
+    {
+        let input_port = self.node_graph.get_input_port_mut(port_key).unwrap();
+        let display_input_port = self.display_input_ports.get_mut(port_key).unwrap();
+
+        display_input_port.value = new_value.clone();
+
+        let new_port_value = display_input_port.value.to_port_value(&input_port.compatability);
+
+        if new_port_value.is_none()
+        {
+            display_input_port.valid = false; // @TODO, consider a better name, like "valid"
+            return;
+        }
+        display_input_port.valid = true;
+
+        input_port.value = new_port_value.unwrap();
+    }
+
+    pub fn stop_port_search(&mut self)
+    {
+        self.port_searcher = None;
     }
 }
