@@ -42,10 +42,12 @@ impl NodeAreaSelect
     // @TODO, maybe find a better name?
     pub fn check_if_node_is_inside_area_select_and_add_if_it_is(&mut self, node_key: &NodeGraphKey, node_rect: &egui::Rect)
     {
-        if self.rect.contains_rect( *node_rect )
+        if self.rect.intersect( *node_rect ).is_positive()
         {
             self.add_node_to_nodes_inside_of_rect( node_key );
         }
+
+        self.remove_node_from_inside_of_rect(node_key);
     }
 
     fn add_node_to_nodes_inside_of_rect(&mut self, node_key: &NodeGraphKey)
@@ -56,5 +58,15 @@ impl NodeAreaSelect
         }
 
         self.nodes_inside_rect.push( *node_key );
+    }
+
+    fn remove_node_from_inside_of_rect(&mut self, node_key: &NodeGraphKey)
+    {
+        if !self.nodes_inside_rect.contains(node_key)
+        {
+            return;
+        }
+
+        self.nodes_inside_rect.retain(|x| x != node_key ); // Removes all elements with this value
     }
 }
