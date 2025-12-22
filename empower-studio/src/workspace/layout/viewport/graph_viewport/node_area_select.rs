@@ -45,6 +45,7 @@ impl NodeAreaSelect
         if self.rect.intersect( *node_rect ).is_positive()
         {
             self.add_node_to_nodes_inside_of_rect( node_key );
+            return;
         }
 
         self.remove_node_from_inside_of_rect(node_key);
