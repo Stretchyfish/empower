@@ -1,6 +1,4 @@
 use empower_engine::NodeGraphKey;
-use empower_engine::node_graph::node::NodeKind;
-use empower_engine::node_graph::node::port::PortCompatability;
 use crate::actions::Action;
 use crate::graph_editor::GraphEditor;
 
@@ -11,15 +9,15 @@ const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 pub fn show_node_body(
                         ui: &mut egui::Ui, 
                         node_key: &NodeGraphKey,
-                        graph_editor: &mut GraphEditor,
+                        graph_editor: &GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
                         node_area_select: &mut Option<NodeAreaSelect>,
                         action_queue: &mut Vec<Action>,
                     )
 {
-    let node = graph_editor.node_graph.get_node_mut(node_key).unwrap();
-    let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
+    let node = graph_editor.node_graph.get_node(node_key).unwrap();
+    let display_node = graph_editor.display_nodes.get(node_key).unwrap();
     
     let node_position = display_node.position;
     let node_size = display_node.display_kind.node_size(&node.kind);
@@ -152,57 +150,21 @@ pub fn show_node_body(
     let state_ui_builder = egui::UiBuilder::new()
     .max_rect(state_max_rect);
 
-    let hash_before_potential_modification = generate_node_hash(&node.kind);
+    let mut node_kind_copy = node.kind.clone();
+    let mut display_node_kind_copy = display_node.display_kind.clone();
 
+    let mut node_was_modified = false;
     ui.scope_builder(state_ui_builder, |ui|
     {
         // This is to ensure the styles and sizes match the rest of the UI
         let style = ui.style_mut();
         style.override_font_id = Some ( egui::FontId::proportional(35.0));
 
-        display_node.display_kind.state_show(ui, &mut node.kind);
+        node_was_modified = display_node_kind_copy.state_show(ui, &mut node_kind_copy);
     });
 
-    if generate_node_hash(&node.kind) != hash_before_potential_modification
+    if node_was_modified
     {
-        action_queue.push( Action::UpdateNode { node_key: node.key });
+        action_queue.push( Action::UpdateNode { node_key: *node_key, node_kind: node_kind_copy, display_node_kind: display_node_kind_copy });
     }
-}
-
-fn generate_node_hash(node_kind: &Box<dyn NodeKind>) -> u64
-{
-    let mut hash = 0;
-    for port_compatability in &node_kind.as_ref().input_compatabilities()
-    {
-        hash += port_compatibility_hash(port_compatability);
-    }
-
-    for port_compatability in &node_kind.as_ref().output_compatabilities()
-    {
-        hash += port_compatibility_hash(port_compatability);
-    }
-
-    hash
-}
-
-fn port_compatibility_hash(port_compatability: &PortCompatability) -> u64
-{
-    let mut hash = 0;
-    for port_value in port_compatability.get_compatability_list()
-    {
-        let hash_add = match port_value
-        {
-            empower_engine::PortValue::Trigger => 0,
-            empower_engine::PortValue::Integer(_) => 1,
-            empower_engine::PortValue::Float(_) => 2,
-            empower_engine::PortValue::Text(_) => 3,
-            empower_engine::PortValue::Bool(_) => 4,
-            empower_engine::PortValue::Vector(_) => 5,
-            empower_engine::PortValue::None => 6,
-        };
-
-        hash += hash_add;
-    }
-
-    hash
 }

@@ -1,10 +1,10 @@
-use empower_engine::NodeGraphKey;
-use crate::graph_editor::DisplayValue;
+use empower_engine::{NodeGraphKey, node_graph::node::NodeKind};
+use crate::graph_editor::{DisplayValue, display_node::DisplayNodeKind};
 
 pub enum Action
 {
     CreateNode { name: &'static str, position: egui::Pos2 },
-    UpdateNode { node_key: NodeGraphKey },
+    UpdateNode { node_key: NodeGraphKey, node_kind: Box<dyn NodeKind>, display_node_kind: Box<dyn DisplayNodeKind>},
     DeleteNode { node_key: NodeGraphKey },
     CopySelectedNodes,
     ToggleNodeSelection { node_key: NodeGraphKey },

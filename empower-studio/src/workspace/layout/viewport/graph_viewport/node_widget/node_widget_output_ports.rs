@@ -5,7 +5,7 @@ use crate::graph_editor::GraphEditor;
 pub fn show_output_port(
                         ui: &mut egui::Ui, 
                         output_port_key: &NodeGraphKey,
-                        graph_editor: &mut GraphEditor,
+                        graph_editor: &GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
                         action_queue: &mut Vec<Action>,

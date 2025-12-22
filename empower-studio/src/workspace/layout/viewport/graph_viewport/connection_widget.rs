@@ -3,7 +3,7 @@ use empower_engine::node_graph::node::port::PortKind;
 
 use crate::graph_editor::GraphEditor;
 
-pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, connection: (NodeGraphKey, NodeGraphKey))
+pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, connection: (NodeGraphKey, NodeGraphKey))
 {
     let display_output_port = graph_editor.display_output_ports.get(&connection.0).expect("Tried to show connection but output port was not available");
     let display_input_port = graph_editor.display_input_ports.get(&connection.1).expect("Tried to show connection but output port was not available");
@@ -13,7 +13,7 @@ pub fn show(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, connection: (Node
     ui.painter().line_segment([display_output_port.position, display_input_port.position], egui::Stroke::new(10.0, connection_color));
 }
 
-pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &mut GraphEditor, mouse_scene_position: &egui::Pos2)
+pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &GraphEditor, mouse_scene_position: &egui::Pos2)
 {
     let port_searcher = graph_editor.port_searcher.as_ref().unwrap();
     

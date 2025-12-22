@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use empower_engine::node_graph::node::NodeKind;
 use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
@@ -13,6 +14,8 @@ use debug_info::DebugInfo;
 
 mod port_searcher;
 use port_searcher::PortSearcher;
+
+use crate::graph_editor::display_node::DisplayNodeKind;
 
 pub struct GraphEditor
 {
@@ -183,19 +186,17 @@ impl GraphEditor
         }
     }
 
-    pub fn update_node_structure(&mut self, node_key: &NodeGraphKey)
+    pub fn update_node_structure(&mut self, node_key: &NodeGraphKey, node_kind: Box<dyn NodeKind>, display_node_kind: Box<dyn DisplayNodeKind>)
     {
         // @TODO, this whole thing is a mess... Needs to be redone, and add output ports
         let node_handle_before_update = self.node_graph.get_node_handle(&node_key);
 
-        let node_kind_copy = self.node_graph.get_node(node_key).unwrap().kind.clone();
-
-        self.node_graph.refresh_node_structure(&node_key, &node_kind_copy); // @TODO, find a better name for this
+        self.node_graph.refresh_node_structure(&node_key, &node_kind); // @TODO, find a better name for this
 
         let node_handle_after_update = self.node_graph.get_node_handle(&node_key);
 
         let display_node = self.display_nodes.get_mut(&node_key).unwrap();
-        // display_node.display_kind = display_node_kind.clone();
+        display_node.display_kind = display_node_kind.clone();
 
         let updated_input_port_values = self.node_graph.get_node_input_port_values(&node_key);
         let updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);

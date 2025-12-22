@@ -19,7 +19,7 @@ pub trait Viewport
         Self: Sized;
 
     fn name(&self) -> &'static str;
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>);
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>);
 }
 
 type ViewportConstructor = fn() -> Box<dyn Viewport>;

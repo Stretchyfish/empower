@@ -11,7 +11,7 @@ mod node_widget_output_ports;
 pub fn show(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    graph_editor: &mut GraphEditor, 
+    graph_editor: &GraphEditor, 
     graph_viewport_title: &String, // @TODO, consider finding a way to combine these?
     node_area_select: &mut Option<NodeAreaSelect>,
     action_queue: &mut Vec<Action>,
@@ -37,7 +37,7 @@ pub fn show(
 pub fn highlight(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    graph_editor: &mut GraphEditor, 
+    graph_editor: &GraphEditor, 
 )
 {
     let node = graph_editor.node_graph.get_node(node_key).unwrap();

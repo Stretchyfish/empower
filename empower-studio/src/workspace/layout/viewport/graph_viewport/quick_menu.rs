@@ -15,7 +15,7 @@ impl QuickMenu
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, action_queue: &mut Vec<Action>)
+    pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, action_queue: &mut Vec<Action>)
     {
         let quick_menu_rect = egui::Rect::from_min_size(self.mouse_position_when_quick_menu_was_activated, egui::Vec2::splat(500.0));
 
@@ -47,8 +47,6 @@ impl QuickMenu
                         action_queue.push( Action::DeleteNode { node_key: selected_node_key });
                     }
                 }
-
-                
             });
         });
     }

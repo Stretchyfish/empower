@@ -6,7 +6,7 @@ use crate::graph_editor::display_node::DisplayValue;
 pub fn show_input_port(
                         ui: &mut egui::Ui, 
                         input_port_key: &NodeGraphKey,
-                        graph_editor: &mut GraphEditor,
+                        graph_editor: &GraphEditor,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
                         action_queue: &mut Vec<Action>,
@@ -14,8 +14,8 @@ pub fn show_input_port(
 {
     let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key); // This needs to be placed here for the borrow checker 
 
-    let input_port = graph_editor.node_graph.get_input_port_mut(input_port_key).unwrap();
-    let display_input_port = graph_editor.display_input_ports.get_mut(input_port_key).unwrap();
+    let input_port = graph_editor.node_graph.get_input_port(input_port_key).unwrap();
+    let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
 
     let input_port_position = display_input_port.position;
     // {

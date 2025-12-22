@@ -1,5 +1,4 @@
 use empower_engine::runtime::EmpowerExecutor;
-
 use crate::graph_editor::GraphEditor;
 use crate::workspace::Layout; 
 use crate::actions::Action;
@@ -29,7 +28,7 @@ impl StudioContext
             {
                 Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },
                 Action::DeleteNode { node_key } => { self.graph_editor.remove_node(&node_key); },
-                Action::UpdateNode { node_key } => { self.graph_editor.update_node_structure(&node_key); }, // @TODO, take a second look at this
+                Action::UpdateNode { node_key, node_kind, display_node_kind } => { self.graph_editor.update_node_structure(&node_key, node_kind, display_node_kind); }, // @TODO, take a second look at this
                 Action::CopySelectedNodes =>
                 {
                     for node_key in self.graph_editor.selected_nodes.clone()
