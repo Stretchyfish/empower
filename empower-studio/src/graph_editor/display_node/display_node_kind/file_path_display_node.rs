@@ -59,6 +59,11 @@ impl DisplayNodeKind for FilePathDisplayNode
             }
         }); 
 
+        if ui.button("Copy to clipboard").clicked()
+        {
+            ui.ctx().copy_text(file_path_state.path.clone());
+        }
+
         if original_file_path != file_path_state.path
         {
             return true;

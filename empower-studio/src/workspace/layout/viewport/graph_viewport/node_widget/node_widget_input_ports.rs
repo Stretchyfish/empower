@@ -98,7 +98,7 @@ pub fn show_input_port(
             }
 
             let text_edit = egui::TextEdit::singleline(text)
-            .char_limit(5)
+            // .char_limit(5)
             .font(egui::FontId::proportional(35.0))
             // .interactive(!port_has_connection)
             .text_color(text_edit_color)
