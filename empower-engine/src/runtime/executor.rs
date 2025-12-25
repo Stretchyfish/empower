@@ -19,8 +19,8 @@ pub struct EmpowerExecutor
     pub execution_queue: VecDeque<NodeGraphKey>,
     pub window_execution: Vec<NodeGraphKey>, // @Find better names for these
     pub background_execution: Vec<NodeGraphKey>,
-    pub window_counter: i32, // @TODO, this might not be needed anymore!
-    window_manager: WindowManager,
+    pub window_manager: WindowManager, // @TODO, keeping this public for debuggging purposes
+    pub running_in_editor: bool,
     pub log: TextBuffer,
     // log: TextBuffer,
 }
@@ -30,12 +30,7 @@ impl EmpowerExecutor
     pub fn new(node_graph: NodeGraph, running_in_editor: bool, debug_mode: bool) -> Self
     {
         let mut window_manager = WindowManager::new();
-
-        if running_in_editor
-        {
-            // @TODO, find a better approach for this
-            window_manager.main_window = Some( 0 );
-        }
+        window_manager.main_window = Some( 0 );
 
         Self
         {
@@ -46,8 +41,8 @@ impl EmpowerExecutor
             execution_queue: VecDeque::new(),
             window_execution: Vec::new(),
             background_execution: Vec::new(),
-            window_counter: 0,
             window_manager,
+            running_in_editor, 
             log: TextBuffer::new(),
         }
     }
@@ -175,6 +170,7 @@ impl EmpowerExecutor
         {
             NodeFunction::Window => 
             {
+                // @TODO, make it automatically detect this earlier
                 if self.window_manager.main_window == None
                 {
                     self.window_manager.main_window = Some( *node_key );
@@ -186,7 +182,6 @@ impl EmpowerExecutor
 
                 self.window_execution.push(*node_key);
                 self.background_execution.push(*node_key);
-                self.window_counter += 1;
             },
             _ => {},
         }
@@ -218,7 +213,7 @@ impl EmpowerExecutor
 
         let main_window_id = self.window_manager.main_window.unwrap();
 
-        if *node_key == main_window_id
+        if !self.running_in_editor && *node_key == main_window_id
         {
             node.kind.execute(ui);
             return;
@@ -485,10 +480,10 @@ impl EmpowerExecutor
 }
 
 #[derive(Clone)]
-struct WindowManager
+pub struct WindowManager // @TODO, pub might not be needed
 {
-    main_window: Option<NodeGraphKey>,
-    sub_windows: HashMap<NodeGraphKey, String>,
+    pub main_window: Option<NodeGraphKey>, // @TODO, make these private
+    pub sub_windows: HashMap<NodeGraphKey, String>,
 }
 
 impl WindowManager
