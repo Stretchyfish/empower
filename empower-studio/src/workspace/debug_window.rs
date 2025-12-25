@@ -1,6 +1,3 @@
-// use empower_engine::node_graph;
-
-use egui::Label;
 use empower_engine::node_graph::node::port::PortKind;
 
 use crate::studio_context::StudioContext;
@@ -32,7 +29,8 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 
             if ui.button("Refresh execution order").clicked()
             {
-                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
+                // let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
+                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order_2(&mut studio_context.graph_editor.node_graph);
                 studio_context.graph_editor.debug_info.node_execution_order = node_execution_order;
             }
         });

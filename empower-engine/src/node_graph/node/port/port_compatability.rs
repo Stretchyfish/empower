@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::PortValue;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub enum PortCompatability
 {
     Exatch(PortValue),
@@ -37,6 +37,15 @@ impl PortCompatability
             PortCompatability::Exatch( value ) => vec![ value.clone() ], 
             PortCompatability::OneOf( value_list ) => value_list.clone(),
             PortCompatability::None => Vec::new()
+        }
+    }
+
+    pub fn is_port_value_type(&self, value_to_find: &PortValue) -> bool
+    {
+        match self
+        {
+            PortCompatability::Exatch( value ) => value.is_same_type_as(value_to_find),
+            _ => false,
         }
     }
 
