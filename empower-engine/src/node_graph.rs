@@ -607,6 +607,41 @@ impl NodeGraph
         next_nodes_to_execute
     }
 
+    pub fn distribute_outputs_2(&mut self, node_key: &NodeGraphKey)
+    {
+        let node = self.nodes.get(node_key).unwrap();
+
+        if node.output_port_keys.is_empty()
+        {
+            return;
+        }
+
+        for output_port_key in &node.output_port_keys
+        {
+            let connected_ports = match self.connections_out.get(output_port_key)
+            {
+                Some( connections ) => connections,
+                None => continue,
+            };
+
+            let output_port = self.output_ports.get(output_port_key).unwrap();
+
+            for connected_input_port_key in connected_ports
+            {
+                let input_port = self.input_ports.get_mut(connected_input_port_key).unwrap();
+
+                let new_input_port_value = output_port.value.clone();
+
+                if !input_port.compatability.contains_port_value_type(&output_port.value)
+                {
+                    panic!("Unable to distribute value between node");
+                }
+
+                input_port.value = new_input_port_value;
+            }
+        }
+    }
+
     pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, port_value: PortValue) -> bool
     {
         let input_port = match self.input_ports.get_mut(port_key)

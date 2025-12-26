@@ -72,12 +72,14 @@ impl EmpowerExecutor
             }
         }
 
-        self.execution_queue.clear();
+        self.execution_queue = VecDeque::from( analysis::detect_execution_order_2(&mut self.node_graph) );
 
-        let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
+        // self.execution_queue.clear();
 
-        self.execution_queue.extend(rouge_nodes);
-        self.execution_queue.push_back(*node_key);
+        // let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
+
+        // self.execution_queue.extend(rouge_nodes);
+        // self.execution_queue.push_back(*node_key);
     }
 
     pub fn stop_node_graph(&mut self)
@@ -118,8 +120,7 @@ impl EmpowerExecutor
             }
 
             self.node_graph.set_output_port_values(&node_key_to_update, &response.unwrap());
-            let distribution_result = self.node_graph.distribute_outputs(&node_key_to_update); 
-            self.execution_queue.extend(distribution_result);
+            self.node_graph.distribute_outputs_2(&node_key_to_update); 
         }
 
         // Setup next nodes in execution queue
@@ -132,8 +133,7 @@ impl EmpowerExecutor
             if response.is_some()// change this to return when you move it back
             {
                 self.node_graph.set_output_port_values(&node_key_to_setup, &response.as_ref().unwrap());
-                let distribution_result = self.node_graph.distribute_outputs(&node_key_to_setup); 
-                self.execution_queue.extend(distribution_result);
+                self.node_graph.distribute_outputs_2(&node_key_to_setup); 
             }
 
             if self.debug_mode 
