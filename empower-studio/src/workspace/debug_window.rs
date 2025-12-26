@@ -30,7 +30,8 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             if ui.button("Refresh execution order").clicked()
             {
                 // let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
-                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order_2(&mut studio_context.graph_editor.node_graph);
+                let start_node_key = 1; // @TODO, find a better way of doing this?
+                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order( &start_node_key, &mut studio_context.graph_editor.node_graph);
                 studio_context.graph_editor.debug_info.node_execution_order = node_execution_order;
             }
         });

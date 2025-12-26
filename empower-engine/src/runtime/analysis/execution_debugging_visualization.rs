@@ -8,7 +8,8 @@ pub fn start_debugging(executor: &mut EmpowerExecutor)
     println!("------------------------ Empower Runtime Debugging -----------------------");
     println!("Node Graph View: ");
     node_graph_quick_overview(&executor.node_graph);
-    println!("Execution order: {:?}", detect_execution_order(&mut executor.node_graph));
+    let start_node_key = 1;
+    println!("Execution order: {:?}", detect_execution_order(&start_node_key, &mut executor.node_graph));
     println!("--------------------------------------------------------------------------");
 }
 

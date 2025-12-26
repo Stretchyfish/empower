@@ -2,44 +2,11 @@ use std::collections::HashSet;
 
 use crate::{NodeGraph, NodeGraphKey, PortValue};
 
-use super::detect_rouge_nodes;
-
-// @TODO, consider finding a way of making the node graph not mut
-pub fn detect_execution_order(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
+pub fn detect_execution_order(entry_node: &NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
 {
     let mut node_execution_order = Vec::new();
 
-    let detected_rouge_nodes = detect_rouge_nodes(node_graph);
-    node_execution_order.extend(detected_rouge_nodes);
-
-    let start_node_key = 1; // @TODO, find a better approach for this!
-
-    node_execution_order.push(start_node_key);
-
-    let mut number_of_nodes_checked = 0;
-
-    // @TODO, find a smarter check than 1000
-    let max_number_of_checks = 1000;
-
-    while number_of_nodes_checked != node_execution_order.len() && number_of_nodes_checked < max_number_of_checks
-    {
-        // @TODO, handle this result better
-        let next_nodes_to_execute = node_graph.distribute_outputs(&node_execution_order[number_of_nodes_checked]);
-
-        node_execution_order.extend(next_nodes_to_execute);
-
-        number_of_nodes_checked += 1;
-    }
-
-    node_execution_order
-}
-
-pub fn detect_execution_order_2(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
-{
-    let mut node_execution_order = Vec::new();
-
-    let start_node_key = 1; // @TODO, find a better approach for this!
-    node_execution_order.push(start_node_key);
+    node_execution_order.push(*entry_node);
 
     let mut cached_output_ports: HashSet<NodeGraphKey> = HashSet::new();
 
@@ -50,15 +17,9 @@ pub fn detect_execution_order_2(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
         let mut potential_new_nodes_to_execute: Vec<NodeGraphKey> = Vec::new();
         determine_is_node_is_ready_for_exeuction(node_execution_order[node_check_index], node_graph, &mut potential_new_nodes_to_execute, &mut cached_output_ports);
 
-        println!("Execution order: {:?}", node_execution_order);
-        println!("Ports in cache: {:?}", cached_output_ports);
-        println!("Node index: {}", node_check_index);
         if !potential_new_nodes_to_execute.is_empty()
         {
-            let range_start = node_check_index;
-            let range_stop = node_check_index + potential_new_nodes_to_execute.len() - 1;
-            node_execution_order.splice(range_start..node_check_index, potential_new_nodes_to_execute);
-           
+            node_execution_order.splice(node_check_index..node_check_index, potential_new_nodes_to_execute);
             continue;
         }
         
@@ -82,7 +43,7 @@ pub fn detect_execution_order_2(node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
 
 // This function is written with a unique set of inputs to make it recursible
 // @TODO, rewrite this with a helper function later.
-pub fn determine_is_node_is_ready_for_exeuction(node_key: NodeGraphKey, node_graph: &mut NodeGraph, new_nodes_to_execute: &mut Vec<NodeGraphKey>, cached_output_ports: &mut HashSet<NodeGraphKey>)
+pub fn determine_is_node_is_ready_for_exeuction(node_key: NodeGraphKey, node_graph: &NodeGraph, new_nodes_to_execute: &mut Vec<NodeGraphKey>, cached_output_ports: &mut HashSet<NodeGraphKey>)
 {
     let node_handle = node_graph.get_node_handle(&node_key);
 
@@ -112,7 +73,7 @@ pub fn determine_is_node_is_ready_for_exeuction(node_key: NodeGraphKey, node_gra
     }
 }
 
-pub fn get_node_trigger_connections(node_key: NodeGraphKey, node_graph: &mut NodeGraph) -> Vec<NodeGraphKey>
+pub fn get_node_trigger_connections(node_key: NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
 {
     let mut trigger_connections: Vec<NodeGraphKey> = Vec::new();
 

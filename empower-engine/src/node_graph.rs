@@ -567,47 +567,7 @@ impl NodeGraph
         }
     }
 
-    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey> 
-    {
-        let node = self.nodes.get(node_key).unwrap();
-
-        if node.output_port_keys.is_empty()
-        {
-            return Vec::new();
-        }
-
-        let mut next_nodes_to_execute = Vec::new(); // @TODO, fill this out
-
-        for output_port_key in &node.output_port_keys
-        {
-            let connected_ports = match self.connections_out.get(output_port_key)
-            {
-                Some( connections ) => connections,
-                None => continue,
-            };
-
-            let output_port = self.output_ports.get(output_port_key).unwrap();
-
-            for connected_input_port_key in connected_ports
-            {
-                let input_port = self.input_ports.get_mut(connected_input_port_key).unwrap();
-
-                let new_input_port_value = output_port.value.clone();
-
-                if !input_port.compatability.contains_port_value_type(&output_port.value)
-                {
-                    panic!("Unable to distribute value between node");
-                }
-
-                input_port.value = new_input_port_value;
-                next_nodes_to_execute.push(input_port.node_key);
-            }
-        }
-
-        next_nodes_to_execute
-    }
-
-    pub fn distribute_outputs_2(&mut self, node_key: &NodeGraphKey)
+    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey)
     {
         let node = self.nodes.get(node_key).unwrap();
 
