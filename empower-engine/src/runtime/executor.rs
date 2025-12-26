@@ -73,11 +73,7 @@ impl EmpowerExecutor
         }
 
         self.execution_queue.clear();
-
-        let rouge_nodes = analysis::detect_rouge_nodes(&self.node_graph);
-
-        self.execution_queue.extend(rouge_nodes);
-        self.execution_queue.push_back(*node_key);
+        self.execution_queue = VecDeque::from( analysis::detect_execution_order(&node_key, &mut self.node_graph) );
     }
 
     pub fn stop_node_graph(&mut self)
@@ -118,8 +114,7 @@ impl EmpowerExecutor
             }
 
             self.node_graph.set_output_port_values(&node_key_to_update, &response.unwrap());
-            let distribution_result = self.node_graph.distribute_outputs(&node_key_to_update); 
-            self.execution_queue.extend(distribution_result);
+            self.node_graph.distribute_outputs(&node_key_to_update); 
         }
 
         // Setup next nodes in execution queue
@@ -128,12 +123,10 @@ impl EmpowerExecutor
             let node_key_to_setup = self.execution_queue[0];
             let response = self.setup_node(&node_key_to_setup);
 
-
             if response.is_some()// change this to return when you move it back
             {
                 self.node_graph.set_output_port_values(&node_key_to_setup, &response.as_ref().unwrap());
-                let distribution_result = self.node_graph.distribute_outputs(&node_key_to_setup); 
-                self.execution_queue.extend(distribution_result);
+                self.node_graph.distribute_outputs(&node_key_to_setup); 
             }
 
             if self.debug_mode 
@@ -144,21 +137,6 @@ impl EmpowerExecutor
             self.execution_queue.pop_front(); // @TODO, add a way to remove running nodes
             responses.push(response.clone()); // @TODO, remove this clone and below
         }
-
-        // @TODO, make this work!
-        // for output in responses
-        // {
-        //     if output.is_none()
-        //     {
-        //         return;
-        //     }
-
-        //     let node_key = 0; // fill out!
-
-        //     self.node_graph.set_output_port_values(&node_key, &output.unwrap());
-        //     let distribution_result = self.node_graph.distribute_outputs(&node_key); 
-        //     self.execution_queue.extend(distribution_result);
-        // }
     }
 
     fn setup_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<PortValue>>

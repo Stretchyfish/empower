@@ -567,16 +567,14 @@ impl NodeGraph
         }
     }
 
-    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey> 
+    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey)
     {
         let node = self.nodes.get(node_key).unwrap();
 
         if node.output_port_keys.is_empty()
         {
-            return Vec::new();
+            return;
         }
-
-        let mut next_nodes_to_execute = Vec::new(); // @TODO, fill this out
 
         for output_port_key in &node.output_port_keys
         {
@@ -600,11 +598,8 @@ impl NodeGraph
                 }
 
                 input_port.value = new_input_port_value;
-                next_nodes_to_execute.push(input_port.node_key);
             }
         }
-
-        next_nodes_to_execute
     }
 
     pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, port_value: PortValue) -> bool

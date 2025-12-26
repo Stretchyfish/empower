@@ -17,7 +17,7 @@ pub fn show(
     action_queue: &mut Vec<Action>,
 )
 {
-    let debug_mode = false; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
+    let debug_mode = true; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
 
     node_widget_body::show_node_body(ui, node_key, graph_editor, graph_viewport_title, &debug_mode, node_area_select, action_queue);
     
