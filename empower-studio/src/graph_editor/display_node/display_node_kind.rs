@@ -21,6 +21,9 @@ use math_graph_display_node::MathGraphDisplayNode;
 mod show_image_display_node;
 use show_image_display_node::ShowImageDisplayNode;
 
+mod condition_display_node;
+use condition_display_node::ConditionDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -56,6 +59,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("vector", || VectorDisplayNode::new() ); 
     m.insert("math graph", || MathGraphDisplayNode::new() ); 
     m.insert("show image", || ShowImageDisplayNode::new() ); 
+    m.insert("condition", || ConditionDisplayNode::new() ); 
 
     m
 });

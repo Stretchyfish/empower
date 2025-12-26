@@ -52,6 +52,11 @@ impl NodeSelectionPanel
                         self.node_to_add = Some( "number" );
                     };
 
+                    if ui.add(egui::Button::new("Condition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                    {
+                        self.node_to_add = Some( "condition" );
+                    };
+
                     if ui.add(egui::Button::new("Boolean").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
                         self.node_to_add = Some( "boolean" );
