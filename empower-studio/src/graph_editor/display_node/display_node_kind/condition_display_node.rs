@@ -23,29 +23,19 @@ impl DisplayNodeKind for ConditionDisplayNode
     }
 
     fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
-        egui::Vec2 { x: 350.0, y: 350.0 }
+        egui::Vec2 { x: 350.0, y: 360.0 }
     }
 
     fn state_size(&self) -> egui::Vec2 {
-        egui::Vec2 { x: 175.0, y: 50.0 }
+        egui::Vec2 { x: 300.0, y: 60.0 }
     }
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
-
-        let mut display_inputs = Vec::new();
-
-        display_inputs.reserve(input_port_values.len());
-        for input_port_value in input_port_values
-        {
-            let display_port = DisplayPort::new(
-                                                "A".to_string(), 
-                                                egui::pos2(0.0, 0.0), 
-                                                &input_port_value
-                                            );
-            display_inputs.push(display_port);
-        }
-
-        display_inputs
+        vec![
+            DisplayPort::new("".to_string(), egui::pos2(0.0, 0.0), &input_port_values[0]),
+            DisplayPort::new("A".to_string(), egui::pos2(0.0, 0.0), &input_port_values[1]),
+            DisplayPort::new("B".to_string(), egui::pos2(0.0, 0.0), &input_port_values[2])
+        ]
     }
 
     fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
@@ -62,19 +52,26 @@ impl DisplayNodeKind for ConditionDisplayNode
 
         let original_condition_type = condition_node_state.condition_type.clone();
 
-        ui.menu_button(condition_node_state.condition_type.to_string(), |ui|
+        let button_text = match condition_node_state.condition_type
         {
-            if ui.button("Equal").clicked()
+            ConditionType::Equal => "A equal to B",
+            ConditionType::GreaterThan => "A greater than B",
+            ConditionType::LessThan => "A less than B",
+        };
+
+        ui.menu_button(button_text, |ui|
+        {
+            if ui.button("A equal to B").clicked()
             {
                 condition_node_state.condition_type = ConditionType::Equal;
             }
-            if ui.button("Greater").clicked()
+            if ui.button("A greater than B").clicked()
             {
-                condition_node_state.condition_type = ConditionType::Greater;
+                condition_node_state.condition_type = ConditionType::GreaterThan;
             }
-            if ui.button("Less").clicked()
+            if ui.button("A less than B").clicked()
             {
-                condition_node_state.condition_type = ConditionType::Less;
+                condition_node_state.condition_type = ConditionType::LessThan;
             }
         });
 

@@ -31,7 +31,7 @@ impl TextBuffer
 
     pub fn add_line(&mut self, line: &String)
     {
-        if (self.lines.len() > self.max_lines)
+        if self.lines.len() > self.max_lines
         {
             self.lines.pop_front();
         }

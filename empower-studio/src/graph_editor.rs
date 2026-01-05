@@ -82,20 +82,6 @@ impl GraphEditor
             self.display_output_ports.insert(node.output_port_keys[index], display_output_ports[index].clone() );
         }
 
-        // for index in 0..node.output_port_keys.len()
-        // {
-        //     self.display_output_ports.insert(node.output_port_keys[index], display_output_ports[index].clone() );
-        // }
-
-        // create display output ports
-        // for output_port_key in &node.output_port_keys
-        // {
-        //     let output_port = self.node_graph.get_output_port(output_port_key).unwrap();
-
-        //     let display_port = DisplayPort::nothing(position, &output_port.value); // The position is just defaulted here, because it will be correct in refresh display node
-        //     self.display_output_ports.insert(*output_port_key, display_port);
-        // }
-        // @TODO, this function needs a second look!
         self.display_nodes.insert(node_handle.node_key, display_node);
 
         // Correct position and etc to avoid unessesary code duplication

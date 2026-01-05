@@ -67,14 +67,14 @@ impl NodeKind for ConditionNode
                     return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
-            ConditionType::Greater =>
+            ConditionType::GreaterThan =>
             {
                 if compare_value > value
                 {
                     return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
-            ConditionType::Less =>
+            ConditionType::LessThan =>
             {
                 if compare_value < value
                 {
@@ -99,8 +99,8 @@ impl NodeKind for ConditionNode
 pub enum ConditionType
 {
     #[default] Equal,
-    Greater,
-    Less,
+    GreaterThan,
+    LessThan,
 }
 
 impl fmt::Display for ConditionType

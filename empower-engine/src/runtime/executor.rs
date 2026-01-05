@@ -279,16 +279,6 @@ impl EmpowerExecutor
 
     }
 
-    fn distribute_node_values(&mut self, node_key: NodeGraphKey)
-    {
-        
-    }
-
-    fn detect_next_nodes_to_execute(&mut self, node_key: NodeGraphKey) -> Vec<NodeGraphKey>
-    {
-        Vec::new()
-    }
-
     // fn setup_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<NodeGraphKey>>
     // {
     //     if self.debug_mode && self.executing_new_node // This statement is for debug only
