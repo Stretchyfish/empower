@@ -5,7 +5,7 @@ use std::ops;
 #[derive(Default, Clone, Debug, PartialEq)]
 pub enum PortValue
 {
-    Trigger,
+    Trigger(bool),
     Integer(i32),
     Float(f32),
     Text(String),
@@ -25,7 +25,7 @@ impl PortValue
     {
         match self
         {
-            PortValue::Trigger => "trigger",
+            PortValue::Trigger(_) => "trigger",
             PortValue::Integer(_) => "integer",
             PortValue::Float(_) => "float",
             PortValue::Text(_) => "text",
@@ -42,7 +42,7 @@ impl fmt::Display for PortValue
 
         match self
         {
-            PortValue::Trigger => write!(f, "trigger"),
+            PortValue::Trigger(value) => write!(f, "trigger {}", value),
             PortValue::Integer(value) => write!(f, "{}", value),
             PortValue::Float(value) => write!(f, "{}", value),
             PortValue::Text(value) => write!(f, "{}", value),

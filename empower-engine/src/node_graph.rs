@@ -567,13 +567,15 @@ impl NodeGraph
         }
     }
 
-    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey)
+    pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey>
     {
+        let mut connected_nodes_to_execute: Vec<NodeGraphKey> = Vec::new();
+        
         let node = self.nodes.get(node_key).unwrap();
 
         if node.output_port_keys.is_empty()
         {
-            return;
+            return Vec::new();
         }
 
         for output_port_key in &node.output_port_keys
@@ -585,6 +587,16 @@ impl NodeGraph
             };
 
             let output_port = self.output_ports.get(output_port_key).unwrap();
+
+            if output_port.value == PortValue::Trigger(true)
+            {
+                for port_key in connected_ports
+                {
+                    let input_port = self.input_ports.get(port_key).unwrap();
+                    connected_nodes_to_execute.push(input_port.node_key);
+                }
+                println!("Got triggered : {:?}", connected_ports);
+            }
 
             for connected_input_port_key in connected_ports
             {
@@ -600,6 +612,8 @@ impl NodeGraph
                 input_port.value = new_input_port_value;
             }
         }
+
+        connected_nodes_to_execute
     }
 
     pub fn set_input_port_value(&mut self, port_key: &NodeGraphKey, port_value: PortValue) -> bool

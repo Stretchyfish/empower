@@ -30,7 +30,7 @@ impl NodeKind for ConditionNode
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         vec![
-            PortCompatability::Exatch( PortValue::Trigger ),
+            PortCompatability::Exatch( PortValue::Trigger(false) ),
             PortCompatability::OneOf( vec![ PortValue::Integer(0), PortValue::Float(0.0) ]),
             PortCompatability::OneOf( vec![ PortValue::Integer(0), PortValue::Float(0.0) ])
         ]
@@ -38,8 +38,8 @@ impl NodeKind for ConditionNode
 
     fn output_compatabilities(&self) -> Vec<PortCompatability> {
         vec![
-            PortCompatability::Exatch( PortValue::Trigger ),
-            PortCompatability::Exatch( PortValue::Trigger )
+            PortCompatability::Exatch( PortValue::Trigger(false) ),
+            PortCompatability::Exatch( PortValue::Trigger(false) )
         ]
     }
 
@@ -67,10 +67,10 @@ impl NodeKind for ConditionNode
 
         if value > compare_value
         {
-            return Some( vec![ PortValue::Trigger, PortValue::Trigger ] );
+            return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
         }
 
-        Some( vec![ PortValue::Trigger, PortValue::Trigger ] )
+        Some( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
     }
 
     fn update(&mut self) -> Option<Vec<PortValue>> {

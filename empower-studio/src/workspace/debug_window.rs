@@ -347,25 +347,33 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                         ui.label(window_name);
                     });
                 }
-                
-
-
-
-                
-
             });
 
+            let cached_output_port_text = format!("Cached Output Ports ({})", executor.cached_output_ports.len());
 
+            egui::CollapsingHeader::new(cached_output_port_text)
+            .default_open(false)
+            .show(ui, |ui| {
 
-            
+                for port_key in executor.cached_output_ports.iter()
+                {
+                    ui.label(format!("{}", port_key));
+                }
+            });
 
+            let executed_nodes_history = format!("Executed nodes history ({})", executor.history.len());
 
+            egui::CollapsingHeader::new(executed_nodes_history)
+            .default_open(false)
+            .show(ui, |ui| {
 
+                for node_key in executor.history.iter()
+                {
+                    ui.label(format!("{}", node_key));
+                }
+            });
 
-                
+            ui.label(format!("Last executed node: {}", executor.last_executed_node));
         });
-
-
-        
     });
 }

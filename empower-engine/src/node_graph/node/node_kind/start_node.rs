@@ -35,7 +35,7 @@ impl NodeKind for StartNode
     fn output_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::from(
             [
-                PortCompatability::Exatch( PortValue::Trigger )
+                PortCompatability::Exatch( PortValue::Trigger(false) )
             ]
         )
     }
@@ -49,7 +49,7 @@ impl NodeKind for StartNode
     }
 
     fn setup(&mut self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>>{
-        Some( Vec::from( [ PortValue::Trigger ] ) )
+        Some( Vec::from( [ PortValue::Trigger(true) ] ) )
     }
 
     fn update(&mut self) -> Option<Vec<PortValue>> {

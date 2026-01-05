@@ -31,7 +31,7 @@ impl NodeKind for PrintNode
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::from(
             [
-                PortCompatability::Exatch( PortValue::Trigger ),
+                PortCompatability::Exatch( PortValue::Trigger(false) ),
                 PortCompatability::OneOf( vec![PortValue::Integer(0), PortValue::Float(0.0), PortValue::Text( String::new() ), PortValue::Bool( false ), PortValue::Vector( Vec::new() ) ])
         ]
         )

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::VecDeque;
 
 use crate::NodeGraph;
@@ -22,6 +23,9 @@ pub struct EmpowerExecutor
     pub window_manager: WindowManager, // @TODO, keeping this public for debuggging purposes
     pub running_in_editor: bool,
     pub log: TextBuffer,
+    pub cached_output_ports: HashSet<NodeGraphKey>,
+    pub history: Vec<NodeGraphKey>,
+    pub last_executed_node: NodeGraphKey,
     // log: TextBuffer,
 }
 
@@ -44,6 +48,9 @@ impl EmpowerExecutor
             window_manager,
             running_in_editor, 
             log: TextBuffer::new(),
+            cached_output_ports: HashSet::new(),
+            history: Vec::new(),
+            last_executed_node: 0,
         }
     }
 
@@ -72,12 +79,19 @@ impl EmpowerExecutor
             }
         }
 
-        self.execution_queue.clear();
-        self.execution_queue = VecDeque::from( analysis::detect_execution_order(&node_key, &mut self.node_graph) );
+        // Use stop node graph to clear any potential cache
+        self.stop_node_graph();
+        
+        // This starts the node graph
+        self.execution_queue.push_front(*node_key);
+
+        // self.execution_queue = VecDeque::from( analysis::detect_execution_order(&node_key, &mut self.node_graph) );
     }
 
     pub fn stop_node_graph(&mut self)
     {
+        // @TODO, should also stop background execution
+        self.cached_output_ports.clear();
         self.execution_queue.clear();
     }
 
@@ -114,19 +128,41 @@ impl EmpowerExecutor
             }
 
             self.node_graph.set_output_port_values(&node_key_to_update, &response.unwrap());
-            self.node_graph.distribute_outputs(&node_key_to_update); 
+            
+            let node_handle = self.node_graph.get_node_handle(&node_key_to_update);
+            self.cached_output_ports.extend(node_handle.output_port_keys);
+
+            let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key_to_update); 
+
+            self.execution_queue.extend(new_nodes_to_execute);
         }
 
         // Setup next nodes in execution queue
         if !self.execution_queue.is_empty() // @TODO, change this if statement to return instead
         {
             let node_key_to_setup = self.execution_queue[0];
-            let response = self.setup_node(&node_key_to_setup);
+            let response = self.setup_node(&node_key_to_setup); // @TODO, change this to not be an option for setup node
 
             if response.is_some()// change this to return when you move it back
             {
                 self.node_graph.set_output_port_values(&node_key_to_setup, &response.as_ref().unwrap());
-                self.node_graph.distribute_outputs(&node_key_to_setup); 
+
+                let node_handle = self.node_graph.get_node_handle(&node_key_to_setup);
+                self.cached_output_ports.extend(node_handle.output_port_keys);
+                
+                let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key_to_setup); 
+
+                let mut extra_nodes_needed_for_execution = Vec::new();
+                for new_node_to_execute_key in &new_nodes_to_execute
+                {
+                    analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
+                }
+
+
+                println!("Added nodes: {:?}", new_nodes_to_execute);
+
+                self.execution_queue.extend(extra_nodes_needed_for_execution);
+                self.execution_queue.extend(new_nodes_to_execute);
             }
 
             if self.debug_mode 
@@ -134,6 +170,9 @@ impl EmpowerExecutor
                 analysis::runtime_debugging(self);
             }
 
+            self.history.push(node_key_to_setup);
+            self.last_executed_node = node_key_to_setup;
+            
             self.execution_queue.pop_front(); // @TODO, add a way to remove running nodes
             responses.push(response.clone()); // @TODO, remove this clone and below
         }
@@ -238,6 +277,16 @@ impl EmpowerExecutor
 
 
 
+    }
+
+    fn distribute_node_values(&mut self, node_key: NodeGraphKey)
+    {
+        
+    }
+
+    fn detect_next_nodes_to_execute(&mut self, node_key: NodeGraphKey) -> Vec<NodeGraphKey>
+    {
+        Vec::new()
     }
 
     // fn setup_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<NodeGraphKey>>

@@ -14,7 +14,7 @@ impl DisplayValue
     {
         match port_value
         {
-            PortValue::Trigger => Self::Nothing,
+            PortValue::Trigger(_) => Self::Nothing,
             PortValue::Integer( int ) => Self::Text( int.to_string() ),
             PortValue::Float( float ) => Self::Text( float.to_string() ),
             PortValue::Text(_) => Self::Text( String::new() ),
