@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
@@ -5,7 +7,7 @@ use super::NodeKind;
 #[derive(Clone)]
 pub struct ConditionNode
 {
-    
+    pub condition_type: ConditionType,
 }
 
 impl NodeKind for ConditionNode
@@ -13,7 +15,7 @@ impl NodeKind for ConditionNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new( Self {} )
+        Box::new( Self { condition_type: ConditionType::Equal } )
     }
 
     fn name(&self) -> &'static str {
@@ -51,21 +53,12 @@ impl NodeKind for ConditionNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
 
-        let compare_value = match inputs[1]
-        {
-            PortValue::Integer(val) => val,
-            _ => panic!("Imposible value!"),
-        };
+        let compare_value = inputs[1];
+        let value = inputs[2];
 
-        let value = match inputs[2]
-        {
-            PortValue::Integer(val) => val,
-            _ => panic!("Imposible value!"),
-        };
-
-        if value > compare_value
+        if compare_value == value
         {
             return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
         }
@@ -77,7 +70,23 @@ impl NodeKind for ConditionNode
         todo!()
     }
 
-    fn execute(&mut self, ui: &mut egui::Ui) {
+    fn execute(&mut self, _: &mut egui::Ui) {
         todo!()
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Eq, Debug)]
+pub enum ConditionType
+{
+    #[default] Equal,
+    Greater,
+    Less,
+}
+
+impl fmt::Display for ConditionType
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
+    {
+        write!(f, "{:?}", self)
     }
 }

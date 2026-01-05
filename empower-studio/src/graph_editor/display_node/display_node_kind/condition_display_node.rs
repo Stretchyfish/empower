@@ -2,6 +2,7 @@ use empower_engine::PortValue;
 use empower_engine::node_graph::node::NodeKind;
 use super::DisplayNodeKind;
 use super::super::DisplayPort;
+use empower_engine::node_graph::node::node_kind::{ConditionNode, ConditionType};
 
 #[derive(Clone)]
 pub struct ConditionDisplayNode
@@ -26,7 +27,7 @@ impl DisplayNodeKind for ConditionDisplayNode
     }
 
     fn state_size(&self) -> egui::Vec2 {
-        egui::Vec2 { x: 0.0, y: 0.0 }
+        egui::Vec2 { x: 175.0, y: 50.0 }
     }
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
@@ -47,7 +48,33 @@ impl DisplayNodeKind for ConditionDisplayNode
         display_inputs
     }
 
-    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> bool {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
+
+        let condition_node_state = node_kind.as_any_mut().downcast_mut::<ConditionNode>().expect("Condition display node tried to unwrap a node_kind that is not the condition node kind");
+
+        let original_condition_type = condition_node_state.condition_type.clone();
+
+        ui.menu_button(condition_node_state.condition_type.to_string(), |ui|
+        {
+            if ui.button("Equal").clicked()
+            {
+                condition_node_state.condition_type = ConditionType::Equal;
+            }
+            if ui.button("Greater").clicked()
+            {
+                condition_node_state.condition_type = ConditionType::Greater;
+            }
+            if ui.button("Less").clicked()
+            {
+                condition_node_state.condition_type = ConditionType::Less;
+            }
+        });
+
+        if original_condition_type != condition_node_state.condition_type
+        {
+            return true;
+        }
+        
         false
     }
 }

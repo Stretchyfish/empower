@@ -44,6 +44,7 @@ use show_image_node::ShowImageNode;
 
 mod condition_node;
 pub use condition_node::ConditionNode;
+pub use condition_node::ConditionType;
 
 pub trait NodeKind
 {

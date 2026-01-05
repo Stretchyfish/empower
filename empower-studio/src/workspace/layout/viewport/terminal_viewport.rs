@@ -90,6 +90,7 @@ impl TerminalViewport
 
         let start_looking_index = self.last_logging_size.as_mut().unwrap();
 
+        // This approach breaks down after log hits 1000 lines, its max, will cause problems!
         for i in *start_looking_index..log.lines.len()
         {
             let new_line = log.lines[i].clone();
