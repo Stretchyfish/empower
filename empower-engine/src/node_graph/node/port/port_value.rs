@@ -86,3 +86,18 @@ impl ops::Mul for PortValue
         }
     }
 }
+
+impl PartialOrd for PortValue
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+
+        match (self, other)
+        {
+            ( PortValue::Integer(a), PortValue::Integer(b)) => a.partial_cmp(b),
+            ( PortValue::Integer(a), PortValue::Float(b)) => (*a as f32).partial_cmp(b),
+            ( PortValue::Float(a), PortValue::Integer(b)) => a.partial_cmp(&(*b as f32)),
+            ( PortValue::Float(a), PortValue::Float(b)) => a.partial_cmp(b),
+            _ => panic!("Tried to compare on two incompatible types"),
+        }
+    }
+}

@@ -58,9 +58,29 @@ impl NodeKind for ConditionNode
         let compare_value = inputs[1];
         let value = inputs[2];
 
-        if compare_value == value
+        match self.condition_type
         {
-            return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+            ConditionType::Equal =>
+            {
+                if compare_value == value
+                {
+                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                }
+            },
+            ConditionType::Greater =>
+            {
+                if compare_value > value
+                {
+                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                }
+            },
+            ConditionType::Less =>
+            {
+                if compare_value < value
+                {
+                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                }
+            },
         }
 
         Some( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
