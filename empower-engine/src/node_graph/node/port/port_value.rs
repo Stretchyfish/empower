@@ -5,7 +5,7 @@ use std::ops;
 #[derive(Default, Clone, Debug, PartialEq)]
 pub enum PortValue
 {
-    Trigger,
+    Trigger(bool),
     Integer(i32),
     Float(f32),
     Text(String),
@@ -25,7 +25,7 @@ impl PortValue
     {
         match self
         {
-            PortValue::Trigger => "trigger",
+            PortValue::Trigger(_) => "trigger",
             PortValue::Integer(_) => "integer",
             PortValue::Float(_) => "float",
             PortValue::Text(_) => "text",
@@ -42,7 +42,7 @@ impl fmt::Display for PortValue
 
         match self
         {
-            PortValue::Trigger => write!(f, "trigger"),
+            PortValue::Trigger(value) => write!(f, "trigger {}", value),
             PortValue::Integer(value) => write!(f, "{}", value),
             PortValue::Float(value) => write!(f, "{}", value),
             PortValue::Text(value) => write!(f, "{}", value),
@@ -83,6 +83,21 @@ impl ops::Mul for PortValue
             ( PortValue::Float(a), PortValue::Integer(b) ) => PortValue::Float( a * b as f32),
             ( PortValue::Integer(a), PortValue::Float(b) ) => PortValue::Float( a as f32 * b),
             _ => panic!("Tried to do multiplication on two incompatible types"),
+        }
+    }
+}
+
+impl PartialOrd for PortValue
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+
+        match (self, other)
+        {
+            ( PortValue::Integer(a), PortValue::Integer(b)) => a.partial_cmp(b),
+            ( PortValue::Integer(a), PortValue::Float(b)) => (*a as f32).partial_cmp(b),
+            ( PortValue::Float(a), PortValue::Integer(b)) => a.partial_cmp(&(*b as f32)),
+            ( PortValue::Float(a), PortValue::Float(b)) => a.partial_cmp(b),
+            _ => panic!("Tried to compare on two incompatible types"),
         }
     }
 }

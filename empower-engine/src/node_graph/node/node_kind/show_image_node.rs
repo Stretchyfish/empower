@@ -33,7 +33,7 @@ impl NodeKind for ShowImageNode
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::from(
         [
-            PortCompatability::Exatch( PortValue::Trigger ), 
+            PortCompatability::Exatch( PortValue::Trigger(false) ), 
             PortCompatability::Exatch( PortValue::Text( String::new() ) ), 
         ]
     )

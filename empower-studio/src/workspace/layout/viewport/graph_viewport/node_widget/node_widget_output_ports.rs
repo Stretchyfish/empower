@@ -44,4 +44,16 @@ pub fn show_output_port(
             egui::Color32::BLACK,
         );
     }
+
+    let output_port_text_font_size = 35.0;
+    let output_port_text_offset = egui::Vec2 { x: -40.0, y: 0.0};
+    let output_port_text_position = output_port_position + output_port_text_offset;
+
+    ui.painter().text(
+        output_port_text_position,
+        egui::Align2::RIGHT_CENTER,
+        &display_output_port.text,
+        egui::FontId::proportional(output_port_text_font_size),
+        egui::Color32::WHITE,
+    );
 }

@@ -7,7 +7,7 @@ use super::Viewport;
 pub struct TerminalViewport
 {
     text: TextBuffer,
-    last_logging_size: Option<i32>, // @TODO, this is not an ideal solution for detecting new values
+    last_logging_size: Option<usize>, // @TODO, this is not an ideal solution for detecting new values
 }
 
 impl Viewport for TerminalViewport
@@ -39,13 +39,13 @@ impl Viewport for TerminalViewport
 
 impl TerminalViewport
 {
-    fn show_text_in_buffer(&self, ui: &mut egui::Ui)
+    fn show_text_in_buffer(&mut self, ui: &mut egui::Ui)
     {
         ui.horizontal_top(|ui|
         {
             if ui.button("Clear").clicked()
             {
-                // self.lines.clear();
+                self.text.clear();
             }
 
             if ui.button("Add text").clicked()
@@ -88,14 +88,17 @@ impl TerminalViewport
             self.last_logging_size = Some( 0 );
         }
 
-        let start_looking_index = self.last_logging_size.unwrap() as usize;
+        let start_looking_index = self.last_logging_size.as_mut().unwrap();
 
-        for i in start_looking_index..log.lines.len()
+        // This approach breaks down after log hits 1000 lines, its max, will cause problems!
+        for i in *start_looking_index..log.lines.len()
         {
             let new_line = log.lines[i].clone();
             self.text.add_line(&new_line);
 
             // @TODO, this approach does not account for text added to an existing line
         } 
+
+        *start_looking_index = log.lines.len();
     }
 }

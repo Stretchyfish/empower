@@ -15,6 +15,8 @@ pub fn detect_execution_order(entry_node: &NodeGraphKey, node_graph: &NodeGraph)
     {
         // @TODO, consider a placing this elsewhere!
         let mut potential_new_nodes_to_execute: Vec<NodeGraphKey> = Vec::new();
+
+        // @TODO, this could be optimized, by reusing potential and cached across multiple nodes?
         determine_is_node_is_ready_for_exeuction(node_execution_order[node_check_index], node_graph, &mut potential_new_nodes_to_execute, &mut cached_output_ports);
 
         if !potential_new_nodes_to_execute.is_empty()
@@ -83,7 +85,7 @@ pub fn get_node_trigger_connections(node_key: NodeGraphKey, node_graph: &NodeGra
     {
         let output_port = node_graph.get_output_port(&output_port_key).unwrap();
 
-        if !output_port.compatability.is_port_value_type( &PortValue::Trigger )
+        if !output_port.compatability.is_port_value_type( &PortValue::Trigger(true) )
         {
             continue;
         }

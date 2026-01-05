@@ -26,7 +26,7 @@ pub fn detect_rouge_nodes(node_graph: &NodeGraph) -> Vec<NodeGraphKey>
                 None => panic!("In detect rouge nodes, requested to get input port {}, that does not exist", input_port_key),
             };
 
-            if input_port.value == PortValue::Trigger
+            if input_port.value == PortValue::Trigger(false)
             {
                 node_contains_trigger = true;
                 break;
@@ -42,7 +42,7 @@ pub fn detect_rouge_nodes(node_graph: &NodeGraph) -> Vec<NodeGraphKey>
         {
             let output_port = node_graph.output_ports.get(output_port_key).unwrap();
 
-            if output_port.value == PortValue::Trigger
+            if output_port.value == PortValue::Trigger(true)
             {
                 node_contains_trigger = true;
                 break;

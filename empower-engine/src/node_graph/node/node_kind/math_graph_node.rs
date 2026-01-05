@@ -33,7 +33,7 @@ impl NodeKind for MathGraphNode
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::from(
                 [ 
-                    PortCompatability::Exatch( PortValue::Trigger ),
+                    PortCompatability::Exatch( PortValue::Trigger(false) ),
                     PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
                     PortCompatability::Exatch( PortValue::Vector( Vec::new() )),
                 ]

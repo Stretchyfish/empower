@@ -42,6 +42,10 @@ pub use file_path_node::FilePathNode;
 mod show_image_node;
 use show_image_node::ShowImageNode;
 
+mod condition_node;
+pub use condition_node::ConditionNode;
+pub use condition_node::ConditionType;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -84,6 +88,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(MathGraphNode::new().name(), || MathGraphNode::new());
     m.insert(FilePathNode::new().name(), || FilePathNode::new());
     m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
+    m.insert(ConditionNode::new().name(), || ConditionNode::new());
 
     m
 });
