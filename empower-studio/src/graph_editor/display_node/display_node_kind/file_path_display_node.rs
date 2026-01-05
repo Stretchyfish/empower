@@ -32,6 +32,20 @@ impl DisplayNodeKind for FilePathDisplayNode
         Vec::new()
     }
 
+    fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
+        
+        let mut display_outputs = Vec::new();
+
+        display_outputs.reserve(output_port_values.len());
+        for output_port_value in output_port_values
+        {
+            let display_port = DisplayPort::nothing(egui::pos2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
+            display_outputs.push(display_port);
+        }
+
+        display_outputs
+    }
+
     fn state_size(&self) -> egui::Vec2 {
         egui::Vec2 { x: 600.0, y: 50.0 }
     }

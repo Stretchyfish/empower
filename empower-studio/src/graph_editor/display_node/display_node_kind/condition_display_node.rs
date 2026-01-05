@@ -23,7 +23,7 @@ impl DisplayNodeKind for ConditionDisplayNode
     }
 
     fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
-        egui::Vec2 { x: 350.0, y: 300.0 }
+        egui::Vec2 { x: 350.0, y: 350.0 }
     }
 
     fn state_size(&self) -> egui::Vec2 {
@@ -38,14 +38,22 @@ impl DisplayNodeKind for ConditionDisplayNode
         for input_port_value in input_port_values
         {
             let display_port = DisplayPort::new(
-                                                            "A".to_string(), 
-                                                            egui::pos2(0.0, 0.0), 
-                                                            &input_port_value
-                                                        );
+                                                "A".to_string(), 
+                                                egui::pos2(0.0, 0.0), 
+                                                &input_port_value
+                                            );
             display_inputs.push(display_port);
         }
 
         display_inputs
+    }
+
+    fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
+
+        vec![
+            DisplayPort::new(String::from("true"), egui::pos2(0.0, 0.0), output_port_values[0]),
+            DisplayPort::new(String::from("false"), egui::pos2(0.0, 0.0), output_port_values[1]),
+        ]
     }
 
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {

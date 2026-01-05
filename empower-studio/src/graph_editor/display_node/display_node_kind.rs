@@ -34,6 +34,7 @@ pub trait DisplayNodeKind
     fn clone_box(&self) -> Box<dyn DisplayNodeKind>; // This is needed to enable trait cloning
     fn node_size(&self, node_kind: &Box<dyn NodeKind>) -> egui::Vec2;
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
+    fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool; // The bool indicates a change 
 }
