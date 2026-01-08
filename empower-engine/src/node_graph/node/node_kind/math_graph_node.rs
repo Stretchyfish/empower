@@ -1,6 +1,6 @@
 use egui_plot::{Legend, Line, Plot, PlotPoints};
 
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
 use super::NodeSetupResponse;

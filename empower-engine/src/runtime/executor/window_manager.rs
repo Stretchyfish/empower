@@ -45,7 +45,7 @@ impl WindowManager
     {
         if *node_key == self.main_window_key.unwrap_or(0) // This should never possibly fail, but set to 0 for safety
         {
-            self.main_window_key == None;
+            self.main_window_key = None;
         }
         
         self.windows.remove(node_key);

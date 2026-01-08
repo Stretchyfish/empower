@@ -1,8 +1,7 @@
-use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::Node;
 use crate::actions::Action;
 use crate::graph_editor::display_node::DisplayNodeStateResponse;
-use crate::graph_editor::{DisplayNode, GraphEditor};
+use crate::graph_editor::DisplayNode;
 
 use super::NodeAreaSelect;
 

@@ -8,7 +8,6 @@ use node::NodeHandle;
 use node::node_kind::NODE_REGISTRY;
 use node::port::Port;
 
-use crate::node_graph::node::NodeKind;
 pub use crate::node_graph::node::port::PortValue;
 use crate::node_graph::node::port::PortCompatability;
 

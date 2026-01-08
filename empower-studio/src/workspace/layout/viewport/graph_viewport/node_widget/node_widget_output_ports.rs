@@ -1,7 +1,6 @@
-use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::port::Port;
 use crate::actions::Action;
-use crate::graph_editor::{DisplayPort, GraphEditor};
+use crate::graph_editor::DisplayPort;
 
 pub fn show_output_port(
                         ui: &mut egui::Ui, 

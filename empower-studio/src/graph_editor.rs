@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use empower_engine::node_graph::node::NodeKind;
 use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
@@ -14,8 +13,6 @@ use debug_info::DebugInfo;
 
 mod port_searcher;
 use port_searcher::PortSearcher;
-
-use crate::graph_editor::display_node::DisplayNodeKind;
 
 pub struct GraphEditor
 {
