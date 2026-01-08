@@ -84,6 +84,19 @@ impl NodeGraph
         }
     }
 
+    pub fn contains_node_kind(&self, node_kind: &'static str) -> bool
+    {
+        for node in self.nodes.values()
+        {
+            if node.kind.name() == node_kind
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn get_node_handle(&self, node_key: &NodeGraphKey) -> NodeHandle
     {
         let node = self.nodes.get(node_key).unwrap();

@@ -1,26 +1,25 @@
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}};
 
 use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
 #[derive(Clone)]
-pub struct FilePathNode
+pub struct LoopNode
 {
-    pub path: String,
-
+    
 }
 
-impl NodeKind for FilePathNode
+impl NodeKind for LoopNode
 {
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
-        
-        Box::new( Self { path: String::new() } )
+
+        Box::new( Self {} )
     }
 
     fn name(&self) -> &'static str {
-        "file path"
+        "loop"
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
@@ -28,27 +27,23 @@ impl NodeKind for FilePathNode
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::new()
+        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
     }
 
     fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::from(
-            [ 
-                PortCompatability::Exatch( PortValue::Text( String::new() ))
-            ]
-        )
+        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-    
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 
     fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::Finished( vec![  PortValue::Text( self.path.clone() ) ] )
+        NodeSetupResponse::CreateLoop
     }
 
     fn update(&mut self) -> NodeUpdateResponse {

@@ -1,32 +1,37 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
 use crate::NodeGraph;
 use crate::NodeGraphKey;
 use crate::PortValue;
+use crate::node_graph::node::node_kind::NodeSetupResponse;
+use crate::node_graph::node::node_kind::NodeUpdateResponse;
+
 use crate::utility::text_buffer::TextBuffer;
 use super::analysis;
 
-use crate::node_graph::node::NodeFunction;
+pub mod window_manager;
+pub use window_manager::WindowManager;
+
+pub mod loop_manager;
+pub use loop_manager::LoopManager;
 
 #[derive(Clone)]
 pub struct EmpowerExecutor
 {
     pub node_graph: NodeGraph,
     pub debug_mode: bool,
-    // last_executed_node: NodeGraphKey, // @TODO, consider doing this as a clone, to avoid changed persisting between execution in studio
-    // executing_new_node: bool, // @TODO, consider if this is the best way of triggering the setup functions
-    pub execution_queue: VecDeque<NodeGraphKey>,
-    pub window_execution: Vec<NodeGraphKey>, // @Find better names for these
-    pub background_execution: Vec<NodeGraphKey>,
-    pub window_manager: WindowManager, // @TODO, keeping this public for debuggging purposes
     pub running_in_editor: bool,
+
+    pub execution_queue: VecDeque<NodeGraphKey>,
+    pub nodes_to_update: HashSet<NodeGraphKey>, // @TODO, come up with a better name
+    pub window_manager: WindowManager,
+    pub loop_manager: LoopManager,
+
     pub log: TextBuffer,
     pub cached_output_ports: HashSet<NodeGraphKey>,
     pub history: Vec<NodeGraphKey>,
     pub last_executed_node: NodeGraphKey,
-    // log: TextBuffer,
 }
 
 impl EmpowerExecutor
@@ -34,19 +39,20 @@ impl EmpowerExecutor
     pub fn new(node_graph: NodeGraph, running_in_editor: bool, debug_mode: bool) -> Self
     {
         let mut window_manager = WindowManager::new();
-        window_manager.main_window = Some( 0 );
+        window_manager.main_window_key = Some( 0 );
 
         Self
         {
             node_graph,
             debug_mode,
-            // last_executed_node: 0, // @TODO, find a better approach, its currently set to 0, because 0 is unsued
-            // executing_new_node: true,
-            execution_queue: VecDeque::new(),
-            window_execution: Vec::new(),
-            background_execution: Vec::new(),
-            window_manager,
             running_in_editor, 
+
+            execution_queue: VecDeque::new(),
+            nodes_to_update: HashSet::new(),
+
+            window_manager,
+            loop_manager: LoopManager::new(),
+
             log: TextBuffer::new(),
             cached_output_ports: HashSet::new(),
             history: Vec::new(),
@@ -84,125 +90,54 @@ impl EmpowerExecutor
         
         // This starts the node graph
         self.execution_queue.push_front(*node_key);
-
-        // self.execution_queue = VecDeque::from( analysis::detect_execution_order(&node_key, &mut self.node_graph) );
     }
 
     pub fn stop_node_graph(&mut self)
     {
-        // @TODO, should also stop background execution
         self.cached_output_ports.clear();
         self.execution_queue.clear();
+        self.nodes_to_update.clear();
+        self.window_manager.clear_windows();
     }
 
     pub fn is_running(&self) -> bool
     {
-       !self.execution_queue.is_empty() || !self.background_execution.is_empty()
+       !self.execution_queue.is_empty() || !self.nodes_to_update.is_empty()
     }
 
     pub fn execute_node_graph(&mut self, ui: Option<&mut egui::Ui>)
     {
-        if !self.is_running() { return; }
-
-        // show window nodes
-        if ui.is_some() // This check is not entirely needed, as should only execute windows if ui exist, but good for now
+        if !self.is_running()
         {
-            let ui = ui.unwrap();
+            return;
+        }
+        
+        self.setup_nodes();
+        self.update_nodes();
 
-            for node_key_to_show in self.window_execution.clone()
-            {
-                self.show_node(&node_key_to_show, ui);
-            }
+        if ui.is_none()
+        {
+            return;
         }
 
-        // update background nodes
-        let mut responses = Vec::new();
-        for node_key_to_update in self.background_execution.clone()
-        {
-            let response = self.update_node(&node_key_to_update);
-            responses.push(response.clone()); // @TODO, remove this clone and below
-
-            if response.is_none()
-            {
-                continue; // Change this to return when you move it back!
-            }
-
-            self.node_graph.set_output_port_values(&node_key_to_update, &response.unwrap());
-            
-            let node_handle = self.node_graph.get_node_handle(&node_key_to_update);
-            self.cached_output_ports.extend(node_handle.output_port_keys);
-
-            let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key_to_update); 
-
-            self.execution_queue.extend(new_nodes_to_execute);
-        }
-
-        // Setup next nodes in execution queue
-        if !self.execution_queue.is_empty() // @TODO, change this if statement to return instead
-        {
-            let node_key_to_setup = self.execution_queue[0];
-            let response = self.setup_node(&node_key_to_setup); // @TODO, change this to not be an option for setup node
-
-            if response.is_some()// change this to return when you move it back
-            {
-                self.node_graph.set_output_port_values(&node_key_to_setup, &response.as_ref().unwrap());
-
-                let node_handle = self.node_graph.get_node_handle(&node_key_to_setup);
-                self.cached_output_ports.extend(node_handle.output_port_keys);
-                
-                let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key_to_setup); 
-
-                let mut extra_nodes_needed_for_execution = Vec::new();
-                for new_node_to_execute_key in &new_nodes_to_execute
-                {
-                    analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
-                }
-
-
-                println!("Added nodes: {:?}", new_nodes_to_execute);
-
-                self.execution_queue.extend(extra_nodes_needed_for_execution);
-                self.execution_queue.extend(new_nodes_to_execute);
-            }
-
-            if self.debug_mode 
-            {
-                analysis::runtime_debugging(self);
-            }
-
-            self.history.push(node_key_to_setup);
-            self.last_executed_node = node_key_to_setup;
-            
-            self.execution_queue.pop_front(); // @TODO, add a way to remove running nodes
-            responses.push(response.clone()); // @TODO, remove this clone and below
-        }
+        self.show_windows(ui.unwrap());
     }
 
-    fn setup_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<PortValue>>
+    pub fn setup_nodes(&mut self)
     {
-        let node = self.node_graph.nodes.get_mut(&node_key).unwrap();
+        let next_node_to_setup = self.execution_queue.pop_front();
 
-        // @TODO, fix this
-        match node.kind.function()
+        if next_node_to_setup.is_none()
         {
-            NodeFunction::Window => 
-            {
-                // @TODO, make it automatically detect this earlier
-                if self.window_manager.main_window == None
-                {
-                    self.window_manager.main_window = Some( *node_key );
-                }
-
-                // @TODO, simplify this window manager stuff
-                let window_name = self.window_manager.adjust_window_name( node.kind.name() );
-                self.window_manager.sub_windows.insert(*node_key, window_name);
-
-                self.window_execution.push(*node_key);
-                self.background_execution.push(*node_key);
-            },
-            _ => {},
+            return;
         }
 
+        let next_node_to_setup_key = next_node_to_setup.unwrap();
+        
+        let node = self.node_graph.nodes.get_mut(&next_node_to_setup_key).unwrap();
+
+        // This is done like that because of borrow issues
+        // @TODO, find a better way to write this
         let mut input_port_values = Vec::with_capacity(node.input_port_keys.len());
         for input_port_key in &node.input_port_keys
         {
@@ -210,326 +145,98 @@ impl EmpowerExecutor
             input_port_values.push(&input_port.value);
         } 
 
-        node.kind.setup(input_port_values, &mut self.log)
-    }
+        let setup_response = node.kind.setup(input_port_values);
 
-    fn update_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<PortValue>>
-    {
-        let node = self.node_graph.nodes.get_mut(&node_key).unwrap();
-        node.kind.update()
-    }
-
-    fn show_node(&mut self, node_key: &NodeGraphKey, ui: &mut egui::Ui)
-    {
-        let node = self.node_graph.nodes.get_mut(&node_key).unwrap();
-
-        if self.window_manager.main_window.is_none()
+        match setup_response
         {
-            return; // Should only happen on the first update loop
-        }
-
-        let main_window_id = self.window_manager.main_window.unwrap();
-
-        if !self.running_in_editor && *node_key == main_window_id
-        {
-            node.kind.execute(ui);
-            return;
-        }
-
-        // @TODO, simplify this line
-        let window_title = self.window_manager.sub_windows.get(node_key).unwrap();
-
-        let mut window_open = true;
-        egui::Window::new(window_title)
-        .open(&mut window_open)
-        .show(ui.ctx(), |window_ui|
-        {
-            node.kind.execute(window_ui);
-        });
-
-        if window_open == false
-        {
-            // @TODO, find a better approach here! Also think about the fact that it is modified higher up
-            let mut index_to_remove = 0;
-            for (index, key) in self.background_execution.iter().enumerate()
+            NodeSetupResponse::Finished(outputs) => self.process_node_outputs(&next_node_to_setup_key, outputs),
+            NodeSetupResponse::FinishedWithLog(outputs, text_buffer) =>
             {
-                if key == node_key
-                {
-                    index_to_remove = index;
-                    break;
-                }
+                self.process_node_outputs(&next_node_to_setup_key, outputs);                
+                self.log.add_line(&text_buffer);
+            },
+            NodeSetupResponse::CreateWindow =>
+            {
+                self.window_manager.create_window(&next_node_to_setup_key, node.kind.name());
+                self.nodes_to_update.insert(next_node_to_setup_key);
+            },
+            NodeSetupResponse::CreateLoop => todo!(),
+            NodeSetupResponse::Error(_) => todo!(),
+        }
+    }
+
+    pub fn update_nodes(&mut self)
+    {
+        for node_key in &self.nodes_to_update.clone() // @TODO, find a way to remove this clone
+        {
+            let node = self.node_graph.nodes.get_mut(&node_key).unwrap();
+            let update_response = node.kind.update();
+
+            match update_response
+            {
+                NodeUpdateResponse::Running => continue,
+                NodeUpdateResponse::Finished(outputs) => self.process_node_outputs(node_key, outputs),
+            };
+
+            self.nodes_to_update.remove(node_key); // @TODO, consider moving this out of the update loop, and remove after passing all nodes
+        }
+    }
+
+    fn process_node_outputs(&mut self, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
+    {
+        let node_handle = self.node_graph.get_node_handle(node_key);
+
+        // Set output values
+        self.cached_output_ports.extend(node_handle.output_port_keys);
+        self.node_graph.set_output_port_values(&node_key, &outputs);
+
+        // Distribute outputs and determine which nodes to run next
+        let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key); 
+
+        let mut extra_nodes_needed_for_execution = Vec::new();
+        for new_node_to_execute_key in &new_nodes_to_execute
+        {
+            analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
+        }
+
+        self.execution_queue.extend(extra_nodes_needed_for_execution);
+        self.execution_queue.extend(new_nodes_to_execute);
+    }
+
+    pub fn show_windows(&mut self, ui: &mut egui::Ui)
+    {
+        for (node_key_to_show, window_title) in self.window_manager.get_windows()
+        {
+            let node = self.node_graph.nodes.get_mut(&node_key_to_show).unwrap();
+
+            if self.window_manager.main_window_key.is_none()
+            {
+                return; // Should only happen on the first update loop
             }
 
-            self.background_execution.remove(index_to_remove);
+            let main_window_id = self.window_manager.main_window_key.unwrap();
 
-            for (index, key) in self.window_execution.iter().enumerate()
+            if !self.running_in_editor && node_key_to_show == main_window_id // @TODO, find a better way to organize these
             {
-                if key == node_key
-                {
-                    index_to_remove = index;
-                    break;
-                }
+                node.kind.show(ui);
+                continue;
             }
 
-            self.window_execution.remove(index_to_remove);
-            self.window_manager.sub_windows.remove(node_key);
-        }
-
-
-
-    }
-
-    // fn setup_node(&mut self, node_key: &NodeGraphKey) -> Option<Vec<NodeGraphKey>>
-    // {
-    //     if self.debug_mode && self.executing_new_node // This statement is for debug only
-    //     {
-    //         analysis::runtime_debugging(self);
-    //     }
-
-    //     let node_to_execute = self.node_graph.nodes.get_mut(node_key).expect("View node tried to fetch a node that doesn't exist");
-
-    //     let mut input_port_values = Vec::with_capacity(node_to_execute.input_port_keys.len());
-    //     for input_port_key in &node_to_execute.input_port_keys
-    //     {
-    //         let input_port = self.node_graph.input_ports.get(input_port_key).unwrap();
-    //         input_port_values.push(&input_port.value);
-    //     } 
-        
-    //     let executed_output_values = node_to_execute.kind.setup(input_port_values)
-
-    //     if executed_output_values.is_none()
-    //     {
-    //         return None;
-    //     }
-
-    //     let output_values = executed_output_values.unwrap();
-    //     self.node_graph.set_output_port_values(node_key, &output_values);
-        
-    //     let distribution_result = self.node_graph.distribute_outputs(node_key); 
-    //     Some( distribution_result )
-    // }
-
-    // fn execute_node(&mut self, node_key: &NodeGraphKey, ui: Option<&mut egui::Ui>) -> Option<Vec<NodeGraphKey>>
-    // {
-
-    //     let node_to_execute = self.node_graph.nodes.get_mut(node_key).expect("View node tried to fetch a node that doesn't exist");
-
-    //     // let input_port_values = self.get_node_input_port_values(node_key).clone(); // @Consider if there is a way to avoid this clone
-    //     let mut input_port_values = Vec::with_capacity(node_to_execute.input_port_keys.len());
-    //     for input_port_key in &node_to_execute.input_port_keys
-    //     {
-    //         let input_port = self.node_graph.input_ports.get(input_port_key).unwrap();
-    //         input_port_values.push(&input_port.value);
-    //     } 
-
-    //     let node_needs_seperate_window = self.window_counter > 1;
-
-    //     let mut executed_output_values = None;
-
-    //     // @TODO, fix these nested if statement
-    //     if self.executing_new_node == true
-    //     {
-    //         self.last_executed_node = *node_key;
-    //         self.executing_new_node = false;
-
-    //         match node_to_execute.kind.function()
-    //         {
-    //             NodeFunction::Window => self.window_counter += 1,
-    //             _ => {},
-    //         }
-
-    //         executed_output_values = node_to_execute.kind.setup(input_port_values);
-    //     }
-    //     else 
-    //     {
-    //         if node_needs_seperate_window
-    //         {
-    //             let mut window_open = true;
-
-    //             egui::Window::new("Debug Panel")
-    //             .open(&mut window_open)
-    //             .show(ui.unwrap().ctx(), |window_ui|
-    //             {
-    //                 executed_output_values = node_to_execute.kind.execute(Some( window_ui ));
-    //             });
-
-    //             if !window_open
-    //             {
-    //                 executed_output_values = Some( Vec::new() );
-    //             }
-    //         }
-    //         else 
-    //         {
-    //             executed_output_values = node_to_execute.kind.execute(ui);
-    //         }
-    //     }
-
-        // executed_output_values = 
-        // if node_needs_seperate_window
-        // {
-        //     let ui = ui.expect("Program was instantiated with window nodes, but a ui was not created");
-
-        //     egui::Window::new("Debug Panel")
-        //     .show(ui.ctx(), |window_ui|
-        //     {
-        //         if self.executing_new_node == true
-        //         {
-        //             self.last_executed_node = *node_key;
-        //             self.executing_new_node = false;
-
-        //             match node_to_execute.kind.function()
-        //             {
-        //                 NodeFunction::Window => self.window_counter += 1,
-        //                 _ => {},
-        //             }
-
-        //             node_to_execute.kind.setup(input_port_values)
-        //         }
-        //         else 
-        //         {
-        //             node_to_execute.kind.execute(window_ui)
-        //         };
-
-        //     });
-        // }
-        // else 
-        // {
-        //     if self.executing_new_node == true
-        //     {
-        //         self.last_executed_node = *node_key;
-        //         self.executing_new_node = false;
-
-        //         match node_to_execute.kind.function()
-        //         {
-        //             NodeFunction::Window => self.window_counter += 1,
-        //             _ => {},
-        //         }
-
-        //         node_to_execute.kind.setup(input_port_values)
-        //     }
-        //     else 
-        //     {
-        //         node_to_execute.kind.execute(window_ui)
-        //     };
-
-        // };
-
-
-
-        // let executed_output_values = if self.last_executed_node != *node_key
-        // let executed_output_values = if self.executing_new_node == true
-        // {
-        //     self.last_executed_node = *node_key;
-        //     self.executing_new_node = false;
-
-        //     match node_to_execute.kind.function()
-        //     {
-        //         NodeFunction::Window => self.window_counter += 1,
-        //         _ => {},
-        //     }
-
-        //     node_to_execute.kind.setup(input_port_values)
-        // }
-        // else 
-        // {
-        //     node_to_execute.kind.execute(ui)
-        // };
-
-
-        // let mut logging = TextBuffer::new();
-        // let executed_output_values = node_to_execute.kind.execute(input_port_values, ctx, &mut logging);
-
-//         if executed_output_values.is_none()
-//         {
-//             return None;
-//         }
-
-//         self.executing_new_node = true;
-
-//         let output_values = executed_output_values.unwrap();
-//         self.node_graph.set_output_port_values(node_key, &output_values);
-        
-//         let distribution_result = self.node_graph.distribute_outputs(node_key); 
-//         Some( distribution_result )
-//     }
-// }
-
-// fn handle_node_execution(node: &mut Node, inputs: &Vec<PortValue>, executing_new_node: bool, node_needs_seperate_window: bool, ui: Option< &mut egui::Ui > ) -> Option<Vec<PortValue>>
-// {
-//     let ui = ui.unwrap();
-
-//     if executing_new_node
-//     {
-//         // self.last_executed_node = *node_key;
-//         // self.executing_new_node = false;
-
-//         match node.kind.function()
-//         {
-//             NodeFunction::Window => self.window_counter += 1,
-//             _ => {},
-//         }
-
-//         return node_to_execute.kind.setup(input_port_values);
-//     }
-
-//     if !node_needs_seperate_window
-//     {
-//         return node_to_execute.kind.execute(ui);
-//     }
-
-//     let mut window_open = true;
-
-//     egui::Window::new("Debug Panel")
-//     .open(&mut window_open)
-//     .show(ui.unwrap().ctx(), |window_ui|
-//     {
-//         return node_to_execute.kind.execute(Some( window_ui ));
-//     });
-
-//     if !window_open
-//     {
-//         return Some( Vec::new() );
-//     }
-
-//     None
-// }
-
-}
-
-#[derive(Clone)]
-pub struct WindowManager // @TODO, pub might not be needed
-{
-    pub main_window: Option<NodeGraphKey>, // @TODO, make these private
-    pub sub_windows: HashMap<NodeGraphKey, String>,
-}
-
-impl WindowManager
-{
-    pub fn new() -> Self
-    {
-        Self
-        {
-            main_window: None,
-            sub_windows: HashMap::new(),
-        }
-    }
-
-    pub fn adjust_window_name(&self, node_name: &str) -> String
-    {
-        let mut number_of_windows_with_same_name = 0;
-        for text in self.sub_windows.values()
-        {
-            if text.contains(node_name)
+            let mut window_open = true;
+            egui::Window::new(window_title)
+            .open(&mut window_open)
+            .show(ui.ctx(), |window_ui|
             {
-                number_of_windows_with_same_name += 1;
+                node.kind.show(window_ui);
+            });
+
+            if window_open == true
+            {
+                continue;
             }
-        }
 
-        if number_of_windows_with_same_name == 0
-        {
-            return String::from( node_name );
+            self.window_manager.remove_window(&node_key_to_show);
+            self.nodes_to_update.remove(&node_key_to_show);
         }
-
-        format!("{} ({})", node_name, number_of_windows_with_same_name)
-    } 
+    }
 }

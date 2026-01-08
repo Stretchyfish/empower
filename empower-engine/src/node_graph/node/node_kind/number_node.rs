@@ -3,6 +3,8 @@ use std::fmt;
 use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct NumberNode
@@ -28,10 +30,6 @@ impl NodeKind for NumberNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new(self.clone())
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -62,15 +60,15 @@ impl NodeKind for NumberNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
-        Some( Vec::from( [ inputs[0].clone() ] ))
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+        NodeSetupResponse::Finished(  vec![ inputs[0].clone() ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

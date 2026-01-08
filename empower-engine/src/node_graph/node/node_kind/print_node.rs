@@ -1,6 +1,8 @@
 use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct PrintNode
@@ -24,10 +26,6 @@ impl NodeKind for PrintNode
         Box::new( self.clone() )
     }
 
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
-    }
-
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::from(
             [
@@ -49,20 +47,17 @@ impl NodeKind for PrintNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
 
         println!("PRINTING: {}", inputs[1]);
-        let text = format!("{}", inputs[1]);
-        log.add_line(&text);
-        
-        Some( Vec::new() )
+        NodeSetupResponse::FinishedWithLog( Vec::new(), format!("{}", inputs[1]))
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

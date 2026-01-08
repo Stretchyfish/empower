@@ -27,17 +27,14 @@ impl EmpowerRuntime
 
     pub fn execute(&mut self)
     {
-        let mut window_counter = 0;
-        for node in self.node_graph_executor.node_graph.nodes.values() // @TODO, find a better approach
+        let mut node_graph_uses_graphics = false;
+        if self.node_graph_executor.node_graph.contains_node_kind("math graph") ||
+            self.node_graph_executor.node_graph.contains_node_kind("show image")
         {
-            match node.kind.function()
-            {
-                NodeFunction::Window => window_counter += 1,
-                _ => {},
-            }
+            node_graph_uses_graphics = true;
         }
 
-        if window_counter == 0
+        if node_graph_uses_graphics == false
         {
             while self.node_graph_executor.is_running()  
             {
@@ -46,7 +43,7 @@ impl EmpowerRuntime
 
             return;
         }
-
+        
         let viewport_builder = egui::ViewportBuilder::default()
         .with_always_on_top()
         .with_active(true)

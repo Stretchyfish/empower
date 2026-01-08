@@ -3,6 +3,8 @@ use egui_plot::{Legend, Line, Plot, PlotPoints};
 use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct MathGraphNode
@@ -24,10 +26,6 @@ impl NodeKind for MathGraphNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Window
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -52,7 +50,8 @@ impl NodeKind for MathGraphNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+
         let x_values = match inputs[1]
         {
             PortValue::Vector(port_values) => port_values,
@@ -69,7 +68,7 @@ impl NodeKind for MathGraphNode
         {
             println!("ERROR, math graph values are not same size");
             // return Some( Vec::new() );
-            return None;
+            return NodeSetupResponse::Error( "ERROR, math graph values are not same size".to_string() );
         }
 
         let mut x = Vec::new();
@@ -99,15 +98,14 @@ impl NodeKind for MathGraphNode
 
         self.graph = Some( graph );
 
-        None
+        NodeSetupResponse::CreateWindow
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
-        None
-        
+    fn update(&mut self) -> NodeUpdateResponse {
+        NodeUpdateResponse::Running
     }
 
-    fn execute(&mut self, ui: &mut egui::Ui) {
+    fn show(&mut self, ui: &mut egui::Ui) {
 
         if self.graph.is_none()
         {

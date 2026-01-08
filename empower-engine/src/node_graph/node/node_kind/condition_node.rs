@@ -1,8 +1,10 @@
 use std::fmt;
 
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct ConditionNode
@@ -24,10 +26,6 @@ impl NodeKind for ConditionNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -53,7 +51,7 @@ impl NodeKind for ConditionNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
 
         let compare_value = inputs[1];
         let value = inputs[2];
@@ -64,33 +62,33 @@ impl NodeKind for ConditionNode
             {
                 if compare_value == value
                 {
-                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
             ConditionType::GreaterThan =>
             {
                 if compare_value > value
                 {
-                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
             ConditionType::LessThan =>
             {
                 if compare_value < value
                 {
-                    return Some( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
         }
 
-        Some( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
+        NodeSetupResponse::Finished( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

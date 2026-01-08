@@ -317,11 +317,11 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
             let executor = studio_context.graph_editor.executor.as_ref().unwrap();
 
-            egui::CollapsingHeader::new(format!("Background execution ({})", executor.background_execution.len()))
+            egui::CollapsingHeader::new(format!("Nodes to update ({})", executor.nodes_to_update.len()))
             .default_open(false)
             .show(ui, |ui| {
 
-                for key in executor.background_execution.clone()
+                for key in executor.nodes_to_update.iter()
                 {
                     ui.horizontal(|ui|
                     {
@@ -333,13 +333,22 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             .default_open(false)
             .show(ui, |ui| {
 
+                if executor.window_manager.main_window_key.is_some()
+                {
+                    ui.label(format!("Main window key: {}", executor.window_manager.main_window_key.unwrap()));
+                }
+                else
+                {
+                    ui.label("No main window key");
+                }
+
                 ui.horizontal(|ui|
                 {
                     ui.label("key");
                     ui.label("window name");                    
                 });
                 
-                for (key, window_name) in executor.window_manager.sub_windows.iter()
+                for (key, window_name) in executor.window_manager.windows.iter()
                 {
                     ui.horizontal(|ui|
                     {

@@ -1,10 +1,13 @@
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct AdditionNode
 {
+
 }
 
 impl NodeKind for AdditionNode
@@ -24,10 +27,6 @@ impl NodeKind for AdditionNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new(self.clone())
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -55,17 +54,17 @@ impl NodeKind for AdditionNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
-
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
         let output_value = inputs[0].clone() + inputs[1].clone();
-        Some( Vec::from([ output_value ]) )
+
+        NodeSetupResponse::Finished(  vec![ output_value ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         panic!("Entered execute for addition node, which should not happend");
     }
     
