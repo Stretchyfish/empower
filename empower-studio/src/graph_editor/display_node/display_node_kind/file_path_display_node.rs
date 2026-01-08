@@ -1,6 +1,8 @@
 use empower_engine::PortValue;
 use empower_engine::node_graph::node::NodeKind;
 use empower_engine::node_graph::node::node_kind::FilePathNode;
+use crate::graph_editor::display_node::DisplayNodeStateResponse;
+
 use super::DisplayNodeKind;
 use super::super::DisplayPort;
 
@@ -39,7 +41,7 @@ impl DisplayNodeKind for FilePathDisplayNode
         display_outputs.reserve(output_port_values.len());
         for output_port_value in output_port_values
         {
-            let display_port = DisplayPort::nothing(egui::pos2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
+            let display_port = DisplayPort::nothing(egui::vec2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
             display_outputs.push(display_port);
         }
 
@@ -50,7 +52,7 @@ impl DisplayNodeKind for FilePathDisplayNode
         egui::Vec2 { x: 600.0, y: 50.0 }
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
 
         let file_path_state = node_kind.as_any_mut().downcast_mut::<FilePathNode>().expect("File path display node tried to unwrap a node_kind that is not the file path node kind");
         let original_file_path = file_path_state.path.clone();
@@ -80,9 +82,9 @@ impl DisplayNodeKind for FilePathDisplayNode
 
         if original_file_path != file_path_state.path
         {
-            return true;
+            return DisplayNodeStateResponse::RefreshNodeStructure;
         }
 
-        false
+        DisplayNodeStateResponse::NoChange
     }
 }

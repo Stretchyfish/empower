@@ -64,8 +64,10 @@ impl GraphEditor
         // Create display input ports
         let node_input_port_values = self.node_graph.get_node_input_port_values(&node.key);
         let node_output_port_values = self.node_graph.get_node_output_port_values(&node.key);
-        let display_input_ports = display_node.display_kind.display_input_ports(node_input_port_values);
-        let display_output_ports = display_node.display_kind.display_output_ports(node_output_port_values);
+        let mut display_input_ports = display_node.display_kind.display_input_ports(node_input_port_values);
+        let mut display_output_ports = display_node.display_kind.display_output_ports(node_output_port_values);
+
+        self.adjust_display_port_position_to_node(&mut display_input_ports, &mut display_output_ports, &display_node.display_kind.node_size(&node.kind), &display_node.display_kind.state_size());
 
         if node.input_port_keys.len() != display_input_ports.len()
         {
@@ -84,10 +86,26 @@ impl GraphEditor
 
         self.display_nodes.insert(node_handle.node_key, display_node);
 
-        // Correct position and etc to avoid unessesary code duplication
-        self.refresh_display_node(node_handle.node_key);
-
         true
+    }
+
+    fn adjust_display_port_position_to_node(&self, display_input_ports: &mut Vec<DisplayPort>, display_output_ports: &mut Vec<DisplayPort>, node_size: &egui::Vec2, node_state_size: &egui::Vec2)
+    {
+        let vertical_offset = 120.0;
+        let mut input_ports_vertical_offset = vertical_offset + node_state_size.y;
+
+        for display_input_port in display_input_ports
+        {
+            display_input_port.relative_position = egui::Vec2 { x: 0.0, y: input_ports_vertical_offset};
+            input_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
+        }
+
+        let mut output_ports_vertical_offset = vertical_offset + node_state_size.y;
+        for display_output_port in display_output_ports
+        {
+            display_output_port.relative_position = egui::Vec2 { x: node_size.x, y: output_ports_vertical_offset};
+            output_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
+        }
     }
 
     pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeGraphKey
@@ -111,8 +129,6 @@ impl GraphEditor
             let copied_display_output_port = self.display_output_ports.get(&output_port_key).unwrap().clone();
             self.display_output_ports.insert(copied_node_handle.output_port_keys[index], copied_display_output_port);
         }
-
-        self.refresh_display_node(copied_node_handle.node_key);
 
         copied_node_handle.node_key.clone()
     }
@@ -142,55 +158,26 @@ impl GraphEditor
         self.display_nodes.remove(node_key);
     }
 
-    pub fn refresh_display_node(&mut self, node_key: NodeGraphKey)
-    {
-        let node = self.node_graph.get_node(&node_key).unwrap();
-        let display_node = self.display_nodes.get_mut(&node_key).unwrap();
-        let display_node_size = display_node.display_kind.node_size(&node.kind);
-        let display_node_state_size = display_node.display_kind.state_size();
-
-        let vertical_offset = 120.0;
-        let mut input_ports_vertical_offset = vertical_offset;
-
-        for input_port_key in &node.input_port_keys
-        {
-            let input_port = self.node_graph.get_input_port(input_port_key).unwrap();
-            let display_input_port = self.display_input_ports.get_mut(input_port_key).unwrap();
-
-            // Updating the display value is done in here to have one function with update behavior, this 
-            // has the side effect of updating the display value to the last valid valid if the box is moved
-            display_input_port.value = DisplayValue::from_port_value(&input_port.value);
-            display_input_port.valid  = true;
-
-            display_input_port.position = display_node.position + egui::Vec2 { x: 0.0, y: input_ports_vertical_offset + display_node_state_size.y };
-
-            input_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
-        }
-
-        let mut output_ports_vertical_offset = vertical_offset;
-        for output_port_key in &node.output_port_keys
-        {
-            let display_output_port = self.display_output_ports.get_mut(output_port_key).unwrap();
-            display_output_port.position = display_node.position + egui::Vec2 { x: display_node_size.x, y: output_ports_vertical_offset + display_node_state_size.y };
-
-            output_ports_vertical_offset += 70.0; // Same as port_gap in node_widet_body (should be made global)
-        }
-    }
-
-    pub fn update_node_structure(&mut self, node_key: &NodeGraphKey, node_kind: Box<dyn NodeKind>, display_node_kind: Box<dyn DisplayNodeKind>)
+    pub fn refresh_node_strcuture(&mut self, node_key: &NodeGraphKey)
     {
         // @TODO, this whole thing is a mess... Needs to be redone, and add output ports
         let node_handle_before_update = self.node_graph.get_node_handle(&node_key);
 
-        self.node_graph.refresh_node_structure(&node_key, &node_kind); // @TODO, find a better name for this
+        self.node_graph.refresh_node_structure(&node_key); // @TODO, find a better name for this
 
         let node_handle_after_update = self.node_graph.get_node_handle(&node_key);
 
-        let display_node = self.display_nodes.get_mut(&node_key).unwrap();
-        display_node.display_kind = display_node_kind.clone();
+        let display_node = self.display_nodes.get(&node_key).unwrap();
 
         let updated_input_port_values = self.node_graph.get_node_input_port_values(&node_key);
-        let updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);
+        let updated_output_port_values = self.node_graph.get_node_input_port_values(&node_key);
+        let mut updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);
+        let mut updated_output_display_ports_values = display_node.display_kind.display_output_ports(updated_output_port_values);
+
+        {
+            let node = self.node_graph.get_node(node_key).unwrap();
+            self.adjust_display_port_position_to_node(&mut updated_input_display_ports_values, &mut updated_output_display_ports_values, &display_node.display_kind.node_size(&node.kind), &display_node.display_kind.state_size());
+        }
 
         // If the update caused there to be less input ports than before, remove the extra once
         if node_handle_before_update.input_port_keys.len() > updated_input_display_ports_values.len()
@@ -216,7 +203,7 @@ impl GraphEditor
             *self.display_input_ports.get_mut(&display_port_key).unwrap() = updated_input_display_ports_values[index].clone();
         }
 
-        self.refresh_display_node(*node_key);
+        // @TODO, missimg the same implementation for changed in output ports
     }
 
     pub fn add_node_to_selection(&mut self, node_key: &NodeGraphKey)
@@ -247,13 +234,10 @@ impl GraphEditor
 
     pub fn move_selected_nodes(&mut self, canvas_delta_position: &egui::Vec2)
     {
-        for node_key in &self.selected_nodes.clone() // This is needed for borrow with refresh display node
+        for node_key in &self.selected_nodes 
         {
             let display_node = self.display_nodes.get_mut(node_key).unwrap();
             display_node.position += *canvas_delta_position;
-
-            // @TODO, this whole refresh needs a rework
-            self.refresh_display_node(*node_key);
         }
     }
 

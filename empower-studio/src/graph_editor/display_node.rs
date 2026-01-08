@@ -6,6 +6,7 @@ pub use display_port::DisplayValue;
 
 mod display_node_kind;
 pub use display_node_kind::DisplayNodeKind;
+pub use display_node_kind::DisplayNodeStateResponse;
 use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;
 
 #[derive(Clone)]

@@ -4,7 +4,7 @@ use crate::graph_editor::{DisplayValue, display_node::DisplayNodeKind};
 pub enum Action
 {
     CreateNode { name: &'static str, position: egui::Pos2 },
-    UpdateNode { node_key: NodeGraphKey, node_kind: Box<dyn NodeKind>, display_node_kind: Box<dyn DisplayNodeKind>},
+    RefreshNodeStructure { node_key: NodeGraphKey },
     DeleteNode { node_key: NodeGraphKey },
     CopySelectedNodes,
     ToggleNodeSelection { node_key: NodeGraphKey },

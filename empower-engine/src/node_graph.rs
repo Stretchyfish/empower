@@ -142,8 +142,7 @@ impl NodeGraph
         new_output_port_keys
     }
 
-    // @TODO, find a way to combine these functions, feels like code reuse can be minimized here
-    pub fn refresh_node_structure(&mut self, node_key: &NodeGraphKey, new_node_kind: &Box<dyn NodeKind>)
+    pub fn refresh_node_structure(&mut self, node_key: &NodeGraphKey)
     {
         // This is defined outside of the first scope to avoid borrower issues
         let mut connections_to_remove: Vec<(NodeGraphKey, NodeGraphKey)> = Vec::new();
@@ -155,8 +154,8 @@ impl NodeGraph
             let node = self.nodes.get(node_key).expect("ERROR in refresh node, unable to fetch node key");
 
             // @TODO, see if its possible to put the node back instead of new_node_state
-            let updated_input_compatabilities = new_node_kind.input_compatabilities();
-            let updated_output_compatabilities = new_node_kind.output_compatabilities();
+            let updated_input_compatabilities = node.kind.input_compatabilities();
+            let updated_output_compatabilities = node.kind.output_compatabilities();
 
             // If too many input ports now exist, remove the extra ones
             if node.input_port_keys.len() > updated_input_compatabilities.len()
@@ -260,16 +259,14 @@ impl NodeGraph
             } 
         }
 
-            let node = self.nodes.get_mut(node_key).unwrap();
-            node.kind = new_node_kind.clone_box();
+        let node = self.nodes.get_mut(node_key).unwrap();
+        node.input_port_keys = new_input_port_keys;
+        node.output_port_keys = new_output_port_keys;
 
-            node.input_port_keys = new_input_port_keys;
-            node.output_port_keys = new_output_port_keys;
-
-            for connection in connections_to_remove
-            {
-                self.remove_connection(&connection.0, &connection.1);
-            }
+        for connection in connections_to_remove
+        {
+            self.remove_connection(&connection.0, &connection.1);
+        }
     }
 
     pub fn add_connection(&mut self, output_port_key: NodeGraphKey, input_port_key: NodeGraphKey) -> Result<(), String>

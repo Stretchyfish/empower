@@ -21,6 +21,6 @@ impl Viewport for EmptyViewport
         "empty viewport"
     }
 
-    fn show(&mut self, _: &mut egui::Ui, _: &GraphEditor, _: &String, _: &mut Vec<Action>) {
+    fn show(&mut self, _: &mut egui::Ui, _: &mut GraphEditor, _: &String, _: &mut Vec<Action>) {
     }
 }

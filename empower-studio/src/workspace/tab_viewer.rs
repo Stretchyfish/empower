@@ -5,7 +5,7 @@ use super::layout::Viewport;
 
 pub struct TabViewer<'a>
 {
-    pub graph_editor: &'a GraphEditor,
+    pub graph_editor: &'a mut GraphEditor,
     pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
     pub action_queue: &'a mut Vec<Action>,
 }

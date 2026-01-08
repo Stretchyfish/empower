@@ -39,7 +39,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queu
             .show_inside(
                 ui,
                 &mut TabViewer {
-                    graph_editor: &studio_context.graph_editor,
+                    graph_editor: &mut studio_context.graph_editor,
                     viewports: &mut studio_context.layout.viewports,
                     action_queue,
                 },

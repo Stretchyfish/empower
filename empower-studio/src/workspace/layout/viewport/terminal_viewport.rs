@@ -30,7 +30,7 @@ impl Viewport for TerminalViewport
         "terminal viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, _: &String, _: &mut Vec<Action>) {
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, _: &String, _: &mut Vec<Action>) {
         self.show_text_in_buffer(ui);
         self.add_more_text_if_executer_generated_some(graph_editor);
     }

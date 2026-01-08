@@ -51,7 +51,7 @@ impl Viewport for GraphViewport
         "graph viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) {
+    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
@@ -62,7 +62,7 @@ impl Viewport for GraphViewport
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.left_shift_is_down

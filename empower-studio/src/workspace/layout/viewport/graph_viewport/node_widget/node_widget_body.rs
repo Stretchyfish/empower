@@ -1,6 +1,8 @@
 use empower_engine::NodeGraphKey;
+use empower_engine::node_graph::node::Node;
 use crate::actions::Action;
-use crate::graph_editor::GraphEditor;
+use crate::graph_editor::display_node::DisplayNodeStateResponse;
+use crate::graph_editor::{DisplayNode, GraphEditor};
 
 use super::NodeAreaSelect;
 
@@ -8,17 +10,14 @@ const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 
 pub fn show_node_body(
                         ui: &mut egui::Ui, 
-                        node_key: &NodeGraphKey,
-                        graph_editor: &GraphEditor,
+                        node: &mut Node,
+                        display_node: &mut DisplayNode,
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
                         node_area_select: &mut Option<NodeAreaSelect>,
                         action_queue: &mut Vec<Action>,
                     )
 {
-    let node = graph_editor.node_graph.get_node(node_key).unwrap();
-    let display_node = graph_editor.display_nodes.get(node_key).unwrap();
-    
     let node_position = display_node.position;
     let node_size = display_node.display_kind.node_size(&node.kind);
     let node_rect = egui::Rect::from_min_size(
@@ -28,7 +27,7 @@ pub fn show_node_body(
 
     if node_area_select.is_some()
     {
-        node_area_select.as_mut().unwrap().check_if_node_is_inside_area_select_and_add_if_it_is(node_key, &node_rect);
+        node_area_select.as_mut().unwrap().check_if_node_is_inside_area_select_and_add_if_it_is(&node.key, &node_rect);
     }
 
     let title_text_font_size = 40.0;
@@ -150,21 +149,25 @@ pub fn show_node_body(
     let state_ui_builder = egui::UiBuilder::new()
     .max_rect(state_max_rect);
 
-    let mut node_kind_copy = node.kind.clone();
-    let mut display_node_kind_copy = display_node.display_kind.clone();
+    // let mut node_kind_copy = node.kind.clone();
+    // let mut display_node_kind_copy = display_node.display_kind.clone();
 
-    let mut node_was_modified = false;
+    let mut display_node_state_response = DisplayNodeStateResponse::NoChange;
     ui.scope_builder(state_ui_builder, |ui|
     {
         // This is to ensure the styles and sizes match the rest of the UI
         let style = ui.style_mut();
         style.override_font_id = Some ( egui::FontId::proportional(35.0));
 
-        node_was_modified = display_node_kind_copy.state_show(ui, &mut node_kind_copy);
+        display_node_state_response = display_node.display_kind.state_show(ui, &mut node.kind);
     });
 
-    if node_was_modified
+    match display_node_state_response
     {
-        action_queue.push( Action::UpdateNode { node_key: *node_key, node_kind: node_kind_copy, display_node_kind: display_node_kind_copy });
+        DisplayNodeStateResponse::NoChange => (),
+        DisplayNodeStateResponse::RefreshNodeStructure =>
+        {
+            action_queue.push( Action::RefreshNodeStructure { node_key: node.key });
+        }
     }
 }
