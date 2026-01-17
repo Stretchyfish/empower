@@ -43,11 +43,11 @@ impl NodeKind for LoopNode
     }
 
     fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::CreateLoop
+        NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true) ] )
     }
 
     fn update(&mut self) -> NodeUpdateResponse {
-        todo!()
+        NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true) ] )
     }
 
     fn show(&mut self, _: &mut egui::Ui) {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
@@ -7,14 +8,23 @@ use crate::PortValue;
 use crate::node_graph::node::node_kind::NodeSetupResponse;
 use crate::node_graph::node::node_kind::NodeUpdateResponse;
 
+use crate::runtime::executor::task_manager::TaskId;
 use crate::utility::text_buffer::TextBuffer;
 use super::analysis;
 
 pub mod window_manager;
+use chrono::DateTime;
+use chrono::Local;
 pub use window_manager::WindowManager;
 
 pub mod loop_manager;
 pub use loop_manager::LoopManager;
+
+mod task_manager;
+use task_manager::TaskManager;
+
+mod task;
+use task::Task;
 
 #[derive(Clone)]
 pub struct EmpowerExecutor
@@ -23,6 +33,8 @@ pub struct EmpowerExecutor
     pub debug_mode: bool,
     pub running_in_editor: bool,
 
+    pub tasks: HashMap<i32, Task>,
+    pub task_manager: TaskManager,
     pub execution_queue: VecDeque<NodeGraphKey>,
     pub nodes_to_update: HashSet<NodeGraphKey>, // @TODO, come up with a better name
     pub window_manager: WindowManager,
@@ -30,7 +42,8 @@ pub struct EmpowerExecutor
 
     pub log: TextBuffer,
     pub cached_output_ports: HashSet<NodeGraphKey>,
-    pub history: Vec<NodeGraphKey>,
+    pub history: Vec<NodeGraphKey>, // @TODO, Multiple values here should only be saved in debug mode
+    pub start_time: DateTime<Local>,
     pub last_executed_node: NodeGraphKey,
 }
 
@@ -47,6 +60,9 @@ impl EmpowerExecutor
             debug_mode,
             running_in_editor, 
 
+            tasks: HashMap::new(),
+            task_manager: TaskManager::new(),
+
             execution_queue: VecDeque::new(),
             nodes_to_update: HashSet::new(),
 
@@ -56,6 +72,7 @@ impl EmpowerExecutor
             log: TextBuffer::new(),
             cached_output_ports: HashSet::new(),
             history: Vec::new(),
+            start_time: Local::now(),
             last_executed_node: 0,
         }
     }
@@ -89,7 +106,9 @@ impl EmpowerExecutor
         self.stop_node_graph();
         
         // This starts the node graph
-        self.execution_queue.push_front(*node_key);
+        let task_id = self.task_manager.add_task();
+        self.task_manager.add_node_key(&task_id, node_key);
+        // self.execution_queue.push_front(*node_key);
     }
 
     pub fn stop_node_graph(&mut self)
@@ -102,7 +121,7 @@ impl EmpowerExecutor
 
     pub fn is_running(&self) -> bool
     {
-       !self.execution_queue.is_empty() || !self.nodes_to_update.is_empty()
+        self.task_manager.has_tasks()
     }
 
     pub fn execute_node_graph(&mut self, ui: Option<&mut egui::Ui>)
@@ -111,7 +130,7 @@ impl EmpowerExecutor
         {
             return;
         }
-        
+
         self.setup_nodes();
         self.update_nodes();
 
@@ -121,68 +140,96 @@ impl EmpowerExecutor
         }
 
         self.show_windows(ui.unwrap());
+
+        self.task_manager.cleanup_tasks();
     }
 
     pub fn setup_nodes(&mut self)
     {
-        let next_node_to_setup = self.execution_queue.pop_front();
+        let jobs = self.task_manager.get_next_nodes_to_setup();
 
-        if next_node_to_setup.is_none()
+        for job in jobs
         {
-            return;
-        }
+            let task_id = job.task_id;
+            let next_node_to_setup_key = job.node_key;
+    
+            let node = self.node_graph.nodes.get_mut(&next_node_to_setup_key).unwrap();
 
-        let next_node_to_setup_key = next_node_to_setup.unwrap();
-        
-        let node = self.node_graph.nodes.get_mut(&next_node_to_setup_key).unwrap();
-
-        // This is done like that because of borrow issues
-        // @TODO, find a better way to write this
-        let mut input_port_values = Vec::with_capacity(node.input_port_keys.len());
-        for input_port_key in &node.input_port_keys
-        {
-            let input_port = self.node_graph.input_ports.get(input_port_key).unwrap();
-            input_port_values.push(&input_port.value);
-        } 
-
-        let setup_response = node.kind.setup(input_port_values);
-
-        match setup_response
-        {
-            NodeSetupResponse::Finished(outputs) => self.process_node_outputs(&next_node_to_setup_key, outputs),
-            NodeSetupResponse::FinishedWithLog(outputs, text_buffer) =>
+            // This is done like that because of borrow issues
+            // @TODO, find a better way to write this
+            let mut input_port_values = Vec::with_capacity(node.input_port_keys.len());
+            for input_port_key in &node.input_port_keys
             {
-                self.process_node_outputs(&next_node_to_setup_key, outputs);                
-                self.log.add_line(&text_buffer);
-            },
-            NodeSetupResponse::CreateWindow =>
+                let input_port = self.node_graph.input_ports.get(input_port_key).unwrap();
+                input_port_values.push(&input_port.value);
+            } 
+
+            let setup_response = node.kind.setup(input_port_values);
+
+            match setup_response
             {
-                self.window_manager.create_window(&next_node_to_setup_key, node.kind.name());
-                self.nodes_to_update.insert(next_node_to_setup_key);
-            },
-            NodeSetupResponse::CreateLoop => todo!(),
-            NodeSetupResponse::Error(_) => todo!(),
+                NodeSetupResponse::Finished(outputs) => self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs),
+                NodeSetupResponse::FinishedWithLog(outputs, text_buffer) =>
+                {
+                    self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs);                
+                    self.log.add_line(&text_buffer);
+                },
+                NodeSetupResponse::CreateWindow =>
+                {
+                    self.window_manager.create_window(&next_node_to_setup_key, node.kind.name());
+                    self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
+                    // self.nodes_to_update.insert(next_node_to_setup_key);
+                },
+                NodeSetupResponse::CreateLoop(outputs) =>
+                {
+                    self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
+                    let loop_task_id = self.task_manager.add_loop(&next_node_to_setup_key);
+                    self.process_node_outputs(&loop_task_id, &next_node_to_setup_key, outputs);                
+                },
+                NodeSetupResponse::Error(_) => todo!(),
+            }
+
+            self.history.push(next_node_to_setup_key);
         }
     }
 
     pub fn update_nodes(&mut self)
     {
-        for node_key in &self.nodes_to_update.clone() // @TODO, find a way to remove this clone
+        let jobs = self.task_manager.get_next_nodes_to_update();
+
+        for job in jobs
         {
-            let node = self.node_graph.nodes.get_mut(&node_key).unwrap();
+            let task_id = job.task_id;
+            let node_to_update_key = job.node_key;
+            
+            let node = self.node_graph.nodes.get_mut(&node_to_update_key).unwrap();
             let update_response = node.kind.update();
 
             match update_response
             {
                 NodeUpdateResponse::Running => continue,
-                NodeUpdateResponse::Finished(outputs) => self.process_node_outputs(node_key, outputs),
+                NodeUpdateResponse::Finished(outputs) =>
+                {
+                    self.process_node_outputs(&task_id, &node_to_update_key, outputs);
+                    self.task_manager.remove_node_from_update(&task_id, &node_to_update_key);
+                },
+                NodeUpdateResponse::ContinueLoop(outputs) =>
+                {
+                    let potential_new_loop_task_id = self.task_manager.continue_loop(&node_to_update_key);
+
+                    if potential_new_loop_task_id.is_none() { continue; };
+
+                    println!("Created new task id");
+
+                    self.process_node_outputs(&potential_new_loop_task_id.unwrap(), &node_to_update_key, outputs);                
+                },
             };
 
-            self.nodes_to_update.remove(node_key); // @TODO, consider moving this out of the update loop, and remove after passing all nodes
+            // self.nodes_to_update.remove(node_key); // @TODO, consider moving this out of the update loop, and remove after passing all nodes
         }
     }
 
-    fn process_node_outputs(&mut self, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
+    fn process_node_outputs(&mut self, task_id: &TaskId, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
     {
         let node_handle = self.node_graph.get_node_handle(node_key);
 
@@ -199,8 +246,11 @@ impl EmpowerExecutor
             analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
         }
 
-        self.execution_queue.extend(extra_nodes_needed_for_execution);
-        self.execution_queue.extend(new_nodes_to_execute);
+        self.task_manager.add_nodes_to_setup_keys(task_id, &extra_nodes_needed_for_execution);
+        self.task_manager.add_nodes_to_setup_keys(task_id, &new_nodes_to_execute);
+
+        // self.execution_queue.extend(extra_nodes_needed_for_execution);
+        // self.execution_queue.extend(new_nodes_to_execute);
     }
 
     pub fn show_windows(&mut self, ui: &mut egui::Ui)

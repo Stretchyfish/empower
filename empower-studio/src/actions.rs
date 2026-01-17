@@ -17,6 +17,7 @@ pub enum Action
     StopPortSearch,
     CreateViewport { name: &'static str },
     ToggleDebugWindow,
+    ToggleExecutionHisotryWindow,
     StartNodeGraphExecution,
     StartNodeGraphExecutionFromEntry { node_key: NodeGraphKey },
     StopNodeGraphExecution,

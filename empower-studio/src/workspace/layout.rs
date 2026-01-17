@@ -6,6 +6,7 @@ pub use viewport::{Viewport, VIEWPORT_REGISTRY};
 pub struct Layout
 {
     pub debug_window_active: bool, // @TODO, find a better name or make a collected object for multiple windows
+    pub execution_history_window_active: bool, 
     pub viewports: HashMap<String, Box<dyn Viewport>>,
     pub docking_state: egui_dock::DockState<String>,
 }
@@ -17,6 +18,7 @@ impl Layout
         let mut new_layout = Self
         {
             debug_window_active: false,
+            execution_history_window_active: false,
             viewports: HashMap::new(),            
             docking_state: egui_dock::DockState::new(Vec::new()), 
         };

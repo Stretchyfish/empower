@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::runtime::analysis::detect_execution_order;
 use crate::{NodeGraph, NodeGraphKey};
 
+use super::TaskId;
 
 #[derive(Clone)]
 pub struct LoopManager
 {
-    loops: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
+    loops: HashMap<NodeGraphKey, HashSet<TaskId>>,
     
 }
 
@@ -21,10 +22,16 @@ impl LoopManager
         }
     }
 
-    pub fn add_loop(&mut self, node_key: &NodeGraphKey, node_graph: &NodeGraph)
+    pub fn add_loop(&mut self, node_key: &NodeGraphKey, task_id: &TaskId)
     {
-        let nodes_in_loop = detect_execution_order(node_key, node_graph);
-        self.loops.insert(*node_key, nodes_in_loop);
+        if !self.loops.contains_key(node_key)
+        {
+            self.loops.insert(*node_key, HashSet::new() );
+        }
+
+        let loop_to_add = self.loops.get_mut(node_key);
+
+        loop_to_add.unwrap().insert(*task_id);
     }
 
     pub fn check_for_loop_triggers(&mut self, )

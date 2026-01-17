@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use chrono::{DateTime, Local};
 use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
@@ -24,6 +25,7 @@ pub struct GraphEditor
     pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
     pub executor: Option<EmpowerExecutor>,
+    pub executor_history: Option<(DateTime<Local>, Vec<NodeGraphKey>)>,
 }
 
 impl GraphEditor
@@ -32,14 +34,15 @@ impl GraphEditor
     {
        let mut graph_editor = Self
        {
-        node_graph: NodeGraph::new(),
-        display_nodes: HashMap::new(),
-        display_input_ports: HashMap::new(),
-        display_output_ports: HashMap::new(),
-        selected_nodes: Vec::new(),
-        port_searcher: None,
-        debug_info: DebugInfo::new(),
-        executor: None,
+            node_graph: NodeGraph::new(),
+            display_nodes: HashMap::new(),
+            display_input_ports: HashMap::new(),
+            display_output_ports: HashMap::new(),
+            selected_nodes: Vec::new(),
+            port_searcher: None,
+            debug_info: DebugInfo::new(),
+            executor: None,
+            executor_history: None,
         };
 
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left

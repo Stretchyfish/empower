@@ -317,16 +317,16 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
             let executor = studio_context.graph_editor.executor.as_ref().unwrap();
 
-            egui::CollapsingHeader::new(format!("Nodes to update ({})", executor.nodes_to_update.len()))
+            egui::CollapsingHeader::new(format!("Task Manager ({})", executor.task_manager.tasks.len()))
             .default_open(false)
             .show(ui, |ui| {
 
-                for key in executor.nodes_to_update.iter()
+                for (task_id, task) in &executor.task_manager.tasks
                 {
-                    ui.horizontal(|ui|
-                    {
-                        ui.label(key.to_string());
-                    });
+
+                    ui.label(format!("Task id: {}", task_id.to_string()));
+                    ui.label(format!("Setup keys: {:?}", task.nodes_to_setup));
+                    ui.label(format!("Update keys: {:?}", task.nodes_to_update));
                 }
             });
             egui::CollapsingHeader::new("Window Manager")
