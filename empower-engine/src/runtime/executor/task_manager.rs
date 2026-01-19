@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug};
 
-use crate::{NodeGraphKey, node_graph::node::node_kind::LoopNode};
+use crate::{NodeGraphKey, node_graph::node::node_kind::LoopNode, utility::text_buffer::TextBuffer};
 
 use super::task::Task;
 
@@ -11,6 +11,8 @@ pub struct TaskManager
 {
     pub tasks: HashMap<TaskId, Task>,
     pub loops: HashMap<NodeGraphKey, HashSet<TaskId>>,
+    pub main_window_key: Option<NodeGraphKey>, 
+    pub windows: HashMap<TaskId, HashMap<NodeGraphKey, String>>,
 }
 
 impl TaskManager
@@ -21,6 +23,8 @@ impl TaskManager
         {
             tasks: HashMap::new(),
             loops: HashMap::new(),
+            main_window_key: None,
+            windows: HashMap::new(),
         }
     }
 
@@ -116,6 +120,89 @@ impl TaskManager
         task.nodes_to_update.insert(*node_key);
     }
 
+    pub fn create_window(&mut self, task_id: &TaskId, node_key: &NodeGraphKey, node_name: &str)
+    {
+        let new_name = self.adjust_window_name(node_name); // Placed here for borrower satisfaction
+        if !self.windows.contains_key(task_id)
+        {
+            self.windows.insert(*task_id, HashMap::new());
+        }
+
+        let windows_in_task = self.windows.get_mut(task_id).unwrap();
+
+        if windows_in_task.contains_key(node_key)
+        {
+            return;
+        }
+
+        if self.main_window_key == None
+        {
+            self.main_window_key = Some ( *node_key );
+        }
+
+        windows_in_task.insert(*node_key, new_name);
+    }
+
+    pub fn get_windows(&self) -> HashMap<TaskId, HashMap<NodeGraphKey, String>> // @TODO, improve naming
+    {
+        self.windows.clone()
+    }
+
+    pub fn remove_window(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)
+    {
+        if *node_key == self.main_window_key.unwrap_or(0) // This should never possibly fail, but set to 0 for safety
+        {
+            self.main_window_key = None;
+        }
+
+        if !self.windows.contains_key(task_id) // Should never happen, but done for safety
+        {
+            return;
+        }
+
+        let task_windows_is_empty;
+
+        {
+            let task_windows = self.windows.get_mut(task_id).unwrap();
+            task_windows.remove(node_key);
+
+            task_windows_is_empty = task_windows.is_empty();
+        }
+
+        if task_windows_is_empty
+        {
+            self.windows.remove(node_key);
+        }
+    }
+
+    pub fn clear_windows(&mut self)
+    {
+        self.main_window_key = None;
+        self.windows.clear();
+    }
+
+    fn adjust_window_name(&self, node_name: &str) -> String
+    {
+        let mut number_of_windows_with_same_name = 0;
+        for tasks in self.windows.values()
+        {
+            for text in tasks.values()
+            {
+                if text.contains(node_name)
+                {
+                    number_of_windows_with_same_name += 1;
+                }
+            }
+        }
+
+        if number_of_windows_with_same_name == 0
+        {
+            return String::from( node_name );
+        }
+
+        format!("{} ({})", node_name, number_of_windows_with_same_name)
+    } 
+
     pub fn remove_node_from_update(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)
     {
         let task = self.tasks.get_mut(task_id);
@@ -129,7 +216,7 @@ impl TaskManager
         task.nodes_to_update.remove(node_key);
     }
 
-    pub fn cleanup_tasks(&mut self)
+    pub fn cleanup_tasks(&mut self, execution_history: &mut TextBuffer)
     {
         let mut task_to_remove = None;
 
@@ -148,6 +235,8 @@ impl TaskManager
         }
 
         self.tasks.remove(&task_to_remove.unwrap());
+
+        execution_history.add_line(&format!("Removed task ({})", task_to_remove.unwrap()));
     }
 
     fn is_task_finished(&self, task_id: &TaskId) -> bool

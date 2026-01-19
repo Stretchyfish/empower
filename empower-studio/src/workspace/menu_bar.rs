@@ -1,6 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::Local;
+use empower_engine::utility::text_buffer::TextBuffer;
 
 use crate::{StudioContext, actions::Action};
 
@@ -51,7 +52,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
                 if ui.button("▶ Start").clicked()
                 {
                     action_queue.push( Action::StartNodeGraphExecution );
-                    studio_context.graph_editor.executor_history = Some( (Local::now(), Vec::new()) ); // @TODO, make this behavior better
+                    studio_context.graph_editor.executor_history = Some( (Local::now(), TextBuffer::new()) ); // @TODO, make this behavior better
                 }
             });
 

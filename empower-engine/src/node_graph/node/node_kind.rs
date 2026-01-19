@@ -46,6 +46,9 @@ pub use condition_node::ConditionType;
 mod loop_node;
 pub use loop_node::LoopNode;
 
+mod wait_node;
+pub use wait_node::WaitNode;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -72,6 +75,7 @@ impl Clone for Box<dyn NodeKind>
 
 pub enum NodeSetupResponse
 {
+    Began,
     Finished(Vec<PortValue>),
     FinishedWithLog(Vec<PortValue>, String),
     CreateWindow,
@@ -105,6 +109,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
     m.insert(ConditionNode::new().name(), || ConditionNode::new());
     m.insert(LoopNode::new().name(), || LoopNode::new());
+    m.insert(WaitNode::new().name(), || WaitNode::new());
 
     m
 });

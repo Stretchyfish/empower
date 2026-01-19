@@ -333,9 +333,9 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             .default_open(false)
             .show(ui, |ui| {
 
-                if executor.window_manager.main_window_key.is_some()
+                if executor.task_manager.main_window_key.is_some()
                 {
-                    ui.label(format!("Main window key: {}", executor.window_manager.main_window_key.unwrap()));
+                    ui.label(format!("Main window key: {}", executor.task_manager.main_window_key.unwrap()));
                 }
                 else
                 {
@@ -344,17 +344,22 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
                 ui.horizontal(|ui|
                 {
-                    ui.label("key");
+                    ui.label("task id");
+                    ui.label("node key");
                     ui.label("window name");                    
                 });
                 
-                for (key, window_name) in executor.window_manager.windows.iter()
+                for (task_id, windows) in executor.task_manager.windows.iter()
                 {
-                    ui.horizontal(|ui|
+                    for (node_key, window_name) in windows
                     {
-                        ui.label(key.to_string());
-                        ui.label(window_name);
-                    });
+                        ui.horizontal(|ui|
+                        {
+                            ui.label(task_id.to_string());
+                            ui.label(node_key.to_string());
+                            ui.label(window_name);
+                        });
+                    }
                 }
             });
 
@@ -370,15 +375,15 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 }
             });
 
-            let executed_nodes_history = format!("Executed nodes history ({})", executor.history.len());
+            let executed_nodes_history = format!("Executed nodes history ({})", executor.history.lines.len());
 
             egui::CollapsingHeader::new(executed_nodes_history)
             .default_open(false)
             .show(ui, |ui| {
 
-                for node_key in executor.history.iter()
+                for line in executor.history.lines.iter()
                 {
-                    ui.label(format!("{}", node_key));
+                    ui.label(format!("{}", line));
                 }
             });
 

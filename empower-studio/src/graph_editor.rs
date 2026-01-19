@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use chrono::{DateTime, Local};
 use empower_engine::node_graph::node::port::PortKind;
+use empower_engine::utility::text_buffer::TextBuffer;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use empower_engine::runtime::EmpowerExecutor;
 
@@ -25,7 +26,7 @@ pub struct GraphEditor
     pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
     pub executor: Option<EmpowerExecutor>,
-    pub executor_history: Option<(DateTime<Local>, Vec<NodeGraphKey>)>,
+    pub executor_history: Option<(DateTime<Local>, TextBuffer)>,
 }
 
 impl GraphEditor

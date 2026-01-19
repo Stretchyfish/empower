@@ -8,6 +8,7 @@ use crate::PortValue;
 use crate::node_graph::node::node_kind::NodeSetupResponse;
 use crate::node_graph::node::node_kind::NodeUpdateResponse;
 
+use crate::runtime::executor::task_manager::Job;
 use crate::runtime::executor::task_manager::TaskId;
 use crate::utility::text_buffer::TextBuffer;
 use super::analysis;
@@ -20,8 +21,8 @@ pub use window_manager::WindowManager;
 pub mod loop_manager;
 pub use loop_manager::LoopManager;
 
-mod task_manager;
-use task_manager::TaskManager;
+pub mod task_manager;
+pub use task_manager::TaskManager;
 
 mod task;
 use task::Task;
@@ -37,12 +38,12 @@ pub struct EmpowerExecutor
     pub task_manager: TaskManager,
     pub execution_queue: VecDeque<NodeGraphKey>,
     pub nodes_to_update: HashSet<NodeGraphKey>, // @TODO, come up with a better name
-    pub window_manager: WindowManager,
+    // pub window_manager: WindowManager,
     pub loop_manager: LoopManager,
 
     pub log: TextBuffer,
     pub cached_output_ports: HashSet<NodeGraphKey>,
-    pub history: Vec<NodeGraphKey>, // @TODO, Multiple values here should only be saved in debug mode
+    pub history: TextBuffer, // @TODO, Multiple values here should only be saved in debug mode
     pub start_time: DateTime<Local>,
     pub last_executed_node: NodeGraphKey,
 }
@@ -66,12 +67,12 @@ impl EmpowerExecutor
             execution_queue: VecDeque::new(),
             nodes_to_update: HashSet::new(),
 
-            window_manager,
+            // window_manager,
             loop_manager: LoopManager::new(),
 
             log: TextBuffer::new(),
             cached_output_ports: HashSet::new(),
-            history: Vec::new(),
+            history: TextBuffer::new(),
             start_time: Local::now(),
             last_executed_node: 0,
         }
@@ -113,10 +114,11 @@ impl EmpowerExecutor
 
     pub fn stop_node_graph(&mut self)
     {
+        // @TODO, this whole thing needs a re-work
         self.cached_output_ports.clear();
         self.execution_queue.clear();
         self.nodes_to_update.clear();
-        self.window_manager.clear_windows();
+        self.task_manager.clear_windows();
     }
 
     pub fn is_running(&self) -> bool
@@ -132,7 +134,11 @@ impl EmpowerExecutor
         }
 
         self.setup_nodes();
+
+        self.task_manager.cleanup_tasks(&mut self.history); // @TODO, consider combining this with continue_loop due to the code flow
+
         self.update_nodes();
+
 
         if ui.is_none()
         {
@@ -141,7 +147,6 @@ impl EmpowerExecutor
 
         self.show_windows(ui.unwrap());
 
-        self.task_manager.cleanup_tasks();
     }
 
     pub fn setup_nodes(&mut self)
@@ -166,8 +171,15 @@ impl EmpowerExecutor
 
             let setup_response = node.kind.setup(input_port_values);
 
+            self.history.add_line(&format!("Setup (task: {}) (node: {})", task_id, next_node_to_setup_key));
+
             match setup_response
             {
+                NodeSetupResponse::Began => // @TODO, come up with better name
+                {
+                    self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
+                    self.history.add_line(&format!("Added to update (task: {}) (node: {})", task_id, next_node_to_setup_key));
+                },
                 NodeSetupResponse::Finished(outputs) => self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs),
                 NodeSetupResponse::FinishedWithLog(outputs, text_buffer) =>
                 {
@@ -176,20 +188,24 @@ impl EmpowerExecutor
                 },
                 NodeSetupResponse::CreateWindow =>
                 {
-                    self.window_manager.create_window(&next_node_to_setup_key, node.kind.name());
+                    self.task_manager.create_window(&task_id, &next_node_to_setup_key, node.kind.name());
                     self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
+
+                    self.history.add_line(&format!("Added to update and window (task: {}) (node: {})", task_id, next_node_to_setup_key));
                     // self.nodes_to_update.insert(next_node_to_setup_key);
                 },
                 NodeSetupResponse::CreateLoop(outputs) =>
                 {
                     self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
                     let loop_task_id = self.task_manager.add_loop(&next_node_to_setup_key);
+
+                    self.history.add_line(&format!("Created task for loop ({})", loop_task_id));
                     self.process_node_outputs(&loop_task_id, &next_node_to_setup_key, outputs);                
+
                 },
                 NodeSetupResponse::Error(_) => todo!(),
             }
 
-            self.history.push(next_node_to_setup_key);
         }
     }
 
@@ -212,6 +228,8 @@ impl EmpowerExecutor
                 {
                     self.process_node_outputs(&task_id, &node_to_update_key, outputs);
                     self.task_manager.remove_node_from_update(&task_id, &node_to_update_key);
+
+                    // @TODO, need to add removal from windows
                 },
                 NodeUpdateResponse::ContinueLoop(outputs) =>
                 {
@@ -219,8 +237,7 @@ impl EmpowerExecutor
 
                     if potential_new_loop_task_id.is_none() { continue; };
 
-                    println!("Created new task id");
-
+                    self.history.add_line(&format!("Created task for loop ({})", potential_new_loop_task_id.unwrap()));
                     self.process_node_outputs(&potential_new_loop_task_id.unwrap(), &node_to_update_key, outputs);                
                 },
             };
@@ -249,44 +266,51 @@ impl EmpowerExecutor
         self.task_manager.add_nodes_to_setup_keys(task_id, &extra_nodes_needed_for_execution);
         self.task_manager.add_nodes_to_setup_keys(task_id, &new_nodes_to_execute);
 
+        self.history.add_line(&format!("Added to setup (task: {}) (nodes: {:?} + {:?})", task_id, extra_nodes_needed_for_execution, new_nodes_to_execute));
+
         // self.execution_queue.extend(extra_nodes_needed_for_execution);
         // self.execution_queue.extend(new_nodes_to_execute);
     }
 
     pub fn show_windows(&mut self, ui: &mut egui::Ui)
     {
-        for (node_key_to_show, window_title) in self.window_manager.get_windows()
+        let windows = self.task_manager.get_windows();
+
+        for (task_id, task_windows) in windows // @TODO, find a better approach here
         {
-            let node = self.node_graph.nodes.get_mut(&node_key_to_show).unwrap();
-
-            if self.window_manager.main_window_key.is_none()
+            for (node_key_to_show, window_title) in task_windows
             {
-                return; // Should only happen on the first update loop
+                let node = self.node_graph.nodes.get_mut(&node_key_to_show).unwrap();
+
+                if self.task_manager.main_window_key.is_none()
+                {
+                    return; // Should only happen on the first update loop
+                }
+
+                let main_window_id = self.task_manager.main_window_key.unwrap();
+
+                if !self.running_in_editor && node_key_to_show == main_window_id // @TODO, find a better way to organize these
+                {
+                    node.kind.show(ui);
+                    continue;
+                }
+
+                let mut window_open = true;
+                egui::Window::new(window_title)
+                .open(&mut window_open)
+                .show(ui.ctx(), |window_ui|
+                {
+                    node.kind.show(window_ui);
+                });
+
+                if window_open == true
+                {
+                    continue;
+                }
+
+                self.task_manager.remove_window(&task_id, &node_key_to_show);
+                self.task_manager.remove_node_from_update(&task_id, &node_key_to_show); // @TODO, consider improving this behavior to avoid managing two stacks of nodes
             }
-
-            let main_window_id = self.window_manager.main_window_key.unwrap();
-
-            if !self.running_in_editor && node_key_to_show == main_window_id // @TODO, find a better way to organize these
-            {
-                node.kind.show(ui);
-                continue;
-            }
-
-            let mut window_open = true;
-            egui::Window::new(window_title)
-            .open(&mut window_open)
-            .show(ui.ctx(), |window_ui|
-            {
-                node.kind.show(window_ui);
-            });
-
-            if window_open == true
-            {
-                continue;
-            }
-
-            self.window_manager.remove_window(&node_key_to_show);
-            self.nodes_to_update.remove(&node_key_to_show);
         }
     }
 }

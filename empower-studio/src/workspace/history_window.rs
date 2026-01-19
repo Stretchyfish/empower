@@ -16,9 +16,9 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             return;
         }
 
-        for node_key in &studio_context.graph_editor.executor_history.as_ref().unwrap().1
+        for line in &studio_context.graph_editor.executor_history.as_ref().unwrap().1.lines
         {
-            ui.label(format!("{}", node_key));
+            ui.label(format!("{}", line));
         }
 
     });
