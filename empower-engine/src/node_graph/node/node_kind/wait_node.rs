@@ -1,3 +1,4 @@
+use std::fmt;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -13,8 +14,9 @@ use super::NodeUpdateResponse;
 #[derive(Clone)]
 pub struct WaitNode
 {
+    pub time_interval_type: WaitTimeIntervals,
     start_time: Instant,
-    wait_time_seconds: u64,
+    pub wait_time: u64,
 }
 
 impl NodeKind for WaitNode
@@ -22,7 +24,7 @@ impl NodeKind for WaitNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new( Self { start_time: Instant::now(), wait_time_seconds: 5 } )
+        Box::new( Self { time_interval_type: WaitTimeIntervals::Seconds, start_time: Instant::now(), wait_time: 5 } )
     }
 
     fn name(&self) -> &'static str {
@@ -58,9 +60,36 @@ impl NodeKind for WaitNode
 
     fn update(&mut self) -> NodeUpdateResponse {
 
-        if self.start_time.elapsed() >= Duration::from_secs(self.wait_time_seconds)
+        match self.time_interval_type
         {
-            return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+            WaitTimeIntervals::Miliseconds =>
+            {
+                if self.start_time.elapsed() >= Duration::from_millis(self.wait_time)
+                {
+                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                }
+            },
+            WaitTimeIntervals::Seconds =>
+            {
+                if self.start_time.elapsed() >= Duration::from_secs(self.wait_time)
+                {
+                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                }
+            },
+            WaitTimeIntervals::Minutes =>
+            {
+                if self.start_time.elapsed() >= Duration::from_mins(self.wait_time)
+                {
+                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                }
+            },
+            WaitTimeIntervals::Hours =>
+            {
+                if self.start_time.elapsed() >= Duration::from_hours(self.wait_time)
+                {
+                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                }
+            },
         }
 
         NodeUpdateResponse::Running
@@ -68,5 +97,22 @@ impl NodeKind for WaitNode
 
     fn show(&mut self, _: &mut egui::Ui) {
         todo!()
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Eq, Debug)]
+pub enum WaitTimeIntervals
+{
+    Miliseconds,
+    #[default] Seconds,
+    Minutes,
+    Hours,
+}
+
+impl fmt::Display for WaitTimeIntervals
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
+    {
+        write!(f, "{:?}", self)
     }
 }

@@ -203,6 +203,16 @@ impl EmpowerExecutor
                     self.process_node_outputs(&loop_task_id, &next_node_to_setup_key, outputs);                
 
                 },
+                NodeSetupResponse::RestartLoop =>
+                {
+                    self.history.add_line(&format!("Restarted loop for task (task: {})", task_id));
+                    self.task_manager.restart_loop(&task_id);
+                },
+                NodeSetupResponse::StopLoop =>
+                {
+                    self.history.add_line(&format!("Stop loop for task (task: {})", task_id));
+                    self.task_manager.remove_loop(&task_id);
+                },
                 NodeSetupResponse::Error(_) => todo!(),
             }
 
@@ -235,7 +245,11 @@ impl EmpowerExecutor
                 {
                     let potential_new_loop_task_id = self.task_manager.continue_loop(&node_to_update_key);
 
-                    if potential_new_loop_task_id.is_none() { continue; };
+                    if potential_new_loop_task_id.is_none() // @TODO, this whole approach needs a second look
+                    {
+                        self.task_manager.remove_node_from_update(&task_id, &node_to_update_key);
+                        continue;
+                    };
 
                     self.history.add_line(&format!("Created task for loop ({})", potential_new_loop_task_id.unwrap()));
                     self.process_node_outputs(&potential_new_loop_task_id.unwrap(), &node_to_update_key, outputs);                

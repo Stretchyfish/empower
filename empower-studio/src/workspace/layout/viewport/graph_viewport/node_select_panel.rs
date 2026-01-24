@@ -67,6 +67,16 @@ impl NodeSelectionPanel
                         self.node_to_add = Some( "wait" );
                     };
 
+                    if ui.add(egui::Button::new("restart node").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                    {
+                        self.node_to_add = Some( "restart loop" );
+                    };
+
+                    if ui.add(egui::Button::new("stop node").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
+                    {
+                        self.node_to_add = Some( "stop loop" );
+                    };
+
                     if ui.add(egui::Button::new("Boolean").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
                         self.node_to_add = Some( "boolean" );

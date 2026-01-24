@@ -17,7 +17,7 @@ pub fn show(
     action_queue: &mut Vec<Action>,
 )
 {
-    let debug_mode = true; // @TODO, this is temporarily hardcoded for testing purposes, set this up proper
+    let debug_mode = graph_editor.debug_info.show_keys; 
 
     let node = graph_editor.node_graph.get_node_mut(node_key).unwrap(); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
     let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();

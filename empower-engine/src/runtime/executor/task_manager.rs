@@ -59,6 +59,35 @@ impl TaskManager
         task_id
     }
 
+    pub fn restart_loop(&mut self, task_id: &TaskId)
+    {
+        if !self.tasks.contains_key(task_id)
+        {
+            return;
+        }
+
+        // @TODO, this is not the best approach to handle restart of nodes
+
+        let task = self.tasks.get_mut(task_id).unwrap();
+
+        task.nodes_to_setup.clear();
+        task.nodes_to_update.clear();
+
+        self.windows.remove(task_id);
+    }
+
+    pub fn remove_loop(&mut self, task_id: &TaskId)
+    {
+        self.tasks.remove(task_id);
+
+        for (_, loop_instance) in &mut self.loops
+        {
+            loop_instance.remove(task_id);
+        }
+
+        self.windows.remove(task_id);
+    }
+
     pub fn continue_loop(&mut self, node_key: &NodeGraphKey) -> Option<TaskId>
     {
         let loop_instance = self.loops.get(node_key);

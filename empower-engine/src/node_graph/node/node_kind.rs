@@ -48,6 +48,13 @@ pub use loop_node::LoopNode;
 
 mod wait_node;
 pub use wait_node::WaitNode;
+pub use wait_node::WaitTimeIntervals;
+
+mod restart_loop_node;
+use restart_loop_node::RestartLoopNode;
+
+mod stop_loop_node;
+use stop_loop_node::StopLoopNode;
 
 pub trait NodeKind
 {
@@ -80,6 +87,8 @@ pub enum NodeSetupResponse
     FinishedWithLog(Vec<PortValue>, String),
     CreateWindow,
     CreateLoop(Vec<PortValue>),
+    RestartLoop,
+    StopLoop,
     Error(String),
 }
 
@@ -110,6 +119,8 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(ConditionNode::new().name(), || ConditionNode::new());
     m.insert(LoopNode::new().name(), || LoopNode::new());
     m.insert(WaitNode::new().name(), || WaitNode::new());
+    m.insert(RestartLoopNode::new().name(), || RestartLoopNode::new());
+    m.insert(StopLoopNode::new().name(), || StopLoopNode::new());
 
     m
 });

@@ -24,6 +24,9 @@ use show_image_display_node::ShowImageDisplayNode;
 mod condition_display_node;
 use condition_display_node::ConditionDisplayNode;
 
+mod display_wait_node;
+use display_wait_node::DisplayWaitNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -67,6 +70,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("math graph", || MathGraphDisplayNode::new() ); 
     m.insert("show image", || ShowImageDisplayNode::new() ); 
     m.insert("condition", || ConditionDisplayNode::new() ); 
+    m.insert("wait", || DisplayWaitNode::new() ); 
 
     m
 });

@@ -77,6 +77,8 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             });
         }
 
+        ui.checkbox(&mut studio_context.graph_editor.debug_info.show_keys, "show keys");
+
         ui.add_space(20.0);
 
         if studio_context.graph_editor.executor_history.is_some()
@@ -94,8 +96,4 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
     });
 
     ui.add_space(2.0);
-
-
-    
-
 }
