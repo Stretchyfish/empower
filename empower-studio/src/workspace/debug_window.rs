@@ -1,3 +1,4 @@
+use eframe::glow::MAX_VERTEX_SHADER_STORAGE_BLOCKS;
 use empower_engine::node_graph::node::port::PortKind;
 
 use crate::studio_context::StudioContext;
@@ -388,6 +389,22 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             });
 
             ui.label(format!("Last executed node: {}", executor.last_executed_node));
+
+            ui.label("Loop Manager");
+
+            ui.horizontal(|ui|
+            {
+                for (task_id, root_node_key) in &executor.task_manager.loop_manager.loop_task_ids
+                {
+                    ui.label(format!("Task_id {}, root nodes: {}", task_id, root_node_key));
+                }
+
+                for (root_node_key, loop_task_ids) in &executor.task_manager.loop_manager.loop_root_nodes
+                {
+                    ui.label(format!("Root node key {}, tasks: {:?}", root_node_key, loop_task_ids));
+                }
+            });
+            
         });
     });
 }

@@ -34,12 +34,7 @@ pub struct EmpowerExecutor
     pub debug_mode: bool,
     pub running_in_editor: bool,
 
-    pub tasks: HashMap<i32, Task>,
     pub task_manager: TaskManager,
-    pub execution_queue: VecDeque<NodeGraphKey>,
-    pub nodes_to_update: HashSet<NodeGraphKey>, // @TODO, come up with a better name
-    // pub window_manager: WindowManager,
-    pub loop_manager: LoopManager,
 
     pub log: TextBuffer,
     pub cached_output_ports: HashSet<NodeGraphKey>,
@@ -61,14 +56,7 @@ impl EmpowerExecutor
             debug_mode,
             running_in_editor, 
 
-            tasks: HashMap::new(),
             task_manager: TaskManager::new(),
-
-            execution_queue: VecDeque::new(),
-            nodes_to_update: HashSet::new(),
-
-            // window_manager,
-            loop_manager: LoopManager::new(),
 
             log: TextBuffer::new(),
             cached_output_ports: HashSet::new(),
@@ -107,7 +95,7 @@ impl EmpowerExecutor
         self.stop_node_graph();
         
         // This starts the node graph
-        let task_id = self.task_manager.add_task();
+        let task_id = self.task_manager.create_task();
         self.task_manager.add_node_key(&task_id, node_key);
         // self.execution_queue.push_front(*node_key);
     }
@@ -116,8 +104,6 @@ impl EmpowerExecutor
     {
         // @TODO, this whole thing needs a re-work
         self.cached_output_ports.clear();
-        self.execution_queue.clear();
-        self.nodes_to_update.clear();
         self.task_manager.clear_windows();
     }
 
@@ -130,15 +116,14 @@ impl EmpowerExecutor
     {
         if !self.is_running()
         {
+            // @TODO, make this return an enum value with the state
             return;
         }
 
+        self.task_manager.cleanup_finished_tasks(&mut self.history); // @TODO, consider combining this with continue_loop due to the code flow
+
         self.setup_nodes();
-
-        self.task_manager.cleanup_tasks(&mut self.history); // @TODO, consider combining this with continue_loop due to the code flow
-
         self.update_nodes();
-
 
         if ui.is_none()
         {
@@ -151,7 +136,7 @@ impl EmpowerExecutor
 
     pub fn setup_nodes(&mut self)
     {
-        let jobs = self.task_manager.get_next_nodes_to_setup();
+        let jobs = self.task_manager.get_next_nodes_to_setup(); // @TODO, it is a bit unclear which action has side effect like this or not
 
         for job in jobs
         {
@@ -183,13 +168,13 @@ impl EmpowerExecutor
                 NodeSetupResponse::Finished(outputs) => self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs),
                 NodeSetupResponse::FinishedWithLog(outputs, text_buffer) =>
                 {
-                    self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs);                
+                    self.process_node_outputs(&task_id, &next_node_to_setup_key, outputs); // @TODO, come up with better naming, since this also adds next nodes to setup               
                     self.log.add_line(&text_buffer);
                 },
                 NodeSetupResponse::CreateWindow =>
                 {
-                    self.task_manager.create_window(&task_id, &next_node_to_setup_key, node.kind.name());
-                    self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
+                    // @TODO, consider if add to update and add to show should be seperated for clarity?
+                    self.task_manager.add_node_to_show_key(&task_id, &next_node_to_setup_key, node.kind.name());
 
                     self.history.add_line(&format!("Added to update and window (task: {}) (node: {})", task_id, next_node_to_setup_key));
                     // self.nodes_to_update.insert(next_node_to_setup_key);
@@ -197,16 +182,15 @@ impl EmpowerExecutor
                 NodeSetupResponse::CreateLoop(outputs) =>
                 {
                     self.task_manager.add_node_to_update_key(&task_id, &next_node_to_setup_key);
-                    let loop_task_id = self.task_manager.add_loop(&next_node_to_setup_key);
+                    let loop_task_id = self.task_manager.add_loop(&job);
 
                     self.history.add_line(&format!("Created task for loop ({})", loop_task_id));
-                    self.process_node_outputs(&loop_task_id, &next_node_to_setup_key, outputs);                
-
+                    self.process_node_outputs(&loop_task_id, &next_node_to_setup_key, outputs);
                 },
                 NodeSetupResponse::RestartLoop =>
                 {
                     self.history.add_line(&format!("Restarted loop for task (task: {})", task_id));
-                    self.task_manager.restart_loop(&task_id);
+                    self.task_manager.stop_task(&task_id);
                 },
                 NodeSetupResponse::StopLoop =>
                 {
@@ -243,11 +227,10 @@ impl EmpowerExecutor
                 },
                 NodeUpdateResponse::ContinueLoop(outputs) =>
                 {
-                    let potential_new_loop_task_id = self.task_manager.continue_loop(&node_to_update_key);
+                    let potential_new_loop_task_id = self.task_manager.continue_loop_2(&task_id, &node_to_update_key);
 
                     if potential_new_loop_task_id.is_none() // @TODO, this whole approach needs a second look
                     {
-                        self.task_manager.remove_node_from_update(&task_id, &node_to_update_key);
                         continue;
                     };
 
