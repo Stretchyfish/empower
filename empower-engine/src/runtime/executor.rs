@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
-use std::collections::VecDeque;
 
 use crate::NodeGraph;
 use crate::NodeGraphKey;
@@ -8,24 +6,17 @@ use crate::PortValue;
 use crate::node_graph::node::node_kind::NodeSetupResponse;
 use crate::node_graph::node::node_kind::NodeUpdateResponse;
 
-use crate::runtime::executor::task_manager::Job;
 use crate::runtime::executor::task_manager::TaskId;
 use crate::utility::text_buffer::TextBuffer;
 use super::analysis;
 
-pub mod window_manager;
 use chrono::DateTime;
 use chrono::Local;
-pub use window_manager::WindowManager;
-
-pub mod loop_manager;
-pub use loop_manager::LoopManager;
 
 pub mod task_manager;
 pub use task_manager::TaskManager;
 
 mod task;
-use task::Task;
 
 #[derive(Clone)]
 pub struct EmpowerExecutor
@@ -47,9 +38,6 @@ impl EmpowerExecutor
 {
     pub fn new(node_graph: NodeGraph, running_in_editor: bool, debug_mode: bool) -> Self
     {
-        let mut window_manager = WindowManager::new();
-        window_manager.main_window_key = Some( 0 );
-
         Self
         {
             node_graph,
@@ -227,7 +215,7 @@ impl EmpowerExecutor
                 },
                 NodeUpdateResponse::ContinueLoop(outputs) =>
                 {
-                    let potential_new_loop_task_id = self.task_manager.continue_loop_2(&task_id, &node_to_update_key);
+                    let potential_new_loop_task_id = self.task_manager.continue_loop(&task_id, &node_to_update_key);
 
                     if potential_new_loop_task_id.is_none() // @TODO, this whole approach needs a second look
                     {

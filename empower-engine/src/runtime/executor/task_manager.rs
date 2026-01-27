@@ -1,6 +1,6 @@
-use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug};
+use std::collections::{HashMap, HashSet};
 
-use crate::{NodeGraphKey, node_graph::node::node_kind::LoopNode, utility::text_buffer::TextBuffer};
+use crate::{NodeGraphKey, utility::text_buffer::TextBuffer};
 
 pub use super::task::{Task, Job, TaskId};
 
@@ -8,12 +8,9 @@ pub use super::task::{Task, Job, TaskId};
 pub struct TaskManager
 {
     pub tasks: HashMap<TaskId, Task>,
-    pub loops: HashMap<NodeGraphKey, HashSet<TaskId>>,
-    pub loops_2: HashMap<TaskId, NodeGraphKey>,
-    pub loop_manager: LoopManager,
     pub relations: HashMap<NodeGraphKey, HashSet<TaskId>>,
     pub main_window_key: Option<NodeGraphKey>, 
-    pub windows: HashMap<TaskId, HashMap<NodeGraphKey, String>>,
+    pub windows: HashMap<TaskId, HashMap<NodeGraphKey, String>>, // @TODO, not sure this is being used now?
     // @TODO, think about adding mapping, so you can have multiple of same node running
 }
 
@@ -24,9 +21,6 @@ impl TaskManager
         TaskManager
         {
             tasks: HashMap::new(),
-            loops: HashMap::new(),
-            loops_2: HashMap::new(),
-            loop_manager: LoopManager::new(),
             relations: HashMap::new(),
             main_window_key: None,
             windows: HashMap::new(),
@@ -51,12 +45,6 @@ impl TaskManager
         self.tasks.insert(task_id, new_task);
 
         task_id
-    }
-
-    pub fn create_task_with_task_id_and_parent(&mut self, task_id: &TaskId, parent: &Job)
-    {
-        let new_task = Task::new(Some( *parent ));
-        self.tasks.insert(*task_id, new_task);
     }
 
     pub fn add_loop(&mut self, parent: &Job) -> TaskId
@@ -100,7 +88,7 @@ impl TaskManager
         self.remove_node_from_update(&removed_tasks_parent.task_id, &removed_tasks_parent.node_key);
     }
 
-    pub fn continue_loop_2(&mut self, task_id: &TaskId, node_key: &NodeGraphKey) -> Option<TaskId>
+    pub fn continue_loop(&mut self, task_id: &TaskId, node_key: &NodeGraphKey) -> Option<TaskId>
     {
         let mut task_that_finished = None;
 
@@ -139,28 +127,6 @@ impl TaskManager
 
         Some( new_task_id )
     }
-
-    // pub fn continue_loop(&mut self, node_key: &NodeGraphKey) -> Option<TaskId>
-    // {
-    //     let loop_instance = self.loops.get(node_key);
-    //     if loop_instance.is_none() // This should in theory never happen, but is placed for safety
-    //     {
-    //         return None;
-    //     }
-
-    //     let loop_instance = loop_instance.unwrap().clone();
-
-    //     for task_id in loop_instance.iter()
-    //     {
-    //         if self.is_task_finished(&task_id)
-    //         {
-    //             let new_task_id = self.add_task();
-    //             return Some( new_task_id ); // @TODO, this approach has the potential to be dangerous two loops finshed in the same step
-    //         }
-    //     }
-
-    //     None
-    // }
 
     pub fn add_node_key(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)
     {
@@ -359,36 +325,6 @@ impl TaskManager
         execution_history.add_line(&format!("Removed task ({})", task_to_remove.unwrap()));
     }
 
-    fn is_task_finished(&self, task_id: &TaskId) -> bool
-    {
-        let task = self.tasks.get(task_id);
-
-        if task.is_none()
-        {
-            return true;
-        }
-
-        let task = task.unwrap();
-
-        if task.nodes_to_setup.is_empty() && task.nodes_to_update.is_empty()
-        {
-            return true;
-        }
-
-        false
-    }
-    // pub fn add_nodes_to_update_keys(&mut self)
-
-    pub fn remove_task(&mut self)
-    {
-        
-    }
-
-    pub fn get_tasks(&self) -> HashMap<TaskId, Task> // @TODO, think this cloning can be avoided
-    {
-        self.tasks.clone()
-    }
-
     // @TODO, in the future, consider rewritting this to be only send one node
     pub fn get_next_nodes_to_setup(&mut self) -> Vec<Job>
     {
@@ -425,83 +361,5 @@ impl TaskManager
     pub fn has_tasks(&self) -> bool
     {
         !self.tasks.is_empty()
-    }
-}
-
-#[derive(Clone)]
-pub struct LoopManager
-{
-    pub loop_task_ids: HashMap<TaskId, NodeGraphKey>,
-    pub loop_root_nodes: HashMap<NodeGraphKey, HashSet<TaskId>>,
-}
-
-impl LoopManager
-{
-    pub fn new() -> Self
-    {
-        Self
-        {
-            loop_task_ids: HashMap::new(),
-            loop_root_nodes: HashMap::new(),
-        }
-    }
-
-    pub fn add_task(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)
-    {
-        self.loop_task_ids.insert(*task_id, *node_key);
-
-        if !self.loop_root_nodes.contains_key(node_key)
-        {
-            self.loop_root_nodes.insert(*node_key, HashSet::new() );
-        }
-
-        self.loop_root_nodes.get_mut(node_key).unwrap().insert(*task_id);
-    }
-
-    pub fn remove_task(&mut self, task_id: &TaskId)
-    {
-        let loop_root_key = self.loop_task_ids.remove(task_id);
-
-        if loop_root_key.is_none() // This should only happen if a wrong key has been put in!
-        {
-            return;
-        }
-
-        let mut delete_root_node_from = false;
-
-        {
-            let loop_root_node = self.loop_root_nodes.get_mut(&loop_root_key.unwrap());
-            if loop_root_node.is_none()
-            {
-                return;
-            }
-
-            let loop_root_node = loop_root_node.unwrap();
-
-            loop_root_node.remove(task_id);
-
-            if loop_root_node.is_empty()
-            {
-                delete_root_node_from = true;
-            }
-        }
-
-        if delete_root_node_from
-        {
-            self.loop_root_nodes.remove(&loop_root_key.unwrap());
-        }
-    }
-
-    pub fn get_tasks_created_from_node_key(&self, node_key: &NodeGraphKey) -> HashSet<TaskId>
-    {
-        let tasks_created_from_node_key = self.loop_root_nodes.get(node_key);
-
-        if tasks_created_from_node_key.is_none()
-        {
-            println!("Node key searching {}", node_key);
-            panic!();
-        }
-
-        tasks_created_from_node_key.unwrap().clone()
     }
 }

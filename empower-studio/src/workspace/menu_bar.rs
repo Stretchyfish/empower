@@ -1,5 +1,3 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use chrono::Local;
 use empower_engine::utility::text_buffer::TextBuffer;
 

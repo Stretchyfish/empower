@@ -17,7 +17,7 @@ impl DisplayNodeKind for DisplayWaitNode
     fn new() -> Box<dyn DisplayNodeKind> where
         Self: Sized {
 
-        Box::new( Self { number_text: String::from("5") } )
+        Box::new( Self { number_text: String::from("1") } )
     }
 
     fn clone_box(&self) -> Box<dyn DisplayNodeKind> {

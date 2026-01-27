@@ -604,7 +604,6 @@ impl NodeGraph
                     let input_port = self.input_ports.get(port_key).unwrap();
                     connected_nodes_to_execute.push(input_port.node_key);
                 }
-                println!("Got triggered : {:?}", connected_ports);
             }
 
             for connected_input_port_key in connected_ports
