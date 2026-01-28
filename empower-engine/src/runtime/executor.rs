@@ -92,7 +92,6 @@ impl EmpowerExecutor
     {
         // @TODO, this whole thing needs a re-work
         self.cached_output_ports.clear();
-        self.task_manager.clear_windows();
     }
 
     pub fn is_running(&self) -> bool

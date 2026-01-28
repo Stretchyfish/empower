@@ -333,15 +333,6 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             .default_open(false)
             .show(ui, |ui| {
 
-                if executor.task_manager.main_window_key.is_some()
-                {
-                    ui.label(format!("Main window key: {}", executor.task_manager.main_window_key.unwrap()));
-                }
-                else
-                {
-                    ui.label("No main window key");
-                }
-
                 ui.horizontal(|ui|
                 {
                     ui.label("task id");
@@ -349,18 +340,18 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                     ui.label("window name");                    
                 });
                 
-                for (task_id, windows) in executor.task_manager.windows.iter()
-                {
-                    for (node_key, window_name) in windows
-                    {
-                        ui.horizontal(|ui|
-                        {
-                            ui.label(task_id.to_string());
-                            ui.label(node_key.to_string());
-                            ui.label(window_name);
-                        });
-                    }
-                }
+                // for (task_id, windows) in executor.task_manager.windows.iter()
+                // {
+                //     for (node_key, window_name) in windows
+                //     {
+                //         ui.horizontal(|ui|
+                //         {
+                //             ui.label(task_id.to_string());
+                //             ui.label(node_key.to_string());
+                //             ui.label(window_name);
+                //         });
+                //     }
+                // }
             });
 
             let cached_output_port_text = format!("Cached Output Ports ({})", executor.cached_output_ports.len());
