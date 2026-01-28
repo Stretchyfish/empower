@@ -259,43 +259,41 @@ impl EmpowerExecutor
 
     pub fn show_windows(&mut self, ui: &mut egui::Ui)
     {
-        let windows = self.task_manager.get_windows();
+        // let windows = self.task_manager.get_windows();
 
-        for (task_id, task_windows) in windows // @TODO, find a better approach here
+
+        let show_jobs = self.task_manager.get_nodes_to_show();
+
+        for show_job in &show_jobs
         {
-            for (node_key_to_show, window_title) in task_windows
+            let node = self.node_graph.nodes.get_mut(&show_job.node_key).unwrap();
+
+            let mut viewport_got_closed = false;
+
+            let title = show_job.window_title.clone();
+            ui.ctx().show_viewport_immediate(
+                egui::ViewportId::from_hash_of(title.clone()),
+                egui::ViewportBuilder::default()
+                .with_title(title)
+                .with_inner_size([600.0, 400.0]),
+                |ctx, _class| {
+
+                    viewport_got_closed = ctx.input(|i| i.viewport().close_requested());
+
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        node.kind.show(ui);
+                    });
+                },
+            );
+
+            if !viewport_got_closed
             {
-                let node = self.node_graph.nodes.get_mut(&node_key_to_show).unwrap();
-
-                if self.task_manager.main_window_key.is_none()
-                {
-                    return; // Should only happen on the first update loop
-                }
-
-                let main_window_id = self.task_manager.main_window_key.unwrap();
-
-                if !self.running_in_editor && node_key_to_show == main_window_id // @TODO, find a better way to organize these
-                {
-                    node.kind.show(ui);
-                    continue;
-                }
-
-                let mut window_open = true;
-                egui::Window::new(window_title)
-                .open(&mut window_open)
-                .show(ui.ctx(), |window_ui|
-                {
-                    node.kind.show(window_ui);
-                });
-
-                if window_open == true
-                {
-                    continue;
-                }
-
-                self.task_manager.remove_window(&task_id, &node_key_to_show);
-                self.task_manager.remove_node_from_update(&task_id, &node_key_to_show); // @TODO, consider improving this behavior to avoid managing two stacks of nodes
+                continue;
             }
+            
+            self.task_manager.remove_node_from_update(&show_job.task_id, &show_job.node_key);
+            self.task_manager.remove_node_from_show(&show_job.task_id, &show_job.node_key);
         }
+
     }
 }

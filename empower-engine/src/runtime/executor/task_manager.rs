@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{NodeGraphKey, utility::text_buffer::TextBuffer};
 
-pub use super::task::{Task, Job, TaskId};
+pub use super::task::{Task, Job, ShowJob, TaskId};
 
 #[derive(Clone)]
 pub struct TaskManager
@@ -211,6 +211,32 @@ impl TaskManager
     pub fn get_windows(&self) -> HashMap<TaskId, HashMap<NodeGraphKey, String>> // @TODO, improve naming
     {
         self.windows.clone()
+    }
+
+    pub fn get_nodes_to_show(&self) -> Vec<ShowJob>
+    {
+        let mut nodes_to_show = Vec::new();
+
+        for (task_id, task) in &self.tasks
+        {
+            let show_jobs_in_task = task.nodes_to_show.iter().map(|(node_key, title)| ShowJob::new(*task_id, node_key.clone(), title.clone()) );
+            nodes_to_show.extend(show_jobs_in_task);
+        }
+
+        nodes_to_show
+    }
+
+    pub fn remove_node_from_show(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)
+    {
+        let task = self.tasks.get_mut(task_id);
+
+        if task.is_none()
+        {
+            return;
+        }
+
+        let task = task.unwrap();
+        task.nodes_to_show.remove(node_key);
     }
 
     pub fn remove_window(&mut self, task_id: &TaskId, node_key: &NodeGraphKey)

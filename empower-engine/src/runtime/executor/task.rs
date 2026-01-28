@@ -24,6 +24,26 @@ impl Job
 }
 
 #[derive(Clone)]
+pub struct ShowJob
+{
+    pub task_id: TaskId,
+    pub node_key: NodeGraphKey,
+    pub window_title: String,
+}
+
+impl ShowJob
+{
+    pub fn new(task_id: TaskId, node_key: NodeGraphKey, window_title: String) -> Self
+    {
+        Self
+        {
+            task_id,
+            node_key,
+            window_title,
+        }
+    }
+}
+#[derive(Clone)]
 pub struct Task
 {
     pub parent: Option<Job>,
