@@ -7,6 +7,8 @@ use studio_context::StudioContext;
 mod graph_editor;
 use graph_editor::GraphEditor;
 
+mod project;
+
 mod workspace;
 mod actions;
 
@@ -72,6 +74,6 @@ impl eframe::App for EmpowerStudioApplication
         let mut action_queue = Vec::new();
         workspace::show(ctx, &mut self.studio_context, &mut action_queue);
 
-        self.studio_context.process_actions(action_queue);
+        self.studio_context.process_actions(action_queue, ctx);
     }
 }

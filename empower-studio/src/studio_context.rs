@@ -2,9 +2,11 @@ use empower_engine::runtime::EmpowerExecutor;
 use crate::graph_editor::GraphEditor;
 use crate::workspace::Layout; 
 use crate::actions::Action;
+use crate::project::Project;
 
 pub struct StudioContext
 {
+    pub project: Project,
     pub graph_editor: GraphEditor,
     pub layout: Layout,
 }
@@ -15,17 +17,25 @@ impl StudioContext
     {
         Self
         {
+            project: Project::new(),
             graph_editor: GraphEditor::new(),
             layout: Layout::new(),
         }
     }
 
-    pub fn process_actions(&mut self, action_queue: Vec<Action>)
+    pub fn process_actions(&mut self, action_queue: Vec<Action>, ctx: &egui::Context)
     {
         for action in action_queue
         {
             match action
             {
+                Action::SaveProject { project_name } => 
+                { 
+                    self.project.save(project_name.clone()); 
+                    ctx.send_viewport_cmd(
+                        egui::ViewportCommand::Title( project_name )
+                    );
+                },
                 Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },
                 Action::RefreshNodeStructure { node_key } => { self.graph_editor.refresh_node_strcuture(&node_key); },
                 Action::DeleteNode { node_key } => { self.graph_editor.remove_node(&node_key); },

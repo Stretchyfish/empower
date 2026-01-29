@@ -9,6 +9,30 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
     egui::MenuBar::new()
     .ui(ui, |ui|
     {
+        ui.menu_button("Project", |ui|
+        {
+            if ui.button("Save").clicked()
+            {
+                let file_path = rfd::FileDialog::new().pick_file();
+
+                if file_path.is_some()
+                {
+                    let file_path  = file_path.unwrap().to_str().unwrap().to_string();
+
+                    action_queue.push( Action::SaveProject { project_name: file_path });
+                }
+            }
+            if ui.button("Save As").clicked()
+            {
+            }
+            if ui.button("Open").clicked()
+            {
+            }
+            if ui.button("Open Recent").clicked()
+            {
+            }
+        });
+        
         ui.menu_button("Nodes", |ui|
         {
             if ui.button("Add test node").clicked()
