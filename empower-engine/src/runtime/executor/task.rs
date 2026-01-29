@@ -47,10 +47,10 @@ impl ShowJob
 pub struct Task
 {
     pub parent: Option<Job>,
+    pub children: HashMap<NodeGraphKey, HashSet<TaskId>>,
     pub nodes_to_setup: VecDeque<NodeGraphKey>,
     pub nodes_to_update: HashSet<NodeGraphKey>,
     pub nodes_to_show: HashMap<NodeGraphKey, String>,
-    pub sub_tasks: HashMap<NodeGraphKey, HashSet<TaskId>>,
 }
 
 impl Task
@@ -60,10 +60,10 @@ impl Task
         Self
         {
             parent,
+            children: HashMap::new(),
             nodes_to_setup: VecDeque::new(),
             nodes_to_update: HashSet::new(),
             nodes_to_show: HashMap::new(),
-            sub_tasks: HashMap::new(),
         }
     }
     

@@ -117,8 +117,7 @@ impl EmpowerExecutor
             return;
         }
 
-        self.show_windows(ui.unwrap());
-
+        self.show_nodes(ui.unwrap());
     }
 
     pub fn setup_nodes(&mut self)
@@ -230,37 +229,8 @@ impl EmpowerExecutor
         }
     }
 
-    fn process_node_outputs(&mut self, task_id: &TaskId, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
+    pub fn show_nodes(&mut self, ui: &mut egui::Ui)
     {
-        let node_handle = self.node_graph.get_node_handle(node_key);
-
-        // Set output values
-        self.cached_output_ports.extend(node_handle.output_port_keys);
-        self.node_graph.set_output_port_values(&node_key, &outputs);
-
-        // Distribute outputs and determine which nodes to run next
-        let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key); 
-
-        let mut extra_nodes_needed_for_execution = Vec::new();
-        for new_node_to_execute_key in &new_nodes_to_execute
-        {
-            analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
-        }
-
-        self.task_manager.add_nodes_to_setup_keys(task_id, &extra_nodes_needed_for_execution);
-        self.task_manager.add_nodes_to_setup_keys(task_id, &new_nodes_to_execute);
-
-        self.history.add_line(&format!("Added to setup (task: {}) (nodes: {:?} + {:?})", task_id, extra_nodes_needed_for_execution, new_nodes_to_execute));
-
-        // self.execution_queue.extend(extra_nodes_needed_for_execution);
-        // self.execution_queue.extend(new_nodes_to_execute);
-    }
-
-    pub fn show_windows(&mut self, ui: &mut egui::Ui)
-    {
-        // let windows = self.task_manager.get_windows();
-
-
         let show_jobs = self.task_manager.get_nodes_to_show();
 
         for show_job in &show_jobs
@@ -294,5 +264,31 @@ impl EmpowerExecutor
             self.task_manager.remove_node_from_show(&show_job.task_id, &show_job.node_key);
         }
 
+    }
+
+    fn process_node_outputs(&mut self, task_id: &TaskId, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
+    {
+        let node_handle = self.node_graph.get_node_handle(node_key);
+
+        // Set output values
+        self.cached_output_ports.extend(node_handle.output_port_keys);
+        self.node_graph.set_output_port_values(&node_key, &outputs);
+
+        // Distribute outputs and determine which nodes to run next
+        let new_nodes_to_execute = self.node_graph.distribute_outputs(&node_key); 
+
+        let mut extra_nodes_needed_for_execution = Vec::new();
+        for new_node_to_execute_key in &new_nodes_to_execute
+        {
+            analysis::determine_is_node_is_ready_for_exeuction(*new_node_to_execute_key, &self.node_graph, &mut extra_nodes_needed_for_execution, &mut self.cached_output_ports);
+        }
+
+        self.task_manager.add_nodes_to_setup_keys(task_id, &extra_nodes_needed_for_execution);
+        self.task_manager.add_nodes_to_setup_keys(task_id, &new_nodes_to_execute);
+
+        self.history.add_line(&format!("Added to setup (task: {}) (nodes: {:?} + {:?})", task_id, extra_nodes_needed_for_execution, new_nodes_to_execute));
+
+        // self.execution_queue.extend(extra_nodes_needed_for_execution);
+        // self.execution_queue.extend(new_nodes_to_execute);
     }
 }

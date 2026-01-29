@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use chrono::ParseResult;
+
 use crate::{NodeGraphKey, utility::text_buffer::TextBuffer};
 
 pub use super::task::{Task, Job, ShowJob, TaskId};
@@ -8,7 +10,6 @@ pub use super::task::{Task, Job, ShowJob, TaskId};
 pub struct TaskManager
 {
     pub tasks: HashMap<TaskId, Task>,
-    pub relations: HashMap<NodeGraphKey, HashSet<TaskId>>,
 }
 
 impl TaskManager
@@ -18,7 +19,6 @@ impl TaskManager
         TaskManager
         {
             tasks: HashMap::new(),
-            relations: HashMap::new(),
         }
     }
 
@@ -46,12 +46,14 @@ impl TaskManager
     {
         let new_task_id = self.create_task_with_parent( parent );
 
-        if self.relations.is_empty()
+        let parrent_task = self.tasks.get_mut( &parent.task_id ).unwrap();
+
+        if parrent_task.children.is_empty()
         {
-            self.relations.insert(parent.node_key, HashSet::new() );
+            parrent_task.children.insert(parent.node_key, HashSet::new() );
         }
 
-        self.relations.get_mut(&parent.node_key).unwrap().insert(new_task_id);
+        parrent_task.children.get_mut( &parent.node_key ).unwrap().insert(new_task_id);
 
         new_task_id // Not really needed, but unsed for debugging
     }
@@ -67,8 +69,10 @@ impl TaskManager
 
         let removed_tasks_parent = removed_task.unwrap().parent.unwrap(); // @TODO, uff, thats dangerous
 
+        let parent_task = self.tasks.get_mut(&removed_tasks_parent.task_id).unwrap();
+
         {
-            let loops_created_from_node = self.relations.get_mut(&removed_tasks_parent.node_key).unwrap();
+            let loops_created_from_node = parent_task.children.get_mut(&removed_tasks_parent.node_key).unwrap();
 
             loops_created_from_node.remove(task_id);
 
@@ -78,7 +82,7 @@ impl TaskManager
             }
         }
 
-        self.relations.remove(&removed_tasks_parent.node_key);
+        parent_task.children.remove(&removed_tasks_parent.node_key);
 
         self.remove_node_from_update(&removed_tasks_parent.task_id, &removed_tasks_parent.node_key);
     }
@@ -88,7 +92,9 @@ impl TaskManager
         let mut task_that_finished = None;
 
         {
-            let tasks_created_from_node = self.relations.get_mut(node_key);
+            let task_executing = self.tasks.get_mut(task_id).unwrap();
+
+            let tasks_created_from_node = task_executing.children.get_mut(node_key);
 
             if tasks_created_from_node.is_none()
             {
@@ -117,8 +123,9 @@ impl TaskManager
         let new_task_id = self.create_task_with_parent(&Job::new(*task_id, *node_key));
 
         // This behavior is slightly weird, but seems nessesary
-        self.relations.get_mut(node_key).unwrap().remove(&task_that_finished.unwrap());
-        self.relations.get_mut(node_key).unwrap().insert(new_task_id);
+        let task_executing = self.tasks.get_mut(task_id).unwrap();
+        task_executing.children.get_mut(node_key).unwrap().remove(&task_that_finished.unwrap());
+        task_executing.children.get_mut(node_key).unwrap().insert(new_task_id);
 
         Some( new_task_id )
     }

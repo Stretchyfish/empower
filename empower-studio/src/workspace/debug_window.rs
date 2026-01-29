@@ -380,16 +380,16 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
             ui.label(format!("Last executed node: {}", executor.last_executed_node));
 
-            ui.label("Relations");
+            // ui.label("Relations");
 
-                for (node_key, tasks) in &executor.task_manager.relations
-                {
-                    ui.horizontal(|ui|
-                    {
-                        ui.label(format!("node: {}", node_key));
-                        ui.label(format!("tasks: {:?}", tasks));
-                    });
-                }
+            //     for (node_key, tasks) in &executor.task_manager.relations
+            //     {
+            //         ui.horizontal(|ui|
+            //         {
+            //             ui.label(format!("node: {}", node_key));
+            //             ui.label(format!("tasks: {:?}", tasks));
+            //         });
+            //     }
         });
     });
 }
