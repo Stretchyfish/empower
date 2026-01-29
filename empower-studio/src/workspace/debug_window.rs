@@ -317,16 +317,16 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
             let executor = studio_context.graph_editor.executor.as_ref().unwrap();
 
-            egui::CollapsingHeader::new(format!("Background execution ({})", executor.background_execution.len()))
+            egui::CollapsingHeader::new(format!("Task Manager ({})", executor.task_manager.tasks.len()))
             .default_open(false)
             .show(ui, |ui| {
 
-                for key in executor.background_execution.clone()
+                for (task_id, task) in &executor.task_manager.tasks
                 {
-                    ui.horizontal(|ui|
-                    {
-                        ui.label(key.to_string());
-                    });
+
+                    ui.label(format!("Task id: {}", task_id.to_string()));
+                    ui.label(format!("Setup keys: {:?}", task.nodes_to_setup));
+                    ui.label(format!("Update keys: {:?}", task.nodes_to_update));
                 }
             });
             egui::CollapsingHeader::new("Window Manager")
@@ -335,18 +335,23 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
                 ui.horizontal(|ui|
                 {
-                    ui.label("key");
+                    ui.label("task id");
+                    ui.label("node key");
                     ui.label("window name");                    
                 });
                 
-                for (key, window_name) in executor.window_manager.sub_windows.iter()
-                {
-                    ui.horizontal(|ui|
-                    {
-                        ui.label(key.to_string());
-                        ui.label(window_name);
-                    });
-                }
+                // for (task_id, windows) in executor.task_manager.windows.iter()
+                // {
+                //     for (node_key, window_name) in windows
+                //     {
+                //         ui.horizontal(|ui|
+                //         {
+                //             ui.label(task_id.to_string());
+                //             ui.label(node_key.to_string());
+                //             ui.label(window_name);
+                //         });
+                //     }
+                // }
             });
 
             let cached_output_port_text = format!("Cached Output Ports ({})", executor.cached_output_ports.len());
@@ -361,19 +366,30 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 }
             });
 
-            let executed_nodes_history = format!("Executed nodes history ({})", executor.history.len());
+            let executed_nodes_history = format!("Executed nodes history ({})", executor.history.lines.len());
 
             egui::CollapsingHeader::new(executed_nodes_history)
             .default_open(false)
             .show(ui, |ui| {
 
-                for node_key in executor.history.iter()
+                for line in executor.history.lines.iter()
                 {
-                    ui.label(format!("{}", node_key));
+                    ui.label(format!("{}", line));
                 }
             });
 
             ui.label(format!("Last executed node: {}", executor.last_executed_node));
+
+            // ui.label("Relations");
+
+            //     for (node_key, tasks) in &executor.task_manager.relations
+            //     {
+            //         ui.horizontal(|ui|
+            //         {
+            //             ui.label(format!("node: {}", node_key));
+            //             ui.label(format!("tasks: {:?}", tasks));
+            //         });
+            //     }
         });
     });
 }

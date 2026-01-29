@@ -1,6 +1,8 @@
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct TextNode
@@ -22,10 +24,6 @@ impl NodeKind for TextNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -52,16 +50,16 @@ impl NodeKind for TextNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
         let output_value = inputs[0].clone();
-        Some(Vec::from( [ output_value ] ))
+        NodeSetupResponse::Finished(  vec![ output_value ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

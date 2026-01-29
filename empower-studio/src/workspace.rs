@@ -12,10 +12,12 @@ pub use layout::Layout;
 
 mod menu_bar;
 mod debug_window;
+mod history_window;
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queue: &mut Vec<Action>)
 {
     debug_window::show(ctx, studio_context);
+    history_window::show(ctx, studio_context);
 
     egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
     {
@@ -39,7 +41,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queu
             .show_inside(
                 ui,
                 &mut TabViewer {
-                    graph_editor: &studio_context.graph_editor,
+                    graph_editor: &mut studio_context.graph_editor,
                     viewports: &mut studio_context.layout.viewports,
                     action_queue,
                 },
@@ -52,7 +54,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queu
 
             if !executor.is_running()
             {
-                studio_context.graph_editor.executor = None;
+                action_queue.push(Action::StopNodeGraphExecution);
                 return; // @TODO, figure out a better way than returning here
             }
 

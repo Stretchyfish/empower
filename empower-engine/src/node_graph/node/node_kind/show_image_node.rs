@@ -1,8 +1,10 @@
 use core::panic;
 
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct ShowImageNode
@@ -24,10 +26,6 @@ impl NodeKind for ShowImageNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Window
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -52,7 +50,7 @@ impl NodeKind for ShowImageNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
 
         let input_text = match inputs[1]
         {
@@ -62,14 +60,14 @@ impl NodeKind for ShowImageNode
 
         self.image_path = Some( input_text.clone() );
 
-        None
+        NodeSetupResponse::CreateWindow
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
-        None
+    fn update(&mut self) -> NodeUpdateResponse {
+        NodeUpdateResponse::Running
     }
 
-    fn execute(&mut self, ui: &mut egui::Ui) {
+    fn show(&mut self, ui: &mut egui::Ui) {
 
         let full_file_path = self.image_path.clone().unwrap();
 

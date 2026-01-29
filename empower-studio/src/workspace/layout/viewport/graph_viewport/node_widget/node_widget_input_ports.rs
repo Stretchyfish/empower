@@ -1,37 +1,30 @@
-use empower_engine::NodeGraphKey;
+use empower_engine::node_graph::node::port::Port;
 use crate::actions::Action;
-use crate::graph_editor::GraphEditor;
+use crate::graph_editor::DisplayPort;
 use crate::graph_editor::display_node::DisplayValue;
 
 pub fn show_input_port(
                         ui: &mut egui::Ui, 
-                        input_port_key: &NodeGraphKey,
-                        graph_editor: &GraphEditor,
+                        node_position: &egui::Pos2,
+                        input_port: &Port,
+                        display_input_port: &DisplayPort,
+                        port_has_connection: &bool,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
                         action_queue: &mut Vec<Action>,
                     )
 {
-    let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key); // This needs to be placed here for the borrow checker 
+    let input_port_position = *node_position + display_input_port.relative_position;
 
-    let input_port = graph_editor.node_graph.get_input_port(input_port_key).unwrap();
-    let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
-
-    let input_port_position = display_input_port.position;
-    // {
-    //     let display_node = graph_editor.display_nodes.get(&input_port.node_key).unwrap();
-    //     display_node.position + display_input_port.position.to_vec2()
-    // };
-    
     // @TODO, make global!
     let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
  
-    let input_port_rect = egui::Rect::from_center_size(display_input_port.position, input_port_size);
+    let input_port_rect = egui::Rect::from_center_size(input_port_position, input_port_size);
 
-    let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + input_port_key.to_string().as_str()), egui::Sense::click());
+    let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + input_port.key.to_string().as_str()), egui::Sense::click());
     if input_port_response.clicked()
     {
-        action_queue.push( Action::ClickedInputPort { port_key: *input_port_key });
+        action_queue.push( Action::ClickedInputPort { port_key: input_port.key });
     }
 
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
@@ -50,7 +43,7 @@ pub fn show_input_port(
         ui.painter().text(
             input_port_position,
             egui::Align2::CENTER_CENTER,
-            input_port_key.to_string(),
+            input_port.key.to_string(),
             egui::FontId::proportional(25.0),
             egui::Color32::BLACK,
         );
@@ -69,7 +62,7 @@ pub fn show_input_port(
         egui::Color32::WHITE,
     );
 
-    if port_has_connection
+    if *port_has_connection
     {
         return;
     }
@@ -121,6 +114,6 @@ pub fn show_input_port(
 
     if potentially_modified_display_value != display_input_port.value
     {
-        action_queue.push( Action::SetInputPortValue { port_key: *input_port_key, display_value: potentially_modified_display_value });
+        action_queue.push( Action::SetInputPortValue { port_key: input_port.key, display_value: potentially_modified_display_value });
     } 
 }

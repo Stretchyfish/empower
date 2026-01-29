@@ -1,5 +1,7 @@
 use empower_engine::PortValue;
 use empower_engine::node_graph::node::NodeKind;
+use crate::graph_editor::display_node::DisplayNodeStateResponse;
+
 use super::DisplayNodeKind;
 use super::super::DisplayPort;
 use empower_engine::node_graph::node::node_kind::{ConditionNode, ConditionType};
@@ -32,21 +34,21 @@ impl DisplayNodeKind for ConditionDisplayNode
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
         vec![
-            DisplayPort::new("".to_string(), egui::pos2(0.0, 0.0), &input_port_values[0]),
-            DisplayPort::new("A".to_string(), egui::pos2(0.0, 0.0), &input_port_values[1]),
-            DisplayPort::new("B".to_string(), egui::pos2(0.0, 0.0), &input_port_values[2])
+            DisplayPort::new("".to_string(), egui::vec2(0.0, 0.0), &input_port_values[0]),
+            DisplayPort::new("A".to_string(), egui::vec2(0.0, 0.0), &input_port_values[1]),
+            DisplayPort::new("B".to_string(), egui::vec2(0.0, 0.0), &input_port_values[2])
         ]
     }
 
     fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
 
         vec![
-            DisplayPort::new(String::from("true"), egui::pos2(0.0, 0.0), output_port_values[0]),
-            DisplayPort::new(String::from("false"), egui::pos2(0.0, 0.0), output_port_values[1]),
+            DisplayPort::new(String::from("true"), egui::vec2(0.0, 0.0), output_port_values[0]),
+            DisplayPort::new(String::from("false"), egui::vec2(0.0, 0.0), output_port_values[1]),
         ]
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
 
         let condition_node_state = node_kind.as_any_mut().downcast_mut::<ConditionNode>().expect("Condition display node tried to unwrap a node_kind that is not the condition node kind");
 
@@ -77,9 +79,9 @@ impl DisplayNodeKind for ConditionDisplayNode
 
         if original_condition_type != condition_node_state.condition_type
         {
-            return true;
+            return DisplayNodeStateResponse::RefreshNodeStructure;
         }
         
-        false
+        DisplayNodeStateResponse::NoChange
     }
 }

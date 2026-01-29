@@ -3,6 +3,7 @@ use empower_engine::node_graph::node::NodeKind;
 
 use super::DisplayNodeKind;
 use crate::graph_editor::DisplayPort;
+use crate::graph_editor::display_node::DisplayNodeStateResponse;
 
 #[derive(Clone)]
 pub struct NumberDisplayNode
@@ -31,7 +32,7 @@ impl DisplayNodeKind for NumberDisplayNode
         vec![
             DisplayPort::new(
                                                             "A".to_string(), 
-                                                            egui::pos2(0.0, 0.0), 
+                                                            egui::vec2(0.0, 0.0), 
                                                             &input_port_values[0]
                                                         )
         ]
@@ -44,7 +45,7 @@ impl DisplayNodeKind for NumberDisplayNode
         display_outputs.reserve(output_port_values.len());
         for output_port_value in output_port_values
         {
-            let display_port = DisplayPort::nothing(egui::pos2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
+            let display_port = DisplayPort::nothing(egui::vec2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
             display_outputs.push(display_port);
         }
 
@@ -55,7 +56,7 @@ impl DisplayNodeKind for NumberDisplayNode
         egui::Vec2 { x: 175.0, y: 50.0 }
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
 
         let number_node_state = node_kind.as_any_mut().downcast_mut::<NumberNode>().expect("Number display node tried to unwrap a node_kind that is not the number node kind");
 
@@ -79,9 +80,9 @@ impl DisplayNodeKind for NumberDisplayNode
 
         if original_desired_value != number_node_state.desired_value
         {
-            return true;
+            return DisplayNodeStateResponse::RefreshNodeStructure;
         }
 
-        false
+        DisplayNodeStateResponse::NoChange
     }
 } 

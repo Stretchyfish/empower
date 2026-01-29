@@ -24,6 +24,9 @@ use show_image_display_node::ShowImageDisplayNode;
 mod condition_display_node;
 use condition_display_node::ConditionDisplayNode;
 
+mod display_wait_node;
+use display_wait_node::DisplayWaitNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 pub trait DisplayNodeKind
@@ -36,7 +39,7 @@ pub trait DisplayNodeKind
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> bool; // The bool indicates a change 
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse;
 }
 
 impl Clone for Box<dyn DisplayNodeKind>
@@ -45,6 +48,12 @@ impl Clone for Box<dyn DisplayNodeKind>
     {
         self.clone_box()
     }
+}
+
+pub enum DisplayNodeStateResponse
+{
+    NoChange,
+    RefreshNodeStructure,
 }
 
 type DisplayNodeConstructor = fn() -> Box<dyn DisplayNodeKind>;
@@ -61,6 +70,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("math graph", || MathGraphDisplayNode::new() ); 
     m.insert("show image", || ShowImageDisplayNode::new() ); 
     m.insert("condition", || ConditionDisplayNode::new() ); 
+    m.insert("wait", || DisplayWaitNode::new() ); 
 
     m
 });

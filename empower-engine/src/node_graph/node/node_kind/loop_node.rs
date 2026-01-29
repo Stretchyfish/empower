@@ -5,21 +5,21 @@ use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
 #[derive(Clone)]
-pub struct BooleanNode
+pub struct LoopNode
 {
-
+    
 }
 
-impl NodeKind for BooleanNode
+impl NodeKind for LoopNode
 {
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
-        
+
         Box::new( Self {} )
     }
 
     fn name(&self) -> &'static str {
-        "boolean"
+        "loop"
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
@@ -27,36 +27,27 @@ impl NodeKind for BooleanNode
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::from(
-            [
-                PortCompatability::Exatch( PortValue::Bool( false )), 
-            ]
-        )
+        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
     }
 
     fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::from(
-            [
-                PortCompatability::Exatch( PortValue::Bool( false )), 
-            ]
-        )
+        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-    
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
-        let output_value = inputs[0].clone();
-        NodeSetupResponse::Finished(  vec![ output_value ] )
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
+        NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true) ] )
     }
 
     fn update(&mut self) -> NodeUpdateResponse {
-        todo!()
+        NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true) ] )
     }
 
     fn show(&mut self, _: &mut egui::Ui) {

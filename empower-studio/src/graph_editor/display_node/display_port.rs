@@ -8,7 +8,7 @@ pub use display_value::DisplayValue;
 pub struct DisplayPort
 {
     pub text: String,
-    pub position: egui::Pos2,
+    pub relative_position: egui::Vec2,
     pub color: egui::Color32,
     pub value: DisplayValue,
     pub valid: bool,
@@ -16,14 +16,14 @@ pub struct DisplayPort
 
 impl DisplayPort
 {
-    pub fn new(text: String, position: egui::Pos2, port_value: &PortValue) -> Self
+    pub fn new(text: String, relative_position: egui::Vec2, port_value: &PortValue) -> Self
     {
-        Self { text, position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), valid: true }
+        Self { text, relative_position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), valid: true }
     }
 
-    pub fn nothing(position: egui::Pos2, port_value: &PortValue) -> Self
+    pub fn nothing(relative_position: egui::Vec2, port_value: &PortValue) -> Self
     {
-        Self { text: String::new(), position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, valid: true }
+        Self { text: String::new(), relative_position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, valid: true }
     }
 }
 

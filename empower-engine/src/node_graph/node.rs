@@ -4,9 +4,6 @@ use super::NodeGraphKey;
 pub mod node_handle;
 pub use node_handle::NodeHandle;
 
-pub mod node_function;
-pub use node_function::NodeFunction;
-
 pub mod port;
 pub mod node_kind;
 pub use node_kind::NodeKind;

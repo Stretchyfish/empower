@@ -1,6 +1,8 @@
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct VectorNode
@@ -22,10 +24,6 @@ impl NodeKind for VectorNode
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
-    }
-
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
     }
 
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
@@ -54,7 +52,7 @@ impl NodeKind for VectorNode
        self 
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
         let mut port_values_vector = Vec::new();
         port_values_vector.reserve(inputs.len());
 
@@ -63,15 +61,14 @@ impl NodeKind for VectorNode
             port_values_vector.push(port_value.clone());
         }
 
-        Some( vec![ PortValue::Vector( port_values_vector ) ] )
- 
+        NodeSetupResponse::Finished( vec![ PortValue::Vector( port_values_vector ) ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
     

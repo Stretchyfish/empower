@@ -1,12 +1,9 @@
 use std::collections::HashMap;
-use std::any::Any; // @TODO, think I can remove this now and its affect on the traits
+use std::any::Any; 
 
 use once_cell::sync::Lazy;
 
-use crate::utility::text_buffer::TextBuffer;
-
 use super::port::{PortValue, PortCompatability};
-use super::NodeFunction;
 
 mod start_node;
 use start_node::StartNode;
@@ -46,6 +43,19 @@ mod condition_node;
 pub use condition_node::ConditionNode;
 pub use condition_node::ConditionType;
 
+mod loop_node;
+pub use loop_node::LoopNode;
+
+mod wait_node;
+pub use wait_node::WaitNode;
+pub use wait_node::WaitTimeIntervals;
+
+mod restart_loop_node;
+use restart_loop_node::RestartLoopNode;
+
+mod stop_loop_node;
+use stop_loop_node::StopLoopNode;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -53,14 +63,13 @@ pub trait NodeKind
         Self: Sized;
     fn name(&self) -> &'static str;
     fn clone_box(&self) -> Box<dyn NodeKind>; // This is needed to enable trait cloning
-    fn function(&self) -> NodeFunction; // @TODO, maybe rename it behavior?
     fn input_compatabilities(&self) -> Vec<PortCompatability>;
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
     fn as_any_mut(&mut self) -> &mut dyn Any; 
     fn as_any(&self) -> &dyn Any; 
-    fn setup(&mut self, inputs: Vec<&PortValue>, log: &mut TextBuffer) -> Option<Vec<PortValue>>;
-    fn update(&mut self) -> Option<Vec<PortValue>>;
-    fn execute(&mut self, ui: &mut egui::Ui); // @TODO, consider renaming show or other?
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse;
+    fn update(&mut self) -> NodeUpdateResponse;
+    fn show(&mut self, ui: &mut egui::Ui); // @TODO, consider renaming show or other?
 }
 
 impl Clone for Box<dyn NodeKind>
@@ -69,6 +78,25 @@ impl Clone for Box<dyn NodeKind>
     {
         self.clone_box()
     }
+}
+
+pub enum NodeSetupResponse
+{
+    Began,
+    Finished(Vec<PortValue>),
+    FinishedWithLog(Vec<PortValue>, String),
+    CreateWindow,
+    CreateLoop(Vec<PortValue>),
+    RestartLoop,
+    StopLoop,
+    Error(String),
+}
+
+pub enum NodeUpdateResponse
+{
+    Finished(Vec<PortValue>),
+    Running, // @TODO, find a better name
+    ContinueLoop(Vec<PortValue>),
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;
@@ -89,6 +117,10 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(FilePathNode::new().name(), || FilePathNode::new());
     m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
     m.insert(ConditionNode::new().name(), || ConditionNode::new());
+    m.insert(LoopNode::new().name(), || LoopNode::new());
+    m.insert(WaitNode::new().name(), || WaitNode::new());
+    m.insert(RestartLoopNode::new().name(), || RestartLoopNode::new());
+    m.insert(StopLoopNode::new().name(), || StopLoopNode::new());
 
     m
 });

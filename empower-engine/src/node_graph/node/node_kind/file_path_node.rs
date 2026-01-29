@@ -1,6 +1,8 @@
-use crate::{node_graph::node::{NodeFunction, port::{PortCompatability, PortValue}}, utility::text_buffer::TextBuffer};
+use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
+use super::NodeSetupResponse;
+use super::NodeUpdateResponse;
 
 #[derive(Clone)]
 pub struct FilePathNode
@@ -25,10 +27,6 @@ impl NodeKind for FilePathNode
         Box::new( self.clone() )
     }
 
-    fn function(&self) -> NodeFunction {
-        NodeFunction::Instant
-    }
-
     fn input_compatabilities(&self) -> Vec<PortCompatability> {
         Vec::new()
     }
@@ -49,17 +47,15 @@ impl NodeKind for FilePathNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>, _: &mut TextBuffer) -> Option<Vec<PortValue>> {
-
-        println!("Ran this with path: {}", self.path.clone());
-        Some( Vec::from([PortValue::Text( self.path.clone() )]))
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
+        NodeSetupResponse::Finished( vec![  PortValue::Text( self.path.clone() ) ] )
     }
 
-    fn update(&mut self) -> Option<Vec<PortValue>> {
+    fn update(&mut self) -> NodeUpdateResponse {
         todo!()
     }
 
-    fn execute(&mut self, _: &mut egui::Ui) {
+    fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
 }

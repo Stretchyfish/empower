@@ -1,7 +1,7 @@
 
 use empower_engine::{PortValue, node_graph::node::NodeKind};
 
-use crate::graph_editor::DisplayPort;
+use crate::graph_editor::{DisplayPort, display_node::DisplayNodeStateResponse};
 
 use super::DisplayNodeKind;
 
@@ -35,14 +35,14 @@ impl DisplayNodeKind for ShowImageDisplayNode
         display_inputs.reserve(input_port_values.len());
 
         let display_port_trigger = DisplayPort::nothing(
-                                                        egui::pos2(0.0, 0.0), 
+                                                        egui::vec2(0.0, 0.0), 
                                                         &input_port_values[0]
                                                     );
         display_inputs.push(display_port_trigger);
 
         let display_port_x = DisplayPort::new(
                                                         "file path".to_string(), 
-                                                        egui::pos2(0.0, 0.0), 
+                                                        egui::vec2(0.0, 0.0), 
                                                         &input_port_values[1]
                                                     );
         display_inputs.push(display_port_x);
@@ -57,7 +57,7 @@ impl DisplayNodeKind for ShowImageDisplayNode
         display_outputs.reserve(output_port_values.len());
         for output_port_value in output_port_values
         {
-            let display_port = DisplayPort::nothing(egui::pos2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
+            let display_port = DisplayPort::nothing(egui::vec2(0.0, 0.0), &output_port_value); // The position is just defaulted here, because it will be correct in refresh display node
             display_outputs.push(display_port);
         }
 
@@ -68,8 +68,8 @@ impl DisplayNodeKind for ShowImageDisplayNode
         egui::Vec2 { x: 0.0, y: 0.0 }
     }
 
-    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> bool {
-        false
+    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+        DisplayNodeStateResponse::NoChange
     }
 }
 
