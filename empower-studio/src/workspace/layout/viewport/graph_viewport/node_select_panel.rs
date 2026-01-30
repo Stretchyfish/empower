@@ -39,7 +39,8 @@ impl NodeSelectionPanel
 
         node_selection_window.show(ui.ctx(), |ui|
         {
-            ui.text_edit_singleline(&mut self.search_text);
+            ui.text_edit_singleline(&mut self.search_text)
+            .request_focus();
             egui::ScrollArea::vertical()
             .max_height(200.0)
             .max_width(200.0)

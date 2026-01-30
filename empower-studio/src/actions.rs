@@ -3,7 +3,7 @@ use crate::graph_editor::DisplayValue;
 
 pub enum Action
 {
-    SaveProject { project_name: String },
+    SaveProject,
     CreateNode { name: &'static str, position: egui::Pos2 },
     RefreshNodeStructure { node_key: NodeGraphKey },
     DeleteNode { node_key: NodeGraphKey },

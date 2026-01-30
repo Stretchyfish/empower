@@ -2,7 +2,7 @@ use empower_engine::runtime::EmpowerExecutor;
 use crate::graph_editor::GraphEditor;
 use crate::workspace::Layout; 
 use crate::actions::Action;
-use crate::project::Project;
+use crate::project::{Project, ProjectLocation};
 
 pub struct StudioContext
 {
@@ -29,11 +29,17 @@ impl StudioContext
         {
             match action
             {
-                Action::SaveProject { project_name } => 
+                Action::SaveProject => 
                 { 
-                    self.project.save(project_name.clone()); 
+                    if self.project.location == ProjectLocation::Temporary
+                    {
+                        self.layout.project_name_window = Some( self.project.name.clone() );
+                        return;
+                    }
+                    
+                    self.project.save(); 
                     ctx.send_viewport_cmd(
-                        egui::ViewportCommand::Title( project_name )
+                        egui::ViewportCommand::Title( format!("Empower Studio - {}", self.project.name) )
                     );
                 },
                 Action::CreateNode { name, position } => { self.graph_editor.add_node(name, position); },

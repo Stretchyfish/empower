@@ -13,23 +13,23 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
         {
             if ui.button("Save").clicked()
             {
-                let file_path = rfd::FileDialog::new().pick_file();
-
-                if file_path.is_some()
-                {
-                    let file_path  = file_path.unwrap().to_str().unwrap().to_string();
-
-                    action_queue.push( Action::SaveProject { project_name: file_path });
-                }
+                action_queue.push( Action::SaveProject );
             }
             if ui.button("Save As").clicked()
             {
+
             }
             if ui.button("Open").clicked()
             {
+
             }
             if ui.button("Open Recent").clicked()
             {
+
+            }
+            if ui.button("Project Settings").clicked()
+            {
+                studio_context.layout.project_setting_window = !studio_context.layout.project_setting_window;
             }
         });
         
