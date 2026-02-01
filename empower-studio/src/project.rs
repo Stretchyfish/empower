@@ -1,11 +1,15 @@
-use std::{fs, path::PathBuf};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 use chrono::ParseError;
+
+mod asset;
+use asset::{AssetId, Asset};
 
 pub struct Project
 {
     pub name: String,
-    pub location: ProjectLocation,
+    pub state: ProjectState,
+    pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
     pub dirty: bool, // To detect if anything changed since last save
 }
 
@@ -16,8 +20,8 @@ impl Project
         Self
         {
             name: String::from("Untitled"),
-            location: ProjectLocation::Temporary, // @TODO, This is technically the parent directory, should maybe be changed or the name should be added
-
+            state: ProjectState::Temporary, // @TODO, This is technically the parent directory, should maybe be changed or the name should be added
+            assets: HashMap::new(),
             dirty: true, // since it is not saved yet
         }
     }
@@ -26,7 +30,7 @@ impl Project
     {
         // @TODO, this function is still very unsafe, needs a lot more safety checks
        
-        if self.location == ProjectLocation::Temporary
+        if self.state == ProjectState::Temporary
         {
             self.setup_project_directory();
             return;
@@ -55,12 +59,12 @@ impl Project
             panic!("Failed to get file path!"); // @TODO, in the future, handle this error properly!
         }
 
-        self.location = ProjectLocation::Path( file_path.unwrap() ); // @TODO, this kind of code is reused a lot, find a better way
+        self.state = ProjectState::Saved( file_path.unwrap() ); // @TODO, this kind of code is reused a lot, find a better way
 
-        let parent_directory = match &self.location
+        let parent_directory = match &self.state
         {
-            ProjectLocation::Temporary => panic!("Tried to access location of a temporary project, should never happen."),
-            ProjectLocation::Path(path_buf) => path_buf,
+            ProjectState::Temporary => panic!("Tried to access location of a temporary project, should never happen."),
+            ProjectState::Saved(path_buf) => path_buf,
         };
 
         let project_directory = parent_directory.join(self.name.clone());
@@ -87,8 +91,8 @@ impl Project
 }
 
 #[derive(PartialEq, Eq)]
-pub enum ProjectLocation
+pub enum ProjectState
 {
     Temporary,
-    Path( PathBuf ),
+    Saved( PathBuf ),
 }

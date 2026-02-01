@@ -24,9 +24,9 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
         {
             ui.label("Location");
 
-            match &mut studio_context.project.location
+            match &mut studio_context.project.state
             {
-                crate::project::ProjectLocation::Temporary => 
+                crate::project::ProjectState::Temporary => 
                 {
                     if ui.button("Unsaved*").clicked()
                     {
@@ -34,10 +34,10 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                                         .set_title("Choose project location")
                                         .set_can_create_directories(true)
                                         .pick_folder();
-                        studio_context.project.location = crate::project::ProjectLocation::Path(save_folder.unwrap());
+                        studio_context.project.state = crate::project::ProjectState::Saved(save_folder.unwrap());
                     }
                 },
-                crate::project::ProjectLocation::Path( path ) => 
+                crate::project::ProjectState::Saved( path ) => 
                 {
                     let mut path_string = path.clone().to_str().unwrap().to_string();
                     let text_edit_widget = egui::TextEdit::singleline( &mut path_string ) // @TODO, look into this again
@@ -51,7 +51,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                                         .set_title("Choose project location")
                                         .set_can_create_directories(true)
                                         .pick_folder();
-                        studio_context.project.location = crate::project::ProjectLocation::Path(save_folder.unwrap());
+                        studio_context.project.state = crate::project::ProjectState::Saved(save_folder.unwrap());
                     }
                 },
             }

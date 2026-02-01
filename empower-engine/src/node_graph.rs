@@ -665,4 +665,14 @@ impl NodeGraph
 
         true
     }
+
+    pub fn save()
+    {
+        
+    }
+
+    pub fn load()
+    {
+        
+    }
 }

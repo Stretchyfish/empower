@@ -31,6 +31,10 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             {
                 studio_context.layout.project_setting_window = !studio_context.layout.project_setting_window;
             }
+            if ui.button("Export").clicked()
+            {
+                
+            }
         });
         
         ui.menu_button("Nodes", |ui|

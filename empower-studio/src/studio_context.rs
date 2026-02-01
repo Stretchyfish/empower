@@ -2,7 +2,7 @@ use empower_engine::runtime::EmpowerExecutor;
 use crate::graph_editor::GraphEditor;
 use crate::workspace::Layout; 
 use crate::actions::Action;
-use crate::project::{Project, ProjectLocation};
+use crate::project::{Project, ProjectState};
 
 pub struct StudioContext
 {
@@ -31,7 +31,7 @@ impl StudioContext
             {
                 Action::SaveProject => 
                 { 
-                    if self.project.location == ProjectLocation::Temporary
+                    if self.project.state == ProjectState::Temporary
                     {
                         self.layout.project_name_window = Some( self.project.name.clone() );
                         return;
