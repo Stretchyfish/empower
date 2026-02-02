@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, path::PathBuf};
 use chrono::ParseError;
 
 mod asset;
-use asset::{AssetId, Asset};
+pub use asset::{AssetId, Asset, AssetKind};
 
 pub struct Project
 {
@@ -87,6 +87,20 @@ impl Project
 
         fs::create_dir(project_directory.join("assets").clone());
         fs::create_dir(project_directory.join("graphs"));
+    }
+
+    pub fn import_asset(&mut self, path: &PathBuf)
+    {
+        let new_asset_id = self.assets.len() as AssetId;
+
+        let new_asset = Asset
+        {
+            id: new_asset_id,
+            path: path.clone(),
+            kind: AssetKind::None,
+        };
+
+        self.assets.insert(new_asset_id, new_asset);
     }
 }
 

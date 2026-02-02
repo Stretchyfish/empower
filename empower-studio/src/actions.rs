@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use empower_engine::NodeGraphKey;
 use crate::graph_editor::DisplayValue;
 
@@ -22,4 +24,5 @@ pub enum Action
     StartNodeGraphExecution,
     StartNodeGraphExecutionFromEntry { node_key: NodeGraphKey },
     StopNodeGraphExecution,
+    ImportAsset { path: PathBuf },
 }

@@ -87,6 +87,10 @@ impl StudioContext
                     self.graph_editor.executor = None;
                 },
                 Action::ToggleExecutionHisotryWindow => self.layout.execution_history_window_active = !self.layout.execution_history_window_active,
+                Action::ImportAsset { path } =>
+                {
+                    self.project.import_asset(&path);
+                },
             }
         }
         
