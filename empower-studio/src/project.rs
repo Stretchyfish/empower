@@ -5,10 +5,13 @@ use chrono::ParseError;
 mod asset;
 pub use asset::{AssetId, Asset, AssetKind};
 
+use crate::graph_editor::GraphEditor;
+
 pub struct Project
 {
     pub name: String,
     pub state: ProjectState,
+    pub graph_editor: GraphEditor,
     pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
     pub dirty: bool, // To detect if anything changed since last save
 }
@@ -21,6 +24,7 @@ impl Project
         {
             name: String::from("Untitled"),
             state: ProjectState::Temporary, // @TODO, This is technically the parent directory, should maybe be changed or the name should be added
+            graph_editor: GraphEditor::new(),
             assets: HashMap::new(),
             dirty: true, // since it is not saved yet
         }

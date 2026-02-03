@@ -25,14 +25,14 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
     
         ui.horizontal(|ui| 
         {
-            ui.checkbox(&mut studio_context.graph_editor.debug_info.show_node_execution_order, "Show node execution order");
+            ui.checkbox(&mut studio_context.project.graph_editor.debug_info.show_node_execution_order, "Show node execution order");
 
             if ui.button("Refresh execution order").clicked()
             {
-                // let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.graph_editor.node_graph);
+                // let node_execution_order = empower_engine::runtime::analysis::detect_execution_order(&mut studio_context.project.graph_editor.node_graph);
                 let start_node_key = 1; // @TODO, find a better way of doing this?
-                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order( &start_node_key, &mut studio_context.graph_editor.node_graph);
-                studio_context.graph_editor.debug_info.node_execution_order = node_execution_order;
+                let node_execution_order = empower_engine::runtime::analysis::detect_execution_order( &start_node_key, &mut studio_context.project.graph_editor.node_graph);
+                studio_context.project.graph_editor.debug_info.node_execution_order = node_execution_order;
             }
         });
     
@@ -47,11 +47,11 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         ui.heading("Node Graph");
 
-        ui.label(format!("Input ports: {}", studio_context.graph_editor.node_graph.input_port_count()));
-        ui.label(format!("Output ports: {}", studio_context.graph_editor.node_graph.output_port_count()));
-        ui.label(format!("Connections: {}", studio_context.graph_editor.node_graph.connections_count()));
+        ui.label(format!("Input ports: {}", studio_context.project.graph_editor.node_graph.input_port_count()));
+        ui.label(format!("Output ports: {}", studio_context.project.graph_editor.node_graph.output_port_count()));
+        ui.label(format!("Connections: {}", studio_context.project.graph_editor.node_graph.connections_count()));
 
-        egui::CollapsingHeader::new(format!("Nodes: {}", studio_context.graph_editor.node_graph.node_count()))
+        egui::CollapsingHeader::new(format!("Nodes: {}", studio_context.project.graph_editor.node_graph.node_count()))
         .default_open(false)
         .show(ui, |ui| 
         {
@@ -62,7 +62,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 ui.label("input ports");
                 ui.label("output ports");
             });
-            for node in studio_context.graph_editor.node_graph.get_all_nodes()
+            for node in studio_context.project.graph_editor.node_graph.get_all_nodes()
             {
                 let input_port_keys = &node.input_port_keys;
                 let output_port_keys = &node.output_port_keys;
@@ -98,7 +98,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
 
-        egui::CollapsingHeader::new(format!("Input ports: {}", studio_context.graph_editor.node_graph.input_port_count()))
+        egui::CollapsingHeader::new(format!("Input ports: {}", studio_context.project.graph_editor.node_graph.input_port_count()))
             .default_open(false)
             .show(ui, |ui| 
         {
@@ -109,7 +109,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 ui.label("value");
            });
 
-            for port in studio_context.graph_editor.node_graph.get_all_input_ports()
+            for port in studio_context.project.graph_editor.node_graph.get_all_input_ports()
             {
                 ui.horizontal(|ui|
                 {
@@ -121,7 +121,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
 
-        egui::CollapsingHeader::new(format!("Output ports: {}", studio_context.graph_editor.node_graph.output_port_count()))
+        egui::CollapsingHeader::new(format!("Output ports: {}", studio_context.project.graph_editor.node_graph.output_port_count()))
             .default_open(false)
             .show(ui, |ui| 
         {
@@ -132,7 +132,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 ui.label("value");
            });
 
-            for port in studio_context.graph_editor.node_graph.get_all_output_ports()
+            for port in studio_context.project.graph_editor.node_graph.get_all_output_ports()
             {
                 ui.horizontal(|ui|
                 {
@@ -143,7 +143,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
 
-        egui::CollapsingHeader::new(format!("Connections: {}", studio_context.graph_editor.node_graph.connections_count()))
+        egui::CollapsingHeader::new(format!("Connections: {}", studio_context.project.graph_editor.node_graph.connections_count()))
             .default_open(false)
             .show(ui, |ui| 
         {
@@ -152,7 +152,7 @@ fn node_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             //     ui.label("port out");
             //     ui.label("port in");
             // });
-            for connection in studio_context.graph_editor.node_graph.get_all_connections()
+            for connection in studio_context.project.graph_editor.node_graph.get_all_connections()
             {
                 ui.horizontal(|ui|
                 {
@@ -175,7 +175,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
 {
     ui.vertical(|ui| {
         ui.heading("Display Graph");
-        egui::CollapsingHeader::new(format!("Display Nodes: {}", studio_context.graph_editor.display_nodes.len()))
+        egui::CollapsingHeader::new(format!("Display Nodes: {}", studio_context.project.graph_editor.display_nodes.len()))
             .default_open(false)
             .show(ui, |ui| {
 
@@ -184,7 +184,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 {
                     ui.label("id");
                 });
-                for (key, _) in studio_context.graph_editor.display_nodes.iter()
+                for (key, _) in studio_context.project.graph_editor.display_nodes.iter()
                 {
                     ui.horizontal(|ui|
                     {
@@ -197,7 +197,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 }
             });
 
-        egui::CollapsingHeader::new(format!("Display Input Ports: {}", studio_context.graph_editor.display_input_ports.len()))
+        egui::CollapsingHeader::new(format!("Display Input Ports: {}", studio_context.project.graph_editor.display_input_ports.len()))
         .default_open(false)
         .show(ui, |ui|
         {
@@ -205,7 +205,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 {
                     ui.label("id");
                 });
-                for (key, _) in studio_context.graph_editor.display_input_ports.iter()
+                for (key, _) in studio_context.project.graph_editor.display_input_ports.iter()
                 {
                     ui.horizontal(|ui|
                     {
@@ -217,7 +217,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 }
         });
 
-        egui::CollapsingHeader::new(format!("Display Output Ports: {}", studio_context.graph_editor.display_output_ports.len()))
+        egui::CollapsingHeader::new(format!("Display Output Ports: {}", studio_context.project.graph_editor.display_output_ports.len()))
         .default_open(false)
         .show(ui, |ui|
         {
@@ -225,7 +225,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 {
                     ui.label("id");
                 });
-                for (key, _) in studio_context.graph_editor.display_output_ports.iter()
+                for (key, _) in studio_context.project.graph_editor.display_output_ports.iter()
                 {
                     ui.horizontal(|ui|
                     {
@@ -237,7 +237,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 }
         });
 
-        egui::CollapsingHeader::new(format!("Selected nodes: {}", studio_context.graph_editor.selected_nodes.len()))
+        egui::CollapsingHeader::new(format!("Selected nodes: {}", studio_context.project.graph_editor.selected_nodes.len()))
         .default_open(false)
         .show(ui, |ui|
         {
@@ -245,7 +245,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
                 {
                     ui.label("id");
                 });
-                for key in studio_context.graph_editor.selected_nodes.iter()
+                for key in studio_context.project.graph_editor.selected_nodes.iter()
                 {
                     ui.horizontal(|ui|
                     {
@@ -259,7 +259,7 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
 
         let port_searcher_show =
         {
-            match studio_context.graph_editor.port_searcher
+            match studio_context.project.graph_editor.port_searcher
             {
                 Some(_) => "active",
                 None => "inactive",
@@ -270,12 +270,12 @@ fn display_graph_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext
         .default_open(true)
         .show(ui, |ui|
         {
-            if studio_context.graph_editor.port_searcher.is_none()
+            if studio_context.project.graph_editor.port_searcher.is_none()
             {
                 return;
             }
 
-            let port_searcher = studio_context.graph_editor.port_searcher.as_ref().unwrap();
+            let port_searcher = studio_context.project.graph_editor.port_searcher.as_ref().unwrap();
             ui.horizontal(|ui|
             {
                 ui.label(format!("Key: {}", port_searcher.port_key));
@@ -300,7 +300,7 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     ui.vertical(|ui| {
 
         let mut active_text = "inactive";
-        if studio_context.graph_editor.executor.is_some()
+        if studio_context.project.graph_editor.executor.is_some()
         {
             active_text = "active";
         }
@@ -310,12 +310,12 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         .default_open(false)
         .show(ui, |ui| {
 
-            if studio_context.graph_editor.executor.is_none()
+            if studio_context.project.graph_editor.executor.is_none()
             {
                 return;
             }
 
-            let executor = studio_context.graph_editor.executor.as_ref().unwrap();
+            let executor = studio_context.project.graph_editor.executor.as_ref().unwrap();
 
             egui::CollapsingHeader::new(format!("Task Manager ({})", executor.task_manager.tasks.len()))
             .default_open(false)

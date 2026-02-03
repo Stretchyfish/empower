@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
-use crate::{GraphEditor, actions::Action};
+use crate::{GraphEditor, actions::Action, project::Project};
 
 mod empty_viewport;
 use empty_viewport::EmptyViewport;
@@ -22,7 +22,7 @@ pub trait Viewport
         Self: Sized;
 
     fn name(&self) -> &'static str;
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>); // @TODO, should get changed to take project as input
+    fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>); // @TODO, should get changed to take project as input
 }
 
 type ViewportConstructor = fn() -> Box<dyn Viewport>;

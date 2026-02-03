@@ -69,7 +69,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
 
     ui.horizontal(|ui|
     {
-        if studio_context.graph_editor.executor.is_none()
+        if studio_context.project.graph_editor.executor.is_none()
         {
             ui.scope(|ui|
             {
@@ -78,7 +78,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
                 if ui.button("▶ Start").clicked()
                 {
                     action_queue.push( Action::StartNodeGraphExecution );
-                    studio_context.graph_editor.executor_history = Some( (Local::now(), TextBuffer::new()) ); // @TODO, make this behavior better
+                    studio_context.project.graph_editor.executor_history = Some( (Local::now(), TextBuffer::new()) ); // @TODO, make this behavior better
                 }
             });
 
@@ -95,21 +95,21 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
                 {
                     action_queue.push( Action::StopNodeGraphExecution );
                     {
-                        let executor = studio_context.graph_editor.executor.as_ref().unwrap(); // @TODO, find a better way to achieve this behavior
-                        studio_context.graph_editor.executor_history = Some( ( executor.start_time.clone(), executor.history.clone() )); // @TODO, make a shared way to save this independent of where its stopped
+                        let executor = studio_context.project.graph_editor.executor.as_ref().unwrap(); // @TODO, find a better way to achieve this behavior
+                        studio_context.project.graph_editor.executor_history = Some( ( executor.start_time.clone(), executor.history.clone() )); // @TODO, make a shared way to save this independent of where its stopped
                     }
                 }
                 ui.spinner(); 
             });
         }
 
-        ui.checkbox(&mut studio_context.graph_editor.debug_info.show_keys, "show keys");
+        ui.checkbox(&mut studio_context.project.graph_editor.debug_info.show_keys, "show keys");
 
         ui.add_space(20.0);
 
-        if studio_context.graph_editor.executor_history.is_some()
+        if studio_context.project.graph_editor.executor_history.is_some()
         {
-            let execution_history = studio_context.graph_editor.executor_history.as_ref().unwrap();
+            let execution_history = studio_context.project.graph_editor.executor_history.as_ref().unwrap();
 
             let time_as_text = format!("{}", execution_history.0.format("%Y-%m-%d %H:%M:%S"));
             ui.label(time_as_text);

@@ -1,7 +1,7 @@
-use empower_engine::NodeGraphKey;
+use empower_engine::{NodeGraph, NodeGraphKey};
 use egui;
 
-use crate::{GraphEditor, actions::Action, workspace::layout::viewport::graph_viewport::user_inputs::GraphViewportUserInputs};
+use crate::{GraphEditor, actions::Action, project::Project, workspace::layout::viewport::graph_viewport::user_inputs::GraphViewportUserInputs};
 
 use super::Viewport;
 
@@ -51,12 +51,12 @@ impl Viewport for GraphViewport
         "graph viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) {
+    fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
-        self.show_canvas(ui, graph_editor, &user_inputs, viewport_name, action_queue);
-        self.process_user_inputs(&user_inputs, graph_editor, action_queue);
+        self.show_canvas(ui, &mut project.graph_editor, &user_inputs, viewport_name, action_queue);
+        self.process_user_inputs(&user_inputs, &project.graph_editor, action_queue);
     }
 }
 

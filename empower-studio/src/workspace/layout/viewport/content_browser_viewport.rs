@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::{actions::Action, project::{Asset, AssetId, AssetKind}};
+use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
 
 use super::Viewport;
 
@@ -27,13 +27,18 @@ impl Viewport for ContentBrowserViewport
         "content browser viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut crate::graph_editor::GraphEditor, viewport_name: &String, action_queue: &mut Vec<Action>) {
-
+    fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
         if ui.button("import asset").clicked()
         {
+            if project.state == ProjectState::Temporary
+            {
+                action_queue.push(Action::SaveProject);
+                return;
+            }
+            
             let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
-                                                .set_title("Import asset")
+                                                .set_title("Import asset") // @TODO, this should probably be in the action of import asset
                                                 .pick_file();
 
             if file_path.is_none()
@@ -59,7 +64,7 @@ impl Viewport for ContentBrowserViewport
                     let available_width = ui.available_width();
                     let max_elements_per_row = ((available_width + ELEMENT_SPACING) / (THUMBNAIL_SIZE.x + ELEMENT_SPACING)).floor() as i32;
 
-                    self.show_content_browser_elements(ui, max_elements_per_row);
+                    self.show_content_browser_elements(ui, project, max_elements_per_row);
                 });
         });
 
@@ -68,18 +73,11 @@ impl Viewport for ContentBrowserViewport
 
 impl ContentBrowserViewport
 {
-    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, max_elements_per_row: i32)
+    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &Project, max_elements_per_row: i32)
     {
         let mut element_index = 0;
 
-        let mut temp_assets: HashMap<String, Asset> = HashMap::new();
-        temp_assets.insert("test1".to_string(), Asset { id: 0, path: PathBuf::new(), kind: AssetKind::None });
-
-        let mut asset_keys = Vec::new();
-        for asset_key in temp_assets.keys()
-        {
-            asset_keys.push(asset_key.clone());
-        }
+        let asset_keys: Vec<_> = project.assets.keys().collect();
 
         // @TODO, all the code below here needs a rework
         
@@ -97,7 +95,7 @@ impl ContentBrowserViewport
                         break;
                     }
                     
-                    let asset = temp_assets[&asset_keys[element_index]].clone();
+                    let asset = project.assets.get(asset_keys[element_index]).unwrap(); 
 
                     let icon = String::from("📃");
 

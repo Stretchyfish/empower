@@ -53,16 +53,16 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queu
             .show_inside(
                 ui,
                 &mut TabViewer {
-                    graph_editor: &mut studio_context.graph_editor,
+                    project: &mut studio_context.project,
                     viewports: &mut studio_context.layout.viewports,
                     action_queue,
                 },
             );
 
         // @TODO, this needs to be moved elsewhere!
-        if studio_context.graph_editor.executor.is_some()
+        if studio_context.project.graph_editor.executor.is_some()
         {
-            let executor = studio_context.graph_editor.executor.as_mut().unwrap();
+            let executor = studio_context.project.graph_editor.executor.as_mut().unwrap();
 
             if !executor.is_running()
             {

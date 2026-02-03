@@ -10,13 +10,13 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
     .open(&mut window_active)
     .show(ctx, |ui| 
     {
-        if studio_context.graph_editor.executor_history.is_none()
+        if studio_context.project.graph_editor.executor_history.is_none()
         {
             ui.label("Error, window appeared, but no execution has happened yet");
             return;
         }
 
-        for line in &studio_context.graph_editor.executor_history.as_ref().unwrap().1.lines
+        for line in &studio_context.project.graph_editor.executor_history.as_ref().unwrap().1.lines
         {
             ui.label(format!("{}", line));
         }
