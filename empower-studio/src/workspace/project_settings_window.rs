@@ -26,7 +26,11 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
 
             match &mut studio_context.project.state
             {
-                crate::project::ProjectState::Temporary => 
+                crate::project::ProjectState::Undefined =>
+                {
+                    todo!();
+                }
+                crate::project::ProjectState::Temporary(_) => 
                 {
                     if ui.button("Unsaved*").clicked()
                     {

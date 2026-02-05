@@ -5,6 +5,7 @@ use crate::graph_editor::DisplayValue;
 
 pub enum Action
 {
+    CreateTemporaryProject,
     SaveProject,
     CreateNode { name: &'static str, position: egui::Pos2 },
     RefreshNodeStructure { node_key: NodeGraphKey },

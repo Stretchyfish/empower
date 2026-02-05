@@ -7,7 +7,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
     let mut window_active = studio_context.layout.debug_window_active;
     egui::Window::new("Debug Panel")
     .collapsible(true)
-    .resizable(false)
+    .resizable(true)
     .open(&mut window_active)
     .show(ctx, |ui| 
     {
@@ -21,6 +21,12 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             ui.add_space(0.5);
 
             executeion_debugging(ui, studio_context);
+
+            ui.add_space(0.5);
+
+            project_debugging(ui, studio_context);
+
+            ui.add_space(0.5);
         });
     
         ui.horizontal(|ui| 
@@ -392,4 +398,39 @@ fn executeion_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             //     }
         });
     });
+}
+
+fn project_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
+{
+    egui::CollapsingHeader::new("Project")
+    .default_open(false)
+    .show(ui, |ui| {
+
+        ui.label(format!("name: {}", studio_context.project.name));
+
+        let state = match &studio_context.project.state
+        {
+            crate::project::ProjectState::Undefined => "undefined",
+            crate::project::ProjectState::Temporary(path_buf) => "temporary",
+            crate::project::ProjectState::Saved(path_buf) => "saved",
+        };
+
+        
+        ui.label(format!("state: {}", state));
+
+        let location = match &studio_context.project.state
+        {
+            crate::project::ProjectState::Undefined => todo!(),
+            crate::project::ProjectState::Temporary(path_buf) => path_buf.to_string_lossy(),
+            crate::project::ProjectState::Saved(path_buf) => path_buf.to_string_lossy(),
+        };
+
+        
+        ui.label(format!("location: {}", location));
+    });
+
+
+
+    
+    
 }

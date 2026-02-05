@@ -27,18 +27,30 @@ impl StudioContext
         {
             match action
             {
+                Action::CreateTemporaryProject =>
+                {
+                    
+                },
                 Action::SaveProject => 
                 { 
-                    if self.project.state == ProjectState::Temporary
+                    if self.project.name == String::from("Untitled") // @TODO, find a better way!
                     {
                         self.layout.project_name_window = Some( self.project.name.clone() );
                         return;
                     }
                     
-                    self.project.save(); 
-                    ctx.send_viewport_cmd(
-                        egui::ViewportCommand::Title( format!("Empower Studio - {}", self.project.name) )
-                    );
+                    self.project.save();
+                    
+                    // if self.project.state == ProjectState::Temporary(_)
+                    // {
+                    //     self.layout.project_name_window = Some( self.project.name.clone() );
+                    //     return;
+                    // }
+                    
+                    // self.project.save(); 
+                    // ctx.send_viewport_cmd(
+                    //     egui::ViewportCommand::Title( format!("Empower Studio - {}", self.project.name) )
+                    // );
                 },
                 Action::CreateNode { name, position } => { self.project.graph_editor.add_node(name, position); },
                 Action::RefreshNodeStructure { node_key } => { self.project.graph_editor.refresh_node_strcuture(&node_key); },

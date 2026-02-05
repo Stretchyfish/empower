@@ -31,11 +31,11 @@ impl Viewport for ContentBrowserViewport
 
         if ui.button("import asset").clicked()
         {
-            if project.state == ProjectState::Temporary
-            {
-                action_queue.push(Action::SaveProject);
-                return;
-            }
+            // if project.state == ProjectState::Temporary()
+            // {
+            //     action_queue.push(Action::SaveProject);
+            //     return;
+            // }
             
             let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
                                                 .set_title("Import asset") // @TODO, this should probably be in the action of import asset
