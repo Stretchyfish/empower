@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::fmt;
 
 pub type AssetId = i32;
 
@@ -17,4 +18,12 @@ pub enum AssetKind
     Folder,
     Text,
     Image,
+}
+
+impl fmt::Display for AssetKind
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
+    {
+        write!(f, "{}", self)
+    }
 }

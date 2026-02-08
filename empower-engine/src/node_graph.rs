@@ -666,7 +666,7 @@ impl NodeGraph
         true
     }
 
-    pub fn save()
+    pub fn save(&mut self)
     {
         
     }

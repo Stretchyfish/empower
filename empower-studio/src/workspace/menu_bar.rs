@@ -17,7 +17,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             }
             if ui.button("Save As").clicked()
             {
-
+                action_queue.push( Action::SaveProjectAs );
             }
             if ui.button("Open").clicked()
             {
