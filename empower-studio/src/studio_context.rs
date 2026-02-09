@@ -106,6 +106,14 @@ impl StudioContext
                 {
                     self.project.import_asset(&path);
                 },
+                Action::CreateFile { path } =>
+                {
+                    self.project.create_file(&path);
+                },
+                Action::CreateFolder { path } =>
+                {
+                    self.project.create_folder(&path);
+                }
             }
         }
         

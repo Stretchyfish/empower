@@ -66,7 +66,6 @@ impl Project
 
         fs::create_dir(temp_directory_root.clone() );
         fs::create_dir(temp_directory_root.join("assets").clone());
-        fs::create_dir(temp_directory_root.join("graphs"));
 
         self.state = ProjectState::Temporary( temp_directory_root.clone() );
     }
@@ -184,6 +183,33 @@ impl Project
         };
 
         self.assets.insert(new_asset_id, new_asset);
+    }
+
+    pub fn create_file(&mut self, path: &PathBuf)
+    {
+        let create_file_result = fs::File::create(path);
+        match create_file_result
+        {
+            Ok(_) => {},
+            Err( error ) => 
+            {
+                println!("Error when creating file : {}", error.kind().to_string());
+            },
+        }
+    }
+
+    pub fn create_folder(&mut self, path: &PathBuf)
+    {
+        let create_directory_result = fs::create_dir(path);
+
+        match create_directory_result
+        {
+            Ok(_) => {},
+            Err( error ) => 
+            {
+                println!("Error when creating directory in create folder : {}", error.kind().to_string());
+            },
+        }
     }
 }
 

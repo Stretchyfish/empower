@@ -27,4 +27,6 @@ pub enum Action
     StartNodeGraphExecutionFromEntry { node_key: NodeGraphKey },
     StopNodeGraphExecution,
     ImportAsset { path: PathBuf },
+    CreateFile { path: PathBuf },
+    CreateFolder { path: PathBuf },
 }

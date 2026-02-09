@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{any::Any, collections::{HashMap, VecDeque}, fs, path::PathBuf};
 
 use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
 
@@ -9,8 +9,11 @@ const ELEMENT_SPACING: f32 = 10.0;
 
 pub struct ContentBrowserViewport
 {
-    current_directory: PathBuf,
-    selected_asset: Option<AssetId>,
+    current_directory: Option<PathBuf>,
+    directory_distory: VecDeque<PathBuf>,
+    selected_asset: Option<PathBuf>,
+    show_quick_feature_window: bool,
+    quick_feature_window_position_when_activated: egui::Pos2,
 }
 
 
@@ -20,7 +23,13 @@ impl Viewport for ContentBrowserViewport
     where
         Self: Sized {
 
-        Box::new( Self { current_directory: PathBuf::new(), selected_asset: None } ) // @TODO, set this up properly!
+        Box::new( Self { 
+            current_directory: None, 
+            directory_distory: VecDeque::new(),
+            selected_asset: None, 
+            show_quick_feature_window: false,
+            quick_feature_window_position_when_activated: egui::Pos2::new(0.0, 0.0),
+          } ) // @TODO, set this up properly!
     }
 
     fn name(&self) -> &'static str {
@@ -29,25 +38,98 @@ impl Viewport for ContentBrowserViewport
 
     fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
-        if ui.button("import asset").clicked()
+        if self.current_directory.is_none() && project.state != ProjectState::Undefined
         {
-            // if project.state == ProjectState::Temporary()
-            // {
-            //     action_queue.push(Action::SaveProject);
-            //     return;
-            // }
-            
-            let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
-                                                .set_title("Import asset") // @TODO, this should probably be in the action of import asset
-                                                .pick_file();
-
-            if file_path.is_none()
+            self.current_directory = Some( match &project.state // @TODO, find a better way!
             {
-                panic!("Failed to get file path in import asset!"); // @TODO, in the future, handle this error properly!
+                ProjectState::Undefined => panic!("Entered an impossible state"),
+                ProjectState::Temporary(path_buf) => path_buf.clone().join("assets"),
+                ProjectState::Saved(path_buf) => path_buf.clone().join("assets"),
+            });
+        }
+        
+        ui.horizontal(|ui|
+        {
+            if ui.button("import asset").clicked()
+            {
+                // if project.state == ProjectState::Temporary()
+                // {
+                //     action_queue.push(Action::SaveProject);
+                //     return;
+                // }
+        
+                let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
+                                                    .set_title("Import asset") // @TODO, this should probably be in the action of import asset
+                                                    .pick_file();
+
+                if file_path.is_none()
+                {
+                    panic!("Failed to get file path in import asset!"); // @TODO, in the future, handle this error properly!
+                }
+
+                action_queue.push( Action::ImportAsset { path: file_path.unwrap() });
             }
 
-            action_queue.push( Action::ImportAsset { path: file_path.unwrap() });
-        }
+            if ui.button("👈").clicked()
+            {
+                // @TODO, find a better approach
+                if self.directory_distory.len() > 10
+                {
+                    self.directory_distory.pop_front();
+                }
+                self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
+
+                // @TODO, this whole thing is very dangerous, find a better way
+                self.current_directory.as_mut().unwrap().pop();
+            }
+
+            if !self.directory_distory.is_empty()
+            {
+                if ui.button("👉").clicked()
+                {
+                    self.current_directory = self.directory_distory.pop_front();
+                }
+            }
+        });
+
+        ui.horizontal(|ui|
+        {
+            let mut cumulative_paths = Vec::new();
+
+            {
+                let mut accumelating_path = PathBuf::new().join("/");
+
+                for path_component in self.current_directory.as_ref().unwrap().components()
+                {
+                    if let std::path::Component::Normal(name) = path_component
+                    {
+                        accumelating_path.push(name);
+                        cumulative_paths.push((accumelating_path.clone(), name.to_string_lossy().to_string()));
+                    }
+                }
+            }
+
+            let mut clicked_breadcrum_path_button = None;
+
+            for (path, name) in cumulative_paths
+            {
+                let breadcrum_path_button = egui::Button::new(name).frame(false);
+
+                let breadcrum_path_response = ui.add(breadcrum_path_button);
+
+                if breadcrum_path_response.clicked()
+                {
+                    clicked_breadcrum_path_button = Some( path );
+                }
+
+                ui.label("/");
+            }
+
+            if clicked_breadcrum_path_button.is_some()
+            {
+                self.current_directory = Some( clicked_breadcrum_path_button.as_ref().unwrap().clone() );
+            }
+        });
 
         ui.separator();
 
@@ -64,61 +146,185 @@ impl Viewport for ContentBrowserViewport
                     let available_width = ui.available_width();
                     let max_elements_per_row = ((available_width + ELEMENT_SPACING) / (THUMBNAIL_SIZE.x + ELEMENT_SPACING)).floor() as i32;
 
-                    self.show_content_browser_elements(ui, project, max_elements_per_row);
+                    self.show_content_browser_elements(ui, project, max_elements_per_row, action_queue);
                 });
         });
-
     }
 }
 
 impl ContentBrowserViewport
 {
-    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &Project, max_elements_per_row: i32)
+    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &Project, max_elements_per_row: i32, action_queue: &mut Vec<Action>)
     {
-        let mut element_index = 0;
-
-        let asset_keys: Vec<_> = project.assets.keys().collect();
-
-        // @TODO, all the code below here needs a rework
-        
-        let mut keep_showing_elements = true;
-        while keep_showing_elements
+        let pane_rect = ui.max_rect(); // @TODO, combine this into a function
+        if ui.rect_contains_pointer(pane_rect) && ui.input(|i| i.pointer.secondary_clicked())
         {
-            ui.horizontal(|ui|
+            self.show_quick_feature_window = !self.show_quick_feature_window;
+
+            if self.show_quick_feature_window
             {
-                let mut elements_in_row = 0;
-                while elements_in_row < max_elements_per_row
-                {
-                    if element_index >= asset_keys.len()
-                    {
-                        keep_showing_elements = false;
-                        break;
-                    }
-                    
-                    let asset = project.assets.get(asset_keys[element_index]).unwrap(); 
-
-                    let icon = String::from("📃");
-
-                    let mut is_asset_selected = false;
-                    if self.selected_asset.is_some()
-                    {
-                        is_asset_selected = self.selected_asset.unwrap() == asset.id;
-                    }
-                    
-                    if ui.selectable_label(is_asset_selected, icon).clicked()
-                    {
-                        self.selected_asset = Some( asset.id );
-
-                        if is_asset_selected
-                        {
-                            self.selected_asset = None;
-                        }
-                    }
-
-                    elements_in_row += 1;
-                    element_index += 1;
-                }
-            });
+                self.quick_feature_window_position_when_activated = ui.input(|i| i.pointer.hover_pos()).unwrap_or(egui::Pos2 {x: 0.0, y: 0.0});
+            }
         }
+        
+        if self.show_quick_feature_window
+        {
+            self.show_quick_feature_window(ui, action_queue);
+        }
+
+        let directory_entries = fs::read_dir(self.current_directory.clone().unwrap());
+        let directory_entries = match directory_entries
+        {
+            Ok( entries ) => entries,
+            Err( error ) => 
+            {
+                println!("Directory location: {:?}", self.current_directory.clone().unwrap());
+                println!("Error in reading content browser directory: {}", error.kind().to_string());
+                println!("Error expanded: {}", error.to_string());
+                return;
+            }
+        };
+
+        ui.horizontal_wrapped(|ui|
+        {
+            for entry in directory_entries.flatten()
+            {
+                if entry.path().is_dir()
+                {
+                    self.draw_directory_asset(ui, &entry.path());
+                    continue;
+                }
+
+                self.draw_file_asset(ui, &entry.path());
+            }
+            
+        });
+    }
+
+    fn draw_directory_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
+    {
+        let mut is_asset_selected = false;
+        if self.selected_asset.is_some()
+        {
+            is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
+        }
+
+        let directory_name = asset_path.file_name().unwrap().to_string_lossy().to_string();
+        
+        ui.vertical(|ui|
+        {
+            let icon = String::from("📁");
+
+            let selectable_label = egui::SelectableLabel::new(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(35.0)));
+
+            let selectable_label_response = ui.add(selectable_label);
+
+
+            if selectable_label_response.clicked()
+            {
+                self.selected_asset = Some( asset_path.clone() );
+            }
+
+            if selectable_label_response.double_clicked()
+            {
+                // @TODO, find a better apparoach
+                if self.directory_distory.len() > 10
+                {
+                    self.directory_distory.pop_front();
+                }
+                self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
+
+                self.current_directory = Some( asset_path.clone() );
+                self.selected_asset = None;
+            }
+
+            ui.label(directory_name);
+        });
+    }
+
+    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
+    {
+        let mut is_asset_selected = false;
+        if self.selected_asset.is_some()
+        {
+            is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
+        }
+
+        let file_name = asset_path.file_name().unwrap().to_string_lossy();
+
+        ui.vertical(|ui|
+        {
+            let mut icon = String::from("📃");
+
+            if file_name.ends_with(".png")
+            {
+                icon = String::from("📷");
+            }
+
+            if ui.selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(35.0))).clicked()
+            {
+                self.selected_asset = Some( asset_path.clone() );
+            }
+            ui.label(file_name.to_string());
+        });
+    }
+
+    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
+    {
+        egui::Window::new("")
+        .current_pos(egui::Pos2 {
+                                x: self.quick_feature_window_position_when_activated.x - 100.0, 
+                                y: self.quick_feature_window_position_when_activated.y - 15.0
+                                })
+        .min_size(egui::Vec2 {x: 200.0, y: 200.0})
+        .max_size(egui::Vec2 {x: 200.0, y: 200.0})
+        .title_bar(false)
+        .show(ui.ctx(), |ui|
+        {
+            let mut behavior = None;
+
+            if ui.add(egui::Button::new("create file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+            {
+                behavior = Some( QuickMenuBehavior::CreateFile );
+            };
+            
+            if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+            {
+                behavior = Some( QuickMenuBehavior::CreateFolder );
+            };
+
+            if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+            {
+                behavior = Some( QuickMenuBehavior::RenameFile );
+            };
+
+            if behavior.is_none()
+            {
+                return;
+            }
+
+            match behavior.unwrap()
+            {
+                QuickMenuBehavior::CreateFile =>
+                {
+                    action_queue.push( Action::CreateFile { path: self.current_directory.as_ref().unwrap().clone().join("new_file.txt") } );
+                },
+                QuickMenuBehavior::CreateFolder => 
+                {
+                    action_queue.push( Action::CreateFolder { path: self.current_directory.as_ref().unwrap().clone().join("new_folder") } );
+                },
+                QuickMenuBehavior::RenameFile => todo!(),
+            }
+
+            self.show_quick_feature_window = false;
+        });
     }
 }
+
+enum QuickMenuBehavior
+{
+    CreateFile,
+    CreateFolder,
+    RenameFile,
+}
+
