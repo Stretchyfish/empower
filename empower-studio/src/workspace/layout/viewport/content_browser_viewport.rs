@@ -94,32 +94,43 @@ impl Viewport for ContentBrowserViewport
 
         ui.horizontal(|ui|
         {
-            let mut cumulative_paths = Vec::new();
 
+            let mut project_path = match &project.state
             {
-                let mut accumelating_path = PathBuf::new().join("/");
+                ProjectState::Undefined => todo!(),
+                ProjectState::Temporary(path_buf) => path_buf.clone(),
+                ProjectState::Saved(path_buf) => path_buf.clone(),
+            };
+            project_path.pop();
 
-                for path_component in self.current_directory.as_ref().unwrap().components()
-                {
-                    if let std::path::Component::Normal(name) = path_component
-                    {
-                        accumelating_path.push(name);
-                        cumulative_paths.push((accumelating_path.clone(), name.to_string_lossy().to_string()));
-                    }
-                }
-            }
+            // @TODO, move all this breadcrum path stuff into its own function
 
             let mut clicked_breadcrum_path_button = None;
 
-            for (path, name) in cumulative_paths
+            let mut accumelating_path = PathBuf::from(project_path.clone());
+
+            let binding = self.current_directory.clone().unwrap();
+            let relative_path = match binding.strip_prefix(project_path)
             {
-                let breadcrum_path_button = egui::Button::new(name).frame(false);
+                Ok( path ) => path,
+                Err( error ) => panic!("Unable to get a relative path to project, directories does not match, error: {}", error.to_string()),
+            };
+
+            for path_component in relative_path.components().filter_map(|comp| match comp
+                {
+                    std::path::Component::Normal(n) => Some(n),
+                    _ => panic!("incompatible path"),
+                })
+            {
+                accumelating_path.push(path_component);
+
+                let breadcrum_path_button = egui::Button::new(path_component.to_string_lossy()).frame(false);
 
                 let breadcrum_path_response = ui.add(breadcrum_path_button);
 
                 if breadcrum_path_response.clicked()
                 {
-                    clicked_breadcrum_path_button = Some( path );
+                    clicked_breadcrum_path_button = Some( accumelating_path.clone() );
                 }
 
                 ui.label("/");
