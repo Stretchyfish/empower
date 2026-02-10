@@ -224,12 +224,17 @@ impl ContentBrowserViewport
         
         ui.vertical(|ui|
         {
+            ui.allocate_ui_with_layout(
+                                    egui::Vec2::new(70.0, 0.0), 
+                                    egui::Layout::top_down(egui::Align::Center),
+                                    |ui|
+            {
+                
             let icon = String::from("📁");
 
-            let selectable_label = egui::SelectableLabel::new(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(35.0)));
+            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0)));
 
-            let selectable_label_response = ui.add(selectable_label);
-
+            let selectable_label_response = ui.add(selectable_label).on_hover_text(directory_name.clone());
 
             if selectable_label_response.clicked()
             {
@@ -249,7 +254,21 @@ impl ContentBrowserViewport
                 self.selected_asset = None;
             }
 
-            ui.label(directory_name);
+            let mut short_directory_name = String::new();
+
+            for (index, character) in directory_name.char_indices()
+            {
+                if index > 11
+                {
+                    short_directory_name.push_str("...");
+                    break;
+                }
+
+                short_directory_name.push(character);
+            }
+
+            ui.label(short_directory_name);
+            });
         });
     }
 
@@ -265,6 +284,11 @@ impl ContentBrowserViewport
 
         ui.vertical(|ui|
         {
+            ui.allocate_ui_with_layout(
+                                        egui::Vec2::new(70.0, 0.0), 
+                                        egui::Layout::top_down(egui::Align::Center),
+                                        |ui|
+        {
             let mut icon = String::from("📃");
 
             if file_name.ends_with(".png")
@@ -272,12 +296,30 @@ impl ContentBrowserViewport
                 icon = String::from("📷");
             }
 
-            if ui.selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(35.0))).clicked()
+            if ui.selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(70.0))).on_hover_text(file_name.clone()).clicked()
             {
                 self.selected_asset = Some( asset_path.clone() );
             }
-            ui.label(file_name.to_string());
+
+            let mut short_file_name = String::new();
+
+            for (index, character) in file_name.char_indices()
+            {
+                if index > 11
+                {
+                    short_file_name.push_str("...");
+                    break;
+                }
+
+                short_file_name.push(character);
+            }
+
+            ui.label(short_file_name);
+                                        
         });
+
+        });
+
     }
 
     fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
