@@ -29,4 +29,5 @@ pub enum Action
     ImportAsset { path: PathBuf },
     CreateFile { path: PathBuf },
     CreateFolder { path: PathBuf },
+    RenameFile { original_path: PathBuf, new_path: PathBuf }, 
 }

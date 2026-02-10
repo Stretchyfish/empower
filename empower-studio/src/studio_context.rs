@@ -114,6 +114,11 @@ impl StudioContext
                 {
                     self.project.create_folder(&path);
                 }
+                Action::RenameFile { original_path, new_path } =>
+                {
+                    self.project.rename_file(original_path, new_path);
+                }
+
             }
         }
         

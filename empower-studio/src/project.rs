@@ -211,6 +211,17 @@ impl Project
             },
         }
     }
+
+    pub fn rename_file(&mut self, original_path: PathBuf, new_path: PathBuf)
+    {
+        let rename_file_result = fs::rename(original_path, new_path);
+
+        match rename_file_result
+        {
+            Ok(_) => {},
+            Err( error ) => panic!("Tried to rename a file, and failed because : {}", error.kind().to_string()),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq)]

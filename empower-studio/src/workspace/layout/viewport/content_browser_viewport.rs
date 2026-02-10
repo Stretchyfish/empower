@@ -1,5 +1,7 @@
 use std::{any::Any, collections::{HashMap, VecDeque}, fs, path::PathBuf};
 
+use egui::epaint::PathShape;
+
 use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
 
 use super::Viewport;
@@ -9,11 +11,13 @@ const ELEMENT_SPACING: f32 = 10.0;
 
 pub struct ContentBrowserViewport
 {
+    known_project_directory: PathBuf, // This is used to detect if the project directory change
     current_directory: Option<PathBuf>,
     directory_distory: VecDeque<PathBuf>,
     selected_asset: Option<PathBuf>,
     show_quick_feature_window: bool,
     quick_feature_window_position_when_activated: egui::Pos2,
+    renaming_file: Option<ViewportRenameState>,
 }
 
 
@@ -24,11 +28,13 @@ impl Viewport for ContentBrowserViewport
         Self: Sized {
 
         Box::new( Self { 
+            known_project_directory: PathBuf::new(),
             current_directory: None, 
             directory_distory: VecDeque::new(),
             selected_asset: None, 
             show_quick_feature_window: false,
             quick_feature_window_position_when_activated: egui::Pos2::new(0.0, 0.0),
+            renaming_file: None,
           } ) // @TODO, set this up properly!
     }
 
@@ -38,14 +44,40 @@ impl Viewport for ContentBrowserViewport
 
     fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
-        if self.current_directory.is_none() && project.state != ProjectState::Undefined
+        let project_directory = match &project.state // @TODO, find a better way!
         {
-            self.current_directory = Some( match &project.state // @TODO, find a better way!
-            {
-                ProjectState::Undefined => panic!("Entered an impossible state"),
-                ProjectState::Temporary(path_buf) => path_buf.clone().join("assets"),
-                ProjectState::Saved(path_buf) => path_buf.clone().join("assets"),
-            });
+            ProjectState::Undefined => panic!("Entered an impossible state"),
+            ProjectState::Temporary(path_buf) => path_buf.clone(),
+            ProjectState::Saved(path_buf) => path_buf.clone(),
+            // ProjectState::Temporary(path_buf) => path_buf.clone().join("assets"),
+            // ProjectState::Saved(path_buf) => path_buf.clone().join("assets"),
+        };
+
+        if project_directory != self.known_project_directory // @TODO, find a better way!
+        {
+            self.known_project_directory = project_directory.clone();
+            self.current_directory = Some( project_directory.join("assets") );
+        }
+
+        let user_clicked_enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
+        if user_clicked_enter && self.renaming_file.is_some()
+        {
+            let rename_file_state = self.renaming_file.as_ref().unwrap();
+
+            let original_path = rename_file_state.path.clone();
+            let mut original_path_parrent_directory = rename_file_state.path.clone();
+            original_path_parrent_directory.pop(); 
+            let new_path = original_path_parrent_directory.join(rename_file_state.potential_new_name.clone());
+            
+            action_queue.push( Action::RenameFile { original_path, new_path } );
+            self.renaming_file = None;
+        }
+       
+        let user_clicked_esp = ui.input(|i| i.key_pressed(egui::Key::Escape));
+
+        if user_clicked_esp && self.renaming_file.is_some()
+        {
+            self.renaming_file = None;
         }
         
         ui.horizontal(|ui|
@@ -236,6 +268,18 @@ impl ContentBrowserViewport
 
             let selectable_label_response = ui.add(selectable_label).on_hover_text(directory_name.clone());
 
+            // @TODO, this whole approach to renaming doesn't scale
+            if self.renaming_file.is_some() // @TODO, maybe instead of renaming file it should be renaming asset?
+            {
+                let rename_file_state = self.renaming_file.as_mut().unwrap();
+                if rename_file_state.path == *asset_path
+                {
+                    ui.text_edit_singleline(&mut rename_file_state.potential_new_name)
+                    .request_focus();
+                    return;
+                }
+            }
+
             if selectable_label_response.clicked()
             {
                 self.selected_asset = Some( asset_path.clone() );
@@ -301,6 +345,18 @@ impl ContentBrowserViewport
                 self.selected_asset = Some( asset_path.clone() );
             }
 
+            // @TODO, this whole approach to renaming doesn't scale
+            if self.renaming_file.is_some()
+            {
+                let rename_file_state = self.renaming_file.as_mut().unwrap();
+                if rename_file_state.path == *asset_path
+                {
+                    ui.text_edit_singleline(&mut rename_file_state.potential_new_name)
+                    .request_focus();
+                    return;
+                }
+            }
+
             let mut short_file_name = String::new();
 
             for (index, character) in file_name.char_indices()
@@ -334,42 +390,31 @@ impl ContentBrowserViewport
         .title_bar(false)
         .show(ui.ctx(), |ui|
         {
-            let mut behavior = None;
-
             if ui.add(egui::Button::new("create file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                behavior = Some( QuickMenuBehavior::CreateFile );
+                let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed.txt");
+                action_queue.push( Action::CreateFile { path: new_asset_path.clone() } );
+                self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                self.show_quick_feature_window = false;
             };
             
             if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                behavior = Some( QuickMenuBehavior::CreateFolder );
+                let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed");
+                action_queue.push( Action::CreateFolder { path: new_asset_path.clone() } );
+                self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                self.show_quick_feature_window = false;
             };
 
-            if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+            if self.selected_asset.is_some()
             {
-                behavior = Some( QuickMenuBehavior::RenameFile );
-            };
-
-            if behavior.is_none()
-            {
-                return;
-            }
-
-            match behavior.unwrap()
-            {
-                QuickMenuBehavior::CreateFile =>
+                if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
                 {
-                    action_queue.push( Action::CreateFile { path: self.current_directory.as_ref().unwrap().clone().join("new_file.txt") } );
-                },
-                QuickMenuBehavior::CreateFolder => 
-                {
-                    action_queue.push( Action::CreateFolder { path: self.current_directory.as_ref().unwrap().clone().join("new_folder") } );
-                },
-                QuickMenuBehavior::RenameFile => todo!(),
+                    // @TODO, more dangerous unwraps without checks here
+                    self.renaming_file = Some( ViewportRenameState::new( self.selected_asset.as_ref().unwrap() ) );
+                    self.show_quick_feature_window = false;
+                };
             }
-
-            self.show_quick_feature_window = false;
         });
     }
 }
@@ -381,3 +426,20 @@ enum QuickMenuBehavior
     RenameFile,
 }
 
+struct ViewportRenameState
+{
+    potential_new_name: String,
+    path: PathBuf,
+}
+
+impl ViewportRenameState
+{
+    pub fn new(path: &PathBuf) -> Self
+    {
+        Self
+        {
+            potential_new_name: path.file_name().unwrap().to_string_lossy().to_string(),
+            path: path.clone(), 
+        }
+    }
+}
