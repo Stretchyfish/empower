@@ -184,7 +184,10 @@ impl Viewport for ContentBrowserViewport
 
         egui::panel::SidePanel::left("something").show_inside(ui, |ui|
         {
-            ui.label("test");
+            if ui.button("assets").clicked()
+            {
+                self.current_directory = Some( self.known_project_directory.join("assets") );
+            }
         });
 
         egui::panel::CentralPanel::default().show_inside(ui, |ui|
