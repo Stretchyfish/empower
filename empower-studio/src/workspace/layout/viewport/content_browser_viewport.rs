@@ -1,7 +1,5 @@
 use std::{any::Any, collections::{HashMap, VecDeque}, fs, path::PathBuf};
 
-use egui::epaint::PathShape;
-
 use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
 
 use super::Viewport;
@@ -77,6 +75,14 @@ impl Viewport for ContentBrowserViewport
 
         if user_clicked_esp && self.renaming_file.is_some()
         {
+            self.renaming_file = None;
+        }
+
+        let user_left_clicked = ui.input(|i| i.pointer.primary_clicked());
+        if user_left_clicked && self.selected_asset.is_some() // If the user clicks on a new asset, is should just clickly get removed and then added again
+        // @TODO, consider changing this
+        {
+            self.selected_asset = None;
             self.renaming_file = None;
         }
         
@@ -227,6 +233,8 @@ impl ContentBrowserViewport
                 return;
             }
         };
+
+        let mut an_asset_was_selected = false;
 
         ui.horizontal_wrapped(|ui|
         {
