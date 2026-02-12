@@ -43,6 +43,8 @@ impl StudioContext
                         },
                         ProjectState::Saved(_) => self.project.save(),
                     }
+
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
                 },
                 Action::SaveProjectAs =>
                 {
@@ -56,6 +58,12 @@ impl StudioContext
                         },
                         ProjectState::Saved(_) => self.project.save_as(),
                     }
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
+                },
+                Action::LoadProject =>
+                {
+                    self.project.load();
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
                 },
                 Action::CreateNode { name, position } => { self.project.graph_editor.add_node(name, position); },
                 Action::RefreshNodeStructure { node_key } => { self.project.graph_editor.refresh_node_strcuture(&node_key); },

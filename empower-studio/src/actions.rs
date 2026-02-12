@@ -8,6 +8,7 @@ pub enum Action
     CreateTemporaryProject,
     SaveProject,
     SaveProjectAs,
+    LoadProject,
     CreateNode { name: &'static str, position: egui::Pos2 },
     RefreshNodeStructure { node_key: NodeGraphKey },
     DeleteNode { node_key: NodeGraphKey },

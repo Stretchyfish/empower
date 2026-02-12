@@ -1,6 +1,6 @@
 use empower_engine::{PortValue, node_graph::node::port::PortCompatability};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum DisplayValue
 {
     Nothing,

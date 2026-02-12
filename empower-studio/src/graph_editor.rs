@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use chrono::{DateTime, Local};
 use empower_engine::node_graph::node::port::PortKind;
 use empower_engine::utility::text_buffer::TextBuffer;
@@ -16,6 +17,7 @@ use debug_info::DebugInfo;
 mod port_searcher;
 use port_searcher::PortSearcher;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct GraphEditor
 {
     pub node_graph: NodeGraph,
@@ -345,5 +347,35 @@ impl GraphEditor
     pub fn stop_port_search(&mut self)
     {
         self.port_searcher = None;
+    }
+
+    pub fn save(&self, path: &PathBuf)
+    {
+        let file_path = path.join("graph_editor.json"); // @TODO, rename this project?
+        
+        let node_graph_json_string = serde_json::to_string_pretty(&self).unwrap();
+
+        let created_node_graph_json_file_results = std::fs::File::create(&file_path);
+
+        match created_node_graph_json_file_results
+        {
+            Ok(_) => println!("Created file succesfully"),
+            Err( error ) => println!("Error, failed to create file: {}", error.kind().to_string()),
+        }
+        
+        let saving_node_graph_file_results = std::fs::write(file_path, node_graph_json_string);
+
+        match saving_node_graph_file_results
+        {
+            Ok(_) => println!("Saved succesfully"),
+            Err( error ) => println!("Error, failed to save : {}", error.kind().to_string()),
+        }
+    }
+
+    pub fn load(path: PathBuf) -> Self
+    {
+        let corrected_path = path.join("graph_editor.json");
+        let node_graph_json = std::fs::read_to_string(corrected_path).unwrap();
+        serde_json::from_str(&node_graph_json).unwrap()
     }
 }

@@ -1,7 +1,7 @@
 use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::port::PortKind;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct PortSearcher
 {
     pub port_key: NodeGraphKey,

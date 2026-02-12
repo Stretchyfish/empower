@@ -4,7 +4,7 @@ use egui;
 pub mod display_value;
 pub use display_value::DisplayValue;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DisplayPort
 {
     pub text: String,

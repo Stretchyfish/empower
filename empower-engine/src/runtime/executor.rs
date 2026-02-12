@@ -18,7 +18,7 @@ pub use task_manager::TaskManager;
 
 mod task;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct EmpowerExecutor
 {
     pub node_graph: NodeGraph,

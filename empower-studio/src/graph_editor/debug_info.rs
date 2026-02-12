@@ -1,5 +1,6 @@
 use empower_engine::NodeGraphKey;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct DebugInfo
 {
     pub show_keys: bool,

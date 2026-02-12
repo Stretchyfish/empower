@@ -72,11 +72,14 @@ impl Project
 
     pub fn save(&mut self)
     {
-        match self.state
+        match &self.state
         {
             ProjectState::Undefined => {},
             ProjectState::Temporary(_) => self.save_as(),
-            ProjectState::Saved(_) => {},
+            ProjectState::Saved( path_to_project ) =>
+            {
+                self.graph_editor.save( path_to_project );
+            },
         }
         
         // @TODO, setup saving behavior
@@ -106,20 +109,27 @@ impl Project
             ProjectState::Undefined => todo!(),
             ProjectState::Temporary(original_location) => 
             {
-                let moved_project_result = fs::rename(original_location, project_directory.clone());
+                // let moved_project_result = fs::rename(original_location, project_directory.clone());
+                // let moved_project_result = fs::copy(original_location, project_directory.clone());
+
+                
+                let mut opts = fs_extra::dir::CopyOptions::new();
+                opts.copy_inside = true;
+
+                let moved_project_result = fs_extra::dir::copy(&original_location, &project_directory.clone(), &opts);
 
                 match moved_project_result 
                 {
                     Ok(_) => {},
                     Err( error ) => 
                     {
-                        match error.kind()
-                        {
-                            std::io::ErrorKind::NotFound => println!("Original location: {}, new location: {}", original_location.to_string_lossy(), project_directory.to_string_lossy()),
-                            _ => todo!(),
-                        }
-
                         println!("Error when running save as on project : {}", error.to_string() );
+                        // match error.kind
+                        // {
+                        //     std::io::ErrorKind::NotFound => println!("Original location: {}, new location: {}", original_location.to_string_lossy(), project_directory.to_string_lossy()),
+                        //     _ => todo!(),
+                        // }
+
                         panic!("Failed to save project correctly");
                     }
                 }
@@ -139,12 +149,22 @@ impl Project
             }
         };
 
+        self.graph_editor.save(&project_directory);
+
         self.state = ProjectState::Saved( project_directory.clone() ); // @TODO, this kind of code is reused a lot, find a better way
     }
 
-    pub fn load()
+    pub fn load(&mut self)
     {
-        
+        let folder_path = rfd::FileDialog::new()
+                                            .set_title("Choose project location")
+                                            .set_can_create_directories(true)
+                                            .pick_folder();
+
+        self.state = ProjectState::Saved( folder_path.clone().unwrap() );
+
+        self.graph_editor = GraphEditor::load(folder_path.clone().unwrap());
+        self.name = folder_path.unwrap().file_name().unwrap().to_string_lossy().to_string();
     }
 
     pub fn import_asset(&mut self, path: &PathBuf)

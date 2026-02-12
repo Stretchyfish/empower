@@ -6,12 +6,13 @@ use super::DisplayNodeKind;
 use super::super::DisplayPort;
 use empower_engine::node_graph::node::node_kind::{ConditionNode, ConditionType};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConditionDisplayNode
 {
 
 }
 
+#[typetag::serde]
 impl DisplayNodeKind for ConditionDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where

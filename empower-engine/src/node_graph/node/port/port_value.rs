@@ -2,7 +2,7 @@ use std::mem::discriminant;
 use std::fmt;
 use std::ops;
 
-#[derive(Default, Clone, Debug, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PortValue
 {
     Trigger(bool),

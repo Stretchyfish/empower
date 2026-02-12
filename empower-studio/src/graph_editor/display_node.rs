@@ -9,10 +9,10 @@ pub use display_node_kind::DisplayNodeKind;
 pub use display_node_kind::DisplayNodeStateResponse;
 use display_node_kind::DISPLAY_NODE_KIND_REGISTRY;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct DisplayNode
 {
-    pub title: &'static str,
+    pub title: String,
     pub position: egui::Pos2,
     pub display_kind: Box<dyn DisplayNodeKind>,
 }
@@ -34,7 +34,7 @@ impl DisplayNode
 
         Self 
         { 
-            title, 
+            title: title.to_string(), 
             position,
             display_kind,
         }

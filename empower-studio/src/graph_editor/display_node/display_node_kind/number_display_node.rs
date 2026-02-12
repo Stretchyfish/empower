@@ -5,12 +5,13 @@ use super::DisplayNodeKind;
 use crate::graph_editor::DisplayPort;
 use crate::graph_editor::display_node::DisplayNodeStateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct NumberDisplayNode
 {
 
 }
 
+#[typetag::serde]
 impl DisplayNodeKind for NumberDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where

@@ -9,7 +9,7 @@ pub use port_compatability::PortCompatability;
 pub mod port_kind;
 pub use port_kind::PortKind;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Port
 {
     pub key: NodeGraphKey, 

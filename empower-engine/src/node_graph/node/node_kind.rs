@@ -56,6 +56,7 @@ use restart_loop_node::RestartLoopNode;
 mod stop_loop_node;
 use stop_loop_node::StopLoopNode;
 
+#[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn

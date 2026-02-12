@@ -4,12 +4,13 @@ use empower_engine::{PortValue, node_graph::node::{NodeKind}};
 
 use crate::graph_editor::{DisplayPort, display_node::DisplayNodeStateResponse};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MathGraphDisplayNode
 {
 
 }
 
+#[typetag::serde]
 impl DisplayNodeKind for MathGraphDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where

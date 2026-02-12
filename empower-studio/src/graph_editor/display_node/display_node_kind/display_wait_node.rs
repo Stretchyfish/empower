@@ -6,12 +6,13 @@ use crate::graph_editor::display_node::DisplayNodeStateResponse;
 use super::DisplayNodeKind;
 use super::super::DisplayPort;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct DisplayWaitNode
 {
     pub number_text: String,
 }
 
+#[typetag::serde]
 impl DisplayNodeKind for DisplayWaitNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where

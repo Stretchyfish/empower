@@ -29,6 +29,7 @@ use display_wait_node::DisplayWaitNode;
 
 use super::super::DisplayPort; // @TODO, improve this include
 
+#[typetag::serde(tag="dislay_node_kind")]
 pub trait DisplayNodeKind
 {
     fn new() -> Box<dyn DisplayNodeKind> // This constructor is to allow for dyn

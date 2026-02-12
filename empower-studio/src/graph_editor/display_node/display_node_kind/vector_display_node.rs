@@ -4,13 +4,14 @@ use crate::graph_editor::{DisplayPort, display_node::DisplayNodeStateResponse};
 
 use super::DisplayNodeKind;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct VectorDisplayNode
 {
     pub show_n: bool,
     pub number_text: String,
 }
 
+#[typetag::serde]
 impl DisplayNodeKind for VectorDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where

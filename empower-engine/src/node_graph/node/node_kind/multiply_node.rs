@@ -4,12 +4,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MultiplyNode
 {
 
 }
 
+#[typetag::serde]
 impl NodeKind for MultiplyNode
 {
     fn new() -> Box<dyn NodeKind> where

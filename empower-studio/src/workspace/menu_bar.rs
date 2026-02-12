@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use chrono::Local;
-use empower_engine::utility::text_buffer::TextBuffer;
+use empower_engine::{NodeGraph, utility::text_buffer::TextBuffer};
 
 use crate::{StudioContext, actions::Action};
 
@@ -21,7 +23,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             }
             if ui.button("Open").clicked()
             {
-
+                action_queue.push( Action::LoadProject );
             }
             if ui.button("Open Recent").clicked()
             {
@@ -65,6 +67,20 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
                 action_queue.push( Action::CreateViewport { name: "empty viewport" });
             }
         });
+
+
+        // if ui.button("test save node graph").clicked()
+        // {
+        //     let path_to_desktop = PathBuf::from("/home/mikkel/Desktop/graph_editor_save.json");
+        //     studio_context.project.graph_editor.save(path_to_desktop);
+        // }
+
+        // if ui.button("test load node graph").clicked()
+        // {
+        //     let path_to_desktop = PathBuf::from("/home/mikkel/Desktop/graph_editor_save.json");
+        //     studio_context.project.graph_editor = crate::graph_editor::GraphEditor::load(path_to_desktop);
+            
+        // }
     });
 
     ui.horizontal(|ui|

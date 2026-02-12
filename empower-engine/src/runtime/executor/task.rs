@@ -3,7 +3,7 @@ use crate::NodeGraphKey;
 
 pub type TaskId = i32;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct Job
 {
     pub task_id: TaskId,
@@ -43,7 +43,7 @@ impl ShowJob
         }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Task
 {
     pub parent: Option<Job>,

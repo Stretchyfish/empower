@@ -4,12 +4,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct PrintNode
 {
 
 }
 
+#[typetag::serde]
 impl NodeKind for PrintNode
 {
     fn new() -> Box<dyn NodeKind> where

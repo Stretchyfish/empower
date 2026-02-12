@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TextBuffer
 {
     pub max_lines: usize,
