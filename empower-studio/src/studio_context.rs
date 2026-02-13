@@ -33,7 +33,7 @@ impl StudioContext
                 },
                 Action::SaveProject => 
                 { 
-                    match self.project.state
+                    match self.project.state.clone()
                     {
                         ProjectState::Undefined => todo!(),
                         ProjectState::Temporary(_) => 
@@ -41,9 +41,12 @@ impl StudioContext
                             self.layout.project_name_window = Some( self.project.name.clone() );
                             return;
                         },
-                        ProjectState::Saved(_) => self.project.save(),
+                        ProjectState::Saved( project_path ) => 
+                        {
+                            self.project.save();
+                            self.layout.add_previous_project(&self.project.name, &project_path);
+                        },
                     }
-
                     ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
                 },
                 Action::SaveProjectAs =>

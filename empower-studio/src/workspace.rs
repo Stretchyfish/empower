@@ -22,7 +22,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queu
     debug_window::show(ctx, studio_context);
     history_window::show(ctx, studio_context);
     project_settings_window::show(ctx, studio_context);
-    project_name_window::show(ctx, studio_context);
+    project_name_window::show(ctx, studio_context, action_queue);
 
     // @TODO, find a better way to handle keyboard actions
     let save_requested = ctx.input(|i| { i.key_pressed(egui::Key::S) && i.modifiers.ctrl});

@@ -1,6 +1,6 @@
-use crate::studio_context::StudioContext;
+use crate::{actions::Action, studio_context::StudioContext};
 
-pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
+pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, action_queue: &mut Vec<Action>)
 {
     if studio_context.layout.project_name_window.is_none()
     {
@@ -45,8 +45,12 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             {
                 if ui.button("Create").clicked() && valid_project_name
                 {
+                    // @TODO, remove this (Its a copy of what is below aswel)
                     studio_context.project.name = possible_project_name.clone(); // @TODO, make the name assignment more safe
                     studio_context.project.save();
+
+                    // @TODO, this is double work due to the inconsistend saving behavior, has to get fixed
+                    action_queue.push( Action::SaveProject );
                     window_active = false;
                 }
             });
@@ -72,8 +76,13 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
         let enter_pressed  = ui.input(|i| i.key_pressed(egui::Key::Enter));
         if enter_pressed && valid_project_name
         {
+            // @TODO, this should not be allowed!
             studio_context.project.name = possible_project_name.clone(); // @TODO, odd code reuse, consider a better way
             studio_context.project.save();
+
+            // @TODO, this is double work due to the inconsistend saving behavior, has to get fixed
+            action_queue.push( Action::SaveProject );
+
             window_active = false;
         }
     });

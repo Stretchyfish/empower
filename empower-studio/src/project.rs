@@ -10,7 +10,7 @@ use crate::graph_editor::GraphEditor;
 pub struct Project
 {
     pub name: String,
-    pub state: ProjectState,
+    pub state: ProjectState, // @TODO, seperate path and state now that path is always present
     pub graph_editor: GraphEditor,
     // pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
     pub dirty: bool, // To detect if anything changed since last save
