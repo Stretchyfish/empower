@@ -6,9 +6,9 @@ edition = "2024"
 [dependencies]
 empower-engine = { path = "../empower-engine" }
 eframe = "0.32.0"
-egui = {version="0.32.0", features = ["serde"]}
+egui = { version="0.32.0", features = ["serde"]}
 egui_extras = { version = "0.32.0", features = ["default", "all_loaders"] } 
-egui_dock = "0.17"
+egui_dock = { version="0.17" ,features = ["serde"]}
 once_cell = "1.21.3"
 rfd = "0.15.4"
 image = { version = "0.25", features = ["jpeg", "png"] } 
@@ -21,3 +21,4 @@ typetag = "0.2"
 
 fs_extra = "1.3"
 
+directories = "5.0"

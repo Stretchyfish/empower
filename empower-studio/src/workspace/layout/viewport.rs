@@ -15,6 +15,7 @@ use terminal_viewport::TerminalViewport;
 mod content_browser_viewport;
 use content_browser_viewport::ContentBrowserViewport;
 
+#[typetag::serde(tag="viewport_name")]
 pub trait Viewport
 {
     fn new() -> Box<dyn Viewport> 

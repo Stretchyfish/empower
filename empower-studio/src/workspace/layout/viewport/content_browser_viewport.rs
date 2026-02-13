@@ -7,6 +7,7 @@ use super::Viewport;
 const THUMBNAIL_SIZE: egui::Vec2 = egui::Vec2 { x: 100.0, y: 100.0 };
 const ELEMENT_SPACING: f32 = 10.0;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ContentBrowserViewport
 {
     known_project_directory: PathBuf, // This is used to detect if the project directory change
@@ -18,7 +19,7 @@ pub struct ContentBrowserViewport
     renaming_file: Option<ViewportRenameState>,
 }
 
-
+#[typetag::serde]
 impl Viewport for ContentBrowserViewport
 {
     fn new() -> Box<dyn Viewport> 
@@ -437,6 +438,7 @@ enum QuickMenuBehavior
     RenameFile,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 struct ViewportRenameState
 {
     potential_new_name: String,

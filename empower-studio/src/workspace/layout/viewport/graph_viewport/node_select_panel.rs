@@ -1,11 +1,10 @@
 use crate::actions::Action;
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct NodeSelectionPanel
 {
     search_text: String,
     mouse_position_when_node_select_menu_was_activated: egui::Pos2,
-    node_to_add: Option<&'static str>,
 }
 
 impl NodeSelectionPanel 
@@ -17,18 +16,12 @@ impl NodeSelectionPanel
         {
             search_text: String::new(),
             mouse_position_when_node_select_menu_was_activated,
-            node_to_add: None,
         }
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui, mouse_position_in_scene: &egui::Pos2, action_queue: &mut Vec<Action>) -> bool
     {
-        if self.node_to_add.is_some()
-        {
-            // graph_editor.add_node(self.node_to_add.unwrap(), *mouse_position_in_scene);
-            action_queue.push( Action::CreateNode { name: self.node_to_add.unwrap(), position: *mouse_position_in_scene });
-            return true;
-        }
+        let mut node_to_add = None;
 
         let window_position = self.mouse_position_when_node_select_menu_was_activated;
         let node_selection_window = egui::Window::new("")
@@ -50,81 +43,88 @@ impl NodeSelectionPanel
                 {
                     if ui.add(egui::Button::new("Number").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "number" );
+                        node_to_add = Some( "number" );
                     };
 
                     if ui.add(egui::Button::new("Condition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "condition" );
+                        node_to_add = Some( "condition" );
                     };
 
                     if ui.add(egui::Button::new("loop").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "loop" );
+                        node_to_add = Some( "loop" );
                     };
 
                     if ui.add(egui::Button::new("wait").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "wait" );
+                        node_to_add = Some( "wait" );
                     };
 
                     if ui.add(egui::Button::new("restart loop").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "restart loop" );
+                        node_to_add = Some( "restart loop" );
                     };
 
                     if ui.add(egui::Button::new("stop loop").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "stop loop" );
+                        node_to_add = Some( "stop loop" );
                     };
 
                     if ui.add(egui::Button::new("Boolean").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "boolean" );
+                        node_to_add = Some( "boolean" );
                     };
 
                     if ui.add(egui::Button::new("Text").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "text" );
+                        node_to_add = Some( "text" );
                     };
 
                     if ui.add(egui::Button::new("Addition").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "addition" );
+                        node_to_add = Some( "addition" );
                     };
 
                     if ui.add(egui::Button::new("Multiply").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "multiply" );
+                        node_to_add = Some( "multiply" );
                     };
 
                     if ui.add(egui::Button::new("Vector").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "vector" );
+                        node_to_add = Some( "vector" );
                     };
 
                     if ui.add(egui::Button::new("Print").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "print" );
+                        node_to_add = Some( "print" );
                     };
 
                     if ui.add(egui::Button::new("file path").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "file path" );
+                        node_to_add = Some( "file path" );
                     };
 
                     if ui.add(egui::Button::new("show image").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "show image" );
+                        node_to_add = Some( "show image" );
                     };
 
                     if ui.add(egui::Button::new("math graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() // @TODO, get rid of these hard coded values (if possible?)
                     {
-                        self.node_to_add = Some( "math graph" );
+                        node_to_add = Some( "math graph" );
                     };
                 });
             });
         });
+
+        if node_to_add.is_some()
+        {
+            // graph_editor.add_node(node_to_add.unwrap(), *mouse_position_in_scene);
+            action_queue.push( Action::CreateNode { name: node_to_add.unwrap(), position: *mouse_position_in_scene });
+            return true;
+        }
 
         false
     }

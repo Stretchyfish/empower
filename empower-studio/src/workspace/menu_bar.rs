@@ -23,12 +23,24 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             }
             if ui.button("Open").clicked()
             {
-                action_queue.push( Action::LoadProject );
+                let project_path = rfd::FileDialog::new()
+                                                    .set_title("Choose project location")
+                                                    .set_can_create_directories(true)
+                                                    .pick_folder();
+                action_queue.push( Action::LoadProject { project_path: project_path.unwrap() } ); // @TODO, this is dangerous
             }
-            if ui.button("Open Recent").clicked()
+            ui.menu_button("Open Recent", |ui|
             {
+                for previous_project in &studio_context.layout.previous_projects
+                {
+                    if ui.button(previous_project.project_name.to_string()).clicked()
+                    {
 
-            }
+                        action_queue.push( Action::LoadProject { project_path: previous_project.project_location.clone() } ); // @TODO, this is dangerous
+                        
+                    }
+                }
+            });
             if ui.button("Project Settings").clicked()
             {
                 studio_context.layout.project_setting_window = !studio_context.layout.project_setting_window;
@@ -39,21 +51,21 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             }
         });
         
-        ui.menu_button("Nodes", |ui|
-        {
-            if ui.button("Add test node").clicked()
-            {
-                action_queue.push( Action::CreateNode { name: "vector", position: egui::Pos2::ZERO } );
-            }
-        });
-
         if ui.button("Toggle debug window").clicked()
         {
             action_queue.push( Action::ToggleDebugWindow );
         }
 
-        ui.menu_button("Add viewport", |ui|
+        ui.menu_button("Windows", |ui|
         {
+            if ui.button("default layout").clicked()
+            {
+                action_queue.push( Action::DefaultLayout );
+            }
+            if ui.button("clear layout").clicked()
+            {
+                action_queue.push( Action::ClearLayout );
+            }
             if ui.button("Graph viewport").clicked()
             {
                 action_queue.push( Action::CreateViewport { name: "graph viewport" });
@@ -62,9 +74,23 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, action_queue:
             {
                 action_queue.push( Action::CreateViewport { name: "terminal viewport" });
             }
+            if ui.button("Content Browser Viewport").clicked()
+            {
+                action_queue.push( Action::CreateViewport { name: "content browser viewport" });
+            }
             if ui.button("Empty Viewport").clicked()
             {
                 action_queue.push( Action::CreateViewport { name: "empty viewport" });
+            }
+
+            if ui.button("save editor state").clicked()
+            {
+                action_queue.push( Action::SaveEditorState );
+            }
+
+            if ui.button("load editor state").clicked()
+            {
+                action_queue.push( Action::LoadEditorState );
             }
         });
 

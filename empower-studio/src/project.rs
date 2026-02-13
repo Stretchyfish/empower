@@ -6,12 +6,13 @@ use empower_engine::node_graph::node::node_kind::FilePathNode;
 
 use crate::graph_editor::GraphEditor;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Project
 {
     pub name: String,
     pub state: ProjectState,
     pub graph_editor: GraphEditor,
-    pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
+    // pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
     pub dirty: bool, // To detect if anything changed since last save
 }
 
@@ -24,7 +25,7 @@ impl Project
             name: String::from("untitled"),
             state: ProjectState::Undefined, // @TODO, This is technically the parent directory, should maybe be changed or the name should be added
             graph_editor: GraphEditor::new(),
-            assets: HashMap::new(),
+            // assets: HashMap::new(),
             dirty: true, // since it is not saved yet
         };
 
@@ -78,13 +79,32 @@ impl Project
             ProjectState::Temporary(_) => self.save_as(),
             ProjectState::Saved( path_to_project ) =>
             {
-                self.graph_editor.save( path_to_project );
+                // self.graph_editor.save( path_to_project );
+
+                let file_path = path_to_project.join("project.json"); // @TODO, rename this project?
+        
+                let project_json_string = serde_json::to_string_pretty(&self).unwrap();
+
+                let created_project_json_file_results = std::fs::File::create(&file_path);
+
+                match created_project_json_file_results
+                {
+                    Ok(_) => println!("Created file succesfully"),
+                    Err( error ) => println!("Error, failed to create file: {}", error.kind().to_string()),
+                }
+        
+                let saving_project_file_results = std::fs::write(file_path, project_json_string);
+
+                match saving_project_file_results
+                {
+                    Ok(_) => println!("Saved succesfully"),
+                    Err( error ) => println!("Error, failed to save : {}", error.kind().to_string()),
+                }
             },
         }
         
         // @TODO, setup saving behavior
         println!("Saved project");
-
     }
 
     pub fn save_as(&mut self)
@@ -92,7 +112,15 @@ impl Project
         let folder_path = rfd::FileDialog::new()
                                             .set_title("Choose project location")
                                             .set_can_create_directories(true)
+                                            // .set_file_name(self.name.clone())
                                             .pick_folder();
+
+        // let file_name = folder_path.clone().unwrap().file_name().unwrap().to_string_lossy().to_string();
+
+        // if file_name != self.name
+        // {
+        //     self.name = file_name;
+        // }
 
         if folder_path.is_none()
         {
@@ -102,7 +130,6 @@ impl Project
 
         let parent_directory = folder_path.unwrap();
         let project_directory = parent_directory.join(self.name.clone());
-
 
         match &self.state
         {
@@ -149,22 +176,16 @@ impl Project
             }
         };
 
-        self.graph_editor.save(&project_directory);
-
         self.state = ProjectState::Saved( project_directory.clone() ); // @TODO, this kind of code is reused a lot, find a better way
+        self.save();
     }
 
-    pub fn load(&mut self)
+    pub fn load(project_path: PathBuf) -> Self
     {
-        let folder_path = rfd::FileDialog::new()
-                                            .set_title("Choose project location")
-                                            .set_can_create_directories(true)
-                                            .pick_folder();
-
-        self.state = ProjectState::Saved( folder_path.clone().unwrap() );
-
-        self.graph_editor = GraphEditor::load(folder_path.clone().unwrap());
-        self.name = folder_path.unwrap().file_name().unwrap().to_string_lossy().to_string();
+        // @TODO, do more checks here
+        let corrected_path = project_path.join("project.json");
+        let node_graph_json = std::fs::read_to_string(corrected_path).unwrap();
+        serde_json::from_str(&node_graph_json).unwrap()
     }
 
     pub fn import_asset(&mut self, path: &PathBuf)
@@ -193,16 +214,16 @@ impl Project
         }
         
         // @TODO, this is a dangerous way of assigning ids!
-        let new_asset_id = self.assets.len() as AssetId;
+        // let new_asset_id = self.assets.len() as AssetId;
 
-        let new_asset = Asset
-        {
-            id: new_asset_id,
-            path: path.clone(),
-            kind: AssetKind::None,
-        };
+        // let new_asset = Asset
+        // {
+        //     id: new_asset_id,
+        //     path: path.clone(),
+        //     kind: AssetKind::None,
+        // };
 
-        self.assets.insert(new_asset_id, new_asset);
+        // self.assets.insert(new_asset_id, new_asset);
     }
 
     pub fn create_file(&mut self, path: &PathBuf)
@@ -244,7 +265,7 @@ impl Project
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ProjectState
 {
     Undefined, // @TODO, consider a way to remove this state

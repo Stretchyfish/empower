@@ -428,13 +428,13 @@ fn project_debugging(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
     ui.label(format!("location: {}", location));
 
-    ui.label("Assets");
+    // ui.label("Assets");
 
-    for (assets_id, asset) in &studio_context.project.assets
-    {
-        // @TODO, this crashes if you do to_string for AssetKind, figure out why
-        ui.label(format!("Asset Id: {}", assets_id));
-    }
+    // for (assets_id, asset) in &studio_context.project.assets
+    // {
+    //     // @TODO, this crashes if you do to_string for AssetKind, figure out why
+    //     ui.label(format!("Asset Id: {}", assets_id));
+    // }
 
     });
 }

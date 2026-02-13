@@ -48,7 +48,8 @@ impl StudioContext
                 },
                 Action::SaveProjectAs =>
                 {
-                    match self.project.state
+                    let project_state = self.project.state.clone();
+                    match project_state
                     {
                         ProjectState::Undefined => todo!(),
                         ProjectState::Temporary(_) => 
@@ -56,13 +57,26 @@ impl StudioContext
                             self.layout.project_name_window = Some( self.project.name.clone() );
                             return;
                         },
-                        ProjectState::Saved(_) => self.project.save_as(),
+                        ProjectState::Saved( path_buf ) =>
+                        {
+                            self.project.save_as();
+                            self.layout.add_previous_project(&self.project.name, &path_buf);
+                        }
                     }
                     ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
                 },
-                Action::LoadProject =>
+                Action::LoadProject { project_path } =>
                 {
-                    self.project.load();
+                    self.project = Project::load(project_path);
+
+                    let project_path = match &self.project.state // @TODO, this is dangerous, needs to be dealth with
+                    {
+                        ProjectState::Undefined => todo!(),
+                        ProjectState::Temporary(_) => todo!(),
+                        ProjectState::Saved(path_buf) => path_buf,
+                    };
+                    
+                    self.layout.add_previous_project(&self.project.name, &project_path);
                     ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
                 },
                 Action::CreateNode { name, position } => { self.project.graph_editor.add_node(name, position); },
@@ -125,8 +139,23 @@ impl StudioContext
                 Action::RenameFile { original_path, new_path } =>
                 {
                     self.project.rename_file(original_path, new_path);
-                }
-
+                },
+                Action::DefaultLayout =>
+                {
+                    self.layout = Layout::default_layout();
+                },
+                Action::ClearLayout =>
+                {
+                    self.layout = Layout::clear();
+                },
+                Action::SaveEditorState =>
+                {
+                    self.layout.save();
+                },
+                Action::LoadEditorState =>
+                {
+                    self.layout = Layout::load();
+                },
             }
         }
         

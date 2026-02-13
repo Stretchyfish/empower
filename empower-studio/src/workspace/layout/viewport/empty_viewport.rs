@@ -2,11 +2,13 @@ use crate::{GraphEditor, actions::Action, project::Project};
 
 use super::Viewport;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct EmptyViewport
 {
 
 }
 
+#[typetag::serde]
 impl Viewport for EmptyViewport
 {
     fn new() -> Box<dyn Viewport> 

@@ -1,5 +1,6 @@
 use crate::{actions::Action, graph_editor::GraphEditor};
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct QuickMenu
 {
     mouse_position_when_quick_menu_was_activated: egui::Pos2,

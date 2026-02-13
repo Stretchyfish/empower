@@ -8,7 +8,7 @@ pub enum Action
     CreateTemporaryProject,
     SaveProject,
     SaveProjectAs,
-    LoadProject,
+    LoadProject { project_path: PathBuf },
     CreateNode { name: &'static str, position: egui::Pos2 },
     RefreshNodeStructure { node_key: NodeGraphKey },
     DeleteNode { node_key: NodeGraphKey },
@@ -31,4 +31,8 @@ pub enum Action
     CreateFile { path: PathBuf },
     CreateFolder { path: PathBuf },
     RenameFile { original_path: PathBuf, new_path: PathBuf }, 
+    DefaultLayout,
+    ClearLayout,
+    SaveEditorState,
+    LoadEditorState,
 }

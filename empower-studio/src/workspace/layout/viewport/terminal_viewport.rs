@@ -4,12 +4,14 @@ use crate::{GraphEditor, actions::Action, project::Project};
 
 use super::Viewport;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TerminalViewport
 {
     text: TextBuffer,
     last_logging_size: Option<usize>, // @TODO, this is not an ideal solution for detecting new values
 }
 
+#[typetag::serde]
 impl Viewport for TerminalViewport
 {
     fn new() -> Box<dyn Viewport> 

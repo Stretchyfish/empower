@@ -76,4 +76,9 @@ impl eframe::App for EmpowerStudioApplication
 
         self.studio_context.process_actions(action_queue, ctx);
     }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>)
+    {
+        self.studio_context.layout.save();
+    }
 }

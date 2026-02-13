@@ -1,6 +1,6 @@
 use empower_engine::NodeGraphKey;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeAreaSelect
 {
     pub start_point: egui::Pos2,

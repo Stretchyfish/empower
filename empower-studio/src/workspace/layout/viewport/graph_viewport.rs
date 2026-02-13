@@ -20,6 +20,7 @@ use node_select_panel::NodeSelectionPanel;
 mod quick_menu;
 use quick_menu::QuickMenu;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
@@ -29,6 +30,7 @@ pub struct GraphViewport
     node_select_panel: Option<NodeSelectionPanel>,
 }
 
+#[typetag::serde]
 impl Viewport for GraphViewport
 {
     fn new() -> Box<dyn Viewport> 
