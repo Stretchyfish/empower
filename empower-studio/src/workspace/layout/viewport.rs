@@ -15,6 +15,8 @@ use terminal_viewport::TerminalViewport;
 mod content_browser_viewport;
 use content_browser_viewport::ContentBrowserViewport;
 
+use super::DraggedAsset;
+
 #[typetag::serde(tag="viewport_name")]
 pub trait Viewport
 {

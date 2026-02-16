@@ -35,4 +35,6 @@ pub enum Action
     ClearLayout,
     SaveEditorState,
     LoadEditorState,
+    BeginDraggingAsset { path: PathBuf },
+    StopDraggingAsset,
 }

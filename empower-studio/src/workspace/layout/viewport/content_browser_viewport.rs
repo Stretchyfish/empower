@@ -4,6 +4,8 @@ use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, Proje
 
 use super::Viewport;
 
+use super::DraggedAsset;
+
 const THUMBNAIL_SIZE: egui::Vec2 = egui::Vec2 { x: 100.0, y: 100.0 };
 const ELEMENT_SPACING: f32 = 10.0;
 
@@ -250,7 +252,7 @@ impl ContentBrowserViewport
                     continue;
                 }
 
-                self.draw_file_asset(ui, &entry.path());
+                self.draw_file_asset(ui, &entry.path(), action_queue);
             }
             
         });
@@ -276,7 +278,7 @@ impl ContentBrowserViewport
                 
             let icon = String::from("📁");
 
-            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0)));
+            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
 
             let selectable_label_response = ui.add(selectable_label).on_hover_text(directory_name.clone());
 
@@ -290,6 +292,11 @@ impl ContentBrowserViewport
                     .request_focus();
                     return;
                 }
+            }
+
+            if selectable_label_response.hovered()
+            {
+
             }
 
             if selectable_label_response.clicked()
@@ -328,7 +335,7 @@ impl ContentBrowserViewport
         });
     }
 
-    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
+    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, action_queue: &mut Vec<Action>)
     {
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
@@ -352,7 +359,24 @@ impl ContentBrowserViewport
                 icon = String::from("📷");
             }
 
-            if ui.selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(70.0))).on_hover_text(file_name.clone()).clicked()
+            // let selectable_asset = egui::Button::selected(selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(70.0)))).on_hover_text(file_name.clone());
+
+            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
+
+            let selectable_asset_response = ui.add(selectable_label).on_hover_text(file_name.clone());
+
+            if selectable_asset_response.drag_started()
+            {
+                action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
+                // selectable_asset_response.dnd_set_drag_payload( DraggedAsset { path: asset_path.clone() } );
+            }
+
+            if selectable_asset_response.drag_stopped()
+            {
+                action_queue.push( Action::StopDraggingAsset );
+            }
+
+            if selectable_asset_response.clicked()
             {
                 self.selected_asset = Some( asset_path.clone() );
             }

@@ -159,6 +159,14 @@ impl StudioContext
                 {
                     self.layout = Layout::load();
                 },
+                Action::BeginDraggingAsset { path } =>
+                {
+                    self.layout.dragged_asset = Some( path );
+                },
+                Action::StopDraggingAsset =>
+                {
+                    self.layout.dragged_asset = None;
+                },
             }
         }
         

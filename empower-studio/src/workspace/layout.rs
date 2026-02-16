@@ -6,6 +6,8 @@ pub use viewport::{Viewport, VIEWPORT_REGISTRY};
 mod previous_project;
 use previous_project::PreviousProject;
 
+use super::DraggedAsset;
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Layout // @TODO, consider renaming editor?
 {
@@ -16,6 +18,7 @@ pub struct Layout // @TODO, consider renaming editor?
     pub viewports: HashMap<String, Box<dyn Viewport>>,
     pub docking_state: egui_dock::DockState<String>,
     pub previous_projects: VecDeque<PreviousProject>,
+    pub dragged_asset: Option<PathBuf>,
 }
 
 impl Layout
@@ -36,6 +39,7 @@ impl Layout
             viewports: HashMap::new(),            
             docking_state: egui_dock::DockState::new(Vec::new()), 
             previous_projects: VecDeque::new(),
+            dragged_asset: None,
         }
     }
 
