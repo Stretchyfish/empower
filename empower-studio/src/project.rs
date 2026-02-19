@@ -4,7 +4,10 @@ mod asset;
 pub use asset::{AssetId, Asset, AssetKind};
 use empower_engine::node_graph::node::node_kind::FilePathNode;
 
-use crate::graph_editor::GraphEditor;
+// use crate::graph_editor::GraphEditor;
+
+pub mod graph_editor;
+pub use graph_editor::GraphEditor;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Project

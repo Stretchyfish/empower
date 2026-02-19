@@ -1,0 +1,17 @@
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Windows
+{
+
+}
+
+impl Windows
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            
+        }
+    }
+}
