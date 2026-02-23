@@ -1,10 +1,4 @@
-use std::{collections::HashMap, fs, path::PathBuf};
-
-mod asset;
-pub use asset::{AssetId, Asset, AssetKind};
-use empower_engine::node_graph::node::node_kind::FilePathNode;
-
-// use crate::graph_editor::GraphEditor;
+use std::{fs, path::PathBuf};
 
 pub mod graph_editor;
 pub use graph_editor::GraphEditor;
@@ -15,7 +9,7 @@ pub struct Project
     pub name: String,
     pub state: ProjectState, // @TODO, seperate path and state now that path is always present
     pub graph_editor: GraphEditor,
-    // pub assets: HashMap<AssetId, Asset>, // @TODO, should maybe be AssetMeta
+    pub location: PathBuf,
     pub dirty: bool, // To detect if anything changed since last save
 }
 
@@ -23,31 +17,12 @@ impl Project
 {
     pub fn new() -> Self
     {
-        let mut new_project = Self
-        {
-            name: String::from("untitled"),
-            state: ProjectState::Undefined, // @TODO, This is technically the parent directory, should maybe be changed or the name should be added
-            graph_editor: GraphEditor::new(),
-            // assets: HashMap::new(),
-            dirty: true, // since it is not saved yet
-        };
-
-        new_project.new_project();
-
-        new_project
-    }
-
-    pub fn new_project(&mut self)
-    {
-        // @TODO, this whole function is quite dangerous, take another look at it
-            
         let temp_directory_root = std::env::temp_dir()
                                             .join("empower_studio_temporary_project");
 
-        
         // In case there already is a temp directory
         let remove_dir_result = fs::remove_dir_all( temp_directory_root.clone() );
-
+                                        
         match remove_dir_result
         {
             Ok(_) => {},
@@ -68,46 +43,47 @@ impl Project
             }
         }
 
-        fs::create_dir(temp_directory_root.clone() );
-        fs::create_dir(temp_directory_root.join("assets").clone());
+        let _ = fs::create_dir(temp_directory_root.clone() );
+        let _ = fs::create_dir(temp_directory_root.join("assets").clone());
 
-        self.state = ProjectState::Temporary( temp_directory_root.clone() );
+        Self
+        {
+            name: String::from("untitled"),
+            state: ProjectState::Temporary, 
+            graph_editor: GraphEditor::new(),
+            location: temp_directory_root,
+            dirty: true, // since it is not saved yet
+        }
     }
 
     pub fn save(&mut self)
     {
         match &self.state
         {
-            ProjectState::Undefined => {},
-            ProjectState::Temporary(_) => self.save_as(),
-            ProjectState::Saved( path_to_project ) =>
+            ProjectState::Temporary => self.save_as(),
+            ProjectState::Saved =>
             {
-                // self.graph_editor.save( path_to_project );
-
-                let file_path = path_to_project.join("project.json"); // @TODO, rename this project?
+                let project_file_path = self.location.join("project.json"); // @TODO, rename this project?
         
                 let project_json_string = serde_json::to_string_pretty(&self).unwrap();
 
-                let created_project_json_file_results = std::fs::File::create(&file_path);
+                let created_project_json_file_results = std::fs::File::create(&project_file_path);
 
                 match created_project_json_file_results
                 {
-                    Ok(_) => println!("Created file succesfully"),
+                    Ok(_) => {},
                     Err( error ) => println!("Error, failed to create file: {}", error.kind().to_string()),
                 }
         
-                let saving_project_file_results = std::fs::write(file_path, project_json_string);
+                let saving_project_file_results = std::fs::write(project_file_path, project_json_string);
 
                 match saving_project_file_results
                 {
                     Ok(_) => println!("Saved succesfully"),
-                    Err( error ) => println!("Error, failed to save : {}", error.kind().to_string()),
+                    Err( error ) => println!("Error, failed to save: {}", error.kind().to_string()),
                 }
             },
         }
-        
-        // @TODO, setup saving behavior
-        println!("Saved project");
     }
 
     pub fn save_as(&mut self)
@@ -115,15 +91,7 @@ impl Project
         let folder_path = rfd::FileDialog::new()
                                             .set_title("Choose project location")
                                             .set_can_create_directories(true)
-                                            // .set_file_name(self.name.clone())
                                             .pick_folder();
-
-        // let file_name = folder_path.clone().unwrap().file_name().unwrap().to_string_lossy().to_string();
-
-        // if file_name != self.name
-        // {
-        //     self.name = file_name;
-        // }
 
         if folder_path.is_none()
         {
@@ -134,39 +102,26 @@ impl Project
         let parent_directory = folder_path.unwrap();
         let project_directory = parent_directory.join(self.name.clone());
 
+        let copy_options = fs_extra::dir::CopyOptions::new().copy_inside(true);
+
         match &self.state
         {
-            ProjectState::Undefined => todo!(),
-            ProjectState::Temporary(original_location) => 
+            ProjectState::Temporary => // If is temporary, copy the temporary project to the desired location 
             {
-                // let moved_project_result = fs::rename(original_location, project_directory.clone());
-                // let moved_project_result = fs::copy(original_location, project_directory.clone());
-
-                
-                let mut opts = fs_extra::dir::CopyOptions::new();
-                opts.copy_inside = true;
-
-                let moved_project_result = fs_extra::dir::copy(&original_location, &project_directory.clone(), &opts);
+                let moved_project_result = fs_extra::dir::copy(&self.location, &project_directory, &copy_options);
 
                 match moved_project_result 
                 {
                     Ok(_) => {},
                     Err( error ) => 
                     {
-                        println!("Error when running save as on project : {}", error.to_string() );
-                        // match error.kind
-                        // {
-                        //     std::io::ErrorKind::NotFound => println!("Original location: {}, new location: {}", original_location.to_string_lossy(), project_directory.to_string_lossy()),
-                        //     _ => todo!(),
-                        // }
-
-                        panic!("Failed to save project correctly");
+                        panic!("Error when running save as on project : {}", error.to_string() );
                     }
                 }
             },
-            ProjectState::Saved(original_location) => 
+            ProjectState::Saved => 
             {
-                let copy_project_result = fs::copy(original_location, project_directory.clone());
+                let copy_project_result = fs_extra::dir::copy(&self.location, &project_directory, &copy_options);
 
                 match copy_project_result
                 {
@@ -179,7 +134,8 @@ impl Project
             }
         };
 
-        self.state = ProjectState::Saved( project_directory.clone() ); // @TODO, this kind of code is reused a lot, find a better way
+        self.state = ProjectState::Saved;
+        self.location = project_directory;
         self.save();
     }
 
@@ -193,18 +149,8 @@ impl Project
 
     pub fn import_asset(&mut self, path: &PathBuf)
     {
-        let project_path = match &self.state
-        {
-            ProjectState::Undefined => return,
-            ProjectState::Temporary(path_buf) => path_buf,
-            ProjectState::Saved(path_buf) => path_buf,
-        };
-
+        let project_path = self.location.clone();
         let file_name = path.file_name().unwrap();
-
-        // println!("File prefix: {}", path.file_prefix().unwrap().to_str().unwrap());
-
-        // return;
 
         let new_file_location = project_path.join("assets").join(file_name.to_str().unwrap());
 
@@ -215,18 +161,6 @@ impl Project
             Ok(_) => {},
             Err( error ) => println!("Error when copying imported file: {}", error.kind().to_string()),
         }
-        
-        // @TODO, this is a dangerous way of assigning ids!
-        // let new_asset_id = self.assets.len() as AssetId;
-
-        // let new_asset = Asset
-        // {
-        //     id: new_asset_id,
-        //     path: path.clone(),
-        //     kind: AssetKind::None,
-        // };
-
-        // self.assets.insert(new_asset_id, new_asset);
     }
 
     pub fn create_file(&mut self, path: &PathBuf)
@@ -271,7 +205,6 @@ impl Project
 #[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ProjectState
 {
-    Undefined, // @TODO, consider a way to remove this state
-    Temporary( PathBuf ),
-    Saved( PathBuf ),
+    Temporary,
+    Saved,
 }

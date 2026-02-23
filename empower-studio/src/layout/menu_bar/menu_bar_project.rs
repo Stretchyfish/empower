@@ -1,19 +1,21 @@
-use crate::actions::Action;
+use crate::{actions::Action, commands::Command, user_state::UserState};
 
-pub fn show_menu_bar_project(ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
+pub fn show_menu_bar_project(ui: &mut egui::Ui, action_queue: &mut Vec<Action>, command: &mut Command)
 {
     ui.menu_button("Project", |ui|
     {
         if ui.button("Save").clicked()
         {
-            action_queue.push( Action::SaveProject );
+            *command = Command::SaveProject;
         }
         if ui.button("Save As").clicked()
         {
-            action_queue.push( Action::SaveProjectAs );
+            *command = Command::SaveProjectAs;
+            // action_queue.push( Action::SaveProjectAs );
         }
         if ui.button("Open").clicked()
         {
+            *command = Command::OpenProject;
             let project_path = rfd::FileDialog::new()
                                                 .set_title("Choose project location")
                                                 .set_can_create_directories(true)

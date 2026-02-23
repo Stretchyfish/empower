@@ -1,11 +1,10 @@
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Windows
+pub struct Cache
 {
-
+    
 }
 
-impl Windows
+impl Cache
 {
     pub fn new() -> Self
     {

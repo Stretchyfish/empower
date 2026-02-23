@@ -1,9 +1,12 @@
-use crate::actions::Action;
+use crate::settings::Settings;
 
-pub fn show_menu_bar_settings(ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
+pub fn show_menu_bar_settings(ui: &mut egui::Ui, settings: &mut Settings)
 {
-    if ui.button("Toggle debug window").clicked()
+    ui.menu_button("settings", |ui|
     {
-        action_queue.push( Action::ToggleDebugWindow );
-    }
+        if ui.button("Developer settings").clicked()
+        {
+            settings.windows.developer_settings.show = !settings.windows.developer_settings.show;
+        }
+    });
 }

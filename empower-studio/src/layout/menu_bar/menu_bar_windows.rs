@@ -1,42 +1,45 @@
-use crate::actions::Action;
+use crate::{actions::Action, commands::Command, user_state::UserState};
 
-pub fn show_menu_bar_windows(ui: &mut egui::Ui, action_queue: &mut Vec<Action>) // @TODO, not a great name
+pub fn show_menu_bar_windows(ui: &mut egui::Ui, command: &mut Command) // @TODO, not a great name
 {
     ui.menu_button("Windows", |ui|
     {
         if ui.button("default layout").clicked()
         {
-            action_queue.push( Action::DefaultLayout );
+            *command = Command::SetDefaultLayout;
         }
         if ui.button("clear layout").clicked()
         {
-            action_queue.push( Action::ClearLayout );
+            *command = Command::SetClearLayout;
         }
-        if ui.button("Graph viewport").clicked()
+        ui.menu_button("Open Recent", |ui|
         {
-            action_queue.push( Action::CreateViewport { name: "graph viewport" });
-        }
-        if ui.button("Terminal Viewport").clicked()
+            if ui.button("Graph viewport").clicked()
+            {
+                *command = Command::AddViewport { name: "graph viewport" };
+            }
+            if ui.button("Terminal Viewport").clicked()
+            {
+                *command = Command::AddViewport { name: "terminal viewport" };
+            }
+            if ui.button("Content Browser Viewport").clicked()
+            {
+                *command = Command::AddViewport { name: "content browser viewport" };
+            }
+            if ui.button("Empty Viewport").clicked()
+            {
+                *command = Command::AddViewport { name: "empty viewport" };
+            }
+        });
+
+        if ui.button("save layout").clicked()
         {
-            action_queue.push( Action::CreateViewport { name: "terminal viewport" });
-        }
-        if ui.button("Content Browser Viewport").clicked()
-        {
-            action_queue.push( Action::CreateViewport { name: "content browser viewport" });
-        }
-        if ui.button("Empty Viewport").clicked()
-        {
-            action_queue.push( Action::CreateViewport { name: "empty viewport" });
+            *command = Command::SaveLayout;
         }
 
-        if ui.button("save editor state").clicked()
+        if ui.button("load layout").clicked()
         {
-            action_queue.push( Action::SaveEditorState );
-        }
-
-        if ui.button("load editor state").clicked()
-        {
-            action_queue.push( Action::LoadEditorState );
+            *command = Command::LoadLayout;
         }
     });
 }

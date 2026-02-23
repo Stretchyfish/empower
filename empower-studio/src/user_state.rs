@@ -1,6 +1,8 @@
 
+#[derive(Default, Clone, PartialEq, Eq)]
 pub enum UserState
 {
-    Idle,
+    #[default] Idle,
     DraggingAsset,
+    NamingProject { new_project_name: String },
 }

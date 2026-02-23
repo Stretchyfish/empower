@@ -1,9 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use crate::{actions::Action, project::Project, settings::Settings, user_inputs::UserInputs, user_state::UserState};
-
-mod windows;
-use windows::Windows;
+use crate::{actions::Action, commands::Command, project::Project, settings::Settings, user_inputs::UserInputs, user_state::UserState};
 
 mod global_space;
 
@@ -15,10 +12,11 @@ use tab_viewer::TabViewer;
 mod viewport;
 use viewport::{Viewport, VIEWPORT_REGISTRY};
 
+const CONFIG_DIRECTORY_PROJECT_NAME: &'static str = "empower-studio";
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Layout
 {
-    windows: Windows,
     viewports: HashMap<String, Box<dyn Viewport>>,
     docking_state: egui_dock::DockState<String>,
 }
@@ -29,7 +27,6 @@ impl Layout
     {
         Self
         {
-            windows: Windows::new(),
             viewports: HashMap::new(),
             docking_state: egui_dock::DockState::new(Vec::new()), 
         }
@@ -37,30 +34,46 @@ impl Layout
 
     pub fn load() -> Self
     {
-        let config_directory = directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory");
+        let config_directory = directories::ProjectDirs::from("com", "empower", CONFIG_DIRECTORY_PROJECT_NAME).expect("Could not find a config directory");
         let editor_state_path = config_directory.config_dir().join("studio_editor.json");
 
         let read_editor_state_result = std::fs::read_to_string(editor_state_path);
 
-        match read_editor_state_result
+        match read_editor_state_result // If it fails to load, use default
         {
             Ok( editor_state_json ) =>
             {
-                serde_json::from_str(&editor_state_json).unwrap()
+                let read_json_result = serde_json::from_str(&editor_state_json);
+
+                match read_json_result
+                {
+                    Ok( editor_state ) => { return editor_state; },
+                    Err( error ) => { println!("Error when reading stored layout, using default instead, error: {}", error.to_string()); },
+                };
             },
-            Err(_) =>
-            {
-                Self::default_layout()
-            },
-        }
+            Err( error ) => { println!("Error when reading stored layout, using default instead, error: {}", error.to_string()); },
+        };
+
+        Self::default_layout()
     }
 
     pub fn save(&self)
     {
         // @TODO, find a better way to match the save and load paths
-        let config_directory = directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory");
+        let config_directory = directories::ProjectDirs::from("com", "empower", CONFIG_DIRECTORY_PROJECT_NAME).expect("Could not find a config directory");
 
-        std::fs::create_dir(config_directory.config_dir());
+        let created_config_directory = std::fs::create_dir(config_directory.config_dir());
+        match created_config_directory
+        {
+            Ok(_) => {},
+            Err( error ) => match error.kind()
+            {
+                std::io::ErrorKind::AlreadyExists => {},
+                _ => {
+                    panic!("Failing to save layout because : {}", error.kind().to_string());
+                }
+            },
+        }
 
         let file_path = config_directory.config_dir().join("studio_editor.json");
         let editor_json = serde_json::to_string_pretty(self).unwrap();
@@ -93,20 +106,20 @@ impl Layout
         new_default_layout
     }
 
-    pub fn show_global_space(&mut self, ctx: &egui::Context, settings: &Settings, user_state: &UserState, user_inputs: &UserInputs, action_queue: &mut Vec<Action>)
+    pub fn show_global_space(&mut self, ctx: &egui::Context, settings: &mut Settings, user_state: &mut UserState, user_inputs: &UserInputs, action_queue: &mut Vec<Action>, command: &mut Command)
     {
-        global_space::show_global_space(ctx, user_state, user_inputs, action_queue);
+        global_space::show_global_space(ctx, settings, user_state, user_inputs, command);
     }
 
-    pub fn show_menu_bar(&mut self, ctx: &egui::Context, action_queue: &mut Vec<Action>)
+    pub fn show_menu_bar(&mut self, ctx: &egui::Context, settings: &mut Settings, action_queue: &mut Vec<Action>, command: &mut Command)
     {
         egui::TopBottomPanel::top("menu bar").show(ctx, |ui| 
         {
-            menu_bar::show_menu_bar(ui, action_queue);
+            menu_bar::show_menu_bar(ui, settings, action_queue, command);
         });
     }
 
-    pub fn show_docking_space(&mut self, ctx: &egui::Context, mut project: &mut Project, settings: &Settings, user_state: &UserState, user_inputs: &UserInputs,action_queue: &mut Vec<Action>)
+    pub fn show_docking_space(&mut self, ctx: &egui::Context, mut project: &mut Project, settings: &Settings, user_state: &UserState, user_inputs: &UserInputs, action_queue: &mut Vec<Action>, command: &mut Command)
     {
         egui::CentralPanel::default()
         .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.0))

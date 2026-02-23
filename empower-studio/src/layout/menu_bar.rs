@@ -1,4 +1,4 @@
-use crate::actions::Action;
+use crate::{actions::Action, commands::Command, layout::Layout, settings::Settings, user_state::UserState};
 
 mod menu_bar_project;
 mod menu_bar_settings;
@@ -6,14 +6,14 @@ mod menu_bar_windows;
 mod start_stop_button;
 mod execution_history_visual;
 
-pub fn show_menu_bar(ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
+pub fn show_menu_bar(ui: &mut egui::Ui, settings: &mut Settings, action_queue: &mut Vec<Action>, command: &mut Command)
 {
     egui::MenuBar::new()
     .ui(ui, |ui|
     {
-        menu_bar_project::show_menu_bar_project(ui, action_queue);
-        menu_bar_settings::show_menu_bar_settings(ui, action_queue);
-        menu_bar_windows::show_menu_bar_windows(ui, action_queue); // @TODO, maybe change this name to layout?
+        menu_bar_project::show_menu_bar_project(ui, action_queue, command);
+        menu_bar_settings::show_menu_bar_settings(ui, settings);
+        menu_bar_windows::show_menu_bar_windows(ui, command); // @TODO, maybe change this name to layout?
     });
 
     ui.horizontal(|ui|

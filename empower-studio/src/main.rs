@@ -18,6 +18,12 @@ use layout::Layout;
 
 mod user_inputs;
 
+mod commands;
+use commands::Command;
+
+mod cache;
+use cache::Cache;
+
 fn main() -> Result<(), eframe::Error>
 {
     let app_image = image::load_from_memory( include_bytes!("../../media/empower_icon.png"))
@@ -65,8 +71,9 @@ pub struct EmpowerStudioApplication
     settings: Settings,
     layout: Layout,
 
+    cache: Cache,
+
     user_state: UserState,
-    
 }
 
 impl EmpowerStudioApplication
@@ -81,181 +88,10 @@ impl EmpowerStudioApplication
             settings: Settings::new(),
             layout: Layout::load(), // Tries first to load a saved layout if one exists
 
+            cache: Cache::new(), // @TODO, this should have a load
+
             user_state: UserState::Idle, // Initial state
         }
-    }
-
-    pub fn process_actions(&mut self, ctx: &egui::Context, action_queue: Vec<Action>)
-    {
-        for action in action_queue
-        {
-            match &action
-            {
-                Action::CreateTemporaryProject =>
-                {
-                    self.project.new_project();
-                },
-                Action::SaveProject => 
-                { 
-                    match self.project.state.clone()
-                    {
-                        ProjectState::Undefined => todo!(),
-                        ProjectState::Temporary(_) => 
-                        {
-                            self.layout.project_name_window = Some( self.project.name.clone() );
-                            return;
-                        },
-                        ProjectState::Saved( project_path ) => 
-                        {
-                            self.project.save();
-                            // self.layout.add_previous_project(&self.project.name, &project_path);
-                        },
-                    }
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
-                },
-                Action::SaveProjectAs =>
-                {
-                    let project_state = self.project.state.clone();
-                    match project_state
-                    {
-                        ProjectState::Undefined => todo!(),
-                        ProjectState::Temporary(_) => 
-                        {
-                            // self.layout.project_name_window = Some( self.project.name.clone() );
-                            return;
-                        },
-                        ProjectState::Saved( path_buf ) =>
-                        {
-                            self.project.save_as();
-                            // self.layout.add_previous_project(&self.project.name, &path_buf);
-                        }
-                    }
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
-                },
-                Action::LoadProject { project_path } =>
-                {
-                    // self.project = Project::load(project_path);
-
-                    // let project_path = match &self.project.state // @TODO, this is dangerous, needs to be dealth with
-                    // {
-                    //     ProjectState::Undefined => todo!(),
-                    //     ProjectState::Temporary(_) => todo!(),
-                    //     ProjectState::Saved(path_buf) => path_buf,
-                    // };
-                    
-                    // self.layout.add_previous_project(&self.project.name, &project_path);
-                    // ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!("empower studio - {}", self.project.name)));
-                },
-                Action::CreateNode { name, position } => { self.project.graph_editor.add_node(name, *position); },
-                Action::RefreshNodeStructure { node_key } => { self.project.graph_editor.refresh_node_strcuture(&node_key); },
-                Action::DeleteNode { node_key } => { self.project.graph_editor.remove_node(&node_key); },
-                Action::CopySelectedNodes =>
-                            {
-                                for node_key in self.project.graph_editor.selected_nodes.clone()
-                                {
-                                    self.project.graph_editor.toggle_node_selection(&node_key);
-                                    let copied_node_key = self.project.graph_editor.create_node_copy(&node_key);
-                                    self.project.graph_editor.toggle_node_selection(&copied_node_key);
-                                }
-                            },
-                Action::ToggleNodeSelection { node_key } => self.project.graph_editor.toggle_node_selection(&node_key),
-                Action::AddNodesToSelectedNodes { node_keys } => for node_key in node_keys { self.project.graph_editor.add_node_to_selection(&node_key); },
-                Action::ClearAllNodesFromSelectedNodes => self.project.graph_editor.clear_node_selection(),
-                Action::MoveSelectedNodes { canvas_delta_position } => self.project.graph_editor.move_selected_nodes(&canvas_delta_position),
-                Action::ClickedInputPort { port_key } => self.project.graph_editor.clicked_input_port( &port_key ),
-                Action::SetInputPortValue { port_key, display_value } => self.project.graph_editor.set_input_port_value_if_display_value_can_convert(&port_key, &display_value),
-                Action::ClickedOutputPort { port_key } => self.project.graph_editor.clicked_output_port( &port_key ),
-                Action::StopPortSearch => self.project.graph_editor.stop_port_search(),
-                Action::CreateViewport { name } => { self.layout.add_viewport( name ); },
-                Action::ToggleDebugWindow => 
-                {
-                    // self.layout.debug_window_active = !self.layout.debug_window_active
-                },
-                Action::StartNodeGraphExecution =>
-                {
-                    // let mut empower_executor = EmpowerExecutor::new(self.project.graph_editor.node_graph.clone(), true, true);
-                    // empower_executor.start_node_graph();
-
-                    // self.project.graph_editor.executor = Some( empower_executor );
-                },
-                Action::StartNodeGraphExecutionFromEntry { node_key } =>
-                {
-                    // let mut empower_executor = EmpowerExecutor::new(self.project.graph_editor.node_graph.clone(), true, true);
-                    // empower_executor.start_node_graph_from_entry( &node_key );
-
-                    // self.project.graph_editor.executor = Some( empower_executor );
-                },
-                Action::StopNodeGraphExecution =>
-                {
-                    {
-                        let executor = self.project.graph_editor.executor.as_ref().unwrap(); // @TODO, find a better way to achieve this behavior
-                        self.project.graph_editor.executor_history = Some( ( executor.start_time.clone(), executor.history.clone() ));
-                    }
-                    self.project.graph_editor.executor = None;
-                },
-                Action::ToggleExecutionHisotryWindow => 
-                {
-                    // self.layout.execution_history_window_active = !self.layout.execution_history_window_active
-                },
-                Action::ImportAsset { path } =>
-                {
-                    self.project.import_asset(&path);
-                },
-                Action::CreateFile { path } =>
-                {
-                    self.project.create_file(&path);
-                },
-                Action::CreateFolder { path } =>
-                {
-                    self.project.create_folder(&path);
-                }
-                Action::RenameFile { original_path, new_path } =>
-                {
-                    // self.project.rename_file(original_path, new_path);
-                },
-                Action::DefaultLayout =>
-                {
-                    self.layout = Layout::default_layout();
-                },
-                Action::ClearLayout =>
-                {
-                    self.layout = Layout::new();
-                },
-                Action::SaveEditorState =>
-                {
-                    self.layout.save();
-                },
-                Action::LoadEditorState =>
-                {
-                    self.layout = Layout::load();
-                },
-                Action::BeginDraggingAsset { path } =>
-                {
-                    // self.layout.dragged_asset = Some( path );
-                },
-                Action::StopDraggingAsset =>
-                {
-                    // self.layout.dragged_asset = None;
-                },
-            }
-        }
-    }
-
-    pub fn background_processes(&mut self)
-    {
-        // // @TODO, this needs to be moved elsewhere!
-        // if studio_context.project.graph_editor.executor.is_some()
-        // {
-        //     let executor = studio_context.project.graph_editor.executor.as_mut().unwrap();
-
-        //     if !executor.is_running()
-        //     {
-        //         action_queue.push(Action::StopNodeGraphExecution);
-        //         return; // @TODO, figure out a better way than returning here
-        //     }
-
-        //     executor.execute_node_graph(Some( ui ));
-        // }
     }
 }
 
@@ -271,18 +107,22 @@ impl eframe::App for EmpowerStudioApplication
 
         // return;
 
-        self.background_processes(); // @TODO, move this elsewhere
+        // processes::background_processes();
 
-        let user_inputs = user_inputs::get_user_inputs();
+        // user_state::process_user_state(&mut self.user_state);
+
+        let mut command = Command::None; // @TODO, consider making this a struct instead with method to change
+
+        let user_inputs = user_inputs::get_user_inputs(ctx);
         let mut new_action_queue: Vec<Action> = Vec::new(); // @TODO, make a better object for action handling
 
-        
+        self.layout.show_menu_bar(ctx, &mut self.settings, &mut new_action_queue, &mut command);
+        self.layout.show_global_space(ctx, &mut self.settings, &mut self.user_state, &user_inputs, &mut new_action_queue, &mut command);
+        self.layout.show_docking_space(ctx, &mut self.project, &self.settings, &self.user_state, &user_inputs, &mut new_action_queue, &mut command);
 
-        self.layout.show_menu_bar(ctx, &mut new_action_queue);
-        self.layout.show_global_space(ctx, &self.settings, &self.user_state, &user_inputs, &mut new_action_queue);
-        self.layout.show_docking_space(ctx, &mut self.project, &self.settings, &self.user_state, &user_inputs, &mut new_action_queue);
+        commands::process_command(command, &mut self.layout, &mut self.project, &mut self.user_state);
 
-        self.process_actions(ctx, new_action_queue);
+        // self.process_actions(ctx, new_action_queue);
 
         
     }

@@ -1,6 +1,6 @@
 use std::{any::Any, collections::{HashMap, VecDeque}, fs, path::PathBuf};
 
-use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
+use crate::{actions::Action, project::{Project, ProjectState}};
 
 use super::Viewport;
 
@@ -45,14 +45,7 @@ impl Viewport for ContentBrowserViewport
 
     fn show(&mut self, ui: &mut egui::Ui, project: &mut Project, viewport_name: &String, action_queue: &mut Vec<Action>) {
 
-        let project_directory = match &project.state // @TODO, find a better way!
-        {
-            ProjectState::Undefined => panic!("Entered an impossible state"),
-            ProjectState::Temporary(path_buf) => path_buf.clone(),
-            ProjectState::Saved(path_buf) => path_buf.clone(),
-            // ProjectState::Temporary(path_buf) => path_buf.clone().join("assets"),
-            // ProjectState::Saved(path_buf) => path_buf.clone().join("assets"),
-        };
+        let project_directory = project.location.clone(); 
 
         if project_directory != self.known_project_directory // @TODO, find a better way!
         {
@@ -135,13 +128,7 @@ impl Viewport for ContentBrowserViewport
 
         ui.horizontal(|ui|
         {
-
-            let mut project_path = match &project.state
-            {
-                ProjectState::Undefined => todo!(),
-                ProjectState::Temporary(path_buf) => path_buf.clone(),
-                ProjectState::Saved(path_buf) => path_buf.clone(),
-            };
+            let mut project_path = project.location.clone();
             project_path.pop();
 
             // @TODO, move all this breadcrum path stuff into its own function
