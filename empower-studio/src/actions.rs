@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use empower_engine::NodeGraphKey;
-use crate::project::graph_editor::{GraphEditor, DisplayValue};
+use crate::studio_context::project::graph_editor::{GraphEditor, DisplayValue};
 // use crate::graph_editor::DisplayValue;
 
 pub enum Action

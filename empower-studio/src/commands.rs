@@ -1,4 +1,4 @@
-use crate::{layout::Layout, project::{Project, ProjectState}, user_state::UserState};
+use crate::{studio_context::layout::Layout, studio_context::project::{Project, ProjectState}};
 
 pub enum Command
 {
@@ -13,36 +13,36 @@ pub enum Command
     OpenProject,
 }
 
-pub fn process_command(command: Command, layout: &mut Layout, project: &mut Project, user_state: &mut UserState)
-{
-    match user_state
-    {
-        UserState::Idle => {},
-        UserState::DraggingAsset => {},
-        UserState::NamingProject { new_project_name: _ } => { return; },
-    };
+// pub fn process_command(command: Command, layout: &mut Layout, project: &mut Project, user_state: &mut UserState)
+// {
+    // match user_state
+    // {
+    //     UserState::Idle => {},
+    //     UserState::DraggingAsset => {},
+    //     UserState::NamingProject { new_project_name: _ } => { return; },
+    // };
     
-    match command
-    {
-        Command::None => {},
-        Command::SetDefaultLayout => { *layout = Layout::default_layout(); },
-        Command::SetClearLayout => { *layout = Layout::new() },
-        Command::AddViewport { name } => { layout.add_viewport(name); },
-        Command::SaveLayout => { layout.save(); },
-        Command::LoadLayout => { *layout = Layout::load(); },
-        Command::SaveProject => 
-        { 
-            if project.state == ProjectState::Temporary && project.name == String::from("untitled") // @TODO, not a great way of handling this
-            {
-                *user_state = UserState::NamingProject { new_project_name: project.name.clone() };
-                return;
-            }
-            project.save(); 
-        },
-        Command::SaveProjectAs => { project.save_as(); },
-        Command::OpenProject => { },
-    };
-}
+    // match command
+    // {
+    //     Command::None => {},
+    //     Command::SetDefaultLayout => { *layout = Layout::default_layout(); },
+    //     Command::SetClearLayout => { *layout = Layout::new() },
+    //     Command::AddViewport { name } => { layout.add_viewport(name); },
+    //     Command::SaveLayout => { layout.save(); },
+    //     Command::LoadLayout => { *layout = Layout::load(); },
+    //     Command::SaveProject => 
+    //     { 
+    //         if project.state == ProjectState::Temporary && project.name == String::from("untitled") // @TODO, not a great way of handling this
+    //         {
+    //             *user_state = UserState::NamingProject { new_project_name: project.name.clone() };
+    //             return;
+    //         }
+    //         project.save(); 
+    //     },
+    //     Command::SaveProjectAs => { project.save_as(); },
+    //     Command::OpenProject => { },
+    // };
+// }
     // pub fn process_actions(&mut self, ctx: &egui::Context, action_queue: Vec<Action>)
     // {
     //     for action in action_queue

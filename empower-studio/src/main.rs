@@ -1,28 +1,23 @@
 use egui;
 use egui_extras;
 
-mod project;
-use project::{Project, ProjectState};
-
 mod settings;
 use settings::Settings;
 
-mod user_state;
-use user_state::UserState;
-
 mod actions;
 use actions::Action;
-
-mod layout;
-use layout::Layout;
 
 mod user_inputs;
 
 mod commands;
 use commands::Command;
 
-mod cache;
-use cache::Cache;
+mod studio_context;
+use studio_context::StudioContext;
+
+mod menu_bar;
+mod global_space;
+mod docking_space;
 
 fn main() -> Result<(), eframe::Error>
 {
@@ -44,7 +39,7 @@ fn main() -> Result<(), eframe::Error>
     .with_clamp_size_to_monitor_size(true)
     .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
     .with_icon(app_icon)
-    .with_maximized(true); // @TODO, improve the maximized approach
+    .with_maximized(true);
     
     let native_options = eframe::NativeOptions { 
                                                     vsync: false, 
@@ -65,15 +60,9 @@ fn main() -> Result<(), eframe::Error>
 
 pub struct EmpowerStudioApplication
 {
-    // studio_context: StudioContext,
+    studio_context: StudioContext,
 
-    project: Project,
     settings: Settings,
-    layout: Layout,
-
-    cache: Cache,
-
-    user_state: UserState,
 }
 
 impl EmpowerStudioApplication
@@ -82,15 +71,9 @@ impl EmpowerStudioApplication
     {
         Self 
         {
-            // studio_context: StudioContext::new(),
+            studio_context: StudioContext::new(),
 
-            project: Project::new(),
             settings: Settings::new(),
-            layout: Layout::load(), // Tries first to load a saved layout if one exists
-
-            cache: Cache::new(), // @TODO, this should have a load
-
-            user_state: UserState::Idle, // Initial state
         }
     }
 }
@@ -111,26 +94,20 @@ impl eframe::App for EmpowerStudioApplication
 
         // user_state::process_user_state(&mut self.user_state);
 
-        let mut command = Command::None; // @TODO, consider making this a struct instead with method to change
-
         let user_inputs = user_inputs::get_user_inputs(ctx);
-        let mut new_action_queue: Vec<Action> = Vec::new(); // @TODO, make a better object for action handling
 
-        self.layout.show_menu_bar(ctx, &mut self.settings, &mut new_action_queue, &mut command);
-        self.layout.show_global_space(ctx, &mut self.settings, &mut self.user_state, &user_inputs, &mut new_action_queue, &mut command);
-        self.layout.show_docking_space(ctx, &mut self.project, &self.settings, &self.user_state, &user_inputs, &mut new_action_queue, &mut command);
+        menu_bar::show(ctx, &mut self.studio_context);
+        global_space::show();
+        docking_space::show(ctx, &mut self.studio_context);
 
-        commands::process_command(command, &mut self.layout, &mut self.project, &mut self.user_state);
-
-        // self.process_actions(ctx, new_action_queue);
-
+        self.studio_context.process_requests();
         
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>)
     {
-        self.layout.save();
-        // self.studio_context.layout.save();
+        self.studio_context.request_save();
+        self.studio_context.process_requests(); // Ensures everything is shut down in the correct order
     }
 }
 
