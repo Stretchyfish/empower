@@ -1,9 +1,11 @@
+use std::collections::VecDeque;
+
 use empower_engine::{NodeGraph, NodeGraphKey};
 use egui;
 
 // use crate::{GraphEditor, actions::Action, project::Project, workspace::layout::viewport::graph_viewport::user_inputs::GraphViewportUserInputs};
 
-use crate::{actions::Action, studio_context::{StudioContext, project::{GraphEditor, Project}}};
+use crate::{actions::Action, studio_context::{StudioContext, project::{GraphEditor, Project, graph_editor::DisplayValue}}};
 
 use super::Viewport;
 
@@ -27,6 +29,7 @@ use quick_menu::QuickMenu;
 pub struct GraphViewport
 {
     mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
+    mouse_scene_delta_last_frame: egui::Vec2,
     scene_rect: egui::Rect,
     quick_menu: Option<QuickMenu>,
     node_area_select: Option<NodeAreaSelect>,
@@ -44,6 +47,7 @@ impl Viewport for GraphViewport
             Self 
             {
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
+                mouse_scene_delta_last_frame: egui::Vec2::ZERO,
                 scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
                 quick_menu: None,
                 node_area_select: None,
@@ -67,19 +71,26 @@ impl Viewport for GraphViewport
 
         let project = studio_context.get_project_mut();
 
-        let mut action_queue = Vec::new();
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
-        self.show_canvas(ui, &mut project.graph_editor, &user_inputs, viewport_name, &mut action_queue, show_ids);
+        let graph_viewport_actions = self.show_canvas(ui, &mut project.graph_editor, &user_inputs, viewport_name, show_ids);
+
+        if !graph_viewport_actions.is_empty() // To avoid double behavior on the same loop, these actions are seperate from user inputs
+        {
+            self.process_graph_viewport_actions(&mut project.graph_editor, graph_viewport_actions);
+            return;
+        }
+        
         self.process_user_inputs(&user_inputs, &mut project.graph_editor);
     }
 }
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>, show_ids: bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, show_ids: bool) -> VecDeque<GraphViewportAction>
     {
-        
+        let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
+
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.left_shift_is_down // This is done to disable dragging of the scene during node area select
         {
@@ -93,16 +104,12 @@ impl GraphViewport
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
+            // Calculate the delta position
+            self.mouse_scene_delta_last_frame = egui::Vec2::ZERO; 
             if user_inputs.mouse_is_inside_viewport && self.quick_menu.is_none()
             {
                 let mouse_scene_position = self.screen_position_to_scene_position(&user_inputs.mouse_position, &scene_ui);
-                let mouse_scene_delta_position = mouse_scene_position - self.mouse_scene_position_last_frame; 
-
-                if !graph_editor.selected_nodes.is_empty()
-                {
-                    graph_editor.move_selected_nodes( &mouse_scene_delta_position );
-                }
-
+                self.mouse_scene_delta_last_frame = mouse_scene_position - self.mouse_scene_position_last_frame; 
                 self.mouse_scene_position_last_frame = mouse_scene_position;
             }
 
@@ -122,7 +129,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect();
             for node_key in node_keys
             {
-                node_widget::show(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue, show_ids);
+                node_widget::show(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, show_ids, &mut graph_viewport_actions);
             }
 
             debug_info_widget::nodes_debug_info_show(scene_ui, &graph_editor);
@@ -145,12 +152,12 @@ impl GraphViewport
             
             if self.quick_menu.is_some()
             {
-                self.quick_menu.as_mut().unwrap().show(scene_ui, graph_editor, action_queue);
+                self.quick_menu.as_mut().unwrap().show(scene_ui, graph_editor);
             }
 
             if self.node_select_panel.is_some()
             {
-                let added_node = self.node_select_panel.as_mut().unwrap().show(scene_ui, &self.mouse_scene_position_last_frame, action_queue);
+                let added_node = self.node_select_panel.as_mut().unwrap().show(scene_ui, graph_editor, &self.mouse_scene_position_last_frame);
 
                 if added_node
                 {
@@ -160,6 +167,8 @@ impl GraphViewport
         });
 
         self.scene_rect = scene_rect;
+
+        graph_viewport_actions
     }
 
     fn process_user_inputs(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor)
@@ -173,8 +182,23 @@ impl GraphViewport
         if user_inputs.left_clicked && graph_editor.port_searcher.is_some()
         {
             graph_editor.stop_port_search();
-            // action_queue.push( Action::StopPortSearch );
             return;
+        }
+
+
+        // Deselect selected nodes
+        if user_inputs.left_clicked && graph_editor.selected_nodes.len() > 0
+        {
+            graph_editor.clear_node_selection();
+            // action_queue.push( Action::ClearAllNodesFromSelectedNodes );
+            return;
+        }
+
+        // Move all the selected nodes
+        if !graph_editor.selected_nodes.is_empty()
+        {
+            graph_editor.move_selected_nodes( &self.mouse_scene_delta_last_frame );
+            return; // This return stops a lot of behavior from below, be aware if it is ever moved
         }
 
         // Process quick menu behavior
@@ -228,13 +252,6 @@ impl GraphViewport
             return;
         }
 
-        // Deselect selected nodes
-        if user_inputs.left_clicked && graph_editor.selected_nodes.len() > 0
-        {
-            graph_editor.clear_node_selection();
-            // action_queue.push( Action::ClearAllNodesFromSelectedNodes );
-            return;
-        }
 
         // Detect keyboard actions
         if user_inputs.clicked_backspace
@@ -252,9 +269,32 @@ impl GraphViewport
         }
     }
 
+    fn process_graph_viewport_actions(&self, graph_editor: &mut GraphEditor, graph_viewport_actions: VecDeque<GraphViewportAction>)
+    {
+        for action in graph_viewport_actions
+        {
+            match action
+            {
+                GraphViewportAction::ClickedNodeTitle { node_key } => { graph_editor.toggle_node_selection(&node_key); },
+                GraphViewportAction::RefreshedNodeStructure { node_key } => { graph_editor.refresh_node_strcuture(&node_key); },
+                GraphViewportAction::ClickedInputPort { port_key } => { graph_editor.clicked_input_port(&port_key); },
+                GraphViewportAction::ClickedOutputPort { port_key } => { graph_editor.clicked_output_port(&port_key); },
+                GraphViewportAction::SetInputPortValue { port_key, display_value } => { graph_editor.set_input_port_value_if_display_value_can_convert(&port_key, &display_value); },
+            }
+        }
+    }
+
     fn screen_position_to_scene_position(&self, scene_position: &egui::Pos2, ui: &egui::Ui) -> egui::Pos2
     {
         return ui.ctx().layer_transform_from_global(ui.painter().layer_id()).unwrap() * *scene_position;
     }
 }
 
+enum GraphViewportAction
+{
+    ClickedNodeTitle { node_key: NodeGraphKey },
+    RefreshedNodeStructure { node_key: NodeGraphKey },
+    ClickedInputPort { port_key: NodeGraphKey },
+    ClickedOutputPort { port_key: NodeGraphKey },
+    SetInputPortValue { port_key: NodeGraphKey, display_value: DisplayValue },
+}

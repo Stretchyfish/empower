@@ -1,7 +1,10 @@
+use std::collections::VecDeque;
+
 use empower_engine::node_graph::node::port::Port;
-use crate::actions::Action;
 use crate::studio_context::project::graph_editor::DisplayPort;
 use crate::studio_context::project::graph_editor::display_node::DisplayValue;
+
+use super::GraphViewportAction;
 
 pub fn show_input_port(
                         ui: &mut egui::Ui, 
@@ -11,7 +14,7 @@ pub fn show_input_port(
                         port_has_connection: &bool,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
-                        action_queue: &mut Vec<Action>,
+                        graph_viewport_action: &mut VecDeque<GraphViewportAction>,
                     )
 {
     let input_port_position = *node_position + display_input_port.relative_position;
@@ -24,7 +27,7 @@ pub fn show_input_port(
     let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + input_port.key.to_string().as_str()), egui::Sense::click());
     if input_port_response.clicked()
     {
-        action_queue.push( Action::ClickedInputPort { port_key: input_port.key });
+        graph_viewport_action.push_back( GraphViewportAction::ClickedInputPort { port_key: input_port.key });
     }
 
     input_port_response.on_hover_text( format!("{:?}, {:?}", input_port.value, input_port.compatability ));
@@ -114,6 +117,6 @@ pub fn show_input_port(
 
     if potentially_modified_display_value != display_input_port.value
     {
-        action_queue.push( Action::SetInputPortValue { port_key: input_port.key, display_value: potentially_modified_display_value });
+        graph_viewport_action.push_back( GraphViewportAction::SetInputPortValue { port_key: input_port.key, display_value: potentially_modified_display_value });
     } 
 }

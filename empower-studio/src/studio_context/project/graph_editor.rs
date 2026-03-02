@@ -286,7 +286,6 @@ impl GraphEditor
                 self.port_searcher = None;
             },
         }
-        
     }
 
     pub fn clicked_output_port(&mut self, port_key: &NodeGraphKey)

@@ -1,6 +1,15 @@
+use std::collections::VecDeque;
+
+use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::port::Port;
-use crate::actions::Action;
 use crate::studio_context::project::graph_editor::DisplayPort;
+
+use super::GraphViewportAction;
+
+pub enum ShowNodeOutputPortResponse
+{
+    Clicked { port_key: NodeGraphKey },
+}
 
 pub fn show_output_port(
                         ui: &mut egui::Ui, 
@@ -9,7 +18,7 @@ pub fn show_output_port(
                         display_output_port: &DisplayPort,
                         graph_viewport_title: &String, 
                         debug_mode: &bool,
-                        action_queue: &mut Vec<Action>,
+                        graph_viewport_actions: &mut VecDeque<GraphViewportAction>
                     )
 {
     let output_port_position = *node_position + display_output_port.relative_position;
@@ -21,7 +30,7 @@ pub fn show_output_port(
     let output_port_response = ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + output_port.key.to_string().as_str()), egui::Sense::click());
     if output_port_response.clicked()
     {
-        action_queue.push( Action::ClickedOutputPort { port_key: output_port.key });
+        graph_viewport_actions.push_back( GraphViewportAction::ClickedOutputPort { port_key: output_port.key });
     }
     output_port_response.on_hover_text( format!("{:?}, {:?}", output_port.value, output_port.compatability ));
 

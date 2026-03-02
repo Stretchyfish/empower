@@ -1,4 +1,4 @@
-use crate::actions::Action;
+use crate::studio_context::project::GraphEditor;
 
 #[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeSelectionPanel
@@ -19,7 +19,7 @@ impl NodeSelectionPanel
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, mouse_position_in_scene: &egui::Pos2, action_queue: &mut Vec<Action>) -> bool
+    pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, mouse_position_in_scene: &egui::Pos2) -> bool
     {
         let mut node_to_add = None;
 
@@ -121,8 +121,8 @@ impl NodeSelectionPanel
 
         if node_to_add.is_some()
         {
-            // graph_editor.add_node(node_to_add.unwrap(), *mouse_position_in_scene);
-            action_queue.push( Action::CreateNode { name: node_to_add.unwrap(), position: *mouse_position_in_scene });
+            graph_editor.add_node(node_to_add.unwrap(), *mouse_position_in_scene);
+            // action_queue.push( Action::CreateNode { name: node_to_add.unwrap(), position: *mouse_position_in_scene });
             return true;
         }
 

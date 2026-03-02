@@ -60,6 +60,14 @@ pub fn show_graph_state(ui: &mut egui::Ui, graph_editor: &GraphEditor)
     {
         
     });
+
+    ui.horizontal(|ui|
+    {
+        ui.label(format!("port searching: {}", graph_editor.port_searcher.is_some()));
+
+
+        
+    });
     
     ui.horizontal(|ui|
     {
