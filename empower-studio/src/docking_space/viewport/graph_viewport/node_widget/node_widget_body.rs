@@ -1,11 +1,18 @@
+use empower_engine::NodeGraphKey;
 use empower_engine::node_graph::node::Node;
-use crate::actions::Action;
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 use crate::studio_context::project::graph_editor::DisplayNode;
 
 use super::NodeAreaSelect;
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
+
+pub enum ShowNodeBodyResponse
+{
+    None,
+    Clicked { node_key: NodeGraphKey },
+    NodeBodyNeedsToRefresh { node_key: NodeGraphKey }
+}
 
 pub fn show_node_body(
                         ui: &mut egui::Ui, 
@@ -14,9 +21,10 @@ pub fn show_node_body(
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
                         node_area_select: &mut Option<NodeAreaSelect>,
-                        action_queue: &mut Vec<Action>,
-                    )
+                    ) -> ShowNodeBodyResponse
 {
+    let mut show_node_body_response = ShowNodeBodyResponse::None;
+    
     let node_position = display_node.position;
     let node_size = display_node.display_kind.node_size(&node.kind);
     let node_rect = egui::Rect::from_min_size(
@@ -77,7 +85,7 @@ pub fn show_node_body(
     
     if node_title_reponse.clicked()
     {
-        action_queue.push( Action::ToggleNodeSelection { node_key: node.key });
+        show_node_body_response = ShowNodeBodyResponse::Clicked { node_key: node.key };
     }
 
     ui.painter().rect(
@@ -166,7 +174,9 @@ pub fn show_node_body(
         DisplayNodeStateResponse::NoChange => (),
         DisplayNodeStateResponse::RefreshNodeStructure =>
         {
-            action_queue.push( Action::RefreshNodeStructure { node_key: node.key });
+            show_node_body_response = ShowNodeBodyResponse::NodeBodyNeedsToRefresh { node_key: node.key };
         }
     }
+
+    show_node_body_response
 }

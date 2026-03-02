@@ -1,10 +1,10 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, path::PathBuf};
 
 pub mod project;
 use project::Project;
 
 mod settings;
-use settings::Settings;
+pub use settings::Settings;
 
 pub mod layout;
 use layout::Layout;
@@ -21,6 +21,8 @@ use windows::Windows;
 mod user_state;
 use user_state::UserState;
 
+use crate::studio_context::project::ProjectState;
+
 pub struct StudioContext
 {
     project: Project,
@@ -29,7 +31,7 @@ pub struct StudioContext
     windows: Windows,
     layout: Layout,
 
-    pub cache: Cache, // @TODO, find a different way
+    cache: Cache, 
     user_state: UserState,
 
     requests: VecDeque<Request>,
@@ -42,21 +44,23 @@ impl StudioContext
         Self
         {
             project: Project::new(),
-            settings: Settings {},
+            settings: Settings::load(),
 
             windows: Windows::new(),
             layout: Layout::load(),
 
-            cache: Cache::new(),
+            cache: Cache::load(),
             user_state: UserState::Idle,
 
             requests: VecDeque::new(),
         }
     }
 
-    fn save(&self)
+    fn save(&self) // @TODO, might need a better name, or needs atleast to seperate temporary saving from project
     {
         self.layout.save();
+        self.cache.save();
+        self.settings.save();
     }
 
     pub fn request_save(&mut self) // @TODO, this should probably be a request instead
@@ -84,6 +88,11 @@ impl StudioContext
         self.requests.push_back( Request::LoadProject );
     }
 
+    pub fn request_load_specific_project(&mut self, project_path: PathBuf)
+    {
+        self.requests.push_back( Request::LoadSpecificProject { project_path });
+    }
+
     pub fn get_layout_clone(&self) -> Layout
     {
         self.layout.clone()
@@ -94,9 +103,39 @@ impl StudioContext
         self.layout = layout;
     }
 
+    pub fn get_cache(&self) -> &Cache
+    {
+        &self.cache
+    }
+
+    pub fn get_windows_clone(&self) -> Windows // @TODO, find a better way to do this
+    {
+        self.windows.clone()
+    }
+
+    pub fn set_windows(&mut self, windows: Windows)
+    {
+        self.windows = windows;
+    }
+
     pub fn get_project_mut(&mut self) -> &mut Project // @TODO, THIS IS ONLY TEMPORARY!
     {
         &mut self.project
+    }
+
+    pub fn get_settings_mut(&mut self) -> &mut Settings
+    {
+        &mut self.settings
+    }
+
+    pub fn get_settings_clone(&self) -> Settings
+    {
+        self.settings.clone()
+    }
+
+    pub fn set_settings(&mut self, settings: Settings)
+    {
+        self.settings = settings;
     }
 
     pub fn request_new_layout(&mut self)
@@ -112,6 +151,11 @@ impl StudioContext
     pub fn request_new_viewport(&mut self, new_viewport_name: &'static str)
     {
         self.requests.push_back( Request::AddViewport { name: new_viewport_name });
+    }
+
+    pub fn has_request(&self) -> bool
+    {
+        !self.requests.is_empty()
     }
 
     pub fn process_requests(&mut self)
@@ -131,11 +175,33 @@ impl StudioContext
             Request::Save => { self.save(); },
             Request::SaveLayout => { self.layout.save(); },
             Request::LoadLayout => { self.layout = Layout::load(); },
-            Request::SaveProject => { self.project.save(); },
+            Request::SaveProject => { 
+
+                if self.project.state == ProjectState::Temporary && self.project.name == "untitled" // @TODO, this is not a great way to detect unsaved, but works
+                {
+                    self.windows.project_name_window.activate_show(self.project.name.clone());
+                    return;
+                }
+                self.project.save(); 
+            },
+            Request::SaveProjectAs => {},
             Request::LoadProject => { 
-                self.project.load(); 
+
+                let project_path = rfd::FileDialog::new()
+                                                    .set_title("Find project to load")
+                                                    .set_can_create_directories(true)
+                                                    .pick_folder();
+
+                if project_path.is_none()
+                {
+                    println!("Failed to get folder path!"); // @TODO, in the future, handle this error properly!
+                    return;
+                }
+
+                self.project.load(project_path.unwrap()); 
                 self.cache.add_previous_project( self.project.location.clone() );
             },
+            Request::LoadSpecificProject { project_path } => { self.project.load(project_path); },
         };
     }
 }

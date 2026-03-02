@@ -1,9 +1,6 @@
 use egui;
 use egui_extras;
 
-mod settings;
-use settings::Settings;
-
 mod actions;
 use actions::Action;
 
@@ -61,8 +58,6 @@ fn main() -> Result<(), eframe::Error>
 pub struct EmpowerStudioApplication
 {
     studio_context: StudioContext,
-
-    settings: Settings,
 }
 
 impl EmpowerStudioApplication
@@ -72,8 +67,6 @@ impl EmpowerStudioApplication
         Self 
         {
             studio_context: StudioContext::new(),
-
-            settings: Settings::new(),
         }
     }
 }
@@ -97,7 +90,7 @@ impl eframe::App for EmpowerStudioApplication
         let user_inputs = user_inputs::get_user_inputs(ctx);
 
         menu_bar::show(ctx, &mut self.studio_context);
-        global_space::show();
+        global_space::show(ctx, &mut self.studio_context, &user_inputs);
         docking_space::show(ctx, &mut self.studio_context);
 
         self.studio_context.process_requests();

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 
 pub enum Request
 {
@@ -7,6 +9,8 @@ pub enum Request
     NewLayout,
     DefaultLayout,
     SaveProject,
+    SaveProjectAs,
     LoadProject,
+    LoadSpecificProject { project_path: PathBuf },
     AddViewport { name: &'static str },
 }

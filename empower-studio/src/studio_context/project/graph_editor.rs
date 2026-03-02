@@ -24,7 +24,7 @@ pub struct GraphEditor
     pub display_nodes: HashMap<NodeGraphKey, DisplayNode>,
     pub display_input_ports: HashMap<NodeGraphKey, DisplayPort>,
     pub display_output_ports: HashMap<NodeGraphKey, DisplayPort>,
-    pub selected_nodes: Vec<NodeGraphKey>,
+    pub selected_nodes: Vec<NodeGraphKey>, // @TODO, replace with a HashSet?
     pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
     pub executor: Option<EmpowerExecutor>,

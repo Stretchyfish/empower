@@ -140,22 +140,11 @@ impl Project
         self.save();
     }
 
-    pub fn load(&mut self)
+    pub fn load(&mut self, project_path: PathBuf)
     {
-        let project_path = rfd::FileDialog::new()
-                                            .set_title("Find project to load")
-                                            .set_can_create_directories(true)
-                                            .pick_folder();
-
-        if project_path.is_none()
-        {
-            println!("Failed to get folder path!"); // @TODO, in the future, handle this error properly!
-            return;
-        }
-
         // @TODO, do more checks here
 
-        let corrected_path = project_path.unwrap().join("project.json");
+        let corrected_path = project_path.join("project.json");
         let node_graph_json = std::fs::read_to_string(corrected_path).unwrap();
         *self = serde_json::from_str(&node_graph_json).unwrap();
     }

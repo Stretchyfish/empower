@@ -63,23 +63,25 @@ impl Viewport for GraphViewport
 
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String) {
 
+        let show_ids = studio_context.get_settings_mut().developer_settings.show_ids;
+
         let project = studio_context.get_project_mut();
 
         let mut action_queue = Vec::new();
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
 
-        self.show_canvas(ui, &mut project.graph_editor, &user_inputs, viewport_name, &mut action_queue);
+        self.show_canvas(ui, &mut project.graph_editor, &user_inputs, viewport_name, &mut action_queue, show_ids);
         self.process_user_inputs(&user_inputs, &mut project.graph_editor);
     }
 }
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, graph_editor: &mut GraphEditor, user_inputs: &GraphViewportUserInputs, viewport_name: &String, action_queue: &mut Vec<Action>, show_ids: bool)
     {
         
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
-        if user_inputs.left_shift_is_down
+        if user_inputs.left_shift_is_down // This is done to disable dragging of the scene during node area select
         {
             drag_pan_button = egui::DragPanButtons::empty();
         }
@@ -120,7 +122,7 @@ impl GraphViewport
             let node_keys: Vec<NodeGraphKey> = graph_editor.display_nodes.keys().cloned().collect();
             for node_key in node_keys
             {
-                node_widget::show(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue);
+                node_widget::show(scene_ui, &node_key, graph_editor, &viewport_name, &mut self.node_area_select, action_queue, show_ids);
             }
 
             debug_info_widget::nodes_debug_info_show(scene_ui, &graph_editor);
@@ -162,7 +164,7 @@ impl GraphViewport
 
     fn process_user_inputs(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor)
     {
-        if !user_inputs.mouse_is_inside_viewport
+        if !user_inputs.mouse_is_inside_viewport 
         {
             return;
         }
