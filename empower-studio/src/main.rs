@@ -6,9 +6,6 @@ use actions::Action;
 
 mod user_inputs;
 
-mod commands;
-use commands::Command;
-
 mod studio_context;
 use studio_context::StudioContext;
 
@@ -75,18 +72,6 @@ impl eframe::App for EmpowerStudioApplication
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
-        // let mut action_queue = Vec::new();
-
-        // workspace::show(ctx, &mut self.studio_context, &mut action_queue);
-
-        // self.studio_context.process_actions(action_queue, ctx);
-
-        // return;
-
-        // processes::background_processes();
-
-        // user_state::process_user_state(&mut self.user_state);
-
         let user_inputs = user_inputs::get_user_inputs(ctx);
 
         menu_bar::show(ctx, &mut self.studio_context);

@@ -1,4 +1,8 @@
+use std::collections::VecDeque;
+
 use crate::studio_context::project::graph_editor::GraphEditor;
+
+use super::GraphViewportAction;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct QuickMenu
@@ -16,7 +20,7 @@ impl QuickMenu
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor)
+    pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
     {
         let quick_menu_rect = egui::Rect::from_min_size(self.mouse_position_when_quick_menu_was_activated, egui::Vec2::splat(500.0));
 
@@ -37,16 +41,12 @@ impl QuickMenu
 
                 if ui.add(egui::Button::new( egui::RichText::new("Copy").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                 {
-                    // action_queue.push( Action::CopySelectedNodes );
+                    graph_viewport_actions.push_back( GraphViewportAction::CopySelectedNodes );
                 }
 
                 if ui.add(egui::Button::new( egui::RichText::new("Delete").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                 {
-                    // @WARNING, this could potentially cause problems with multiple windows, so be carefull
-                    for selected_node_key in selected_nodes
-                    {
-                        // action_queue.push( Action::DeleteNode { node_key: selected_node_key });
-                    }
+                    graph_viewport_actions.push_back( GraphViewportAction::DeleteSelectedNodes );
                 }
             });
         });

@@ -5,11 +5,7 @@ use empower_engine::node_graph::node::port::Port;
 use crate::studio_context::project::graph_editor::DisplayPort;
 
 use super::GraphViewportAction;
-
-pub enum ShowNodeOutputPortResponse
-{
-    Clicked { port_key: NodeGraphKey },
-}
+use super::PORT_SIZE;
 
 pub fn show_output_port(
                         ui: &mut egui::Ui, 
@@ -23,9 +19,7 @@ pub fn show_output_port(
 {
     let output_port_position = *node_position + display_output_port.relative_position;
 
-    // @TODO, make this const
-    let output_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
-    let output_port_rect= egui::Rect::from_center_size(output_port_position, output_port_size);
+    let output_port_rect= egui::Rect::from_center_size(output_port_position, PORT_SIZE);
 
     let output_port_response = ui.interact(output_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_output_port_" + output_port.key.to_string().as_str()), egui::Sense::click());
     if output_port_response.clicked()

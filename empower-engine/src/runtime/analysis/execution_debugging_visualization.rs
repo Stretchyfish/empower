@@ -5,12 +5,12 @@ use crate::analyser::node_graph_quick_overview;
 
 pub fn start_debugging(executor: &mut EmpowerExecutor)
 {   
-    println!("------------------------ Empower Runtime Debugging -----------------------");
-    println!("Node Graph View: ");
-    node_graph_quick_overview(&executor.node_graph);
-    let start_node_key = 1;
-    println!("Execution order: {:?}", detect_execution_order(&start_node_key, &mut executor.node_graph));
-    println!("--------------------------------------------------------------------------");
+    // println!("------------------------ Empower Runtime Debugging -----------------------");
+    // println!("Node Graph View: ");
+    // node_graph_quick_overview(&executor.node_graph);
+    // let start_node_key = 1;
+    // println!("Execution order: {:?}", detect_execution_order(&start_node_key, &mut executor.node_graph));
+    // println!("--------------------------------------------------------------------------");
 }
 
 pub fn runtime_debugging(executor: &mut EmpowerExecutor)

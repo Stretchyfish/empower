@@ -8,6 +8,8 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext,user_inputs:
     process_global_user_inputs(studio_context, user_inputs);
     show_windows(ctx, studio_context, user_inputs);
     show_settings_windows(ctx, studio_context);
+
+    show_execution(ctx, studio_context);
 }
 
 fn process_global_user_inputs(studio_context: &mut StudioContext, user_inputs: &UserInputs)
@@ -39,4 +41,14 @@ fn show_settings_windows(ctx: &egui::Context, studio_context: &mut StudioContext
     settings.developer_settings.show(ctx, studio_context);
 
     studio_context.set_settings(settings);
+}
+
+fn show_execution(ctx: &egui::Context, studio_context: &mut StudioContext)
+{
+    if !studio_context.exeucutor_is_running()
+    {
+        return;
+    }
+
+    studio_context.execute_node_graph(ctx);
 }

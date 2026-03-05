@@ -27,8 +27,6 @@ pub struct GraphEditor
     pub selected_nodes: Vec<NodeGraphKey>, // @TODO, replace with a HashSet?
     pub port_searcher: Option<PortSearcher>,
     pub debug_info: DebugInfo,
-    pub executor: Option<EmpowerExecutor>,
-    pub executor_history: Option<(DateTime<Local>, TextBuffer)>,
 }
 
 impl GraphEditor
@@ -44,8 +42,6 @@ impl GraphEditor
             selected_nodes: Vec::new(),
             port_searcher: None,
             debug_info: DebugInfo::new(),
-            executor: None,
-            executor_history: None,
         };
 
         let start_node_left_offset = egui::Pos2 { x: -1700.0, y: -165.0 / 2.0 }; // Half the center nodes height and oriented left

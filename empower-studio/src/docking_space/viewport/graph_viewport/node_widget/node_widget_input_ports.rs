@@ -6,6 +6,8 @@ use crate::studio_context::project::graph_editor::display_node::DisplayValue;
 
 use super::GraphViewportAction;
 
+use super::PORT_SIZE;
+
 pub fn show_input_port(
                         ui: &mut egui::Ui, 
                         node_position: &egui::Pos2,
@@ -18,11 +20,7 @@ pub fn show_input_port(
                     )
 {
     let input_port_position = *node_position + display_input_port.relative_position;
-
-    // @TODO, make global!
-    let input_port_size = egui::Vec2 { x: 50.0, y: 50.0 }; 
- 
-    let input_port_rect = egui::Rect::from_center_size(input_port_position, input_port_size);
+    let input_port_rect = egui::Rect::from_center_size(input_port_position, PORT_SIZE);
 
     let input_port_response = ui.interact(input_port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_input_port_" + input_port.key.to_string().as_str()), egui::Sense::click());
     if input_port_response.clicked()

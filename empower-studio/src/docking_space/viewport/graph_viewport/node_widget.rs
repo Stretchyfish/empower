@@ -10,6 +10,8 @@ mod node_widget_body;
 mod node_widget_input_ports;
 mod node_widget_output_ports;
 
+const PORT_SIZE: egui::Vec2 = egui::Vec2 { x: 50.0, y: 50.0 };
+
 pub fn show(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
@@ -20,7 +22,6 @@ pub fn show(
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
 )
 {
-    // let debug_mode = graph_editor.debug_info.show_keys; 
     let debug_mode = show_ids; 
 
     let node = graph_editor.node_graph.get_node_mut(node_key).unwrap(); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!

@@ -8,7 +8,7 @@ pub use graph_editor::GraphEditor;
 pub struct Project
 {
     pub name: String,
-    pub state: ProjectState, // @TODO, seperate path and state now that path is always present
+    pub state: ProjectState, 
     pub graph_editor: GraphEditor,
     pub location: PathBuf,
     pub dirty: bool, // To detect if anything changed since last save

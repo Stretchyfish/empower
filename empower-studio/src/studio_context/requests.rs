@@ -13,4 +13,6 @@ pub enum Request
     LoadProject,
     LoadSpecificProject { project_path: PathBuf },
     AddViewport { name: &'static str },
+    StartExecution,
+    StopExeuction,
 }

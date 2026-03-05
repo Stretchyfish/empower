@@ -1,8 +1,6 @@
-use std::{any::Any, collections::{HashMap, VecDeque}, fs, path::PathBuf};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
-// use crate::{actions::Action, project::{Asset, AssetId, AssetKind, Project, ProjectState}};
-
-use crate::{actions::Action, studio_context::{StudioContext, project::Project}};
+use crate::studio_context::{StudioContext, project::Project};
 
 use super::Viewport;
 
@@ -50,11 +48,9 @@ impl Viewport for ContentBrowserViewport
         "content browser viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String) {
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String) {
 
         let project = studio_context.get_project_mut();
-
-        let mut action_queue = Vec::new();
 
         let project_directory = &project.location;
 
@@ -74,7 +70,7 @@ impl Viewport for ContentBrowserViewport
             original_path_parrent_directory.pop(); 
             let new_path = original_path_parrent_directory.join(rename_file_state.potential_new_name.clone());
             
-            action_queue.push( Action::RenameFile { original_path, new_path } );
+            project.rename_file(original_path, new_path);
             self.renaming_file = None;
         }
        
@@ -112,7 +108,7 @@ impl Viewport for ContentBrowserViewport
                     panic!("Failed to get file path in import asset!"); // @TODO, in the future, handle this error properly!
                 }
 
-                action_queue.push( Action::ImportAsset { path: file_path.unwrap() });
+                project.import_asset(&file_path.unwrap());
             }
 
             if ui.button("👈").clicked()
@@ -200,7 +196,7 @@ impl Viewport for ContentBrowserViewport
                     let available_width = ui.available_width();
                     let max_elements_per_row = ((available_width + ELEMENT_SPACING) / (THUMBNAIL_SIZE.x + ELEMENT_SPACING)).floor() as i32;
 
-                    self.show_content_browser_elements(ui, project, max_elements_per_row, &mut action_queue);
+                    self.show_content_browser_elements(ui, project, max_elements_per_row);
                 });
         });
     }
@@ -208,7 +204,7 @@ impl Viewport for ContentBrowserViewport
 
 impl ContentBrowserViewport
 {
-    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &Project, max_elements_per_row: i32, action_queue: &mut Vec<Action>)
+    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &mut Project, max_elements_per_row: i32)
     {
         let pane_rect = ui.max_rect(); // @TODO, combine this into a function
         if ui.rect_contains_pointer(pane_rect) && ui.input(|i| i.pointer.secondary_clicked())
@@ -223,7 +219,7 @@ impl ContentBrowserViewport
         
         if self.show_quick_feature_window
         {
-            self.show_quick_feature_window(ui, action_queue);
+            self.show_quick_feature_window(ui, project);
         }
 
         let directory_entries = fs::read_dir(self.current_directory.clone().unwrap());
@@ -251,7 +247,7 @@ impl ContentBrowserViewport
                     continue;
                 }
 
-                self.draw_file_asset(ui, &entry.path(), action_queue);
+                self.draw_file_asset(ui, &entry.path());
             }
             
         });
@@ -334,7 +330,7 @@ impl ContentBrowserViewport
         });
     }
 
-    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, action_queue: &mut Vec<Action>)
+    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
     {
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
@@ -366,13 +362,13 @@ impl ContentBrowserViewport
 
             if selectable_asset_response.drag_started()
             {
-                action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
+                // action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
                 // selectable_asset_response.dnd_set_drag_payload( DraggedAsset { path: asset_path.clone() } );
             }
 
             if selectable_asset_response.drag_stopped()
             {
-                action_queue.push( Action::StopDraggingAsset );
+                // action_queue.push( Action::StopDraggingAsset );
             }
 
             if selectable_asset_response.clicked()
@@ -413,7 +409,7 @@ impl ContentBrowserViewport
 
     }
 
-    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, action_queue: &mut Vec<Action>)
+    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, project: &mut Project)
     {
         egui::Window::new("")
         .current_pos(egui::Pos2 {
@@ -428,7 +424,8 @@ impl ContentBrowserViewport
             if ui.add(egui::Button::new("create file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
                 let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed.txt");
-                action_queue.push( Action::CreateFile { path: new_asset_path.clone() } );
+
+                project.create_file(&new_asset_path);
                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
                 self.show_quick_feature_window = false;
             };
@@ -436,7 +433,7 @@ impl ContentBrowserViewport
             if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
                 let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed");
-                action_queue.push( Action::CreateFolder { path: new_asset_path.clone() } );
+                project.create_folder(&new_asset_path);
                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
                 self.show_quick_feature_window = false;
             };

@@ -3,8 +3,6 @@ use std::collections::VecDeque;
 use empower_engine::{NodeGraph, NodeGraphKey};
 use egui;
 
-// use crate::{GraphEditor, actions::Action, project::Project, workspace::layout::viewport::graph_viewport::user_inputs::GraphViewportUserInputs};
-
 use crate::{actions::Action, studio_context::{StudioContext, project::{GraphEditor, Project, graph_editor::DisplayValue}}};
 
 use super::Viewport;
@@ -28,7 +26,7 @@ use quick_menu::QuickMenu;
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphViewport
 {
-    mouse_scene_position_last_frame: egui::Pos2, // @TODO, only temporary public for debug purpose
+    mouse_scene_position_last_frame: egui::Pos2, 
     mouse_scene_delta_last_frame: egui::Vec2,
     scene_rect: egui::Rect,
     quick_menu: Option<QuickMenu>,
@@ -68,7 +66,6 @@ impl Viewport for GraphViewport
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String) {
 
         let show_ids = studio_context.get_settings_mut().developer_settings.show_ids;
-
         let project = studio_context.get_project_mut();
 
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);
@@ -152,7 +149,7 @@ impl GraphViewport
             
             if self.quick_menu.is_some()
             {
-                self.quick_menu.as_mut().unwrap().show(scene_ui, graph_editor);
+                self.quick_menu.as_mut().unwrap().show(scene_ui, graph_editor, &mut graph_viewport_actions);
             }
 
             if self.node_select_panel.is_some()
@@ -183,22 +180,6 @@ impl GraphViewport
         {
             graph_editor.stop_port_search();
             return;
-        }
-
-
-        // Deselect selected nodes
-        if user_inputs.left_clicked && graph_editor.selected_nodes.len() > 0
-        {
-            graph_editor.clear_node_selection();
-            // action_queue.push( Action::ClearAllNodesFromSelectedNodes );
-            return;
-        }
-
-        // Move all the selected nodes
-        if !graph_editor.selected_nodes.is_empty()
-        {
-            graph_editor.move_selected_nodes( &self.mouse_scene_delta_last_frame );
-            return; // This return stops a lot of behavior from below, be aware if it is ever moved
         }
 
         // Process quick menu behavior
@@ -247,11 +228,9 @@ impl GraphViewport
             {
                 graph_editor.add_node_to_selection(&node_inside_area);
             }
-            // action_queue.push( Action::AddNodesToSelectedNodes { node_keys: self.node_area_select.as_ref().unwrap().get_nodes_inside_of_area_select() });
             self.node_area_select = None;
             return;
         }
-
 
         // Detect keyboard actions
         if user_inputs.clicked_backspace
@@ -259,13 +238,25 @@ impl GraphViewport
             let nodes_to_delete = graph_editor.selected_nodes.clone();
 
             graph_editor.clear_node_selection();
-            // action_queue.push( Action::ClearAllNodesFromSelectedNodes );
             for node_key in nodes_to_delete
             {
                 graph_editor.remove_node( &node_key );
-                // action_queue.push( Action::DeleteNode { node_key });
             }
             return;
+        }
+
+        // Deselect selected nodes
+        if user_inputs.left_clicked && graph_editor.selected_nodes.len() > 0
+        {
+            graph_editor.clear_node_selection();
+            return;
+        }
+
+        // Move all the selected nodes
+        if !graph_editor.selected_nodes.is_empty()
+        {
+            graph_editor.move_selected_nodes( &self.mouse_scene_delta_last_frame );
+            return; 
         }
     }
 
@@ -280,6 +271,17 @@ impl GraphViewport
                 GraphViewportAction::ClickedInputPort { port_key } => { graph_editor.clicked_input_port(&port_key); },
                 GraphViewportAction::ClickedOutputPort { port_key } => { graph_editor.clicked_output_port(&port_key); },
                 GraphViewportAction::SetInputPortValue { port_key, display_value } => { graph_editor.set_input_port_value_if_display_value_can_convert(&port_key, &display_value); },
+                GraphViewportAction::DeleteSelectedNodes => { for node_key in graph_editor.selected_nodes.clone() { graph_editor.remove_node(&node_key); } graph_editor.clear_node_selection(); },
+                GraphViewportAction::CopySelectedNodes => 
+                { 
+                    let selected_nodes_copy = graph_editor.selected_nodes.clone();
+                    graph_editor.clear_node_selection();
+                    for node_key in &selected_nodes_copy  
+                    {
+                        let new_node_key = graph_editor.create_node_copy(node_key); 
+                        graph_editor.add_node_to_selection(&new_node_key);
+                    } 
+                },  
             }
         }
     }
@@ -297,4 +299,6 @@ enum GraphViewportAction
     ClickedInputPort { port_key: NodeGraphKey },
     ClickedOutputPort { port_key: NodeGraphKey },
     SetInputPortValue { port_key: NodeGraphKey, display_value: DisplayValue },
+    CopySelectedNodes,
+    DeleteSelectedNodes,
 }

@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, path::PathBuf};
 
 pub mod project;
+use empower_engine::{NodeGraph, node_graph, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
 use project::Project;
 
 mod settings;
@@ -34,6 +35,8 @@ pub struct StudioContext
     cache: Cache, 
     user_state: UserState,
 
+    executor: EmpowerExecutor,
+
     requests: VecDeque<Request>,
 }
 
@@ -51,6 +54,8 @@ impl StudioContext
 
             cache: Cache::load(),
             user_state: UserState::Idle,
+
+            executor: EmpowerExecutor::new(true, false),
 
             requests: VecDeque::new(),
         }
@@ -133,6 +138,31 @@ impl StudioContext
         self.settings.clone()
     }
 
+    pub fn exeucutor_is_running(&self) -> bool
+    {
+        self.executor.is_running()
+    }
+
+    pub fn request_executor_start(&mut self)
+    {
+        self.requests.push_back( Request::StartExecution );
+    }
+
+    pub fn request_executor_stop(&mut self)
+    {
+        self.requests.push_back( Request::StopExeuction );
+    }
+
+    pub fn execute_node_graph(&mut self, ctx: &egui::Context)
+    {
+        self.executor.execute_node_graph(&mut self.project.graph_editor.node_graph, Some( ctx ));
+    }
+
+    pub fn get_execution_log(&self) -> &LogBuffer
+    {
+        &self.executor.logs
+    }
+
     pub fn set_settings(&mut self, settings: Settings)
     {
         self.settings = settings;
@@ -202,6 +232,8 @@ impl StudioContext
                 self.cache.add_previous_project( self.project.location.clone() );
             },
             Request::LoadSpecificProject { project_path } => { self.project.load(project_path); },
+            Request::StartExecution => { self.executor.start_node_graph( &mut self.project.graph_editor.node_graph ); },
+            Request::StopExeuction => { self.executor.stop_node_graph(); },
         };
     }
 }
