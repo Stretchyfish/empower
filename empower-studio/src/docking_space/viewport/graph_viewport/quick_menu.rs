@@ -7,21 +7,40 @@ use super::GraphViewportAction;
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct QuickMenu
 {
+    show: bool,
     mouse_position_when_quick_menu_was_activated: egui::Pos2,
 }
 
 impl QuickMenu
 {
-    pub fn new(mouse_position_when_quick_menu_was_activated: egui::Pos2) -> Self
+    pub fn new() -> Self
     {
         Self
         {
-            mouse_position_when_quick_menu_was_activated,
+            show: false,
+            mouse_position_when_quick_menu_was_activated: egui::Pos2::ZERO,
         }
+    }
+
+    pub fn on(&mut self, mouse_position: &egui::Pos2)
+    {
+        self.show = true;
+        self.mouse_position_when_quick_menu_was_activated = *mouse_position;
+    }
+
+    pub fn off(&mut self)
+    {
+        self.show = false;
+    }
+
+    pub fn is_on(&self) -> bool
+    {
+        self.show
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui, graph_editor: &GraphEditor, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
     {
+        let number_of_input_actions_when_starting =graph_viewport_actions.len();
         let quick_menu_rect = egui::Rect::from_min_size(self.mouse_position_when_quick_menu_was_activated, egui::Vec2::splat(500.0));
 
         let quick_menu_ui_builder = egui::UiBuilder::new().max_rect(quick_menu_rect);
@@ -35,7 +54,7 @@ impl QuickMenu
                 {
                     if ui.add(egui::Button::new( egui::RichText::new("Compile").size(30.0)).min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked()
                     {
-                        // action_queue.push( Action::StartNodeGraphExecutionFromEntry { node_key: selected_nodes[0] });
+                        graph_viewport_actions.push_back( GraphViewportAction::StartExecutionFromEntry { node_key: selected_nodes[0] });
                     }
                 }
 
@@ -50,5 +69,10 @@ impl QuickMenu
                 }
             });
         });
+
+        if graph_viewport_actions.len() > number_of_input_actions_when_starting // Detect if the user performed an action
+        {
+            self.show = false;
+        }
     }
 }

@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, path::PathBuf};
 
 pub mod project;
-use empower_engine::{NodeGraph, node_graph, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
+use empower_engine::{NodeGraph, NodeGraphKey, node_graph, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
 use project::Project;
 
 mod settings;
@@ -33,7 +33,6 @@ pub struct StudioContext
     layout: Layout,
 
     cache: Cache, 
-    user_state: UserState,
 
     executor: EmpowerExecutor,
 
@@ -53,7 +52,6 @@ impl StudioContext
             layout: Layout::load(),
 
             cache: Cache::load(),
-            user_state: UserState::Idle,
 
             executor: EmpowerExecutor::new(true, false),
 
@@ -148,6 +146,11 @@ impl StudioContext
         self.requests.push_back( Request::StartExecution );
     }
 
+    pub fn request_executor_start_from(&mut self, node_key: NodeGraphKey)
+    {
+        self.requests.push_back( Request::StartExecutionFrom { node_key });
+    }
+
     pub fn request_executor_stop(&mut self)
     {
         self.requests.push_back( Request::StopExeuction );
@@ -233,6 +236,7 @@ impl StudioContext
             },
             Request::LoadSpecificProject { project_path } => { self.project.load(project_path); },
             Request::StartExecution => { self.executor.start_node_graph( &mut self.project.graph_editor.node_graph ); },
+            Request::StartExecutionFrom { node_key } => { self.executor.start_node_graph_from_entry(&mut self.project.graph_editor.node_graph, &node_key); },
             Request::StopExeuction => { self.executor.stop_node_graph(); },
         };
     }
