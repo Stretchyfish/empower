@@ -1,4 +1,4 @@
-use crate::studio_context::StudioContext;
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 
@@ -28,6 +28,6 @@ impl Viewport for EmptyViewport
         "empty viewport"
     }
 
-    fn show(&mut self, _: &mut egui::Ui, _: &mut StudioContext, _: &String) {
+    fn show(&mut self, _: &mut egui::Ui, _: &mut StudioContext, _: &String, _: &UserInputs) {
     }
 }

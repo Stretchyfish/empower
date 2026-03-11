@@ -10,7 +10,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         }
         if ui.button("Save As").clicked()
         {
-
+            studio_context.request_save_project_as();
         }
         if ui.button("Open").clicked()
         {

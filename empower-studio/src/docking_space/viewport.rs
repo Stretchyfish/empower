@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
-use crate::studio_context::StudioContext;
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 mod empty_viewport;
 use empty_viewport::EmptyViewport;
@@ -24,7 +24,7 @@ pub trait Viewport
 
     fn clone_box(&self) -> Box<dyn Viewport>;
     fn name(&self) -> &'static str;
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String);
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs);
 }
 
 impl Clone for Box<dyn Viewport>

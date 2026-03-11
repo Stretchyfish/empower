@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::studio_context::StudioContext;
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 pub mod viewport;
 use viewport::Viewport;
 
-pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
+pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, user_inputs: &UserInputs)
 {
     let mut layout_mut = studio_context.get_layout_clone(); // This is a rather expensive call, but needed to maintain structure
 
@@ -28,6 +28,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
                 &mut TabViewer {
                     studio_context,
                     viewports: &mut layout_mut.viewports,
+                    user_inputs,
                 },
             );
     });
@@ -39,6 +40,7 @@ pub struct TabViewer<'a>
 {
     pub studio_context: &'a mut StudioContext,
     pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
+    pub user_inputs: &'a UserInputs,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_>
@@ -60,6 +62,6 @@ impl egui_dock::TabViewer for TabViewer<'_>
         }
 
         let viewport = self.viewports.get_mut(&tab_name).unwrap();
-        viewport.show(ui, self.studio_context, &tab_name);
+        viewport.show(ui, self.studio_context, &tab_name, self.user_inputs);
     }
 }

@@ -1,13 +1,10 @@
 use std::{collections::VecDeque, fs, path::PathBuf};
 
-use crate::studio_context::{StudioContext, project::Project};
+use crate::{studio_context::{StudioContext, project::Project}, user_inputs::UserInputs};
 
 use super::Viewport;
 
 // use super::DraggedAsset;
-
-const THUMBNAIL_SIZE: egui::Vec2 = egui::Vec2 { x: 100.0, y: 100.0 };
-const ELEMENT_SPACING: f32 = 10.0;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ContentBrowserViewport
@@ -16,8 +13,7 @@ pub struct ContentBrowserViewport
     current_directory: Option<PathBuf>,
     directory_distory: VecDeque<PathBuf>,
     selected_asset: Option<PathBuf>,
-    show_quick_feature_window: bool,
-    quick_feature_window_position_when_activated: egui::Pos2,
+    quick_menu: Option<egui::Pos2>,
     renaming_file: Option<ViewportRenameState>,
 }
 
@@ -33,8 +29,8 @@ impl Viewport for ContentBrowserViewport
             current_directory: None, 
             directory_distory: VecDeque::new(),
             selected_asset: None, 
-            show_quick_feature_window: false,
-            quick_feature_window_position_when_activated: egui::Pos2::new(0.0, 0.0),
+
+            quick_menu: None,
             renaming_file: None,
           } ) // @TODO, set this up properly!
     }
@@ -48,10 +44,9 @@ impl Viewport for ContentBrowserViewport
         "content browser viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String) {
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, user_inputs: &UserInputs) {
 
         let project = studio_context.get_project_mut();
-
         let project_directory = &project.location;
 
         if *project_directory != self.known_project_directory // @TODO, find a better way!
@@ -60,8 +55,21 @@ impl Viewport for ContentBrowserViewport
             self.current_directory = Some( project_directory.join("assets") );
         }
 
-        let user_clicked_enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
-        if user_clicked_enter && self.renaming_file.is_some()
+        self.show_asset_import_and_directory_navigation(ui, project);
+        self.show_breadcrum_path(ui, project);
+        ui.separator();
+        self.show_content_browser_category_panel(ui);
+        self.show_content_browser_elements_panel(ui, project, user_inputs);
+    }
+}
+
+impl ContentBrowserViewport
+{
+    pub fn process_user_inputs(&mut self, ui: &egui::Ui, user_inputs: &UserInputs, project: &mut Project)
+    {
+        if !ui.max_rect().contains(user_inputs.mouse_position) { return; }
+        
+        if user_inputs.clicked_enter && self.renaming_file.is_some()
         {
             let rename_file_state = self.renaming_file.as_ref().unwrap();
 
@@ -72,43 +80,48 @@ impl Viewport for ContentBrowserViewport
             
             project.rename_file(original_path, new_path);
             self.renaming_file = None;
+            return;
         }
        
-        let user_clicked_esp = ui.input(|i| i.key_pressed(egui::Key::Escape));
-
-        if user_clicked_esp && self.renaming_file.is_some()
+        if ( user_inputs.clicked_esp || user_inputs.clicked_primary_mouse_button || user_inputs.clicked_secondary_mouse_button) && self.renaming_file.is_some()
         {
             self.renaming_file = None;
+            return;
         }
 
-        let user_left_clicked = ui.input(|i| i.pointer.primary_clicked());
-        if user_left_clicked && self.selected_asset.is_some() // If the user clicks on a new asset, is should just clickly get removed and then added again
-        // @TODO, consider changing this
+        if user_inputs.clicked_primary_mouse_button && self.selected_asset.is_some() // If the user clicks on a new asset, is should just clickly get removed and then added again
         {
             self.selected_asset = None;
             self.renaming_file = None;
+            return;
         }
-        
+
+        if user_inputs.clicked_secondary_mouse_button
+        {
+            if self.quick_menu.is_none()
+            {
+                self.quick_menu = Some( user_inputs.mouse_position.clone() );
+                return;
+            }
+
+            self.quick_menu = None;
+        }
+    }
+
+    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui, project: &mut Project)
+    {
         ui.horizontal(|ui|
         {
             if ui.button("import asset").clicked()
             {
-                // if project.state == ProjectState::Temporary()
-                // {
-                //     action_queue.push(Action::SaveProject);
-                //     return;
-                // }
-        
                 let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
                                                     .set_title("Import asset") // @TODO, this should probably be in the action of import asset
                                                     .pick_file();
 
-                if file_path.is_none()
+                if file_path.is_some()
                 {
-                    panic!("Failed to get file path in import asset!"); // @TODO, in the future, handle this error properly!
+                    project.import_asset(&file_path.unwrap());
                 }
-
-                project.import_asset(&file_path.unwrap());
             }
 
             if ui.button("👈").clicked()
@@ -132,10 +145,12 @@ impl Viewport for ContentBrowserViewport
                 }
             }
         });
+    }
 
+    pub fn show_breadcrum_path(&mut self, ui: &mut egui::Ui, project: &mut Project)
+    {
         ui.horizontal(|ui|
         {
-
             let mut project_path = project.location.clone();
             project_path.pop();
 
@@ -177,9 +192,10 @@ impl Viewport for ContentBrowserViewport
                 self.current_directory = Some( clicked_breadcrum_path_button.as_ref().unwrap().clone() );
             }
         });
+    }
 
-        ui.separator();
-
+    pub fn show_content_browser_category_panel(&mut self, ui: &mut egui::Ui)
+    {
         egui::panel::SidePanel::left("something").show_inside(ui, |ui|
         {
             if ui.button("assets").clicked()
@@ -187,39 +203,13 @@ impl Viewport for ContentBrowserViewport
                 self.current_directory = Some( self.known_project_directory.join("assets") );
             }
         });
-
-        egui::panel::CentralPanel::default().show_inside(ui, |ui|
-        {
-            
-                egui::ScrollArea::vertical().show(ui, |ui|
-                {
-                    let available_width = ui.available_width();
-                    let max_elements_per_row = ((available_width + ELEMENT_SPACING) / (THUMBNAIL_SIZE.x + ELEMENT_SPACING)).floor() as i32;
-
-                    self.show_content_browser_elements(ui, project, max_elements_per_row);
-                });
-        });
     }
-}
 
-impl ContentBrowserViewport
-{
-    fn show_content_browser_elements(&mut self, ui: &mut egui::Ui, project: &mut Project, max_elements_per_row: i32)
+    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, project: &mut Project, user_inputs: &UserInputs)
     {
-        let pane_rect = ui.max_rect(); // @TODO, combine this into a function
-        if ui.rect_contains_pointer(pane_rect) && ui.input(|i| i.pointer.secondary_clicked())
+        if self.current_directory.is_none()
         {
-            self.show_quick_feature_window = !self.show_quick_feature_window;
-
-            if self.show_quick_feature_window
-            {
-                self.quick_feature_window_position_when_activated = ui.input(|i| i.pointer.hover_pos()).unwrap_or(egui::Pos2 {x: 0.0, y: 0.0});
-            }
-        }
-        
-        if self.show_quick_feature_window
-        {
-            self.show_quick_feature_window(ui, project);
+            return;
         }
 
         let directory_entries = fs::read_dir(self.current_directory.clone().unwrap());
@@ -228,109 +218,49 @@ impl ContentBrowserViewport
             Ok( entries ) => entries,
             Err( error ) => 
             {
-                println!("Directory location: {:?}", self.current_directory.clone().unwrap());
-                println!("Error in reading content browser directory: {}", error.kind().to_string());
-                println!("Error expanded: {}", error.to_string());
-                return;
+                match error.kind()
+                {
+                    std::io::ErrorKind::NotFound => // This error is most likely to happen if the closed the application in a new folder in a temporary project
+                    {
+                        self.current_directory = Some( project.location.join("assets") );
+                        println!("Overwritting current directory in content browser due to impossible access when loading layout");
+                        return;
+                    }, 
+                    _ => { panic!("Error in reading content browser directory: {}", error.kind().to_string()); },
+                }
             }
         };
-
-        let mut an_asset_was_selected = false;
-
-        ui.horizontal_wrapped(|ui|
+        
+        egui::panel::CentralPanel::default().show_inside(ui, |ui|
         {
-            for entry in directory_entries.flatten()
+            self.process_user_inputs(ui, user_inputs, project);
+            
+            if self.quick_menu.is_some()
             {
-                if entry.path().is_dir()
-                {
-                    self.draw_directory_asset(ui, &entry.path());
-                    continue;
-                }
-
-                self.draw_file_asset(ui, &entry.path());
+                self.show_quick_feature_window(ui, project, &self.quick_menu.unwrap());
             }
             
-        });
-    }
-
-    fn draw_directory_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
-    {
-        let mut is_asset_selected = false;
-        if self.selected_asset.is_some()
-        {
-            is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
-        }
-
-        let directory_name = asset_path.file_name().unwrap().to_string_lossy().to_string();
-        
-        ui.vertical(|ui|
-        {
-            ui.allocate_ui_with_layout(
-                                    egui::Vec2::new(70.0, 0.0), 
-                                    egui::Layout::top_down(egui::Align::Center),
-                                    |ui|
+            egui::ScrollArea::vertical().show(ui, |ui|
             {
-                
-            let icon = String::from("📁");
-
-            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
-
-            let selectable_label_response = ui.add(selectable_label).on_hover_text(directory_name.clone());
-
-            // @TODO, this whole approach to renaming doesn't scale
-            if self.renaming_file.is_some() // @TODO, maybe instead of renaming file it should be renaming asset?
-            {
-                let rename_file_state = self.renaming_file.as_mut().unwrap();
-                if rename_file_state.path == *asset_path
+                ui.horizontal_wrapped(|ui|
                 {
-                    ui.text_edit_singleline(&mut rename_file_state.potential_new_name)
-                    .request_focus();
-                    return;
-                }
-            }
-
-            if selectable_label_response.hovered()
-            {
-
-            }
-
-            if selectable_label_response.clicked()
-            {
-                self.selected_asset = Some( asset_path.clone() );
-            }
-
-            if selectable_label_response.double_clicked()
-            {
-                // @TODO, find a better apparoach
-                if self.directory_distory.len() > 10
-                {
-                    self.directory_distory.pop_front();
-                }
-                self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
-
-                self.current_directory = Some( asset_path.clone() );
-                self.selected_asset = None;
-            }
-
-            let mut short_directory_name = String::new();
-
-            for (index, character) in directory_name.char_indices()
-            {
-                if index > 11
-                {
-                    short_directory_name.push_str("...");
-                    break;
-                }
-
-                short_directory_name.push(character);
-            }
-
-            ui.label(short_directory_name);
+                    for entry in directory_entries.flatten()
+                    {
+                        self.show_asset(ui, &entry.path());
+                    }
+                });
             });
         });
+
+        if !ui.max_rect().contains(user_inputs.mouse_position)
+        {
+            return;
+        }
+
+    
     }
 
-    fn draw_file_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
+    fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
     {
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
@@ -338,83 +268,92 @@ impl ContentBrowserViewport
             is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
         }
 
-        let file_name = asset_path.file_name().unwrap().to_string_lossy();
+        let mut file_is_being_renamed = false;
+        if self.renaming_file.is_some()
+        {
+            file_is_being_renamed = self.renaming_file.as_ref().unwrap().path == *asset_path;
+        }
 
+        let asset_is_a_directory = asset_path.is_dir();
+
+        let asset_name = asset_path.file_name().unwrap().to_string_lossy().to_string();
+       
         ui.vertical(|ui|
         {
             ui.allocate_ui_with_layout(
                                         egui::Vec2::new(70.0, 0.0), 
                                         egui::Layout::top_down(egui::Align::Center),
                                         |ui|
-        {
-            let mut icon = String::from("📃");
-
-            if file_name.ends_with(".png")
             {
-                icon = String::from("📷");
-            }
+                let mut asset_icon = String::from("📃");
 
-            // let selectable_asset = egui::Button::selected(selectable_label(is_asset_selected, egui::RichText::new(icon).font(egui::FontId::proportional(70.0)))).on_hover_text(file_name.clone());
-
-            let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
-
-            let selectable_asset_response = ui.add(selectable_label).on_hover_text(file_name.clone());
-
-            if selectable_asset_response.drag_started()
-            {
-                // action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
-                // selectable_asset_response.dnd_set_drag_payload( DraggedAsset { path: asset_path.clone() } );
-            }
-
-            if selectable_asset_response.drag_stopped()
-            {
-                // action_queue.push( Action::StopDraggingAsset );
-            }
-
-            if selectable_asset_response.clicked()
-            {
-                self.selected_asset = Some( asset_path.clone() );
-            }
-
-            // @TODO, this whole approach to renaming doesn't scale
-            if self.renaming_file.is_some()
-            {
-                let rename_file_state = self.renaming_file.as_mut().unwrap();
-                if rename_file_state.path == *asset_path
+                if asset_is_a_directory
                 {
-                    ui.text_edit_singleline(&mut rename_file_state.potential_new_name)
+                    asset_icon = String::from("📁");
+                }
+
+                if asset_name.ends_with(".png")
+                {
+                    asset_icon = String::from("📷");
+                }
+
+                let selectable_label = egui::Button::selectable(is_asset_selected, egui::RichText::new(asset_icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
+                let selectable_asset_response = ui.add(selectable_label).on_hover_text(asset_name.clone());
+
+                if selectable_asset_response.drag_started()
+                {
+                    // action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
+                    // selectable_asset_response.dnd_set_drag_payload( DraggedAsset { path: asset_path.clone() } );
+                }
+
+                if selectable_asset_response.drag_stopped()
+                {
+                    // action_queue.push( Action::StopDraggingAsset );
+                }
+
+                if selectable_asset_response.clicked()
+                {
+                    self.selected_asset = Some( asset_path.clone() );
+                }
+
+                if selectable_asset_response.double_clicked()
+                {
+                    if asset_is_a_directory
+                    {
+                        
+                        // @TODO, find a better apparoach
+                        if self.directory_distory.len() > 10
+                        {
+                            self.directory_distory.pop_front();
+                        }
+                        self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
+
+                        self.current_directory = Some( asset_path.clone() );
+                        self.selected_asset = None;
+                    }
+
+                }
+
+                if file_is_being_renamed // @TODO, This is a somewhat dangerous (should be save, but still)
+                {
+                    ui.text_edit_singleline(&mut self.renaming_file.as_mut().unwrap().potential_new_name)
                     .request_focus();
                     return;
                 }
-            }
 
-            let mut short_file_name = String::new();
-
-            for (index, character) in file_name.char_indices()
-            {
-                if index > 11
-                {
-                    short_file_name.push_str("...");
-                    break;
-                }
-
-                short_file_name.push(character);
-            }
-
-            ui.label(short_file_name);
-                                        
+                let potentially_shortened_asset_name = shorten_text(asset_name, 11);
+                ui.label(potentially_shortened_asset_name);
+                
+            })
         });
-
-        });
-
     }
-
-    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, project: &mut Project)
+    
+    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, project: &mut Project, mouse_position_when_activated: &egui::Pos2)
     {
         egui::Window::new("")
         .current_pos(egui::Pos2 {
-                                x: self.quick_feature_window_position_when_activated.x - 100.0, 
-                                y: self.quick_feature_window_position_when_activated.y - 15.0
+                                x: mouse_position_when_activated.x - 100.0, 
+                                y: mouse_position_when_activated.y - 15.0
                                 })
         .min_size(egui::Vec2 {x: 200.0, y: 200.0})
         .max_size(egui::Vec2 {x: 200.0, y: 200.0})
@@ -427,7 +366,7 @@ impl ContentBrowserViewport
 
                 project.create_file(&new_asset_path);
                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
-                self.show_quick_feature_window = false;
+                self.quick_menu = None;
             };
             
             if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
@@ -435,7 +374,7 @@ impl ContentBrowserViewport
                 let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed");
                 project.create_folder(&new_asset_path);
                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
-                self.show_quick_feature_window = false;
+                self.quick_menu = None;
             };
 
             if self.selected_asset.is_some()
@@ -444,18 +383,24 @@ impl ContentBrowserViewport
                 {
                     // @TODO, more dangerous unwraps without checks here
                     self.renaming_file = Some( ViewportRenameState::new( self.selected_asset.as_ref().unwrap() ) );
-                    self.show_quick_feature_window = false;
+                    self.quick_menu = None;
                 };
             }
         });
     }
 }
 
-enum QuickMenuBehavior
+fn shorten_text(mut text: String, max_letters: usize) -> String // @TODO, make this its own tool
 {
-    CreateFile,
-    CreateFolder,
-    RenameFile,
+    if text.len() <= max_letters
+    {
+        return text;
+    }
+    
+    text.truncate(max_letters);
+    text.push_str("...");
+
+    text
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -476,3 +421,61 @@ impl ViewportRenameState
         }
     }
 }
+
+// #[derive(Clone, serde::Serialize, serde::Deserialize)]
+// struct QuickMenu
+// {
+//     mouse_position_when_activated: egui::Pos2,
+// }
+
+// impl QuickMenu
+// {
+//     pub fn new(mouse_position: &egui::Pos2) -> Self
+//     {
+//         Self
+//         {
+//             mouse_position_when_activated: *mouse_position
+//         }
+//     }
+
+//     pub fn show(&self, ui: &mut egui::Ui)
+//     {
+//         egui::Window::new("")
+//         .current_pos(egui::Pos2 {
+//                                 x: self.mouse_position_when_activated.x - 100.0, 
+//                                 y: self.mouse_position_when_activated.y - 15.0
+//                                 })
+//         .min_size(egui::Vec2 {x: 200.0, y: 200.0})
+//         .max_size(egui::Vec2 {x: 200.0, y: 200.0})
+//         .title_bar(false)
+//         .show(ui.ctx(), |ui|
+//         {
+//             if ui.add(egui::Button::new("create file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+//             {
+//                 let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed.txt");
+
+//                 project.create_file(&new_asset_path);
+//                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+//                 self.show_quick_feature_window = false;
+//             };
+        
+//             if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+//             {
+//                 let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed");
+//                 project.create_folder(&new_asset_path);
+//                 self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+//                 self.show_quick_feature_window = false;
+//             };
+
+//             if self.selected_asset.is_some()
+//             {
+//                 if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+//                 {
+//                     // @TODO, more dangerous unwraps without checks here
+//                     self.renaming_file = Some( ViewportRenameState::new( self.selected_asset.as_ref().unwrap() ) );
+//                     self.show_quick_feature_window = false;
+//                 };
+//             }
+//         });
+//     }
+// }

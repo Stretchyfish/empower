@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, path::PathBuf};
 
 pub mod project;
-use empower_engine::{NodeGraph, NodeGraphKey, node_graph, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
+use empower_engine::{NodeGraphKey, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer}};
 use project::Project;
 
 mod settings;
@@ -18,9 +18,6 @@ use cache::Cache;
 
 mod windows;
 use windows::Windows;
-
-mod user_state;
-use user_state::UserState;
 
 use crate::studio_context::project::ProjectState;
 
@@ -86,6 +83,11 @@ impl StudioContext
         self.requests.push_back( Request::SaveProject );
     }
 
+    pub fn request_save_project_as(&mut self)
+    {
+        self.requests.push_back( Request::SaveProjectAs );
+    }
+
     pub fn request_load_project(&mut self)
     {
         self.requests.push_back( Request::LoadProject );
@@ -119,6 +121,15 @@ impl StudioContext
     pub fn set_windows(&mut self, windows: Windows)
     {
         self.windows = windows;
+    }
+
+    pub fn project_is_temporary(&self) -> bool
+    {
+        match self.project.state
+        {
+            ProjectState::Temporary => true,
+            ProjectState::Saved => false,
+        }
     }
 
     pub fn get_project_mut(&mut self) -> &mut Project // @TODO, THIS IS ONLY TEMPORARY!
@@ -209,15 +220,13 @@ impl StudioContext
             Request::SaveLayout => { self.layout.save(); },
             Request::LoadLayout => { self.layout = Layout::load(); },
             Request::SaveProject => { 
-
-                if self.project.state == ProjectState::Temporary && self.project.name == "untitled" // @TODO, this is not a great way to detect unsaved, but works
-                {
-                    self.windows.project_name_window.activate_show(self.project.name.clone());
-                    return;
-                }
                 self.project.save(); 
+                self.cache.add_previous_project(self.project.location.clone());
             },
-            Request::SaveProjectAs => {},
+            Request::SaveProjectAs =>
+            {
+                self.windows.project_name_window.activate_show(self.project.name.clone()); // This window will have the user set the projects name before calling regular save again
+            },
             Request::LoadProject => { 
 
                 let project_path = rfd::FileDialog::new()

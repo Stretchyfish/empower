@@ -1,7 +1,4 @@
-use chrono::format::strftime;
-
-use crate::{studio_context::{Settings, StudioContext}, user_inputs::UserInputs};
-
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext,user_inputs: &UserInputs)
 {
@@ -21,6 +18,11 @@ fn process_global_user_inputs(studio_context: &mut StudioContext, user_inputs: &
 
     if user_inputs.holding_ctrl && user_inputs.clicked_s
     {
+        if studio_context.project_is_temporary()
+        {
+            studio_context.request_save_project_as();
+            return;
+        }
         studio_context.request_save_project();
     }
 }

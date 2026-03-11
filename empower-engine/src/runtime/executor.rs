@@ -65,7 +65,7 @@ impl EmpowerExecutor
     {
         if self.debug_mode
         {
-            analysis::start_debugging(self);
+            // analysis::start_debugging(self);
         }
 
         if *node_key == 1 // Start node key (This check is only for debugging of node graph without a start node, should get removed later)

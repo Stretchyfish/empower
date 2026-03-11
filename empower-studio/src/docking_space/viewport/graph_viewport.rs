@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use empower_engine::NodeGraphKey;
 use egui;
 
-use crate::studio_context::{StudioContext, project::{GraphEditor, graph_editor::DisplayValue}};
+use crate::{studio_context::{StudioContext, project::{GraphEditor, graph_editor::DisplayValue}}, user_inputs::UserInputs};
 
 use super::Viewport;
 
@@ -63,7 +63,7 @@ impl Viewport for GraphViewport
         "graph viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String) {
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, _: &UserInputs) {
 
         let show_ids = studio_context.get_settings_mut().developer_settings.show_ids;
         let user_inputs = user_inputs::get_graph_viewport_user_inputs(ui);

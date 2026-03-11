@@ -31,12 +31,12 @@ impl DeveloperSettings
                 ui.checkbox(&mut self.show_ids, "show ids");
             });
 
-            ui.collapsing("Project", |ui|
+            ui.collapsing("Project", |_|
             {
                 
             });
 
-            ui.collapsing("Settings", |ui|
+            ui.collapsing("Settings", |_|
             {
                 
             });
@@ -46,7 +46,7 @@ impl DeveloperSettings
                 show_graph_state(ui, &studio_context.get_project_mut().graph_editor);
             });
 
-            ui.collapsing("Executor", |ui|
+            ui.collapsing("Executor", |_|
             {
                 
             });
@@ -56,7 +56,7 @@ impl DeveloperSettings
 
 pub fn show_graph_state(ui: &mut egui::Ui, graph_editor: &GraphEditor)
 {
-    ui.collapsing(format!("selected node {}", graph_editor.selected_nodes.len()), |ui|
+    ui.collapsing(format!("selected node {}", graph_editor.selected_nodes.len()), |_|
     {
         
     });

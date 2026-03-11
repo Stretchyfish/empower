@@ -1,6 +1,6 @@
 use empower_engine::utility::log_buffer::LogBuffer;
 
-use crate::studio_context::{StudioContext};
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 
@@ -35,7 +35,7 @@ impl Viewport for TerminalViewport
         "terminal viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String) {
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, _: &UserInputs) {
 
         let logs = studio_context.get_execution_log();
         

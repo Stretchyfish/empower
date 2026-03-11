@@ -1,9 +1,6 @@
 use egui;
 use egui_extras;
 
-mod actions;
-use actions::Action;
-
 mod user_inputs;
 
 mod studio_context;
@@ -76,10 +73,9 @@ impl eframe::App for EmpowerStudioApplication
 
         menu_bar::show(ctx, &mut self.studio_context);
         global_space::show(ctx, &mut self.studio_context, &user_inputs);
-        docking_space::show(ctx, &mut self.studio_context);
+        docking_space::show(ctx, &mut self.studio_context, &user_inputs);
 
         self.studio_context.process_requests();
-        
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>)
