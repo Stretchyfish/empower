@@ -6,12 +6,14 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConditionNode
 {
     pub condition_type: ConditionType,
 }
 
+
+#[typetag::serde]
 impl NodeKind for ConditionNode
 {
     fn new() -> Box<dyn NodeKind> where
@@ -93,7 +95,7 @@ impl NodeKind for ConditionNode
     }
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum ConditionType
 {
     #[default] Equal,

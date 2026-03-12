@@ -8,20 +8,23 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct WaitNode
 {
     pub time_interval_type: WaitTimeIntervals,
-    start_time: Instant,
+
+    #[serde(skip)]
+    start_time: Option<Instant>, // Option is only used here to satisfy deserialization
     pub wait_time: u64,
 }
 
+#[typetag::serde]
 impl NodeKind for WaitNode
 {
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new( Self { time_interval_type: WaitTimeIntervals::Seconds, start_time: Instant::now(), wait_time: 5 } )
+        Box::new( Self { time_interval_type: WaitTimeIntervals::Seconds, start_time: Some( Instant::now() ), wait_time: 5 } )
     }
 
     fn name(&self) -> &'static str {
@@ -50,7 +53,7 @@ impl NodeKind for WaitNode
 
     fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
 
-        self.start_time = Instant::now();
+        self.start_time = Some( Instant::now() );
         
         NodeSetupResponse::Began
     }
@@ -61,28 +64,28 @@ impl NodeKind for WaitNode
         {
             WaitTimeIntervals::Miliseconds =>
             {
-                if self.start_time.elapsed() >= Duration::from_millis(self.wait_time)
+                if self.start_time.unwrap().elapsed() >= Duration::from_millis(self.wait_time)
                 {
                     return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Seconds =>
             {
-                if self.start_time.elapsed() >= Duration::from_secs(self.wait_time)
+                if self.start_time.unwrap().elapsed() >= Duration::from_secs(self.wait_time)
                 {
                     return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Minutes =>
             {
-                if self.start_time.elapsed() >= Duration::from_mins(self.wait_time)
+                if self.start_time.unwrap().elapsed() >= Duration::from_mins(self.wait_time)
                 {
                     return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Hours =>
             {
-                if self.start_time.elapsed() >= Duration::from_hours(self.wait_time)
+                if self.start_time.unwrap().elapsed() >= Duration::from_hours(self.wait_time)
                 {
                     return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
@@ -97,7 +100,7 @@ impl NodeKind for WaitNode
     }
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum WaitTimeIntervals
 {
     Miliseconds,

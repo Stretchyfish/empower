@@ -1,24 +1,24 @@
-use super::super::EmpowerExecutor;
-use super::detect_execution_order;
+// use super::super::EmpowerExecutor;
+// use super::detect_execution_order;
 
-use crate::analyser::node_graph_quick_overview;
+// use crate::analyser::node_graph_quick_overview;
 
-pub fn start_debugging(executor: &mut EmpowerExecutor)
-{   
-    println!("------------------------ Empower Runtime Debugging -----------------------");
-    println!("Node Graph View: ");
-    node_graph_quick_overview(&executor.node_graph);
-    let start_node_key = 1;
-    println!("Execution order: {:?}", detect_execution_order(&start_node_key, &mut executor.node_graph));
-    println!("--------------------------------------------------------------------------");
-}
+// pub fn start_debugging(executor: &mut EmpowerExecutor)
+// {   
+    // println!("------------------------ Empower Runtime Debugging -----------------------");
+    // println!("Node Graph View: ");
+    // node_graph_quick_overview(&executor.node_graph);
+    // let start_node_key = 1;
+    // println!("Execution order: {:?}", detect_execution_order(&start_node_key, &mut executor.node_graph));
+    // println!("--------------------------------------------------------------------------");
+// }
 
-pub fn runtime_debugging(executor: &mut EmpowerExecutor)
-{
-    if !executor.is_running()
-    {
-        return;
-    }
+// pub fn runtime_debugging(executor: &mut EmpowerExecutor)
+// {
+//     if !executor.is_running()
+//     {
+//         return;
+//     }
 
     // let current_execution_node_key= executor.execution_queue[0];
     // let current_execute_node = executor.node_graph.nodes.get(&current_execution_node_key).unwrap();
@@ -54,4 +54,4 @@ pub fn runtime_debugging(executor: &mut EmpowerExecutor)
 
     // println!("|                                |");
     // println!("----------------------------------");
-}
+// }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub type NodeGraphKey = i32;
 
@@ -11,7 +12,7 @@ use node::port::Port;
 pub use crate::node_graph::node::port::PortValue;
 use crate::node_graph::node::port::PortCompatability;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeGraph
 {
     pub(crate) nodes: HashMap<NodeGraphKey, Node>,
@@ -665,4 +666,34 @@ impl NodeGraph
 
         true
     }
+
+    pub fn save(&mut self, path: PathBuf) // @TODO, this should maybe be elsewhere
+    {
+        let node_graph_json_string = serde_json::to_string_pretty(&self).unwrap();
+
+        let created_node_graph_json_file_results = std::fs::File::create(&path);
+
+        match created_node_graph_json_file_results
+        {
+            Ok(_) => println!("Created file succesfully"),
+            Err( error ) => println!("Error, failed to create file: {}", error.kind().to_string()),
+        }
+        
+        let saving_node_graph_file_results = std::fs::write(path, node_graph_json_string);
+
+        match saving_node_graph_file_results
+        {
+            Ok(_) => println!("Saved succesfully"),
+            Err( error ) => println!("Error, failed to save : {}", error.kind().to_string()),
+        }
+    }
+
+    pub fn load(path: PathBuf) -> Self
+    {
+        let node_graph_json = std::fs::read_to_string(path).unwrap();
+        serde_json::from_str(&node_graph_json).unwrap()
+    }
 }
+
+
+

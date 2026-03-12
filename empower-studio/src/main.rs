@@ -1,14 +1,14 @@
 use egui;
 use egui_extras;
 
+mod user_inputs;
+
 mod studio_context;
 use studio_context::StudioContext;
 
-mod graph_editor;
-use graph_editor::GraphEditor;
-
-mod workspace;
-mod actions;
+mod menu_bar;
+mod global_space;
+mod docking_space;
 
 fn main() -> Result<(), eframe::Error>
 {
@@ -30,7 +30,7 @@ fn main() -> Result<(), eframe::Error>
     .with_clamp_size_to_monitor_size(true)
     .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
     .with_icon(app_icon)
-    .with_maximized(true); // @TODO, improve the maximized approach
+    .with_maximized(true);
     
     let native_options = eframe::NativeOptions { 
                                                     vsync: false, 
@@ -69,9 +69,19 @@ impl eframe::App for EmpowerStudioApplication
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
-        let mut action_queue = Vec::new();
-        workspace::show(ctx, &mut self.studio_context, &mut action_queue);
+        let user_inputs = user_inputs::get_user_inputs(ctx);
 
-        self.studio_context.process_actions(action_queue);
+        menu_bar::show(ctx, &mut self.studio_context);
+        docking_space::show(ctx, &mut self.studio_context, &user_inputs);
+        global_space::show(ctx, &mut self.studio_context, &user_inputs);
+
+        self.studio_context.process_requests();
+    }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>)
+    {
+        self.studio_context.request_save();
+        self.studio_context.process_requests(); // Ensures everything is shut down in the correct order
     }
 }
+

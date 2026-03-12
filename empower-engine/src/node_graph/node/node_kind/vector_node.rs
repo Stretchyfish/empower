@@ -4,12 +4,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct VectorNode
 {
     pub number_of_input_ports: i32,
 }
 
+#[typetag::serde]
 impl NodeKind for VectorNode
 {
     fn new() -> Box<dyn NodeKind> where

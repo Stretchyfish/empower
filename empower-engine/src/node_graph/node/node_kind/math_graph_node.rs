@@ -6,12 +6,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MathGraphNode
 {
     graph: Option<Vec<[f64; 2]>>
 }
 
+#[typetag::serde]
 impl NodeKind for MathGraphNode
 {
     fn new() -> Box<dyn NodeKind> where

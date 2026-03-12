@@ -6,12 +6,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ShowImageNode
 {
     image_path: Option<String>,
 }
 
+#[typetag::serde]
 impl NodeKind for ShowImageNode
 {
     fn new() -> Box<dyn NodeKind> where

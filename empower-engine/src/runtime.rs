@@ -9,18 +9,21 @@ pub use executor::EmpowerExecutor;
 
 pub struct EmpowerRuntime
 {
+    node_graph: NodeGraph,
     node_graph_executor: EmpowerExecutor,
 }
 
 impl EmpowerRuntime
 {
-    pub fn new(node_graph: NodeGraph, debug_mode: bool) -> Self
+    pub fn new(mut node_graph: NodeGraph, debug_mode: bool) -> Self
     {
-        let mut node_graph_executor = EmpowerExecutor::new(node_graph, false, debug_mode);
-        node_graph_executor.start_node_graph();
+        // let mut node_graph_executor = EmpowerExecutor::new(node_graph, false, debug_mode);
+        let mut node_graph_executor = EmpowerExecutor::new(false, debug_mode);
+        node_graph_executor.start_node_graph(&mut node_graph);
  
         Self
         {
+            node_graph,
             node_graph_executor,
         }
     }
@@ -28,8 +31,8 @@ impl EmpowerRuntime
     pub fn execute(&mut self)
     {
         let mut node_graph_uses_graphics = false;
-        if self.node_graph_executor.node_graph.contains_node_kind("math graph") ||
-            self.node_graph_executor.node_graph.contains_node_kind("show image")
+        if self.node_graph.contains_node_kind("math graph") ||
+            self.node_graph.contains_node_kind("show image")
         {
             node_graph_uses_graphics = true;
         }
@@ -38,7 +41,7 @@ impl EmpowerRuntime
         {
             while self.node_graph_executor.is_running()  
             {
-                self.node_graph_executor.execute_node_graph(None);
+                self.node_graph_executor.execute_node_graph(&mut self.node_graph, None);
             }
 
             return;
@@ -56,6 +59,7 @@ impl EmpowerRuntime
                                                         viewport: viewport_builder,
                                                         ..Default::default()};
 
+        let node_graph = self.node_graph.clone(); // @TODO, this is expensive, find a better way
         let executor = self.node_graph_executor.clone(); // @TODO, this can be potentially be a very expensive call, find a better way
         
         let _ = eframe::run_native(
@@ -64,16 +68,16 @@ impl EmpowerRuntime
             Box::new(|cc| 
             {
                 egui_extras::install_image_loaders(&&cc.egui_ctx);
-                Ok(Box::new(EmpowerVisualizer::new(executor)))
+                Ok(Box::new(EmpowerVisualizer::new(node_graph, executor)))
             }),
         );
      }
 
-    pub fn execute_with_ui(&mut self, ui: &mut egui::Ui)
-    {
-        self.node_graph_executor.execute_node_graph(Some( ui ));
+    // pub fn execute_with_ui(&mut self, ui: &mut egui::Ui)
+    // {
+    //     self.node_graph_executor.execute_node_graph(Some( ui ));
 
-    }
+    // }
 }
 
 

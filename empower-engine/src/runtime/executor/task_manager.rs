@@ -4,7 +4,7 @@ use crate::{NodeGraphKey, utility::text_buffer::TextBuffer};
 
 pub use super::task::{Task, Job, ShowJob, TaskId};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct TaskManager
 {
     pub tasks: HashMap<TaskId, Task>,

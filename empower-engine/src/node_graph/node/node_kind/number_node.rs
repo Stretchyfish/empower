@@ -6,12 +6,13 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct NumberNode
 {
     pub desired_value: NumberNodeValueKind,
 }
 
+#[typetag::serde]
 impl NodeKind for NumberNode
 {
     fn new() -> Box<dyn NodeKind> where
@@ -73,7 +74,7 @@ impl NodeKind for NumberNode
     }
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum NumberNodeValueKind
 {
     #[default] Automatic,
