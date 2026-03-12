@@ -76,7 +76,7 @@ impl Viewport for GraphViewport
             return;
         }
         
-        self.process_user_inputs(&user_inputs, &mut studio_context.get_project_mut().graph_editor);
+        self.process_user_inputs(&user_inputs, studio_context);
     }
 }
 
@@ -166,12 +166,26 @@ impl GraphViewport
         graph_viewport_actions
     }
 
-    fn process_user_inputs(&mut self, user_inputs: &GraphViewportUserInputs, graph_editor: &mut GraphEditor)
+    fn process_user_inputs(&mut self, user_inputs: &GraphViewportUserInputs, studio_context: &mut StudioContext)
     {
+
         if !user_inputs.mouse_is_inside_viewport 
         {
             return;
         }
+
+        if user_inputs.released_left_click && studio_context.get_dragged_asset().is_some()
+        {
+            let dragged_asset = studio_context.get_dragged_asset().as_ref().unwrap();
+            if dragged_asset.as_path().to_string_lossy().to_string().ends_with(".txt")
+            {
+                studio_context.get_project_mut().graph_editor.add_node("file path", self.mouse_scene_position_last_frame);
+            }
+
+            studio_context.request_stop_dragging_asset();
+        }
+
+        let graph_editor = &mut studio_context.get_project_mut().graph_editor;
 
         // Deselect port searcher
         if user_inputs.left_clicked && graph_editor.port_searcher.is_some()

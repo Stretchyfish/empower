@@ -17,4 +17,6 @@ pub enum Request
     StartExecution,
     StartExecutionFrom { node_key: NodeGraphKey },
     StopExeuction,
+    StartDraggingAsset { path: PathBuf },
+    StopDraggingAsset,
 }

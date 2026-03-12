@@ -33,6 +33,7 @@ pub struct StudioContext
 
     executor: EmpowerExecutor,
 
+    dragged_asset: Option<PathBuf>,
     requests: VecDeque<Request>,
 }
 
@@ -51,6 +52,8 @@ impl StudioContext
             cache: Cache::load(),
 
             executor: EmpowerExecutor::new(true, false),
+
+            dragged_asset: None,
 
             requests: VecDeque::new(),
         }
@@ -197,6 +200,21 @@ impl StudioContext
         self.requests.push_back( Request::AddViewport { name: new_viewport_name });
     }
 
+    pub fn get_dragged_asset(&self) -> &Option<PathBuf>
+    {
+        &self.dragged_asset
+    }
+
+    pub fn request_begin_dragging_asset(&mut self, asset_path: &PathBuf)
+    {
+        self.requests.push_back( Request::StartDraggingAsset { path: asset_path.clone() });
+    }
+
+    pub fn request_stop_dragging_asset(&mut self)
+    {
+        self.requests.push_back( Request::StopDraggingAsset );
+    }
+
     pub fn has_request(&self) -> bool
     {
         !self.requests.is_empty()
@@ -247,6 +265,8 @@ impl StudioContext
             Request::StartExecution => { self.executor.start_node_graph( &mut self.project.graph_editor.node_graph ); },
             Request::StartExecutionFrom { node_key } => { self.executor.start_node_graph_from_entry(&mut self.project.graph_editor.node_graph, &node_key); },
             Request::StopExeuction => { self.executor.stop_node_graph(); },
+            Request::StartDraggingAsset { path } => { self.dragged_asset = Some( path ); },
+            Request::StopDraggingAsset => { self.dragged_asset = None; },
         };
     }
 }

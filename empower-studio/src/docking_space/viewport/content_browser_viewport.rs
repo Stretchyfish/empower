@@ -4,8 +4,6 @@ use crate::{studio_context::{StudioContext, project::Project}, user_inputs::User
 
 use super::Viewport;
 
-// use super::DraggedAsset;
-
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ContentBrowserViewport
 {
@@ -13,6 +11,7 @@ pub struct ContentBrowserViewport
     current_directory: Option<PathBuf>,
     directory_distory: VecDeque<PathBuf>,
     selected_asset: Option<PathBuf>,
+    hovering_asset: Option<PathBuf>,
     quick_menu: Option<egui::Pos2>,
     renaming_file: Option<ViewportRenameState>,
 }
@@ -29,6 +28,7 @@ impl Viewport for ContentBrowserViewport
             current_directory: None, 
             directory_distory: VecDeque::new(),
             selected_asset: None, 
+            hovering_asset: None,
 
             quick_menu: None,
             renaming_file: None,
@@ -46,28 +46,65 @@ impl Viewport for ContentBrowserViewport
 
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, user_inputs: &UserInputs) {
 
-        let project = studio_context.get_project_mut();
-        let project_directory = &project.location;
-
-        if *project_directory != self.known_project_directory // @TODO, find a better way!
         {
-            self.known_project_directory = project_directory.clone();
-            self.current_directory = Some( project_directory.join("assets") );
-        }
+            let project = studio_context.get_project_mut();
+            let project_directory = &project.location;
 
-        self.show_asset_import_and_directory_navigation(ui, project);
-        self.show_breadcrum_path(ui, project);
-        ui.separator();
-        self.show_content_browser_category_panel(ui);
-        self.show_content_browser_elements_panel(ui, project, user_inputs);
+            if *project_directory != self.known_project_directory // @TODO, find a better way!
+            {
+                self.known_project_directory = project_directory.clone();
+                self.current_directory = Some( project_directory.join("assets") );
+            }
+
+            self.show_asset_import_and_directory_navigation(ui);
+            self.show_breadcrum_path(ui);
+            ui.separator();
+            self.show_content_browser_category_panel(ui);
+        }
+        self.show_content_browser_elements_panel(ui, studio_context, user_inputs);
     }
 }
 
 impl ContentBrowserViewport
 {
-    pub fn process_user_inputs(&mut self, ui: &egui::Ui, user_inputs: &UserInputs, project: &mut Project)
+    pub fn process_user_inputs(&mut self, ui: &egui::Ui, user_inputs: &UserInputs, studio_context: &mut StudioContext)
     {
         if !ui.max_rect().contains(user_inputs.mouse_position) { return; }
+
+        if user_inputs.released_primary_mouse_button && self.hovering_asset.is_some() && studio_context.get_dragged_asset().is_some()
+        {
+            // @TODO, this whole dragging and dropping behavior needs a second look, doesn't really work well
+            
+            let dragged_asset = studio_context.get_dragged_asset().as_ref().unwrap();
+
+            if self.hovering_asset.as_ref().unwrap() == dragged_asset
+            {
+                studio_context.request_stop_dragging_asset();
+                return;
+            }
+
+            if self.hovering_asset.as_ref().unwrap().is_dir()
+            {
+                let rename_file_result = fs::rename(dragged_asset, self.hovering_asset.as_ref().unwrap().join(dragged_asset.file_name().unwrap().to_string_lossy().to_string()));
+
+                match rename_file_result
+                {
+                    Ok(_) => {},
+                    Err( error ) => panic!("Tried to rename a file, and failed because : {}", error.kind().to_string()),
+                }
+            }
+
+            studio_context.request_stop_dragging_asset();
+            return;
+        }
+
+        if user_inputs.released_primary_mouse_button && studio_context.get_dragged_asset().is_some()
+        {
+            studio_context.request_stop_dragging_asset();
+            return;
+        }
+
+        let project = studio_context.get_project_mut();
         
         if user_inputs.clicked_enter && self.renaming_file.is_some()
         {
@@ -108,7 +145,7 @@ impl ContentBrowserViewport
         }
     }
 
-    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui, project: &mut Project)
+    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui)
     {
         ui.horizontal(|ui|
         {
@@ -120,7 +157,14 @@ impl ContentBrowserViewport
 
                 if file_path.is_some()
                 {
-                    project.import_asset(&file_path.unwrap());
+                    let import_location = self.current_directory.as_ref().unwrap().clone().join(file_path.as_ref().unwrap().file_name().unwrap());
+                    let file_copy_result = fs::copy(file_path.as_ref().unwrap(), import_location);
+
+                    match file_copy_result
+                    {
+                        Ok(_) => {},
+                        Err( error ) => println!("Error when copying imported file: {}", error.kind().to_string()),
+                    }
                 }
             }
 
@@ -147,11 +191,11 @@ impl ContentBrowserViewport
         });
     }
 
-    pub fn show_breadcrum_path(&mut self, ui: &mut egui::Ui, project: &mut Project)
+    pub fn show_breadcrum_path(&mut self, ui: &mut egui::Ui)
     {
         ui.horizontal(|ui|
         {
-            let mut project_path = project.location.clone();
+            let mut project_path = self.known_project_directory.clone();
             project_path.pop();
 
             // @TODO, move all this breadcrum path stuff into its own function
@@ -205,7 +249,7 @@ impl ContentBrowserViewport
         });
     }
 
-    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, project: &mut Project, user_inputs: &UserInputs)
+    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs)
     {
         if self.current_directory.is_none()
         {
@@ -222,31 +266,36 @@ impl ContentBrowserViewport
                 {
                     std::io::ErrorKind::NotFound => // This error is most likely to happen if the closed the application in a new folder in a temporary project
                     {
-                        self.current_directory = Some( project.location.join("assets") );
+                        self.current_directory = Some( self.known_project_directory.join("assets") );
                         println!("Overwritting current directory in content browser due to impossible access when loading layout");
                         return;
                     }, 
-                    _ => { panic!("Error in reading content browser directory: {}", error.kind().to_string()); },
+                    _ => { panic!("Error in moving file: {}", error.kind().to_string()); },
                 }
             }
         };
         
         egui::panel::CentralPanel::default().show_inside(ui, |ui|
         {
-            self.process_user_inputs(ui, user_inputs, project);
-            
-            if self.quick_menu.is_some()
+
             {
-                self.show_quick_feature_window(ui, project, &self.quick_menu.unwrap());
+                self.process_user_inputs(ui, user_inputs, studio_context);
+            
+                let project = studio_context.get_project_mut();
+                if self.quick_menu.is_some()
+                {
+                    self.show_quick_feature_window(ui, project, &self.quick_menu.unwrap());
+                }
             }
             
+            self.hovering_asset = None; // This will get set back to the actually hovered asset if the user is still hovering in show_asset
             egui::ScrollArea::vertical().show(ui, |ui|
             {
                 ui.horizontal_wrapped(|ui|
                 {
                     for entry in directory_entries.flatten()
                     {
-                        self.show_asset(ui, &entry.path());
+                        self.show_asset(ui, &entry.path(), studio_context);
                     }
                 });
             });
@@ -260,7 +309,7 @@ impl ContentBrowserViewport
     
     }
 
-    fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf)
+    fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, studio_context: &mut StudioContext)
     {
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
@@ -302,13 +351,12 @@ impl ContentBrowserViewport
 
                 if selectable_asset_response.drag_started()
                 {
-                    // action_queue.push( Action::BeginDraggingAsset { path: asset_path.clone() });
-                    // selectable_asset_response.dnd_set_drag_payload( DraggedAsset { path: asset_path.clone() } );
+                    studio_context.request_begin_dragging_asset(asset_path);
                 }
 
-                if selectable_asset_response.drag_stopped()
+                if selectable_asset_response.hovered()
                 {
-                    // action_queue.push( Action::StopDraggingAsset );
+                    self.hovering_asset = Some( asset_path.clone() );
                 }
 
                 if selectable_asset_response.clicked()

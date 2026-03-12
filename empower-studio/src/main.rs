@@ -72,8 +72,8 @@ impl eframe::App for EmpowerStudioApplication
         let user_inputs = user_inputs::get_user_inputs(ctx);
 
         menu_bar::show(ctx, &mut self.studio_context);
-        global_space::show(ctx, &mut self.studio_context, &user_inputs);
         docking_space::show(ctx, &mut self.studio_context, &user_inputs);
+        global_space::show(ctx, &mut self.studio_context, &user_inputs);
 
         self.studio_context.process_requests();
     }
