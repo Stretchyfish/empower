@@ -9,6 +9,9 @@ use node::NodeHandle;
 use node::node_kind::NODE_REGISTRY;
 use node::port::Port;
 
+mod variable;
+pub use variable::Variable;
+
 pub use crate::node_graph::node::port::PortValue;
 use crate::node_graph::node::port::PortCompatability;
 
@@ -20,6 +23,7 @@ pub struct NodeGraph
     pub(crate) output_ports: HashMap<NodeGraphKey, Port>,
     pub(crate) connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
     pub(crate) connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
+    pub(crate) variables: HashMap<String, Variable>
 }
 
 impl NodeGraph
@@ -33,6 +37,7 @@ impl NodeGraph
             output_ports: HashMap::new(),
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
+            variables: HashMap::new(),
         }
     }
 
@@ -575,6 +580,11 @@ impl NodeGraph
 
             output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
         }
+    }
+
+    pub fn get_variables_mut(&mut self) -> &mut HashMap<String, Variable>
+    {
+        &mut self.variables
     }
 
     pub fn distribute_outputs(&mut self, node_key: &NodeGraphKey) -> Vec<NodeGraphKey>

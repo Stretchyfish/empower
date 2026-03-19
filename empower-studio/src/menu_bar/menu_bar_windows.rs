@@ -30,6 +30,10 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             {
                 studio_context.request_new_viewport("empty viewport");
             }
+            if ui.button("Variable Editor Viewport").clicked()
+            {
+                studio_context.request_new_viewport("variable editor viewport");
+            }
         });
 
         if ui.button("save layout").clicked()

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
-use crate::{studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{docking_space::viewport::variable_editor_viewport::VariableEditorViewport, studio_context::StudioContext, user_inputs::UserInputs};
 
 mod empty_viewport;
 use empty_viewport::EmptyViewport;
@@ -14,6 +14,8 @@ use terminal_viewport::TerminalViewport;
 
 mod content_browser_viewport;
 use content_browser_viewport::ContentBrowserViewport;
+
+mod variable_editor_viewport;
 
 #[typetag::serde(tag="viewport_name")]
 pub trait Viewport
@@ -44,6 +46,7 @@ pub static VIEWPORT_REGISTRY: Lazy<HashMap<&'static str, ViewportConstructor>> =
     m.insert(GraphViewport::new().name(), || GraphViewport::new());
     m.insert(TerminalViewport::new().name(), || TerminalViewport::new());
     m.insert(ContentBrowserViewport::new().name(), || ContentBrowserViewport::new());
+    m.insert(VariableEditorViewport::new().name(), || VariableEditorViewport::new());
  
     m
 });
