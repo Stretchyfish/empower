@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use super::DisplayNodeKind;
 
-use empower_engine::{PortValue, node_graph::node::{NodeKind}};
+use empower_engine::{PortValue, node_graph::{Variable, node::NodeKind}};
 
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 use crate::studio_context::project::graph_editor::DisplayPort;
@@ -75,7 +77,7 @@ impl DisplayNodeKind for MathGraphDisplayNode
         egui::Vec2 { x: 0.0, y: 0.0 }
     }
 
-    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>, _: &HashMap<String, Variable>) -> DisplayNodeStateResponse {
         DisplayNodeStateResponse::NoChange
     }
 }

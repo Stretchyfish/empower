@@ -483,6 +483,11 @@ impl NodeGraph
         self.nodes.get_mut(node_key)
     }
 
+    pub fn get_node_and_variables_mut(&mut self, node_key: &NodeGraphKey) -> (Option<&mut Node>, &mut HashMap<String, Variable>)
+    {
+        (self.nodes.get_mut(node_key), &mut self.variables)
+    }
+
     pub fn get_input_port(&self, port_key: &NodeGraphKey) -> Option<&Port>
     {
         self.input_ports.get(port_key)
@@ -580,6 +585,11 @@ impl NodeGraph
 
             output_port.value = executed_output_value.clone(); // This needs to be a clone, or the value ends up on multiple input ports
         }
+    }
+
+    pub fn get_variables(&mut self) -> &HashMap<String, Variable>
+    {
+        &self.variables
     }
 
     pub fn get_variables_mut(&mut self) -> &mut HashMap<String, Variable>

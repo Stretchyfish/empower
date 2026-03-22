@@ -58,6 +58,4 @@ impl NodeKind for StartNode
     fn show(&mut self, _: &mut egui::Ui) {
         todo!()
     }
-    
-    
 }

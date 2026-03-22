@@ -1,4 +1,6 @@
-use empower_engine::PortValue;
+use std::collections::HashMap;
+
+use empower_engine::{PortValue, node_graph::Variable};
 use empower_engine::node_graph::node::NodeKind;
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 
@@ -49,7 +51,7 @@ impl DisplayNodeKind for ConditionDisplayNode
         ]
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, _: &HashMap<String, Variable>) -> DisplayNodeStateResponse {
 
         let condition_node_state = node_kind.as_any_mut().downcast_mut::<ConditionNode>().expect("Condition display node tried to unwrap a node_kind that is not the condition node kind");
 

@@ -20,7 +20,7 @@ impl Viewport for VariableEditorViewport
         Box::new(
             Self
             {
-                mode: VariableEditorViewportMode::ShowVariable,
+                mode: VariableEditorViewportMode::CreateVariable,
                 new_variable: Variable::new(),
             }
         )
@@ -40,8 +40,8 @@ impl Viewport for VariableEditorViewport
 
         ui.horizontal(|ui|
         {
-            ui.selectable_value(&mut self.mode, VariableEditorViewportMode::ShowVariables, "show variables");
             ui.selectable_value(&mut self.mode, VariableEditorViewportMode::CreateVariable, "add variable");
+            ui.selectable_value(&mut self.mode, VariableEditorViewportMode::ShowVariables, "show variables");
             ui.selectable_value(&mut self.mode, VariableEditorViewportMode::ShowVariable, "edit variable");
         });
 
@@ -133,17 +133,10 @@ impl VariableEditorViewport
             });
         }
 
-
         ui.separator();
         
         if ui.button("Add variable").clicked()
         {
-            let variable = Variable
-            {
-                name: format!("a{}", variables.len()),
-                values: HashMap::from( [(String::from("something"), PortValue::Float(0.6) )] ),
-            };
-
             variables.insert(self.new_variable.name.clone(), self.new_variable.clone());
             self.new_variable = Variable::new();
         }
@@ -181,54 +174,5 @@ impl VariableEditorViewport
                 }
             });
         });
-
-        
-    //     let available_height = ui.available_height();
-
-    //     let mut table = TableBuilder::new(ui)
-    //         .striped(true)
-    //         .resizable(true)
-    //         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-    //         .column(Column::auto())
-    //         .column(
-    //             Column::remainder()
-    //                 .at_least(40.0)
-    //                 .clip(true)
-    //                 .resizable(true),
-    //         )
-    //         .column(Column::auto())
-    //         .column(Column::remainder())
-    //         .column(Column::remainder())
-    //         .min_scrolled_height(0.0)
-    //         .max_scroll_height(available_height);
-
-    //     table
-    //         .header(20.0, |mut header|
-    //     {
-    //        header.col(|ui|
-    //        {
-    //            ui.strong("name");
-    //        }); 
-    //     })
-    //         .body(|mut body|
-    //     {
-    //         body.rows(50.0, variables.len(), |mut row|
-    //         {
-    //             row.col(|ui|
-    //             {
-    //                 // let variable_name = variable_names[row.index()];
-    //                 // ui.label(&variable_names[row.index()].clone());
-    //                 // ui.label("test");
-    //             });
-    //         });
-        
-    //         // for (name, values) in variables
-    //         // {
-    //         //     ui.label(name);
-    //         //     ui.separator();
-    //         // }
-    //     });
     }
-
-
 }
