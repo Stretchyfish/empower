@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use empower_engine::{PortValue, node_graph::{Variable, node::node_kind::NodeKind}};
+use empower_engine::{PortValue, node_graph::{Variable, Variables, node::node_kind::NodeKind}};
 use once_cell::sync::Lazy;
 
 mod default_display_node;
@@ -43,7 +43,7 @@ pub trait DisplayNodeKind
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, variables: &HashMap<String, Variable>) -> DisplayNodeStateResponse;
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, variables: &Variables) -> DisplayNodeStateResponse;
 }
 
 impl Clone for Box<dyn DisplayNodeKind>

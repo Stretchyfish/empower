@@ -1,6 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 use crate::PortValue;
+
+pub type Variables = HashMap<String, Arc<Mutex<Variable>>>;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Variable

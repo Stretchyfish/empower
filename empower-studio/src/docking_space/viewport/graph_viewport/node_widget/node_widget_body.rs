@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 use empower_engine::node_graph::Variable;
+use empower_engine::node_graph::Variables;
 use empower_engine::node_graph::node::Node;
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 use crate::studio_context::project::graph_editor::DisplayNode;
@@ -15,7 +17,7 @@ pub fn show_node_body(
                         ui: &mut egui::Ui, 
                         node: &mut Node,
                         display_node: &mut DisplayNode,
-                        variables: &HashMap<String, Variable>,
+                        variables: &Variables,
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
                         node_area_select: &mut Option<NodeAreaSelect>,

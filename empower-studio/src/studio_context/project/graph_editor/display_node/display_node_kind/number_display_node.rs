@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use empower_engine::node_graph::Variable;
+use empower_engine::node_graph::{Variable, Variables};
 use empower_engine::node_graph::node::node_kind::{NumberNode, NumberNodeValueKind};
 use empower_engine::node_graph::node::NodeKind;
 
@@ -60,7 +61,7 @@ impl DisplayNodeKind for NumberDisplayNode
         egui::Vec2 { x: 175.0, y: 50.0 }
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, _: &HashMap<String, Variable>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, _: &Variables) -> DisplayNodeStateResponse {
 
         let number_node_state = node_kind.as_any_mut().downcast_mut::<NumberNode>().expect("Number display node tried to unwrap a node_kind that is not the number node kind");
 

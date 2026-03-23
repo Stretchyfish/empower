@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub type NodeGraphKey = i32;
 
@@ -11,6 +12,7 @@ use node::port::Port;
 
 mod variable;
 pub use variable::Variable;
+pub use variable::Variables;
 
 pub use crate::node_graph::node::port::PortValue;
 use crate::node_graph::node::port::PortCompatability;
@@ -23,7 +25,7 @@ pub struct NodeGraph
     pub(crate) output_ports: HashMap<NodeGraphKey, Port>,
     pub(crate) connections_out: HashMap<NodeGraphKey, Vec<NodeGraphKey>>,
     pub(crate) connections_in: HashMap<NodeGraphKey, NodeGraphKey>,
-    pub(crate) variables: HashMap<String, Variable>
+    pub(crate) variables: Variables
 }
 
 impl NodeGraph
@@ -190,7 +192,8 @@ impl NodeGraph
             for (index, port_compatability) in updated_input_compatabilities.iter().enumerate()
             {
                 // If there are to many new ports, add more
-                if node.input_port_keys.len() - 1 < index // @TODO, this should also be doable with a contain
+                // @TODO, this fix by converting to i32 to avoid problems with variable node is not ideal
+                if node.input_port_keys.len() as i32 - 1 < index as i32 // @TODO, this should also be doable with a contain
                 {
                     let new_input_port_key = self.get_available_input_port_key();
                     let new_input_port = Port::new_input_port(
@@ -227,7 +230,7 @@ impl NodeGraph
             for (index, port_compatability) in updated_output_compatabilities.iter().enumerate()
             {
                 // If there are to many new ports, add more
-                if node.output_port_keys.len() - 1 < index
+                if node.output_port_keys.len() as i32 - 1 < index as i32
                 {
                     let new_output_port_key = self.get_available_output_port_key();
                     let new_output_port = Port::new_output_port(
@@ -483,7 +486,7 @@ impl NodeGraph
         self.nodes.get_mut(node_key)
     }
 
-    pub fn get_node_and_variables_mut(&mut self, node_key: &NodeGraphKey) -> (Option<&mut Node>, &mut HashMap<String, Variable>)
+    pub fn get_node_and_variables_mut(&mut self, node_key: &NodeGraphKey) -> (Option<&mut Node>, &mut Variables)
     {
         (self.nodes.get_mut(node_key), &mut self.variables)
     }
@@ -587,12 +590,12 @@ impl NodeGraph
         }
     }
 
-    pub fn get_variables(&mut self) -> &HashMap<String, Variable>
+    pub fn get_variables(&mut self) -> &Variables
     {
         &self.variables
     }
 
-    pub fn get_variables_mut(&mut self) -> &mut HashMap<String, Variable>
+    pub fn get_variables_mut(&mut self) -> &mut Variables
     {
         &mut self.variables
     }

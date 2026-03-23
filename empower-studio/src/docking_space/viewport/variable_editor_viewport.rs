@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use empower_engine::{PortValue, node_graph::Variable};
+use empower_engine::{PortValue, node_graph::{Variable, Variables}};
 
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
@@ -66,7 +66,7 @@ enum VariableEditorViewportMode // @TODO, make sure these names match the show f
 
 impl VariableEditorViewport
 {
-    fn show_create_variable_panel(&mut self, ui: &mut egui::Ui, variables: &mut HashMap<String, Variable>)
+    fn show_create_variable_panel(&mut self, ui: &mut egui::Ui, variables: &mut Variables)
     {
         ui.horizontal(|ui|
         {
@@ -137,17 +137,17 @@ impl VariableEditorViewport
         
         if ui.button("Add variable").clicked()
         {
-            variables.insert(self.new_variable.name.clone(), self.new_variable.clone());
+            variables.insert(self.new_variable.name.clone(), Arc::new( Mutex::new( self.new_variable.clone() )));
             self.new_variable = Variable::new();
         }
     }
 
-    fn show_edit_variable_panel(&mut self, ui: &mut egui::Ui, variables: &mut HashMap<String, Variable>)
+    fn show_edit_variable_panel(&mut self, ui: &mut egui::Ui, variables: &mut Variables)
     {
         
     }
 
-    fn show_all_variables_panel(&mut self, ui: &mut egui::Ui, variables: &mut HashMap<String, Variable>)
+    fn show_all_variables_panel(&mut self, ui: &mut egui::Ui, variables: &mut Variables)
     {
         egui::ScrollArea::vertical().show(ui, |ui|
         {
@@ -160,11 +160,12 @@ impl VariableEditorViewport
                 {
                     ui.add_sized([150.0, 20.0], egui::Label::new(name));
 
-                    egui::CollapsingHeader::new(format!("values {}", variable.values.len()))
+                    // @TODO, this is very unsafe
+                    egui::CollapsingHeader::new(format!("values {}", variable.lock().unwrap().values.len()))
                     .id_salt(name)
                     .show(ui, |ui|
                     {
-                        for (name, value) in &variable.values
+                        for (name, value) in &variable.lock().unwrap().values
                         {
                             ui.label(format!("{}: {}", name, value));
                         }
