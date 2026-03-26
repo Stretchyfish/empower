@@ -58,6 +58,7 @@ use stop_loop_node::StopLoopNode;
 
 mod variable_node;
 pub use variable_node::VariableNode;
+pub use variable_node::AccessType;
 
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind

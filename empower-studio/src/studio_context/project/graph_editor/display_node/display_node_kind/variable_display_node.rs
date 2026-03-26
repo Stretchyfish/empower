@@ -34,13 +34,13 @@ impl DisplayNodeKind for VariableDisplayNode
     fn node_size(&self, _: &Box<dyn NodeKind>) -> egui::Vec2 {
 
         let n = self.value_mappings.len();
-        let height = 300.0 + 70.0 * (n as f32 - 2.0); // @TODO, distance between nodes needs to be a global value
+        let height = 350.0 + 70.0 * (n as f32 - 2.0); // @TODO, distance between nodes needs to be a global value
     
         egui::Vec2 { x: 450.0, y: height }
     }
 
     fn state_size(&self) -> egui::Vec2 {
-        egui::Vec2 { x: 300.0, y: 60.0 }
+        egui::Vec2 { x: 300.0, y: 120.0 }
     }
 
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort> {
@@ -84,6 +84,7 @@ impl DisplayNodeKind for VariableDisplayNode
         };
 
         let mut variable_changed = false;
+        let mut read_access_change = false;
 
         ui.horizontal(|ui|
         {
@@ -108,9 +109,36 @@ impl DisplayNodeKind for VariableDisplayNode
                     }
                 }
             });
+
         });
-        
-        if variable_changed
+
+        ui.horizontal(|ui|
+        {
+            ui.label("access");
+            
+            ui.menu_button(variable_node.access_type.to_string(), |ui|
+            {
+                if ui.button("write only").clicked()
+                {
+                    variable_node.access_type = empower_engine::node_graph::node::node_kind::AccessType::WriteOnly;
+                    read_access_change = true;
+                }
+
+                if ui.button("read only").clicked()
+                {
+                    variable_node.access_type = empower_engine::node_graph::node::node_kind::AccessType::ReadOnly;
+                    read_access_change = true;
+                }
+
+                if ui.button("both").clicked()
+                {
+                    variable_node.access_type = empower_engine::node_graph::node::node_kind::AccessType::ReadAndSet;
+                    read_access_change = true;
+                }
+            });
+        });
+
+        if variable_changed || read_access_change
         {
             return DisplayNodeStateResponse::RefreshNodeStructure;
         }

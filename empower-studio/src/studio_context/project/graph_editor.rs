@@ -166,7 +166,7 @@ impl GraphEditor
         let display_node = self.display_nodes.get(&node_key).unwrap();
 
         let updated_input_port_values = self.node_graph.get_node_input_port_values(&node_key);
-        let updated_output_port_values = self.node_graph.get_node_input_port_values(&node_key);
+        let updated_output_port_values = self.node_graph.get_node_output_port_values(&node_key);
         let mut updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);
         let mut updated_output_display_ports_values = display_node.display_kind.display_output_ports(updated_output_port_values);
 
@@ -200,9 +200,10 @@ impl GraphEditor
         }
 
         // Output port restructure handling
+            // If there is less ports than before update, remove the extra once 
         if node_handle_before_update.output_port_keys.len() > updated_output_display_ports_values.len()
         {
-            let mut index_to_remove = updated_output_display_ports_values.len();
+            let mut index_to_remove = updated_output_display_ports_values.len(); 
             while index_to_remove < node_handle_before_update.output_port_keys.len() 
             {
                 let key_to_remove = node_handle_before_update.output_port_keys[index_to_remove]; 
@@ -211,6 +212,7 @@ impl GraphEditor
             }
         }
 
+            // Insert the new output ports after update
         for (index, display_port_key) in node_handle_after_update.output_port_keys.iter().enumerate()
         {
             if !self.display_output_ports.contains_key(display_port_key)

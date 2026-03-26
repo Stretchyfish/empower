@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::fmt;
 use std::sync::{Arc, Mutex};
 
 use crate::node_graph::node::port::{PortCompatability, PortValue};
@@ -13,6 +14,7 @@ pub struct VariableNode
 {
     pub variable: Option<Arc<Mutex<Variable>>>,
     pub value_mappings: Vec<String>, // This is mainly used to handle the order of values, that the order stays consistent
+    pub access_type: AccessType,
 }
 
 #[typetag::serde]
@@ -25,6 +27,7 @@ impl NodeKind for VariableNode
             {
                 variable: None,
                 value_mappings: Vec::new(),
+                access_type: AccessType::WriteOnly,
             }
         )
     }
@@ -40,6 +43,11 @@ impl NodeKind for VariableNode
     fn input_compatabilities(&self) -> Vec<PortCompatability>  {
 
         if self.variable.is_none()
+        {
+            return Vec::new();
+        }
+
+        if self.access_type == AccessType::WriteOnly
         {
             return Vec::new();
         }
@@ -61,6 +69,11 @@ impl NodeKind for VariableNode
     fn output_compatabilities(&self) -> Vec<PortCompatability>  {
 
         if self.variable.is_none()
+        {
+            return Vec::new();
+        }
+
+        if self.access_type == AccessType::ReadOnly
         {
             return Vec::new();
         }
@@ -94,23 +107,59 @@ impl NodeKind for VariableNode
             return NodeSetupResponse::Finished( Vec::new() );
         }
 
-        if self.value_mappings.len() != inputs.len()
-        {
-            panic!("Variable node value mappings and inputs do not match!");
-        }
+        // if self.value_mappings.len() != inputs.len()
+        // {
+        //     panic!("Variable node value mappings and inputs do not match!");
+        // }
 
         let variable = self.variable.as_mut().unwrap();
 
+        println!("-----Values-----");
+        for (name, values) in &variable.lock().unwrap().values
+        {
+            println!("{} : {}", name, values);
+        }
+
         // @TODO, this indexing is rather unsafe
 
-        for (index, name) in self.value_mappings.iter().enumerate()
+        let mut outputs = Vec::new();
+        match self.access_type
         {
-            let input = inputs[index]; 
-            variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
+            AccessType::ReadOnly =>
+            {
+                for (index, name) in self.value_mappings.iter().enumerate()
+                {
+                    let input = inputs[index]; 
+                    variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
+                }
+            },
+            AccessType::WriteOnly =>
+            {
+                for name in &self.value_mappings
+                {
+                    // let input = inputs[index]; 
+                    // variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
+                    let value = variable.lock().unwrap().values.get(name).unwrap().clone();
+                    outputs.push( value.clone() );
+                }
+            },
+            AccessType::ReadAndSet =>
+            {
+                for (index, name) in self.value_mappings.iter().enumerate()
+                {
+                    let input = inputs[index]; 
+                    println!("Input value is: {}", input);
+                    variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
+                    let value = variable.lock().unwrap().values.get(name).unwrap().clone();
+
+                    println!("Actual value is: {}", value);
+
+                    outputs.push( value );
+                }
+            },
         }
         
-        // NodeSetupResponse::Finished( inputs.iter().cloned() )
-        NodeSetupResponse::Finished( Vec::new() )
+        NodeSetupResponse::Finished( outputs )
     }
 
     fn update(&mut self) -> NodeUpdateResponse {
@@ -119,5 +168,27 @@ impl NodeKind for VariableNode
 
     fn show(&mut self, _: &mut egui::Ui) {
         todo!()
+    }
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub enum AccessType
+{
+    ReadOnly,
+    WriteOnly,
+    ReadAndSet
+}
+
+impl fmt::Display for AccessType
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        match self
+        {
+            AccessType::ReadOnly => write!(f, "read only"),
+            AccessType::WriteOnly => write!(f, "write only"),
+            AccessType::ReadAndSet => write!(f, "read and write"),
+        }
+
     }
 }
