@@ -1,3 +1,4 @@
+use empower_engine::node_graph::Variables;
 use empower_engine::{PortValue, node_graph::node::NodeKind};
 
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
@@ -69,7 +70,7 @@ impl DisplayNodeKind for ShowImageDisplayNode
         egui::Vec2 { x: 0.0, y: 0.0 }
     }
 
-    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>, _: &Variables) -> DisplayNodeStateResponse {
         DisplayNodeStateResponse::NoChange
     }
 }

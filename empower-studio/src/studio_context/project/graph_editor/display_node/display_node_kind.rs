@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use empower_engine::{PortValue, node_graph::node::node_kind::NodeKind};
+use empower_engine::{PortValue, node_graph::{Variables, node::node_kind::NodeKind}};
 use once_cell::sync::Lazy;
 
 mod default_display_node;
@@ -27,6 +27,9 @@ use condition_display_node::ConditionDisplayNode;
 mod display_wait_node;
 use display_wait_node::DisplayWaitNode;
 
+mod variable_display_node;
+use variable_display_node::VariableDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 #[typetag::serde(tag="dislay_node_kind")]
@@ -40,7 +43,7 @@ pub trait DisplayNodeKind
     fn display_input_ports(&self, input_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn display_output_ports(&self, output_port_values: Vec<&PortValue>) -> Vec<DisplayPort>;
     fn state_size(&self) -> egui::Vec2;
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse;
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, variables: &Variables) -> DisplayNodeStateResponse;
 }
 
 impl Clone for Box<dyn DisplayNodeKind>
@@ -72,6 +75,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("show image", || ShowImageDisplayNode::new() ); 
     m.insert("condition", || ConditionDisplayNode::new() ); 
     m.insert("wait", || DisplayWaitNode::new() ); 
+    m.insert("variable", || VariableDisplayNode::new() ); 
 
     m
 });

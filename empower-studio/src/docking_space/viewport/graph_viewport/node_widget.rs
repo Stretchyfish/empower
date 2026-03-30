@@ -24,10 +24,12 @@ pub fn show(
 {
     let debug_mode = show_ids; 
 
-    let node = graph_editor.node_graph.get_node_mut(node_key).unwrap(); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
+    let node_and_variables = graph_editor.node_graph.get_node_and_variables_mut(node_key); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
+    let node = node_and_variables.0.unwrap(); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
     let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
+    let variables = node_and_variables.1;
 
-    node_widget_body::show_node_body(ui, node, display_node, graph_viewport_title, &debug_mode, node_area_select, graph_viewport_actions);
+    node_widget_body::show_node_body(ui, node, display_node, variables, graph_viewport_title, &debug_mode, node_area_select, graph_viewport_actions);
 
     let node_handle = graph_editor.node_graph.get_node_handle(node_key);
 

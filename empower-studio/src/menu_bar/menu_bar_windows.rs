@@ -12,7 +12,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             studio_context.request_new_layout();
         }
-        ui.menu_button("Open Recent", |ui|
+        ui.menu_button("Add window", |ui|
         {
             if ui.button("Graph viewport").clicked()
             {
@@ -29,6 +29,10 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             if ui.button("Empty Viewport").clicked()
             {
                 studio_context.request_new_viewport("empty viewport");
+            }
+            if ui.button("Variable Editor Viewport").clicked()
+            {
+                studio_context.request_new_viewport("variable editor viewport");
             }
         });
 

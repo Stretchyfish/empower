@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use empower_engine::node_graph::Variables;
 use empower_engine::node_graph::node::Node;
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 use crate::studio_context::project::graph_editor::DisplayNode;
@@ -13,6 +14,7 @@ pub fn show_node_body(
                         ui: &mut egui::Ui, 
                         node: &mut Node,
                         display_node: &mut DisplayNode,
+                        variables: &Variables,
                         graph_viewport_title: &String, 
                         debug_mode: &bool, 
                         node_area_select: &mut Option<NodeAreaSelect>,
@@ -160,7 +162,7 @@ pub fn show_node_body(
         let style = ui.style_mut();
         style.override_font_id = Some ( egui::FontId::proportional(35.0));
 
-        display_node_state_response = display_node.display_kind.state_show(ui, &mut node.kind);
+        display_node_state_response = display_node.display_kind.state_show(ui, &mut node.kind, variables);
     });
 
     match display_node_state_response

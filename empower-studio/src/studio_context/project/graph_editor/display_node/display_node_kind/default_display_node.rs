@@ -1,4 +1,5 @@
 use empower_engine::PortValue;
+use empower_engine::node_graph::Variables;
 use empower_engine::node_graph::node::NodeKind;
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 
@@ -64,7 +65,7 @@ impl DisplayNodeKind for DefaultDisplayNode
         display_outputs
     }
 
-    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, _: &mut egui::Ui, _: &mut Box<dyn NodeKind>, _: &Variables) -> DisplayNodeStateResponse {
         DisplayNodeStateResponse::NoChange
     }
 }

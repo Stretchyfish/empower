@@ -28,13 +28,18 @@ impl Layout
         let mut new_default_layout = Self::new();
         
         let graph_viewport_name = new_default_layout.add_viewport("graph viewport");
+
         let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state("content browser viewport");
         let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state("terminal viewport");
+        let variable_editor_viewport_name = new_default_layout.add_viewport_without_docking_state("variable editor viewport");
 
         // This is all to place the initial docking configuration
         let graph_viewport_index = new_default_layout.docking_state.find_tab(&graph_viewport_name).expect("Unable to find initial graph viewport tab");
 
-        new_default_layout.docking_state.main_surface_mut().split_below(graph_viewport_index.1, 0.7, vec![content_browser_viewport_name, terminal_viewport_name]);
+        new_default_layout.docking_state.main_surface_mut().split_below(graph_viewport_index.1, 0.7, vec![content_browser_viewport_name.clone()]);
+
+        let content_browser_index = new_default_layout.docking_state.find_tab(&content_browser_viewport_name).expect("Unable to find initial content browser tab");
+        new_default_layout.docking_state.main_surface_mut().split_right(content_browser_index.1, 0.6, vec![terminal_viewport_name, variable_editor_viewport_name]);
 
         new_default_layout
     }

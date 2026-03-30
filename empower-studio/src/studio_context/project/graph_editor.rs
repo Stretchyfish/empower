@@ -166,7 +166,7 @@ impl GraphEditor
         let display_node = self.display_nodes.get(&node_key).unwrap();
 
         let updated_input_port_values = self.node_graph.get_node_input_port_values(&node_key);
-        let updated_output_port_values = self.node_graph.get_node_input_port_values(&node_key);
+        let updated_output_port_values = self.node_graph.get_node_output_port_values(&node_key);
         let mut updated_input_display_ports_values = display_node.display_kind.display_input_ports(updated_input_port_values);
         let mut updated_output_display_ports_values = display_node.display_kind.display_output_ports(updated_output_port_values);
 
@@ -199,7 +199,31 @@ impl GraphEditor
             *self.display_input_ports.get_mut(&display_port_key).unwrap() = updated_input_display_ports_values[index].clone();
         }
 
-        // @TODO, missimg the same implementation for changed in output ports
+        // Output port restructure handling
+            // If there is less ports than before update, remove the extra once 
+        if node_handle_before_update.output_port_keys.len() > updated_output_display_ports_values.len()
+        {
+            let mut index_to_remove = updated_output_display_ports_values.len(); 
+            while index_to_remove < node_handle_before_update.output_port_keys.len() 
+            {
+                let key_to_remove = node_handle_before_update.output_port_keys[index_to_remove]; 
+                self.display_output_ports.remove(&key_to_remove);
+                index_to_remove += 1;
+            }
+        }
+
+            // Insert the new output ports after update
+        for (index, display_port_key) in node_handle_after_update.output_port_keys.iter().enumerate()
+        {
+            if !self.display_output_ports.contains_key(display_port_key)
+            {
+                let new_display_output_port = updated_output_display_ports_values[index].clone();
+                self.display_output_ports.insert(*display_port_key, new_display_output_port);
+                continue;
+            }
+
+            *self.display_output_ports.get_mut(&display_port_key).unwrap() = updated_output_display_ports_values[index].clone();
+        }
     }
 
     pub fn add_node_to_selection(&mut self, node_key: &NodeGraphKey)

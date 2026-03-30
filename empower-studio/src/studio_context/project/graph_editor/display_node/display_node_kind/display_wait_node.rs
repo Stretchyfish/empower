@@ -1,4 +1,5 @@
 use empower_engine::PortValue;
+use empower_engine::node_graph::Variables;
 use empower_engine::node_graph::node::NodeKind;
 use empower_engine::node_graph::node::node_kind::{WaitNode, WaitTimeIntervals};
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
@@ -49,7 +50,7 @@ impl DisplayNodeKind for DisplayWaitNode
         egui::Vec2 { x: 300.0, y: 50.0 }
     }
 
-    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>) -> DisplayNodeStateResponse {
+    fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, _: &Variables) -> DisplayNodeStateResponse {
 
         let wait_node = node_kind.as_any_mut().downcast_mut::<WaitNode>().expect("Wait display node tried to unwrap a node_kind that is not the wait node kind");
 
