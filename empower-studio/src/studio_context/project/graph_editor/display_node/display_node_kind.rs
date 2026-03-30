@@ -1,6 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use empower_engine::{PortValue, node_graph::{Variable, Variables, node::node_kind::NodeKind}};
+use empower_engine::{PortValue, node_graph::{Variables, node::node_kind::NodeKind}};
 use once_cell::sync::Lazy;
 
 mod default_display_node;

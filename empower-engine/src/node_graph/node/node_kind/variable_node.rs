@@ -107,18 +107,7 @@ impl NodeKind for VariableNode
             return NodeSetupResponse::Finished( Vec::new() );
         }
 
-        // if self.value_mappings.len() != inputs.len()
-        // {
-        //     panic!("Variable node value mappings and inputs do not match!");
-        // }
-
         let variable = self.variable.as_mut().unwrap();
-
-        println!("-----Values-----");
-        for (name, values) in &variable.lock().unwrap().values
-        {
-            println!("{} : {}", name, values);
-        }
 
         // @TODO, this indexing is rather unsafe
 
@@ -137,8 +126,6 @@ impl NodeKind for VariableNode
             {
                 for name in &self.value_mappings
                 {
-                    // let input = inputs[index]; 
-                    // variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
                     let value = variable.lock().unwrap().values.get(name).unwrap().clone();
                     outputs.push( value.clone() );
                 }
@@ -148,17 +135,14 @@ impl NodeKind for VariableNode
                 for (index, name) in self.value_mappings.iter().enumerate()
                 {
                     let input = inputs[index]; 
-                    println!("Input value is: {}", input);
                     variable.lock().unwrap().values.insert(name.clone(), input.clone()); // @TODO, feels like some of these clone could get removed
                     let value = variable.lock().unwrap().values.get(name).unwrap().clone();
-
-                    println!("Actual value is: {}", value);
 
                     outputs.push( value );
                 }
             },
         }
-        
+
         NodeSetupResponse::Finished( outputs )
     }
 

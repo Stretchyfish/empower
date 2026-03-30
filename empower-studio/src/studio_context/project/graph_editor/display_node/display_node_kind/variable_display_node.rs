@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use empower_engine::node_graph::Variables;
@@ -8,7 +7,7 @@ use crate::studio_context::project::graph_editor::display_node::DisplayNodeState
 
 use super::DisplayNodeKind;
 use super::super::DisplayPort;
-use empower_engine::node_graph::node::node_kind::{ConditionNode, ConditionType, VariableNode};
+use empower_engine::node_graph::node::node_kind::VariableNode;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct VariableDisplayNode

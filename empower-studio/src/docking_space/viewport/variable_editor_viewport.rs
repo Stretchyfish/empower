@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 
 use empower_engine::{PortValue, node_graph::{Variable, Variables}};
 
@@ -142,7 +142,7 @@ impl VariableEditorViewport
         }
     }
 
-    fn show_edit_variable_panel(&mut self, ui: &mut egui::Ui, variables: &mut Variables)
+    fn show_edit_variable_panel(&mut self, _: &mut egui::Ui, _: &mut Variables)
     {
         
     }

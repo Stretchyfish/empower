@@ -1,6 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
-
-use empower_engine::{PortValue, node_graph::{Variable, Variables, node::{NodeKind, node_kind::VectorNode}}, utility::alphabet_counter::AlphabetCounter};
+use empower_engine::{PortValue, node_graph::{Variables, node::{NodeKind, node_kind::VectorNode}}, utility::alphabet_counter::AlphabetCounter};
 
 use crate::studio_context::project::graph_editor::{DisplayPort, display_node::DisplayNodeStateResponse};
 

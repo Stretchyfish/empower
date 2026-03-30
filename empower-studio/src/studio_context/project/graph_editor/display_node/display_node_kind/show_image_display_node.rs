@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use empower_engine::node_graph::{Variable, Variables};
+use empower_engine::node_graph::Variables;
 use empower_engine::{PortValue, node_graph::node::NodeKind};
 
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;

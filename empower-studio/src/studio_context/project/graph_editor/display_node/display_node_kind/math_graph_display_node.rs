@@ -1,8 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
-
 use super::DisplayNodeKind;
 
-use empower_engine::{PortValue, node_graph::{Variable, Variables, node::NodeKind}};
+use empower_engine::{PortValue, node_graph::{Variables, node::NodeKind}};
 
 use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
 use crate::studio_context::project::graph_editor::DisplayPort;
