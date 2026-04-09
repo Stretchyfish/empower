@@ -712,8 +712,18 @@ impl NodeGraph
 
     pub fn load(path: PathBuf) -> Self
     {
-        let node_graph_json = std::fs::read_to_string(path).unwrap();
-        serde_json::from_str(&node_graph_json).unwrap()
+        let node_graph_json = std::fs::read_to_string(path.clone());
+
+        match node_graph_json
+        {
+            Ok(_) => {},
+            Err( error ) => 
+            {
+                panic!("Error when loading graph: {}, at path: {}", error.kind().to_string(), path.to_string_lossy().to_string());
+            },
+        }
+        
+        serde_json::from_str(&node_graph_json.unwrap()).unwrap()
     }
 }
 

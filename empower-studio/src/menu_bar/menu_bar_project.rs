@@ -32,7 +32,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         }
         if ui.button("Export").clicked()
         {
-        
+            studio_context.get_settings_mut().export_settings.toggle_show();
         }
     });
 }
