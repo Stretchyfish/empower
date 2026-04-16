@@ -4,6 +4,9 @@ pub use developer_settings::DeveloperSettings;
 mod project_settings;
 pub use project_settings::ProjectSettings;
 
+mod export_settings;
+pub use export_settings::ExportSettings;
+
 const CONFIG_DIRECTORY_PROJECT_NAME: &'static str = "empower-studio"; // @TODO, this created in multiple files, should be more global
 const CONFIG_SETTINGS_FILE_NAME: &'static str = "settings.json";
 
@@ -12,6 +15,7 @@ pub struct Settings
 {
     pub project_settings: ProjectSettings,
     pub developer_settings: DeveloperSettings,
+    pub export_settings: ExportSettings,
 }
 
 impl Settings
@@ -22,6 +26,7 @@ impl Settings
         {
             project_settings: ProjectSettings::new(),
             developer_settings: DeveloperSettings::default(),
+            export_settings: ExportSettings::new(),
         }
     }
 

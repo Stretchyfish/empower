@@ -17,6 +17,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             menu_bar_windows::show(ui, studio_context);
         });
 
+
         ui.horizontal(|ui|
         {
             start_stop_button::show(ui, studio_context);

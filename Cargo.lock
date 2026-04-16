@@ -1144,6 +1144,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "empower-application"
+version = "0.1.0"
+dependencies = [
+ "egui_dock",
+ "empower-engine",
+]
+
+[[package]]
 name = "empower-engine"
 version = "0.1.0"
 dependencies = [

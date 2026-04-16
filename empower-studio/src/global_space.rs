@@ -77,9 +77,10 @@ fn show_windows(ctx: &egui::Context, studio_context: &mut StudioContext, user_in
 
 fn show_settings_windows(ctx: &egui::Context, studio_context: &mut StudioContext)
 {
-    let mut settings = studio_context.get_settings_clone();
+    let mut settings = studio_context.get_settings_clone(); // @TODO, consider combining a getter function for get project and settings to avoid this clone
     settings.project_settings.show(ctx, studio_context.get_project_mut());
     settings.developer_settings.show(ctx, studio_context);
+    settings.export_settings.show(ctx, studio_context.get_project_mut());
 
     studio_context.set_settings(settings);
 }

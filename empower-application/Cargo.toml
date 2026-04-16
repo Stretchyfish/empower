@@ -1,0 +1,10 @@
+[package]
+name = "empower-application"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+empower-engine = { path = "../empower-engine" }
+
+egui_dock = { version="0.17", features = ["serde"]} # @TODO, figure out how to remove this dependency
+
