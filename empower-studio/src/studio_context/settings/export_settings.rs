@@ -1,13 +1,22 @@
-use std::{fmt, fs::{self, exists}, path::PathBuf};
+use std::{fs, path::PathBuf};
 use crate::studio_context::project::Project;
+use std::collections::BTreeMap;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ExportSettings
 {
     pub show: bool,
     export_name: String,
-    target_platform: Platforms, 
     export_path: PathBuf,
+
+    #[serde(skip, default)]
+    target_platform: Option<String>, 
+
+    #[serde(skip, default)]
+    export_platforms_available: BTreeMap<String, PathBuf>,
+
+    #[serde(skip, default)]
+    checked_atleast_once_for_runtimes: bool,
 }
 
 impl ExportSettings
@@ -18,8 +27,11 @@ impl ExportSettings
         {
             show: false,
             export_name: String::new(),
-            target_platform: Platforms::Undefined,
+            target_platform: None,
             export_path: PathBuf::new(),
+
+            export_platforms_available: BTreeMap::new(),
+            checked_atleast_once_for_runtimes: false,
         }
     }
 
@@ -32,6 +44,32 @@ impl ExportSettings
     {
         if !self.show { return; }
 
+        if !self.checked_atleast_once_for_runtimes
+        {
+            let executable_path = std::env::current_exe();
+            let runtimes_path = executable_path.unwrap().parent().unwrap().join("resources").join("runtime");
+
+             let read_directory = std::fs::read_dir(runtimes_path).unwrap();
+
+             for directory_entry in read_directory
+             {
+                 if directory_entry.is_err()
+                 {
+                     continue;
+                 }
+
+                 let directory_entry = directory_entry.unwrap();
+                 let directory_name = directory_entry.file_name().into_string().unwrap();
+
+                 if directory_name.contains("linux") && directory_name.contains("x86_64")
+                 {
+                     self.export_platforms_available.insert(String::from("linux_x86_64"), directory_entry.path());
+                 }
+             }
+            
+            self.checked_atleast_once_for_runtimes = true;
+        }
+
         egui::Window::new("Export Settings")
         .collapsible(true)
         .resizable(true)
@@ -43,39 +81,38 @@ impl ExportSettings
             {
                 ui.label("Exported name: ");
                 let text_edit = egui::TextEdit::singleline(&mut self.export_name);
-                // .char_limit(5)
-                // .text_color(text_edit_color);
-                // .background_color(text_background_color);
 
                 ui.add( text_edit);
             });
 
             ui.horizontal(|ui|
             {
-                ui.label("Target platform: ");
-                ui.menu_button(self.target_platform.to_string(), |ui|
+                ui.label("Available platforms: ");
+
+                let desired_platform_name = match self.target_platform.clone()
                 {
-                    if ui.button("Linux").clicked()
+                    Some( name ) => name,
+                    None => String::from("undefined"),
+                };
+                
+                ui.menu_button(desired_platform_name, |ui|
+                {
+                    for (platform_name, _) in &self.export_platforms_available
                     {
-                        self.target_platform = Platforms::Linux;
-                    }
-                    if ui.button("Windows").clicked()
-                    {
-                        self.target_platform = Platforms::Windows;
-                    }
-                    if ui.button("Mac").clicked()
-                    {
-                        self.target_platform = Platforms::Mac;
-                    }
-                    if ui.button("Web").clicked()
-                    {
-                        self.target_platform = Platforms::Web;
+                        if ui.button(platform_name).clicked()
+                        {
+                            self.target_platform = Some( platform_name.clone() );
+                        }
                     }
                 });
+
             });
 
-            let info_text = egui::RichText::new("Platform selection currently not working, will default to current platform").color(egui::Color32::RED);
-            ui.label(info_text);
+            if self.export_platforms_available.is_empty()
+            {
+                let info_text = egui::RichText::new("No platform runtime could be found, exporting currently not available").color(egui::Color32::RED);
+                ui.label(info_text);
+            }
 
             ui.horizontal(|ui|
             {
@@ -104,58 +141,29 @@ impl ExportSettings
                 ui.add( text_edit);
             });
 
-            if ui.button("Export Project").clicked()
-            {
-                export_behavior(project, self.export_name.clone(), self.export_path.clone());
+            let export_button = egui::Button::new("Export project");
 
-                
+            if ui.add_enabled(self.target_platform.is_some(), export_button).clicked()
+            {
+                export_behavior(project, self.export_name.clone(), self.export_path.clone(), self.export_platforms_available.get(&self.target_platform.clone().unwrap()).unwrap().clone());
             }
         });
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
-enum Platforms
+fn export_behavior(project: &mut Project, export_name: String, location: PathBuf, platform_path: PathBuf)
 {
-    Undefined,
-    Linux,
-    Mac,
-    Windows,
-    Web,
-}
-
-impl fmt::Display for Platforms
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
+    if !platform_path.exists()
     {
-        write!(f, "{:?}", self)
+        panic!("Runtime when exporting doesn't exist: {}", platform_path.to_string_lossy().to_string());
     }
-}
 
-fn export_behavior(project: &mut Project, export_name: String, location: PathBuf)
-{
-
-    let executable_path = std::env::current_exe();
-    // println!("Application path: {}", application_path.unwrap().parent().unwrap().to_string_lossy().to_string());
-
-    // @TODO, update this to work on windows
-    let runtime_path = executable_path.unwrap().parent().unwrap().join("resources").join("empower-application");
-
-    match exists(runtime_path.clone())
-    {
-        Ok(_) => {},
-        Err(_) =>
-        {
-            {
-                panic!("Runtime when exporting doesn't exist: {}", runtime_path.to_string_lossy().to_string());
-            }
-        },
-    }
+    // @TODO, add behavior for windows
  
     let export_directory = location.join(export_name.clone());
 
     let copy_options = fs_extra::dir::CopyOptions::new().copy_inside(true);
-    let copy_runtime_result = fs_extra::dir::copy(runtime_path.clone(), &export_directory, &copy_options);
+    let copy_runtime_result = fs_extra::dir::copy(platform_path.clone(), &export_directory, &copy_options);
 
     match copy_runtime_result
     {
@@ -166,21 +174,38 @@ fn export_behavior(project: &mut Project, export_name: String, location: PathBuf
         },
     }
 
-    fs::rename(export_directory.join("empower-application"), export_directory.join(export_name.clone()));
+    let _ = fs::rename(export_directory.join(platform_path.file_name().unwrap()), export_directory.join(export_name.clone()));
+
+    let new_runtime_location_before_name_change = if cfg!(target_os = "windows")
+    {
+        export_directory.join("empower-application.exe")
+    }
+    else
+    {
+        export_directory.join("empower-application")
+    };
+
+    let new_runtime_location_after_name_change = if cfg!(target_os = "windows")
+    {
+         export_directory.join(format!("{}.exe", export_name.clone()))
+    }
+    else
+    {
+         export_directory.join(export_name.clone())
+    };
+
+    let rename_exutable_result = fs::rename(new_runtime_location_before_name_change, new_runtime_location_after_name_change.clone());
+
+    match rename_exutable_result
+    {
+        Ok(_) => {},
+        Err( error ) =>
+        {
+            println!("Failed to rename exported executable due to error : {}", error.kind().to_string());
+        },
+    }
     
-    let export_name = export_name + ".json";
+    let export_name = "graph.json";
     project.graph_editor.node_graph.save(export_directory.join(export_name));
-
-    // let res = fs::copy(runtime_path.clone(), export_directory);
-
-    // match res
-    // {
-    //     Ok(_) => todo!(),
-    //     Err( error ) =>
-    //     {
-    //         println!("Error when copying runtime: {}", error.kind().to_string());
-    //     },
-    // }
-
-    
 }
+

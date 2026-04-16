@@ -3,48 +3,112 @@ use std::path::PathBuf;
 
 fn main()
 {
-    // let executable_directory = env::current_exe().unwrap().parent().unwrap().to_path_buf();
-
+    // println!("cargo:rerun-if-changed=empower-application"); // @TODO, investigate this approach to detect changes in runtime executable 
 
     let working_directory = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    // @TODO, add safety check here
-    
-    let profile = env::var("PROFILE").unwrap(); 
-    let target_dir = working_directory.join("../target").join(profile);
+    let profile = match env::var("PROFILE") 
+    {
+        Ok( profile ) => profile,
+        Err( error ) => panic!("Failed ot get profile during build: {}", error),
+    };
 
-    // println!("cargo:warning=target dir: {}", target_dir.to_string_lossy().to_string());
+    println!("cargo:Warning=Profile: {}", profile);
+
+    let target = match std::env::var("TARGET")
+    {
+        Ok( target ) => target,
+        Err( error ) => panic!("Failed ot get target during build: {}", error),
+    };
+
+    println!("cargo:Warning=Target: {}", target);
+
+    // let application_platform_build_configs = [
+    //     ("Linux", "x86_64-unknown-linux-gnu", "empower-application")
+    // ];
+
+    // for ( platform, _target, _executable_name ) in application_platform_build_configs
+    // {
+            // @TODO, use this to loop throught all build platforms later
+    // }
+
+    let target_dir = working_directory.join("../target").join(profile);
 
     let resources_directory = target_dir.join("resources");
     let create_resource_directory_result = fs::create_dir(resources_directory.clone());
 
     match create_resource_directory_result
     {
-        Ok(_) => {},
+        Ok(_) =>
+        {
+            println!("cargo:warning=Created resource folder at : {}", resources_directory.to_string_lossy().to_string());
+        },
         Err( error ) =>
         {
             match error.kind()
             {
-                std::io::ErrorKind::AlreadyExists => {
-                    println!("cargo:warning=Resources already exists");
-                },
+                std::io::ErrorKind::AlreadyExists => {},
                 _ => { panic!("cargo:warning=Error when creating resource directory: {}", error.kind().to_string()); },
+            }
+        },
+    }
+
+    let runtime_directory = resources_directory.join("runtime");
+    let create_runtime_directory_result = fs::create_dir(runtime_directory.clone());
+
+    match create_runtime_directory_result
+    {
+        Ok(_) =>
+        {
+            println!("cargo:warning=Created runtime folder at : {}", runtime_directory.to_string_lossy().to_string());
+        },
+        Err( error ) =>
+        {
+            match error.kind()
+            {
+                std::io::ErrorKind::AlreadyExists => {},
+                _ => { panic!("cargo:warning=Error when creating runtime directory: {}", error.kind().to_string()); },
             }
         },
     }
 
     // @TODO, have it fetch the once from different platforms
     // @TODO, add exe if the platform is windows
-    let runtime_original_location = target_dir.join("empower-application");
+    let runtime_original_location = if cfg!(target_os = "windows")
+    {
+        target_dir.join("empower-application.exe")
+    }
+    else
+    {
+        target_dir.join("empower-application")
+    };
 
-    let _ = fs::create_dir(resources_directory.join("empower-application"));
-    let runtime_new_location = resources_directory.join("empower-application").join("empower-application");
+    if !runtime_original_location.exists()
+    {
+        println!("cargo:warning=No runtime could be found at {}, will be ignored.", runtime_original_location.to_string_lossy().to_string());
+        return;
+    }
+
+    let new_runtime_directory_name = format!("empower-application-{}", target);
+    let _ = fs::create_dir(runtime_directory.join(new_runtime_directory_name.clone()));
+
+    let runtime_new_location = if cfg!(target_os = "windows")
+    {
+        runtime_directory.join(new_runtime_directory_name).join("empower-application.exe")
+    }
+    else
+    {
+        runtime_directory.join(new_runtime_directory_name).join("empower-application")
+    };
 
     let copy_runtime_result = fs::copy(runtime_original_location, runtime_new_location);
 
     match copy_runtime_result 
     {
-        Ok(_) => {},
+        Ok(_) =>
+        {
+            // println!("cargo:warning=Moved runtime for platform: {}, into: {}", target, runtime_directory.to_string_lossy().to_string());
+        },
         Err( error ) =>
         {
             match error.kind()
@@ -52,32 +116,11 @@ fn main()
                 std::io::ErrorKind::AlreadyExists => {
                     println!("cargo:warning=Runtime already exists");
                 },
+                std::io::ErrorKind::NotFound => {
+                    println!("cargo:warning=Runtime not found");
+                },
                 _ => { panic!("cargo:warning=Error when copying runtime: {}", error.kind().to_string()); },
             }
         },
     }
-    
-    // println!("cargo:warning=Created resource folder at : {}", resources_directory.to_string_lossy().to_string());
-    
-    
-    // let application_platform_build_configs = [
-    //     ("Linux", "x86_64-unknown-linux-gnu", "application")
-    // ];
-
-    // let path = std::env::current_dir().unwrap().to_string_lossy().to_string();
-
-    // println!("Path: {}", path);
-
-    // for ( platform, _target, _executable_name ) in application_platform_build_configs
-    // {
-    //     let status = Command::new("cargo").args(["build", "--release", "-p", "empower-application"]).status().expect("Failed to build application"); 
-
-    //     if !status.success()
-    //     {
-    //         panic!("Failed to build runtime for {}", platform);
-    //     }
-
-        // let current_directory = env::current_exe().unwrap().parent().unwrap().to_path_buf();
-        
-    // }
 }
