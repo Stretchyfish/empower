@@ -3,8 +3,6 @@ use std::path::PathBuf;
 
 fn main()
 {
-    // println!("cargo:rerun-if-changed=empower-application"); // @TODO, investigate this approach to detect changes in runtime executable 
-
     let working_directory = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     let profile = match env::var("PROFILE") 
@@ -13,7 +11,7 @@ fn main()
         Err( error ) => panic!("Failed ot get profile during build: {}", error),
     };
 
-    println!("cargo:Warning=Profile: {}", profile);
+    // println!("cargo:Warning=Profile: {}", profile);
 
     let target = match std::env::var("TARGET")
     {
@@ -21,16 +19,7 @@ fn main()
         Err( error ) => panic!("Failed ot get target during build: {}", error),
     };
 
-    println!("cargo:Warning=Target: {}", target);
-
-    // let application_platform_build_configs = [
-    //     ("Linux", "x86_64-unknown-linux-gnu", "empower-application")
-    // ];
-
-    // for ( platform, _target, _executable_name ) in application_platform_build_configs
-    // {
-            // @TODO, use this to loop throught all build platforms later
-    // }
+    // println!("cargo:Warning=Target: {}", target);
 
     let target_dir = working_directory.join("../target").join(profile);
 
@@ -41,7 +30,7 @@ fn main()
     {
         Ok(_) =>
         {
-            println!("cargo:warning=Created resource folder at : {}", resources_directory.to_string_lossy().to_string());
+            // println!("cargo:warning=Created resource folder at : {}", resources_directory.to_string_lossy().to_string());
         },
         Err( error ) =>
         {
@@ -60,7 +49,7 @@ fn main()
     {
         Ok(_) =>
         {
-            println!("cargo:warning=Created runtime folder at : {}", runtime_directory.to_string_lossy().to_string());
+            // println!("cargo:warning=Created runtime folder at : {}", runtime_directory.to_string_lossy().to_string());
         },
         Err( error ) =>
         {
@@ -85,7 +74,7 @@ fn main()
 
     if !runtime_original_location.exists()
     {
-        println!("cargo:warning=No runtime could be found at {}, will be ignored.", runtime_original_location.to_string_lossy().to_string());
+        println!("cargo:warning=No runtime could be found at {}, make sure empower-application is build for exporting.", runtime_original_location.to_string_lossy().to_string());
         return;
     }
 
