@@ -30,6 +30,9 @@ use display_wait_node::DisplayWaitNode;
 mod variable_display_node;
 use variable_display_node::VariableDisplayNode;
 
+mod loop_display_node;
+use loop_display_node::LoopDisplayNode;
+
 use super::super::DisplayPort; // @TODO, improve this include
 
 #[typetag::serde(tag="dislay_node_kind")]
@@ -76,6 +79,7 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     m.insert("condition", || ConditionDisplayNode::new() ); 
     m.insert("wait", || DisplayWaitNode::new() ); 
     m.insert("variable", || VariableDisplayNode::new() ); 
+    m.insert("loop", || LoopDisplayNode::new() ); 
 
     m
 });

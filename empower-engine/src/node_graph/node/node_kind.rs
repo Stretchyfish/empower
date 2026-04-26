@@ -45,6 +45,7 @@ pub use condition_node::ConditionType;
 
 mod loop_node;
 pub use loop_node::LoopNode;
+pub use loop_node::LoopType;
 
 mod wait_node;
 pub use wait_node::WaitNode;

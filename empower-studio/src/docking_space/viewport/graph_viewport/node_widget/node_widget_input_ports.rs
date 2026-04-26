@@ -111,6 +111,29 @@ pub fn show_input_port(
                                             egui::RichText::new("").font(egui::FontId::proportional(35.0)));
             ui.put(input_port_checkbox_rect, checkbox);
         },
+        DisplayValue::Interval( from, interval, to ) =>
+        {
+            let input_port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
+
+            ui.horizontal(|ui|
+            {
+                let text_edit = egui::TextEdit::singleline(from).font(egui::FontId::proportional(35.0));
+                ui.put(
+                    egui::Rect::from_min_size(input_port_value_position, input_port_value_box_size),
+                    text_edit
+                );
+
+                let text_edit = egui::TextEdit::singleline(interval).font(egui::FontId::proportional(35.0));
+                ui.put(
+                    egui::Rect::from_min_size(input_port_value_position + egui::Vec2 { x: 60.0, y: 0.0 }, input_port_value_box_size),
+                    text_edit);
+
+                let text_edit = egui::TextEdit::singleline(to).font(egui::FontId::proportional(35.0));
+                ui.put(
+                    egui::Rect::from_min_size(input_port_value_position + egui::Vec2 { x: 120.0, y: 0.0 }, input_port_value_box_size),
+                    text_edit);
+            });
+        }
     }
 
     if potentially_modified_display_value != display_input_port.value

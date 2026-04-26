@@ -1,4 +1,4 @@
-use crate::{studio_context::project::GraphEditor, user_inputs::{self, UserInputs}};
+use crate::{studio_context::project::GraphEditor};
 
 const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "number",
@@ -56,6 +56,7 @@ impl NodeSelectionPanel
                                                 .title_bar(false);
 
         let mut node_showed_number = 0; // Used later in the big scope for the total number of nodes and in the smaller scope for indexing
+        let user_clicked_enter = ui.ctx().input(|i| { i.key_pressed(egui::Key::Enter) }); // @TODO, add user_inputs instead of registering enter click again
 
         node_selection_window.show(ui.ctx(), |ui|
         {
@@ -120,7 +121,6 @@ impl NodeSelectionPanel
 
                         node_showed_number += 1;
 
-                        let user_clicked_enter = ui.ctx().input(|i| { i.key_pressed(egui::Key::Enter) });
                         if user_clicked_enter && current_node_is_selected
                         {
                             node_to_add = Some( *node_name );

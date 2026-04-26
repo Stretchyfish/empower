@@ -11,6 +11,7 @@ pub enum PortValue
     Text(String),
     Bool(bool),
     Vector(Vec<PortValue>),
+    Range(i32, i32, i32),
     #[default] None,
 }
 
@@ -31,6 +32,7 @@ impl PortValue
             PortValue::Text(_) => "text",
             PortValue::Bool(_) => "bool",
             PortValue::Vector(_) => "vector",
+            PortValue::Range(_, _, _) => "range",
             PortValue::None => "none",
         }
     }
@@ -48,7 +50,8 @@ impl fmt::Display for PortValue
             PortValue::Text(value) => write!(f, "{}", value),
             PortValue::Bool(value) => write!(f, "{}", value),
             PortValue::None => write!(f, "none"),
-            PortValue::Vector(port_values) => write!(f, "{:?}", port_values)
+            PortValue::Vector(port_values) => write!(f, "{:?}", port_values),
+            PortValue::Range(from, interval, to) => write!(f, "{:?},{:?},{:?}", from, interval, to),
         }
     }
 }

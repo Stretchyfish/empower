@@ -23,7 +23,7 @@ impl DisplayPort
 
     pub fn nothing(relative_position: egui::Vec2, port_value: &PortValue) -> Self
     {
-        Self { text: String::new(), relative_position, color: color_of_port_value(port_value), value: DisplayValue::Nothing, valid: true }
+        Self { text: String::new(), relative_position, color: color_of_port_value(port_value), value: DisplayValue::from_port_value(port_value), valid: true }
     }
 }
 
@@ -37,6 +37,7 @@ fn color_of_port_value(port_value: &PortValue) -> egui::Color32
         PortValue::Text(_) => egui::Color32::YELLOW,
         PortValue::Bool(_) => egui::Color32::YELLOW,
         PortValue::Vector(_) => egui::Color32::YELLOW,
+        PortValue::Range(_, _, _) => egui::Color32::YELLOW,
         PortValue::None => egui::Color32::YELLOW,
     }
 }
