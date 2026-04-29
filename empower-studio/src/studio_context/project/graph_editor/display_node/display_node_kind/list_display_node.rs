@@ -1,18 +1,18 @@
-use empower_engine::{PortValue, node_graph::{Variables, node::{NodeKind, node_kind::VectorNode}}, utility::alphabet_counter::AlphabetCounter};
+use empower_engine::{PortValue, node_graph::{Variables, node::{NodeKind, node_kind::ListNode}}, utility::alphabet_counter::AlphabetCounter};
 
 use crate::studio_context::project::graph_editor::{DisplayPort, display_node::DisplayNodeStateResponse};
 
 use super::DisplayNodeKind;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
-pub struct VectorDisplayNode
+pub struct ListDisplayNode
 {
     pub show_n: bool,
     pub number_text: String,
 }
 
 #[typetag::serde]
-impl DisplayNodeKind for VectorDisplayNode
+impl DisplayNodeKind for ListDisplayNode
 {
     fn new() -> Box<dyn DisplayNodeKind> where
         Self: Sized {
@@ -27,7 +27,7 @@ impl DisplayNodeKind for VectorDisplayNode
 
     fn node_size(&self, node_kind: &Box<dyn NodeKind>) -> egui::Vec2 {
 
-        let vector_state = node_kind.as_any().downcast_ref::<VectorNode>().expect("Vector display node tried to unwrap a node_kind that is not the vector node kind");
+        let vector_state = node_kind.as_any().downcast_ref::<ListNode>().expect("List display node tried to unwrap a node_kind that is not the list node kind");
 
         let n = vector_state.number_of_input_ports;
         let height = 300.0 + 70.0 * (n as f32 - 2.0); // @TODO, distance between nodes needs to be a global value
@@ -40,7 +40,7 @@ impl DisplayNodeKind for VectorDisplayNode
         // Probably don't need a second check here
         if input_port_values.len() < 2
         {
-            panic!("Vector somehow got an impossible size");
+            panic!("List somehow got an impossible size");
         }
 
         let mut display_port_values = Vec::new();
@@ -83,18 +83,18 @@ impl DisplayNodeKind for VectorDisplayNode
 
     fn state_show(&mut self, ui: &mut egui::Ui, node_kind: &mut Box<dyn NodeKind>, _: &Variables) -> DisplayNodeStateResponse {
 
-        let vector_state = node_kind.as_any_mut().downcast_mut::<VectorNode>().expect("Vector display node tried to unwrap a node_kind that is not the vector node kind");
+        let list_state = node_kind.as_any_mut().downcast_mut::<ListNode>().expect("List display node tried to unwrap a node_kind that is not the list node kind");
 
         let original_show_n = self.show_n.clone();
         let original_number_text = self.number_text.clone();
-        let original_number_of_inputs = vector_state.number_of_input_ports;
+        let original_number_of_inputs = list_state.number_of_input_ports;
 
         ui.horizontal(|ui|
         {
 
         ui.label("size: ");
 
-        let mut number_to_show = vector_state.number_of_input_ports.to_string();
+        let mut number_to_show = list_state.number_of_input_ports.to_string();
         if self.show_n
         {
             number_to_show = "n".to_string();
@@ -104,27 +104,27 @@ impl DisplayNodeKind for VectorDisplayNode
         {
             if ui.button("2").clicked()
             {
-                vector_state.number_of_input_ports = 2;
+                list_state.number_of_input_ports = 2;
                 self.show_n = false; 
             }
             if ui.button("3").clicked()
             {
-                vector_state.number_of_input_ports = 3;
+                list_state.number_of_input_ports = 3;
                 self.show_n = false; 
             }
             if ui.button("4").clicked()
             {
-                vector_state.number_of_input_ports = 4;
+                list_state.number_of_input_ports = 4;
                 self.show_n = false; 
             }
             if ui.button("5").clicked()
             {
-                vector_state.number_of_input_ports = 5;
+                list_state.number_of_input_ports = 5;
                 self.show_n = false; 
             }
             if ui.button("6").clicked()
             {
-                vector_state.number_of_input_ports = 6;
+                list_state.number_of_input_ports = 6;
                 self.show_n = false; 
             }
             if ui.button("n").clicked()
@@ -149,7 +149,7 @@ impl DisplayNodeKind for VectorDisplayNode
                 Err(_) => 
                 {
                     parsed_successfully = false;
-                    vector_state.number_of_input_ports
+                    list_state.number_of_input_ports
                 }
             };
 
@@ -161,7 +161,7 @@ impl DisplayNodeKind for VectorDisplayNode
 
             if parsed_number >= 2
             {
-                vector_state.number_of_input_ports = parsed_number;
+                list_state.number_of_input_ports = parsed_number;
             }
 
             let text_edit = egui::TextEdit::singleline(&mut self.number_text)
@@ -176,7 +176,7 @@ impl DisplayNodeKind for VectorDisplayNode
 
         if original_show_n != self.show_n || 
             original_number_text != self.number_text ||
-                original_number_of_inputs != vector_state.number_of_input_ports
+                original_number_of_inputs != list_state.number_of_input_ports
         {
             return DisplayNodeStateResponse::RefreshNodeStructure;
         }

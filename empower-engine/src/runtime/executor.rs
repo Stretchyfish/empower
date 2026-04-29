@@ -22,7 +22,7 @@ mod task;
 #[derive(Clone)]
 pub struct EmpowerExecutor
 {
-    pub debug_mode: bool,
+    pub debug_mode: Option<DebugMode>,
     pub running_in_editor: bool,
 
     pub task_manager: TaskManager,
@@ -40,7 +40,7 @@ impl EmpowerExecutor
     {
         Self
         {
-            debug_mode,
+            debug_mode: None,
             running_in_editor, 
 
             task_manager: TaskManager::new(),
@@ -63,7 +63,7 @@ impl EmpowerExecutor
 
     pub fn start_node_graph_from_entry(&mut self, node_graph: &mut NodeGraph, node_key: &NodeGraphKey)
     {
-        if self.debug_mode
+        if self.debug_mode.is_some()
         {
             // analysis::start_debugging(self);
         }
@@ -185,7 +185,6 @@ impl EmpowerExecutor
                 },
                 NodeSetupResponse::Error(_) => todo!(),
             }
-
         }
     }
 
@@ -291,4 +290,26 @@ impl EmpowerExecutor
         // self.execution_queue.extend(extra_nodes_needed_for_execution);
         // self.execution_queue.extend(new_nodes_to_execute);
     }
+
+    fn process_debug_single_action(&mut self, node_affected: &NodeGraphKey)
+    {
+        if self.debug_mode.is_none()
+        {
+            return;
+        }
+
+
+        
+
+
+
+        
+    
+    }
+}
+
+#[derive(Clone)]
+struct DebugMode
+{
+    pub delay_between_each_execution: f32,
 }

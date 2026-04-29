@@ -11,12 +11,13 @@ const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "text",
     "addition",
     "multiply",
-    "vector",
+    "list",
     "print",
     "variable",
     "file path",
     "show image",
-    "math graph"
+    "math graph",
+    "range"
 ];
 
 // @TODO, looks like the serde serialization and deserialization could be removed here with a bit of rewritting

@@ -20,7 +20,7 @@ impl NodeKind for ListNode
     }
 
     fn name(&self) -> &'static str {
-        "vector"
+        "list"
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {

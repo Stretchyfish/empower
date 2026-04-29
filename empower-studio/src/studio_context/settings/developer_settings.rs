@@ -1,3 +1,5 @@
+use empower_engine::{runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
+
 use crate::studio_context::{StudioContext, project::GraphEditor};
 
 #[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
@@ -46,9 +48,9 @@ impl DeveloperSettings
                 show_graph_state(ui, &studio_context.get_project_mut().graph_editor);
             });
 
-            ui.collapsing("Executor", |_|
+            ui.collapsing("Executor", |ui|
             {
-                
+                show_executor_state(ui, &studio_context.get_execution_history());
             });
         });
     }
@@ -107,5 +109,16 @@ pub fn show_graph_state(ui: &mut egui::Ui, graph_editor: &GraphEditor)
         });
 
         
+    });
+}
+
+pub fn show_executor_state(ui: &mut egui::Ui, execution_history: &TextBuffer)
+{
+    ui.collapsing("history", |ui|
+    {
+        for line in &execution_history.lines
+        {
+            ui.label(line);
+        }
     });
 }
