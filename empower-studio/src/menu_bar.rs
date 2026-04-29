@@ -17,10 +17,19 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext)
             menu_bar_windows::show(ui, studio_context);
         });
 
-
         ui.horizontal(|ui|
         {
             start_stop_button::show(ui, studio_context);
+
+            let debug_info = &mut studio_context.get_project_mut().graph_editor.debug_info;
+
+            ui.checkbox(&mut debug_info.debug_mode, "debug mode");
+
+            if debug_info.debug_mode
+            {
+                ui.add( egui::Slider::new( &mut debug_info.delay_between_each_execution, 0.0..=10.0 ).text("delay") );
+            }
+        
             // start_stop_button::show_start_stop_button(ui, action_queue);
 
             // // ui.checkbox(&mut studio_context.project.graph_editor.debug_info.show_keys, "show keys");

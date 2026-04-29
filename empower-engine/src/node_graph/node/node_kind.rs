@@ -27,8 +27,8 @@ use print_node::PrintNode;
 mod text_node;
 use text_node::TextNode;
 
-mod vector_node;
-pub use vector_node::VectorNode;
+mod list_node;
+pub use list_node::ListNode;
 
 mod math_graph_node;
 use math_graph_node::MathGraphNode;
@@ -45,6 +45,7 @@ pub use condition_node::ConditionType;
 
 mod loop_node;
 pub use loop_node::LoopNode;
+pub use loop_node::LoopType;
 
 mod wait_node;
 pub use wait_node::WaitNode;
@@ -59,6 +60,9 @@ use stop_loop_node::StopLoopNode;
 mod variable_node;
 pub use variable_node::VariableNode;
 pub use variable_node::AccessType;
+
+mod range_node;
+use range_node::RangeNode;
 
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
@@ -117,7 +121,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(BooleanNode::new().name(), || BooleanNode::new());
     m.insert(PrintNode::new().name(), || PrintNode::new());
     m.insert(TextNode::new().name(), || TextNode::new());
-    m.insert(VectorNode::new().name(), || VectorNode::new());
+    m.insert(ListNode::new().name(), || ListNode::new());
     m.insert(MathGraphNode::new().name(), || MathGraphNode::new());
     m.insert(FilePathNode::new().name(), || FilePathNode::new());
     m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
@@ -127,6 +131,7 @@ pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::n
     m.insert(RestartLoopNode::new().name(), || RestartLoopNode::new());
     m.insert(StopLoopNode::new().name(), || StopLoopNode::new());
     m.insert(VariableNode::new().name(), || VariableNode::new());
+    m.insert(RangeNode::new().name(), || RangeNode::new());
 
     m
 });

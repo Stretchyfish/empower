@@ -15,7 +15,8 @@ pub struct UserInputs
     pub clicked_s: bool,
     pub clicked_d: bool,
     pub clicked_enter: bool,
-
+    pub clicked_up_arrow: bool,
+    pub clicked_down_arrow: bool,
 }
 
 pub fn get_user_inputs(ctx: &egui::Context) -> UserInputs
@@ -35,6 +36,8 @@ pub fn get_user_inputs(ctx: &egui::Context) -> UserInputs
     user_inputs.clicked_s = ctx.input(|i| { i.key_pressed(egui::Key::S) });
     user_inputs.clicked_d = ctx.input(|i| { i.key_pressed(egui::Key::D) });
     user_inputs.clicked_enter = ctx.input(|i| { i.key_pressed(egui::Key::Enter) });
+    user_inputs.clicked_up_arrow =  ctx.input(|i| { i.key_pressed(egui::Key::ArrowUp) });
+    user_inputs.clicked_down_arrow =  ctx.input(|i| { i.key_pressed(egui::Key::ArrowDown) });
 
     user_inputs
 }

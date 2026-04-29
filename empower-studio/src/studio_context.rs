@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, path::PathBuf};
 
 pub mod project;
-use empower_engine::{NodeGraphKey, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer}};
+use empower_engine::{NodeGraphKey, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
 use project::Project;
 
 mod settings;
@@ -178,6 +178,11 @@ impl StudioContext
     pub fn get_execution_log(&self) -> &LogBuffer
     {
         &self.executor.logs
+    }
+
+    pub fn get_execution_history(&self) -> &TextBuffer
+    {
+        &self.executor.history
     }
 
     pub fn set_settings(&mut self, settings: Settings)

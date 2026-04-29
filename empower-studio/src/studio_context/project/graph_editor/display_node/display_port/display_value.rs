@@ -6,6 +6,7 @@ pub enum DisplayValue
     Nothing,
     Text(String),
     Checkbox(bool),
+    Interval(String, String, String),
 }
 
 impl DisplayValue
@@ -20,6 +21,7 @@ impl DisplayValue
             PortValue::Text(_) => Self::Text( String::new() ),
             PortValue::Bool( boolean) => Self::Checkbox( *boolean ),
             PortValue::Vector(_) => Self::Nothing,
+            PortValue::Range( from, interval, to ) => Self::Interval( from.to_string(), interval.to_string(), to.to_string() ), 
             PortValue::None => Self::Nothing,
         }
     }
@@ -36,6 +38,33 @@ impl DisplayValue
                 (DisplayValue::Text( text_to_parse ), PortValue::Float(_)) => self.text_to_float(&text_to_parse),
                 (DisplayValue::Text( text_send ), PortValue::Text(_)) => Some( PortValue::Text( text_send.to_string() ) ),
                 (DisplayValue::Checkbox( boolean_to_parse), PortValue::Bool(_)) => Some( PortValue::Bool( *boolean_to_parse )),
+                (DisplayValue::Interval( from_str, interval_str, to_str), PortValue::Range(_, _, _)) =>
+                {
+                    let from = match from_str.parse::<i32>()
+                    {
+                        Ok( parsed_value) => Some( parsed_value ),
+                        Err(_) => None,
+                    };
+
+                    let interval = match interval_str.parse::<i32>()
+                    {
+                        Ok( parsed_value) => Some( parsed_value ),
+                        Err(_) => None,
+                    };
+
+                    let to = match to_str.parse::<i32>()
+                    {
+                        Ok( parsed_value) => Some( parsed_value ),
+                        Err(_) => None,
+                    };
+
+                    if from.is_none() || interval.is_none() || to.is_none()
+                    {
+                        return None;
+                    }
+
+                    Some( PortValue::Range( from.unwrap(), interval.unwrap(), to.unwrap() ) )
+                },
                 _ => panic!("Tried to pass two incompatible values"),
             };
 

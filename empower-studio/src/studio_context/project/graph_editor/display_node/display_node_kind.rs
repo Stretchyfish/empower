@@ -12,8 +12,8 @@ use file_path_display_node::FilePathDisplayNode;
 mod number_display_node;
 use number_display_node::NumberDisplayNode;
 
-mod vector_display_node;
-use vector_display_node::VectorDisplayNode;
+mod list_display_node;
+use list_display_node::ListDisplayNode;
 
 mod math_graph_display_node;
 use math_graph_display_node::MathGraphDisplayNode;
@@ -29,6 +29,12 @@ use display_wait_node::DisplayWaitNode;
 
 mod variable_display_node;
 use variable_display_node::VariableDisplayNode;
+
+mod loop_display_node;
+use loop_display_node::LoopDisplayNode;
+
+mod range_display_node;
+use range_display_node::RangeDisplayNode;
 
 use super::super::DisplayPort; // @TODO, improve this include
 
@@ -70,12 +76,14 @@ pub static DISPLAY_NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, DisplayNodeCon
     
     m.insert("file path", || FilePathDisplayNode::new() ); 
     m.insert("number", || NumberDisplayNode::new() ); 
-    m.insert("vector", || VectorDisplayNode::new() ); 
+    m.insert("list", || ListDisplayNode::new() ); 
     m.insert("math graph", || MathGraphDisplayNode::new() ); 
     m.insert("show image", || ShowImageDisplayNode::new() ); 
     m.insert("condition", || ConditionDisplayNode::new() ); 
     m.insert("wait", || DisplayWaitNode::new() ); 
     m.insert("variable", || VariableDisplayNode::new() ); 
+    m.insert("loop", || LoopDisplayNode::new() ); 
+    m.insert("range", || RangeDisplayNode::new() ); 
 
     m
 });
