@@ -7,6 +7,6 @@ fn main()
     
     let node_graph = NodeGraph::load( current_directory.join("graph.json"));
 
-    let mut runtime = EmpowerRuntime::new(node_graph, true);
-    runtime.execute();
+    let mut runtime = EmpowerRuntime::new();
+    runtime.execute(node_graph);
 }

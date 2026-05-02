@@ -34,6 +34,6 @@ fn main()
         println!("{}", connection_response.err().unwrap());
     }
 
-    let mut runtime = EmpowerRuntime::new(node_graph, true);
-    runtime.execute();
+    let mut runtime = EmpowerRuntime::new();
+    runtime.execute(node_graph);
 }

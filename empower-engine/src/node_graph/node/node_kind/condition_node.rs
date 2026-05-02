@@ -6,6 +6,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConditionNode
 {
@@ -53,7 +55,7 @@ impl NodeKind for ConditionNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         let compare_value = inputs[1];
         let value = inputs[2];
@@ -64,29 +66,29 @@ impl NodeKind for ConditionNode
             {
                 if compare_value == value
                 {
-                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
             ConditionType::GreaterThan =>
             {
                 if compare_value > value
                 {
-                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
             ConditionType::LessThan =>
             {
                 if compare_value < value
                 {
-                    return NodeSetupResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Trigger(false) ] );
                 }
             },
         }
 
-        NodeSetupResponse::Finished( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
+        NodeResponse::Finished( vec![ PortValue::Trigger(false), PortValue::Trigger(true) ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

@@ -2,6 +2,7 @@ use std::any::Any;
 
 use crate::{PortValue, node_graph::node::{node_kind::{NodeSetupResponse, NodeUpdateResponse}, port::PortCompatability}};
 
+use super::NodeResponse;
 use super::NodeKind;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -53,7 +54,7 @@ impl NodeKind for RangeNode
         self
     }
 
-    fn setup(&mut self,inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         let from_value = match inputs[0]
         {
@@ -75,10 +76,10 @@ impl NodeKind for RangeNode
 
         let combined_range = PortValue::Range( from_value, interval_value, to_value);
 
-        NodeSetupResponse::Finished( vec![ combined_range ] )
+        NodeResponse::Finished( vec![ combined_range ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

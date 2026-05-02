@@ -4,6 +4,7 @@ use crate::node_graph::node::port::{PortCompatability, PortValue};
 
 use super::NodeKind;
 use super::NodeSetupResponse;
+use super::NodeResponse;
 use super::NodeUpdateResponse;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -51,7 +52,7 @@ impl NodeKind for ShowImageNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         let input_text = match inputs[1]
         {
@@ -61,11 +62,11 @@ impl NodeKind for ShowImageNode
 
         self.image_path = Some( input_text.clone() );
 
-        NodeSetupResponse::CreateWindow
+        NodeResponse::CreateWindow
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
-        NodeUpdateResponse::Running
+    fn update(&mut self) -> NodeResponse {
+        NodeResponse::Continue
     }
 
     fn show(&mut self, ui: &mut egui::Ui) {

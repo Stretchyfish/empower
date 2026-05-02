@@ -725,6 +725,17 @@ impl NodeGraph
         
         serde_json::from_str(&node_graph_json.unwrap()).unwrap()
     }
+
+    pub fn uses_graphics(&self) -> bool
+    {
+        if self.contains_node_kind("math graph") || // @TODO, find a better way of detecting this!
+            self.contains_node_kind("show image")
+        {
+            return true;
+        }
+
+        false
+    }
 }
 
 

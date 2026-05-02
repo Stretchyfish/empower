@@ -29,7 +29,8 @@ impl eframe::App for EmpowerVisualizer
             // Implement termination behavior here
         }
 
-        self.node_graph_executor.execute_node_graph(&mut self.node_graph, Some( ctx ));
+        // self.node_graph_executor.execute(&mut self.node_graph, Some( ctx ));
+        self.node_graph_executor.execute(&mut self.node_graph);
 
         // egui::CentralPanel::default()
         //     .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))

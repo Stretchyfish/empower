@@ -3,6 +3,7 @@ use crate::node_graph::node::port::{PortCompatability, PortValue};
 use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
+use super::NodeResponse;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct RestartLoopNode
@@ -43,11 +44,11 @@ impl NodeKind for RestartLoopNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::RestartLoop
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeResponse {
+        NodeResponse::RestartLoop
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

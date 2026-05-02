@@ -3,6 +3,7 @@ use crate::node_graph::node::port::{PortCompatability, PortValue};
 use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
+use super::NodeResponse;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct PrintNode
@@ -48,13 +49,14 @@ impl NodeKind for PrintNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         println!("PRINTING: {}", inputs[1]);
-        NodeSetupResponse::FinishedWithLog( Vec::new(), format!("{}", inputs[1]))
+        // NodeResponse::FinishedWithLog( Vec::new(), format!("{}", inputs[1]))
+        NodeResponse::Finished( Vec::new() )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

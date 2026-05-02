@@ -6,6 +6,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MathGraphNode
 {
@@ -51,7 +53,7 @@ impl NodeKind for MathGraphNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         let x_values = match inputs[1]
         {
@@ -69,7 +71,7 @@ impl NodeKind for MathGraphNode
         {
             println!("ERROR, math graph values are not same size");
             // return Some( Vec::new() );
-            return NodeSetupResponse::Error( "ERROR, math graph values are not same size".to_string() );
+            return NodeResponse::Error( "ERROR, math graph values are not same size".to_string() );
         }
 
         let mut x = Vec::new();
@@ -99,11 +101,11 @@ impl NodeKind for MathGraphNode
 
         self.graph = Some( graph );
 
-        NodeSetupResponse::CreateWindow
+        NodeResponse::CreateWindow
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
-        NodeUpdateResponse::Running
+    fn update(&mut self) -> NodeResponse {
+        NodeResponse::Continue
     }
 
     fn show(&mut self, ui: &mut egui::Ui) {

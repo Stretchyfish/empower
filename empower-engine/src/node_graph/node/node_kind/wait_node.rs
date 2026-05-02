@@ -8,6 +8,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct WaitNode
 {
@@ -51,14 +53,14 @@ impl NodeKind for WaitNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeResponse {
 
         self.start_time = Some( Instant::now() );
         
-        NodeSetupResponse::Began
+        NodeResponse::Continue
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
 
         match self.time_interval_type
         {
@@ -66,33 +68,33 @@ impl NodeKind for WaitNode
             {
                 if self.start_time.unwrap().elapsed() >= Duration::from_millis(self.wait_time)
                 {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Seconds =>
             {
                 if self.start_time.unwrap().elapsed() >= Duration::from_secs(self.wait_time)
                 {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Minutes =>
             {
                 if self.start_time.unwrap().elapsed() >= Duration::from_mins(self.wait_time)
                 {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
             WaitTimeIntervals::Hours =>
             {
                 if self.start_time.unwrap().elapsed() >= Duration::from_hours(self.wait_time)
                 {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
+                    return NodeResponse::Finished( vec![ PortValue::Trigger(true) ]);
                 }
             },
         }
 
-        NodeUpdateResponse::Running
+        NodeResponse::Continue
     }
 
     fn show(&mut self, _: &mut egui::Ui) {

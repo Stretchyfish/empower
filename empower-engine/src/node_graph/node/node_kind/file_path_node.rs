@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct FilePathNode
 {
@@ -47,11 +49,11 @@ impl NodeKind for FilePathNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::Finished( vec![  PortValue::Text( self.path.clone() ) ] )
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeResponse {
+        NodeResponse::Finished( vec![  PortValue::Text( self.path.clone() ) ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

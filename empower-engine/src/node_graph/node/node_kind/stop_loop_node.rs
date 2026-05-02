@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct StopLoopNode
 {
@@ -44,11 +46,11 @@ impl NodeKind for StopLoopNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::StopLoop
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeResponse {
+        NodeResponse::StopLoop
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

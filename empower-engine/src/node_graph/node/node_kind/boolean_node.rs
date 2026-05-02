@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct BooleanNode
 {
@@ -51,12 +53,12 @@ impl NodeKind for BooleanNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
         let output_value = inputs[0].clone();
-        NodeSetupResponse::Finished(  vec![ output_value ] )
+        NodeResponse::Finished(  vec![ output_value ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

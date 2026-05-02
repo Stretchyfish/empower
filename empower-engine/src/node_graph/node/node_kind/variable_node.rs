@@ -8,6 +8,7 @@ use crate::node_graph::Variable;
 use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
+use super::NodeResponse;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct VariableNode
@@ -100,11 +101,11 @@ impl NodeKind for VariableNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
 
         if self.variable.is_none()
         {
-            return NodeSetupResponse::Finished( Vec::new() );
+            return NodeResponse::Finished( Vec::new() );
         }
 
         let variable = self.variable.as_mut().unwrap();
@@ -143,10 +144,10 @@ impl NodeKind for VariableNode
             },
         }
 
-        NodeSetupResponse::Finished( outputs )
+        NodeResponse::Finished( outputs )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

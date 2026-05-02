@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct LoopNode
 {
@@ -62,7 +64,7 @@ impl NodeKind for LoopNode
         self
     }
 
-    fn setup(&mut self, input_port_value: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, input_port_value: Vec<&PortValue>) -> NodeResponse {
 
         if input_port_value.len() == 2
         {
@@ -78,12 +80,12 @@ impl NodeKind for LoopNode
 
         match self.loop_type
         {
-            LoopType::Forever => { NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true) ] ) },
-            LoopType::Range => { NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true), PortValue::Integer(0) ] ) },
+            LoopType::Forever => { NodeResponse::CreateLoop( vec![ PortValue::Trigger(true) ] ) },
+            LoopType::Range => { NodeResponse::CreateLoop( vec![ PortValue::Trigger(true), PortValue::Integer(0) ] ) },
         }
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
 
         let mut next_value_to_send = None;
         if self.range.is_some()
@@ -93,14 +95,14 @@ impl NodeKind for LoopNode
 
             if next_value_to_send.unwrap() >= self.range.unwrap().2
             {
-                return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Integer( self.next_iteration_send ) ]  );
+                return NodeResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Integer( self.next_iteration_send ) ]  );
             }
         }
 
         match self.loop_type
         {
-            LoopType::Forever => { NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true) ] ) },
-            LoopType::Range => { NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true), PortValue::Integer( next_value_to_send.unwrap() ) ] ) },
+            LoopType::Forever => { NodeResponse::ContinueLoop( vec![ PortValue::Trigger(true) ] ) },
+            LoopType::Range => { NodeResponse::ContinueLoop( vec![ PortValue::Trigger(true), PortValue::Integer( next_value_to_send.unwrap() ) ] ) },
         }
     }
 

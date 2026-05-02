@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ListNode
 {
@@ -53,7 +55,7 @@ impl NodeKind for ListNode
        self 
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
         let mut port_values_vector = Vec::new();
         port_values_vector.reserve(inputs.len());
 
@@ -62,10 +64,10 @@ impl NodeKind for ListNode
             port_values_vector.push(port_value.clone());
         }
 
-        NodeSetupResponse::Finished( vec![ PortValue::Vector( port_values_vector ) ] )
+        NodeResponse::Finished( vec![ PortValue::Vector( port_values_vector ) ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

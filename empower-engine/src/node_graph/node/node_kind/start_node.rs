@@ -4,6 +4,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct StartNode
 {
@@ -47,11 +49,11 @@ impl NodeKind for StartNode
         self
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::Finished(  vec![ PortValue::Trigger(true )] )
+    fn setup(&mut self, _: Vec<&PortValue>) -> NodeResponse {
+        NodeResponse::Finished( vec![ PortValue::Trigger(true )] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

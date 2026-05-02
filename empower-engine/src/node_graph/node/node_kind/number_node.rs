@@ -6,6 +6,8 @@ use super::NodeKind;
 use super::NodeSetupResponse;
 use super::NodeUpdateResponse;
 
+use super::NodeResponse;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct NumberNode
 {
@@ -61,11 +63,11 @@ impl NodeKind for NumberNode
         self
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::Finished(  vec![ inputs[0].clone() ] )
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse {
+        NodeResponse::Finished(  vec![ inputs[0].clone() ] )
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn update(&mut self) -> NodeResponse {
         todo!()
     }
 

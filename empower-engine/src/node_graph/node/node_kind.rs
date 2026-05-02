@@ -76,8 +76,8 @@ pub trait NodeKind
     fn output_compatabilities(&self) -> Vec<PortCompatability>;
     fn as_any_mut(&mut self) -> &mut dyn Any; 
     fn as_any(&self) -> &dyn Any; 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse;
-    fn update(&mut self) -> NodeUpdateResponse;
+    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeResponse;
+    fn update(&mut self) -> NodeResponse;
     fn show(&mut self, ui: &mut egui::Ui); // @TODO, consider renaming show or other?
 }
 
@@ -87,6 +87,18 @@ impl Clone for Box<dyn NodeKind>
     {
         self.clone_box()
     }
+}
+
+pub enum NodeResponse
+{
+    Continue,
+    Finished( Vec<PortValue> ),
+    CreateLoop ( Vec<PortValue> ),
+    ContinueLoop ( Vec<PortValue> ),
+    RestartLoop,
+    StopLoop,
+    CreateWindow,
+    Error(String),
 }
 
 pub enum NodeSetupResponse

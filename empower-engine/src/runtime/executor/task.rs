@@ -8,19 +8,29 @@ pub struct Job
 {
     pub task_id: TaskId,
     pub node_key: NodeGraphKey,
+    pub job_type: JobType
 }
 
 impl Job
 {
-    pub fn new(task_id: TaskId, node_key: NodeGraphKey) -> Self
+    pub fn new(task_id: TaskId, node_key: NodeGraphKey, job_type: JobType) -> Self
     {
         Self
         {
             task_id,
             node_key,
+            job_type
         }
         
     }
+}
+
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+enum JobType
+{
+    Setup,
+    Update,
+    Show
 }
 
 #[derive(Clone)]
