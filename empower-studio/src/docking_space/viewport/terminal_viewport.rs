@@ -37,9 +37,9 @@ impl Viewport for TerminalViewport
 
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, _: &UserInputs) {
 
-        let logs = studio_context.get_execution_log();
+        // let logs = studio_context.get_execution_log();
         
-        self.show_text_in_buffer(logs, ui);
+        // self.show_text_in_buffer(logs, ui);
     }
 }
 

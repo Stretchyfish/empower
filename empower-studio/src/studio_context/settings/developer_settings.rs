@@ -50,7 +50,7 @@ impl DeveloperSettings
 
             ui.collapsing("Executor", |ui|
             {
-                show_executor_state(ui, &studio_context.get_execution_history());
+                // show_executor_state(ui, &studio_context.get_execution_history());
             });
         });
     }

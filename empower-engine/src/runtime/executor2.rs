@@ -1,27 +1,38 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::{NodeGraph, NodeGraphKey, PortValue, node_graph::{self, node::{Node, node_kind::NodeResponse, port::port_value}}};
-use super::EmpowerDebugger;
+use crate::{NodeGraph, NodeGraphKey, PortValue, node_graph::{self, node::{Node, node_kind::NodeResponse, port::port_value}}, utility::log_buffer::LogBuffer};
 
 const START_NODE_KEY: NodeGraphKey = 1;
 
 pub struct EmpowerExecutor
 {
-    task_queue: VecDeque<Task>,
+    nodes_to_setup: VecDeque<NodeGraphKey>,
+    nodes_to_update: HashSet<NodeGraphKey>,
+    nodes_to_show: HashSet<NodeGraphKey>,
 
     cached_output_ports: HashMap<NodeGraphKey, PortValue>,
 
+    debugger: Option<EmpowerDebugger>,
 }
 
 impl EmpowerExecutor
 {
     pub fn new(running_in_editor: bool) -> Self
     {
+        let mut debugger = None;
+        if running_in_editor
+        {
+            debugger = Some( EmpowerDebugger::new() );
+        }
+        
         EmpowerExecutor
         {
-            task_queue: VecDeque::new(),
+            nodes_to_setup: VecDeque::new(),
+            nodes_to_update: HashSet::new(),
+            nodes_to_show: HashSet::new(),
 
             cached_output_ports: HashMap::new(),
+            debugger,
         }
     }
 
@@ -32,28 +43,37 @@ impl EmpowerExecutor
     
     pub fn start_node_graph_from_entry(&mut self, node_key: &NodeGraphKey) -> bool
     {
-        self.task_queue.push_back( Task::new(*node_key, Action::Setup) );
+        self.nodes_to_setup.push_back( *node_key );
 
         true
     }
 
     pub fn is_running(&self) -> bool
     {
-        !self.task_queue.is_empty()
+        !self.nodes_to_setup.is_empty() && !self.nodes_to_update.is_empty() && !self.nodes_to_show.is_empty()
     }
 
-    pub fn execute(&mut self, node_graph: &mut NodeGraph) -> bool
+    pub fn execute(&mut self, node_graph: &mut NodeGraph, ctx: Option<&egui::Context>)
     {
-        let next_task = self.task_queue.pop_front();
+        self.update_nodes(node_graph);
+        self.setup_next_node(node_graph);
 
-        if next_task.is_none()
+        if ctx.is_none()
         {
-            return false;
+            return;
         }
 
-        let next_task = next_task.unwrap();
+        self.show_nodes(node_graph, ctx.unwrap());
+    }
 
-        let node_key = next_task.node_key;
+    fn setup_next_node(&mut self, node_graph: &mut NodeGraph)
+    {
+        if self.nodes_to_setup.is_empty()
+        {
+            return;
+        }
+        
+        let node_key = self.nodes_to_setup.pop_front().unwrap();
 
         let node_response = {
             
@@ -77,20 +97,22 @@ impl EmpowerExecutor
                 inputs.push(connected_output_port_value);
             } 
 
-            match next_task.action
-            {
-                Action::Setup => node.kind.setup(inputs),
-                Action::Update => todo!(),
-            }
+            node.kind.setup(inputs)
         };
 
         match node_response
         {
-            NodeResponse::Continue => self.task_queue.push_back( Task::new(next_task.node_key, Action::Update) ),
+            NodeResponse::Continue => self.nodes_to_setup.push_back( node_key ),
             NodeResponse::Finished(port_values) =>
             {
                 self.cache_output_ports(&node_graph, &node_key, port_values);
-                self.get_next_tasks_from_node(&node_graph, &node_key);
+                self.get_next_nodes_to_setup_from_selected_node(&node_graph, &node_key);
+            },
+            NodeResponse::FinishedWithLog(port_values, log) =>
+            {
+                self.cache_output_ports(&node_graph, &node_key, port_values);
+                self.get_next_nodes_to_setup_from_selected_node(&node_graph, &node_key);
+                // self.logs.add_log_info(log);
             },
             NodeResponse::CreateLoop(port_values) => todo!(),
             NodeResponse::ContinueLoop(port_values) => todo!(), // @TODO, consider renaming this to "trigger loop"
@@ -99,19 +121,17 @@ impl EmpowerExecutor
             NodeResponse::CreateWindow => todo!(),
             NodeResponse::Error(_) => todo!(),
         }
-        
-        true
     }
 
-    fn setup_next_node(&mut self, node_graph: &mut NodeGraph)
+    fn update_nodes(&mut self, node_graph: &mut NodeGraph)
     {
-
-
-        
         
     }
 
-    
+    fn show_nodes(&mut self, node_graph: &mut NodeGraph, ctx: &egui::Context)
+    {
+        
+    }
 
     fn cache_output_ports(&mut self, node_graph: &NodeGraph, node_key: &NodeGraphKey, outputs: Vec<PortValue>)
     {
@@ -124,7 +144,7 @@ impl EmpowerExecutor
         );
     }
 
-    fn get_next_tasks_from_node(&self, node_graph: &NodeGraph, node_key: &NodeGraphKey) -> Vec<Task> 
+    fn get_next_nodes_to_setup_from_selected_node(&self, node_graph: &NodeGraph, node_key: &NodeGraphKey) -> Vec<NodeGraphKey> 
     {
         let mut connected_nodes_to_setup = Vec::new();
 
@@ -153,7 +173,7 @@ impl EmpowerExecutor
             for next_nodes_input_port_key in connected_input_ports
             {
                 let input_port = node_graph.input_ports.get(next_nodes_input_port_key).unwrap();
-                connected_nodes_to_setup.push( Task::new(input_port.node_key, Action::Setup) );
+                connected_nodes_to_setup.push( input_port.node_key );
             }
         }
 
@@ -161,26 +181,36 @@ impl EmpowerExecutor
     }
 }
 
-struct Task
+enum NodeSetupResponse
 {
-    node_key: NodeGraphKey,
-    action: Action 
+    Finished( Vec<PortValue> ),
+    AddToUpdate,
+    CreateLoop,
+    CreateWindow,
 }
 
-impl Task
+enum NodeUpdateResponse
 {
-    pub fn new(node_key: NodeGraphKey, action: Action) -> Self
+    Continue,
+    Finished( Vec<PortValue> ),
+    TriggerLoop,
+    StopLoop,
+    StopWindow,
+}
+
+struct EmpowerDebugger
+{
+    
+}
+
+impl EmpowerDebugger
+{
+    pub fn new() -> Self
     {
-        Task
+        Self
         {
-            node_key,
-            action
+            
         }
     }
 }
 
-enum Action
-{
-    Setup,
-    Update
-}

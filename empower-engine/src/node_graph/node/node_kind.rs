@@ -93,6 +93,7 @@ pub enum NodeResponse
 {
     Continue,
     Finished( Vec<PortValue> ),
+    FinishedWithLog(Vec<PortValue>, String),
     CreateLoop ( Vec<PortValue> ),
     ContinueLoop ( Vec<PortValue> ),
     RestartLoop,
@@ -103,9 +104,9 @@ pub enum NodeResponse
 
 pub enum NodeSetupResponse
 {
-    Began,
     Finished(Vec<PortValue>),
     FinishedWithLog(Vec<PortValue>, String),
+    Continue,
     CreateWindow,
     CreateLoop(Vec<PortValue>),
     RestartLoop,
@@ -116,8 +117,8 @@ pub enum NodeSetupResponse
 pub enum NodeUpdateResponse
 {
     Finished(Vec<PortValue>),
-    Running, // @TODO, find a better name
-    ContinueLoop(Vec<PortValue>),
+    Continue, // @TODO, find a better name
+    ContinueLoop(Vec<PortValue>), // @TODO, find a better name
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;

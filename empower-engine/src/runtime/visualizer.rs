@@ -30,7 +30,7 @@ impl eframe::App for EmpowerVisualizer
         }
 
         // self.node_graph_executor.execute(&mut self.node_graph, Some( ctx ));
-        self.node_graph_executor.execute(&mut self.node_graph);
+        self.node_graph_executor.execute(&mut self.node_graph, Some( ctx ));
 
         // egui::CentralPanel::default()
         //     .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.))

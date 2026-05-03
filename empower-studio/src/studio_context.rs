@@ -31,7 +31,7 @@ pub struct StudioContext
 
     cache: Cache, 
 
-    executor: EmpowerExecutor,
+    executor: Option<EmpowerExecutor>,
 
     dragged_asset: Option<PathBuf>,
     requests: VecDeque<Request>,
@@ -51,7 +51,7 @@ impl StudioContext
 
             cache: Cache::load(),
 
-            executor: EmpowerExecutor::new(true, false),
+            executor: None,
 
             dragged_asset: None,
 
@@ -152,7 +152,12 @@ impl StudioContext
 
     pub fn exeucutor_is_running(&self) -> bool
     {
-        self.executor.is_running()
+        if self.executor.is_some()
+        {
+            return self.executor.as_ref().unwrap().is_running();
+        }
+
+        false
     }
 
     pub fn request_executor_start(&mut self)
@@ -172,18 +177,27 @@ impl StudioContext
 
     pub fn execute_node_graph(&mut self, ctx: &egui::Context)
     {
-        self.executor.execute_node_graph(&mut self.project.graph_editor.node_graph, Some( ctx ));
+        if self.executor.is_none()
+        {
+            return;
+            // @TODO, add some error here
+        }
+
+        self.executor.as_mut().unwrap().execute( &mut self.project.graph_editor.node_graph, Some( ctx ) );
     }
 
-    pub fn get_execution_log(&self) -> &LogBuffer
-    {
-        &self.executor.logs
-    }
+    // pub fn get_execution_log(&self) -> &LogBuffer
+    // {
 
-    pub fn get_execution_history(&self) -> &TextBuffer
-    {
-        &self.executor.history
-    }
+
+    //     &self.executor.logs // @TODO, add getting function here
+    // }
+
+    // pub fn get_execution_history(&self) -> &TextBuffer
+    // {
+    //     // &self.executor.history
+    //     &TextBuffer::new()
+    // }
 
     pub fn set_settings(&mut self, settings: Settings)
     {
@@ -267,9 +281,22 @@ impl StudioContext
                 self.cache.add_previous_project( self.project.location.clone() );
             },
             Request::LoadSpecificProject { project_path } => { self.project.load(project_path); },
-            Request::StartExecution => { self.executor.start_node_graph( &mut self.project.graph_editor.node_graph ); },
-            Request::StartExecutionFrom { node_key } => { self.executor.start_node_graph_from_entry(&mut self.project.graph_editor.node_graph, &node_key); },
-            Request::StopExeuction => { self.executor.stop_node_graph(); },
+            Request::StartExecution =>
+            {
+                let mut executor = EmpowerExecutor::new(true);
+                executor.start();
+                self.executor = Some( executor );
+            },
+            Request::StartExecutionFrom { node_key } =>
+            {
+                let mut executor = EmpowerExecutor::new(true);
+                executor.start_node_graph_from_entry( &node_key );
+                self.executor = Some( executor );
+            },
+            Request::StopExeuction =>
+            {
+                self.executor = None;
+            },
             Request::StartDraggingAsset { path } => { self.dragged_asset = Some( path ); },
             Request::StopDraggingAsset => { self.dragged_asset = None; },
         };

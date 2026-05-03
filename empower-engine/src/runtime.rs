@@ -10,9 +10,6 @@ use visualizer::EmpowerVisualizer;
 mod executor2;
 pub use executor2::EmpowerExecutor;
 
-mod debugger;
-pub use debugger::EmpowerDebugger;
-
 pub struct EmpowerRuntime // @TODO, consider making this a pure function
 {
 
@@ -46,7 +43,7 @@ impl EmpowerRuntime
      {
         while node_graph_executor.is_running()  
         {
-            node_graph_executor.execute(&mut node_graph);
+            node_graph_executor.execute(&mut node_graph, None );
         }
      }
 
