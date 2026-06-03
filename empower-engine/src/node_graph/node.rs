@@ -1,0 +1,26 @@
+use super::NodeGraphKey;
+
+pub mod node_kind;
+use node_kind::NodeKind;
+
+pub struct Node
+{
+    pub position: egui::Pos2,
+    pub input_port_keys: Vec<NodeGraphKey>,
+    pub output_port_keys: Vec<NodeGraphKey>,
+    pub kind: Box<dyn NodeKind>,
+}
+
+impl Node
+{
+    pub fn new(position: egui::Pos2, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>, kind: Box<dyn NodeKind>) -> Self
+    {
+        Self
+        {
+            position,
+            input_port_keys,
+            output_port_keys,
+            kind
+        }
+    }
+}
