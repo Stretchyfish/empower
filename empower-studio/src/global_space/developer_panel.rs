@@ -1,4 +1,4 @@
-use crate::user_state::{self, UserState};
+use crate::{studio_context::Settings, user_state::{self, UserState}};
 
 
 pub struct DeveloperPanel
@@ -23,7 +23,7 @@ impl DeveloperPanel
         self.show = !self.show;
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, user_state: &Option<UserState>)
+    pub fn show(&mut self, ui: &mut egui::Ui, settings: &mut Settings, user_state: &Option<UserState>)
     {
         if !self.show 
         {
@@ -41,10 +41,16 @@ impl DeveloperPanel
             {
                 ui.label(format!("User state: {:?}", user_state))
             });
+
+            ui.collapsing("node graph", |ui|
+            {
+                
+            });
+
+            if ui.checkbox(&mut settings.developer_mode, "developer mode").clicked()
+            {
+            
+            }
         });
-
-
-        
-        
     }
 }

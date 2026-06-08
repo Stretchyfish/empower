@@ -3,11 +3,8 @@ use std::collections::{HashMap, HashSet};
 mod node;
 pub use node::Node;
 
-mod port;
+pub mod port;
 pub use port::Port;
-
-mod connection;
-use connection::Connection;
 
 use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
 
@@ -21,7 +18,8 @@ pub struct NodeGraph
     
     pub nodes: HashMap<NodeGraphKey, Node>,
     pub ports: HashMap<NodeGraphKey, Port>,
-    connections: HashMap<NodeGraphKey, Connection>
+
+    pub connections: HashMap<NodeGraphKey, NodeGraphKey>, // inputs -> outputs
 }
 
 impl NodeGraph
@@ -36,7 +34,8 @@ impl NodeGraph
             
             nodes: HashMap::new(),
             ports: HashMap::new(),
-            connections: HashMap::new()
+
+            connections: HashMap::new(),
         }
     }
 
@@ -90,6 +89,28 @@ impl NodeGraph
         }
 
         new_port_keys
+    }
+
+    pub fn add_connection(&mut self, from_port_key: &NodeGraphKey, to_port_key: &NodeGraphKey) -> bool
+    {
+        if from_port_key == to_port_key
+        {
+            return false;
+        }
+
+        self.connections.insert(*to_port_key, *from_port_key); // The ports are switched upon insert as output ports has an 1:N relation and inputs have a 1:1 relation to other ports, the order is then reversed during compilation.
+
+        true
+    }
+
+    pub fn remove_connection(&mut self, to_port_key: &NodeGraphKey) -> Option<NodeGraphKey>
+    {
+        self.connections.remove(to_port_key)
+    }
+
+    pub fn contains_connection(&mut self, to_port_key: &NodeGraphKey) -> bool
+    {
+        self.connections.contains_key(to_port_key)
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey

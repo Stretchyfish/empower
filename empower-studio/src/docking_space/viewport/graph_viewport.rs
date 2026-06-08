@@ -1,13 +1,15 @@
 use std::collections::VecDeque;
 
-use crate::{studio_context::StudioContext, user_inputs::{UserInputs}, user_state::{self, UserAction, UserState}};
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey}};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
+mod connection_widget;
+
 mod area_select;
 use area_select::AreaSelect;
 
@@ -27,13 +29,16 @@ pub struct GraphEditorViewport
     selected_nodes: HashSet<NodeGraphKey>,
 
     #[serde(skip)]
+    selected_port: Option<NodeGraphKey>,
+
+    #[serde(skip)]
     area_select: Option<AreaSelect>,
     
     #[serde(skip)]
     cached_node_sizes: HashMap<NodeGraphKey, egui::Vec2>,
 
     #[serde(skip)]
-    cached_port_positions: HashMap<NodeGraphKey, egui::Rect>,
+    cached_port_positions: HashMap<NodeGraphKey, egui::Pos2>,
 }
 
 #[typetag::serde]
@@ -52,6 +57,7 @@ impl Viewport for GraphEditorViewport
                 mouse_scene_position_last_frame: egui::Pos2::ZERO,
                 mouse_scene_delta_last_frame: egui::Vec2::ZERO,
                 selected_nodes: HashSet::new(),
+                selected_port: None,
                 area_select: None,
                 cached_node_sizes: HashMap::new(),
                 cached_port_positions: HashMap::new(),
@@ -70,6 +76,8 @@ impl Viewport for GraphEditorViewport
 
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
     {
+        let developer_mode = studio_context.get_settings().developer_mode;
+        
         let graph_viewport_actions = {
 
             let project = studio_context.get_project_mut();
@@ -82,7 +90,7 @@ impl Viewport for GraphEditorViewport
             let node_graph = project.assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph editor tried to read a node graph but didn't get it from assets");
 
             self.apply_viewport_state_to_node_graph(node_graph);
-            self.show_canvas(ui, node_graph, user_inputs, viewport_name)
+            self.show_canvas(ui, node_graph, user_inputs, viewport_name, &developer_mode)
         };
 
         self.process_graph_viewport_actions(studio_context, graph_viewport_actions, viewport_name);
@@ -91,7 +99,7 @@ impl Viewport for GraphEditorViewport
 
 impl GraphEditorViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String) -> VecDeque<GraphViewportAction>
+    fn show_canvas(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, developer_mode: &bool) -> VecDeque<GraphViewportAction>
     {
         let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
 
@@ -110,6 +118,11 @@ impl GraphEditorViewport
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
+            for connection in &node_graph.connections
+            {
+                connection_widget::show(scene_ui, connection.1, connection.0, &self.cached_port_positions);
+            }
+            
             let node_keys: Vec<NodeGraphKey> = node_graph.nodes.keys().cloned().collect();
             for node_key in node_keys
             {
@@ -126,7 +139,12 @@ impl GraphEditorViewport
                     }
                 }
                 
-                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_node_sizes);
+                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_node_sizes, &mut self.cached_port_positions, developer_mode);
+            }
+
+            if self.selected_port.is_some()
+            {
+                connection_widget::search_show(scene_ui, self.selected_port.as_ref().unwrap(), node_graph, &self.mouse_scene_position_last_frame, &self.cached_port_positions);
             }
 
             if self.area_select.is_some()
@@ -136,7 +154,7 @@ impl GraphEditorViewport
 
             // Calculate the delta position and process background actions
             self.mouse_scene_delta_last_frame = egui::Vec2::ZERO; 
-            if !mouse_is_inside_viewport
+            if !mouse_is_inside_viewport // No point in processing anything below if the mouse is not inside the viewport
             {
                 return;
             }
@@ -210,18 +228,67 @@ impl GraphEditorViewport
                         {
                             self.selected_nodes.clear();
                             self.selected_nodes.insert(node_key);
-                            // self.selected_nodes.push( node_key );
-                            // studio_context.request_user_state_change( viewport_name.clone(), UserAction::DraggingNodes { nodes: vec![ node_key ] });
                         }
 
                         break;
                     }
 
                     self.selected_nodes.insert(node_key);
-
-                    // studio_context.request_user_state_change( viewport_name.clone(), UserAction::DraggingNodes { nodes: vec![ node_key ] } );
                 },
-                GraphViewportAction::ClickedPort { port_key } => todo!(),
+                GraphViewportAction::ClickedPort { port_key } =>
+                {
+                    if self.graph_asset_id.is_none() // This should never happen, but placed here for safety
+                    {
+                        break;
+                    }
+
+                    let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
+
+                    if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
+                    {
+                        let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
+                        self.selected_port = Some( connected_output_port );
+                        break;
+                    }
+
+                    if self.selected_port.is_none()
+                    {
+                        self.selected_port = Some( port_key );
+                        break;
+                    }
+                        
+                    if self.selected_port.unwrap() == port_key
+                    {
+                        self.selected_port = None;
+                        break;
+                    }
+
+
+                    let selected_port_direction;
+
+                    {
+                        selected_port_direction = node_graph.ports.get(&self.selected_port.unwrap()).unwrap().direction;
+                        let clicked_port_direction = node_graph.ports.get(&port_key).unwrap().direction;
+
+                        if selected_port_direction == clicked_port_direction // If they are the same port direction, then they can't connect.
+                        {
+                            self.selected_port = None;
+                            break;
+                        }
+                    }
+
+                    match selected_port_direction
+                    {
+                        PortDirection::Input => {
+                            node_graph.add_connection(&port_key, &self.selected_port.unwrap());
+                        },
+                        PortDirection::Output => {
+                            node_graph.add_connection(&self.selected_port.unwrap(), &port_key);
+                        },
+                    }
+
+                    self.selected_port = None;
+                },
                 GraphViewportAction::DragSelecting =>
                 {
                     if self.area_select.is_none()
@@ -246,6 +313,7 @@ impl GraphEditorViewport
                 GraphViewportAction::ClickedBackground =>
                 {
                     self.selected_nodes.clear();
+                    self.selected_port = None;
                 },
             }
         }

@@ -11,6 +11,9 @@ use request::Request;
 mod windows;
 pub use windows::Windows;
 
+mod settings;
+pub use settings::Settings;
+
 use crate::user_state::{UserAction, UserState};
 
 static CONFIG_DIRECTORY: Lazy<directories::ProjectDirs> = Lazy::new(|| {
@@ -22,6 +25,7 @@ pub struct StudioContext
     project: Project,
     
     layout: Layout,
+    settings: Settings,
 
     user_state: Option<UserState>,
 
@@ -39,6 +43,7 @@ impl StudioContext
             project: Project::new(),
             
             layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
+            settings: Settings::new(),
 
             user_state: None,
 
@@ -131,9 +136,14 @@ impl StudioContext
         &mut self.windows
     }
 
-    pub fn get_windows_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &Option<UserState>)
+    pub fn get_settings(&self) -> &Settings
     {
-        (&mut self.windows, &self.user_state)
+        &self.settings
+    }
+
+    pub fn get_windows_and_settings_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &mut Settings, &Option<UserState>)
+    {
+        (&mut self.windows, &mut self.settings, &self.user_state)
     }
 
     pub fn process_requests(&mut self)

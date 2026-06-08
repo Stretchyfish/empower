@@ -21,6 +21,8 @@ pub fn show(
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
     cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
+    cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+    developer_mode: &bool,
 )
 {
     let node = node_graph.nodes.get_mut(node_key).unwrap();
@@ -30,13 +32,13 @@ pub fn show(
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
         let input_port = node_graph.ports.get(input_port_key).unwrap();
-        node_widget_input_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, vertical_offset_before_showing_ports);
+        node_widget_input_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
     }
 
     for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
     {
         let output_port = node_graph.ports.get(output_port_key).unwrap();
-        node_widget_output_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, &cached_node_sizes, vertical_offset_before_showing_ports);
+        node_widget_output_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, &cached_node_sizes, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
     }
 }
 

@@ -15,7 +15,9 @@ pub fn show(
             port_has_connection: &bool,
             graph_viewport_title: &String, 
             graph_viewport_action: &mut VecDeque<GraphViewportAction>,
+            cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
             vertical_offset_before_showing_ports: f32,
+            developer_mode: &bool,
 )
 {
     let input_port_position = *node_position + egui::Vec2 { x: 0.0, y: vertical_offset_before_showing_ports + VERTICAL_PORT_GAB / 2.0 + VERTICAL_PORT_GAB * port_index as f32 };
@@ -35,4 +37,17 @@ pub fn show(
         port_color,
         egui::Stroke::NONE,
     );
+
+    if *developer_mode
+    {
+        ui.painter().text(
+            input_port_position,
+            egui::Align2::CENTER_CENTER,
+            input_port_key.to_string(),
+            egui::FontId::proportional(25.0),
+            egui::Color32::BLACK,
+        );
+    }
+    
+    cached_port_positions.insert(*input_port_key, input_port_position);
 }

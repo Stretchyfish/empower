@@ -16,7 +16,9 @@ pub fn show(
             graph_viewport_title: &String, 
             graph_viewport_action: &mut VecDeque<GraphViewportAction>,
             cached_node_sizes: &HashMap<NodeGraphKey, egui::Vec2>,
+            cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
             vertical_offset_before_showing_ports: f32,
+            developer_mode: &bool,
 )
 {
     let node_size = cached_node_sizes.get(&output_port.node_key).unwrap(); // This is safe to due, due to the cached size always being filled out first in node_widget_body::show
@@ -38,4 +40,17 @@ pub fn show(
         port_color,
         egui::Stroke::NONE,
     );
+
+    if *developer_mode
+    {
+        ui.painter().text(
+            output_port_position,
+            egui::Align2::CENTER_CENTER,
+            output_port_key.to_string(),
+            egui::FontId::proportional(25.0),
+            egui::Color32::BLACK,
+        );
+    }
+
+    cached_port_positions.insert(*output_port_key, output_port_position);
 }
