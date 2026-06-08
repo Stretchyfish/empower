@@ -1,9 +1,14 @@
 use crate::studio_context::StudioContext;
 
-pub fn show(ui: &mut egui::Ui, _: &mut StudioContext)
+pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
-    ui.menu_button("Settings", |_|
+    let windows = studio_context.get_windows_mut();
+    
+    ui.menu_button("Settings", |ui|
     {
-
+        if ui.button("developer panel").clicked()
+        {
+            windows.developer_panel.toggle_show();
+        }
     });
 }

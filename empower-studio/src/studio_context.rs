@@ -8,6 +8,11 @@ mod request;
 use once_cell::sync::Lazy;
 use request::Request;
 
+mod windows;
+pub use windows::Windows;
+
+use crate::user_state::{UserAction, UserState};
+
 static CONFIG_DIRECTORY: Lazy<directories::ProjectDirs> = Lazy::new(|| {
     directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory")
 });
@@ -17,7 +22,11 @@ pub struct StudioContext
     project: Project,
     
     layout: Layout,
-    
+
+    user_state: Option<UserState>,
+
+    windows: Windows,
+
     requests: VecDeque<Request>,
 }
 
@@ -30,6 +39,10 @@ impl StudioContext
             project: Project::new(),
             
             layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
+
+            user_state: None,
+
+            windows: Windows::new(),
 
             requests: VecDeque::new(),
         }
@@ -93,6 +106,36 @@ impl StudioContext
         &mut self.project
     }
 
+    pub fn get_project_mut_and_borrow_user_state(&mut self) -> (&mut Project, &Option<UserState>) // This is a helper function to overcome borrower limitations
+    {
+        (&mut self.project, &self.user_state)
+    }
+
+    pub fn request_user_state_change(&mut self, layer_or_viewport: String, new_action: UserAction)
+    {
+        self.requests.push_back( Request::UserStateChange { layer_or_viewport, new_action } );
+    }
+
+    pub fn request_user_state_clear(&mut self)
+    {
+        self.requests.push_back( Request::UserStateClear );
+    }
+
+    pub fn get_user_state(&self) -> &Option<UserState>
+    {
+        &self.user_state
+    }
+
+    pub fn get_windows_mut(&mut self) -> &mut Windows
+    {
+        &mut self.windows
+    }
+
+    pub fn get_windows_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &Option<UserState>)
+    {
+        (&mut self.windows, &self.user_state)
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -108,6 +151,8 @@ impl StudioContext
             Request::AddViewport { name } => { self.layout.add_viewport( name ); },
             Request::SaveStudio => { self.save_studio(); },
             Request::LoadStudio => { self.load_studio(); },
+            Request::UserStateClear => { self.user_state = None; },
+            Request::UserStateChange { layer_or_viewport, new_action } => { self.user_state = Some( UserState::from(layer_or_viewport, new_action) )},
         }
     }
 }

@@ -7,6 +7,9 @@ use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 mod empty_viewport;
 use empty_viewport::EmptyViewport;
 
+mod graph_viewport;
+use graph_viewport::GraphEditorViewport;
+
 #[typetag::serde(tag="viewport_name")]
 pub trait Viewport
 {
@@ -33,6 +36,7 @@ pub static VIEWPORT_REGISTRY: Lazy<HashMap<&'static str, ViewportConstructor>> =
     let mut r: HashMap<&'static str, ViewportConstructor> = HashMap::new();
 
     r.insert(EmptyViewport::new().name(), || EmptyViewport::new());
+    r.insert(GraphEditorViewport::new().name(), || GraphEditorViewport::new());
 
     r
 });

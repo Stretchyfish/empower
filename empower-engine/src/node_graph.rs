@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
 mod node;
-use node::Node;
+pub use node::Node;
 
 mod port;
-use port::Port;
+pub use port::Port;
 
 mod connection;
 use connection::Connection;
@@ -15,20 +15,22 @@ pub type NodeGraphKey = i32;
 
 pub struct NodeGraph
 {
+    pub name: &'static str,
     input_nodes: HashSet<NodeGraphKey>,
     output_nodes: HashSet<NodeGraphKey>,
     
-    nodes: HashMap<NodeGraphKey, Node>,
-    ports: HashMap<NodeGraphKey, Port>,
+    pub nodes: HashMap<NodeGraphKey, Node>,
+    pub ports: HashMap<NodeGraphKey, Port>,
     connections: HashMap<NodeGraphKey, Connection>
 }
 
 impl NodeGraph
 {
-    pub fn new() -> Self
+    pub fn new(name: &'static str) -> Self
     {
         Self
         {
+            name,
             input_nodes: HashSet::new(),
             output_nodes: HashSet::new(),
             
@@ -40,10 +42,12 @@ impl NodeGraph
 
     pub fn new_entry_graph() -> Self
     {
-        let mut node_graph = NodeGraph::new();
+        let mut node_graph = NodeGraph::new("entry graph");
 
         let start_node_key = node_graph.add_node("start", None);
         node_graph.input_nodes.insert(start_node_key);
+
+        let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
 
         node_graph
     }

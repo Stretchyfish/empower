@@ -27,8 +27,7 @@ impl Layout
     {
         let mut new_default_layout = Self::new();
         
-        // let graph_viewport_name = new_default_layout.add_viewport("graph viewport");
-        let _ = new_default_layout.add_viewport("empty viewport");
+        let _ = new_default_layout.add_viewport("graph viewport");
 
         new_default_layout
     }

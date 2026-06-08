@@ -6,7 +6,9 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
     let project = studio_context.get_project_mut();
 
-    ui.menu_button(project.entry_graph.to_string(), |_|
+    let selected_graph_name = project.assets.get_node_graph( &project.entry_graph ).expect("Menu bar was asked to get an graph asset id that doesn't exist in assets").name;
+
+    ui.menu_button(selected_graph_name, |_|
     {
 
     });

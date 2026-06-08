@@ -36,7 +36,7 @@ impl NodeKind for StartNode
     fn output_port_definitions(&self) -> Vec<PortDefinition>
     {
         vec![
-            PortDefinition::new_input_execution_port(),
+            PortDefinition::new_output_execution_port(),
         ]
     }
 

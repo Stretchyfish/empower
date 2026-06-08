@@ -31,6 +31,11 @@ impl Assets
         self.node_graphs.get(id)
     }
 
+    pub fn get_node_graph_mut(&mut self, id: &AssetId) -> Option<&mut NodeGraph>
+    {
+        self.node_graphs.get_mut(id)
+    }
+
     fn get_asset_id(&self) -> AssetId
     {
         self.node_graphs.keys().max().unwrap_or(&0) + 1 // @TODO, this approach needs to get fixed later!

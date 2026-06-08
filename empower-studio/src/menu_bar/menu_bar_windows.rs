@@ -10,7 +10,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         }
         ui.menu_button("Add window", |ui|
         {
-            if ui.button("Graph viewport").clicked()
+            if ui.button("Graph Viewport").clicked()
             {
                 studio_context.request_new_viewport("graph viewport");
             }
