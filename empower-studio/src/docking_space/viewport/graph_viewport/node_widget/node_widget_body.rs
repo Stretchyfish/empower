@@ -17,10 +17,10 @@ pub fn show(
             node_key: &NodeGraphKey,
             node: &mut Node,
             graph_viewport_title: &String, 
-            // node_area_select: &mut Option<NodeAreaSelect>,
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
+            developer_mode: &bool,
         ) -> f32
 {
     let node_size = cached_node_sizes.get(node_key).copied().unwrap_or_default();
@@ -33,7 +33,12 @@ pub fn show(
 
     let title_text_font_size = 40.0;
 
-    let node_title = node.kind.name().to_string();
+    let mut node_title = node.kind.name().to_string();
+
+    if *developer_mode
+    {
+       node_title = format!("{} [{}]", node_title, node_key.to_string());
+    }
 
     let text_size = ui.painter()
                         .layout_no_wrap(

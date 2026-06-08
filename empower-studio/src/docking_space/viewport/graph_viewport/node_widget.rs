@@ -6,8 +6,7 @@ use crate::docking_space::viewport::graph_viewport::area_select::AreaSelect;
 use super::GraphViewportAction;
 
 mod node_widget_body;
-mod node_widget_input_ports;
-mod node_widget_output_ports;
+mod node_widget_ports;
 
 const PORT_SIZE: egui::Vec2 = egui::Vec2 { x: 50.0, y: 50.0 };
 const VERTICAL_PORT_GAB: f32 = 60.0;
@@ -17,7 +16,6 @@ pub fn show(
     node_key: &NodeGraphKey,
     node_graph: &mut NodeGraph, 
     graph_viewport_title: &String, 
-    // node_area_select: &mut Option<NodeAreaSelect>,
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
     cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
@@ -27,18 +25,18 @@ pub fn show(
 {
     let node = node_graph.nodes.get_mut(node_key).unwrap();
 
-    let vertical_offset_before_showing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, cached_node_sizes);
+    let vertical_offset_before_showing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, cached_node_sizes, developer_mode);
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
         let input_port = node_graph.ports.get(input_port_key).unwrap();
-        node_widget_input_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
+        node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, &cached_node_sizes, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
     }
 
     for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
     {
         let output_port = node_graph.ports.get(output_port_key).unwrap();
-        node_widget_output_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, &cached_node_sizes, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
+        node_widget_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &true, &String::from(graph_viewport_title), graph_viewport_actions, &cached_node_sizes, cached_port_positions, vertical_offset_before_showing_ports, developer_mode);
     }
 }
 

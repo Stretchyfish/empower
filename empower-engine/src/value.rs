@@ -1,5 +1,5 @@
 
-#[derive(Clone)]
+#[derive(PartialEq, PartialOrd, Clone)]
 pub enum Value
 {
     Integer(i32),

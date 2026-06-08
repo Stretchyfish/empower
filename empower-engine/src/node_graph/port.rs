@@ -34,4 +34,33 @@ impl Port
             compatability: port_definition.compatability,
         }
     }
+
+    pub fn compatible_with(&self, port: &Port) -> bool
+    {
+        match (self.kind, port.kind)
+        {
+            (PortKind::Execution, PortKind::Execution) =>
+                return true,
+            (PortKind::Data, PortKind::Data) =>
+                self.compatability.iter()
+                .any(|from_possible_value| port.compatability.iter().any(|to_possible_value| *from_possible_value == *to_possible_value )),
+            _ => false,
+        }
+    }
+
+    pub fn color(&self) -> egui::Color32
+    {
+        match self.kind
+        {
+            PortKind::Execution => egui::Color32::WHITE,
+            PortKind::Data =>
+            {
+                match self.value.as_ref().unwrap() // This should never be false
+                {
+                    Value::Integer(_) => egui::Color32::YELLOW,
+                    Value::Float(_) => egui::Color32::BLUE,
+                }
+            }
+        }
+    }
 }

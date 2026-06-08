@@ -47,6 +47,8 @@ impl NodeGraph
         node_graph.input_nodes.insert(start_node_key);
 
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
+        let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 100.0 } ));
+        let _ = node_graph.add_node("start", Some( egui::Pos2{ x: 0.0, y: 100.0 } ));
 
         node_graph
     }
@@ -94,6 +96,14 @@ impl NodeGraph
     pub fn add_connection(&mut self, from_port_key: &NodeGraphKey, to_port_key: &NodeGraphKey) -> bool
     {
         if from_port_key == to_port_key
+        {
+            return false;
+        }
+
+        let from_port = self.ports.get(from_port_key).unwrap(); // This is slightly dangerous, but with the current editor implementation it should be safe (maybe revise in the future though)
+        let to_port = self.ports.get(to_port_key).unwrap();
+
+        if !from_port.compatible_with(to_port)
         {
             return false;
         }

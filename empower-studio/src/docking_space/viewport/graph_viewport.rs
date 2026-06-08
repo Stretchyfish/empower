@@ -120,7 +120,7 @@ impl GraphEditorViewport
         {
             for connection in &node_graph.connections
             {
-                connection_widget::show(scene_ui, connection.1, connection.0, &self.cached_port_positions);
+                connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
             }
             
             let node_keys: Vec<NodeGraphKey> = node_graph.nodes.keys().cloned().collect();
@@ -247,8 +247,12 @@ impl GraphEditorViewport
                     if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
                     {
                         let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
-                        self.selected_port = Some( connected_output_port );
-                        break;
+
+                        if self.selected_port.is_none()
+                        {
+                            self.selected_port = Some( connected_output_port );
+                            break;
+                        }
                     }
 
                     if self.selected_port.is_none()
