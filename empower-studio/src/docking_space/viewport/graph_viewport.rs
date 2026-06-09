@@ -138,7 +138,7 @@ impl GraphEditorViewport
                         node_widget::highlight(scene_ui, &node_key, node_graph, &mut self.cached_node_sizes);
                     }
                 }
-                
+
                 node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_node_sizes, &mut self.cached_port_positions, developer_mode);
             }
 
@@ -319,6 +319,10 @@ impl GraphEditorViewport
                     self.selected_nodes.clear();
                     self.selected_port = None;
                 },
+                GraphViewportAction::PortEditWasChanged { port_key } =>
+                {
+                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().attempt_to_parse_edit(); // This has got to be the most questionable line of code I have ever written...
+                },
             }
         }
     }
@@ -337,4 +341,5 @@ enum GraphViewportAction
     DragSelecting,
     StoppedDragSelecting,
     ClickedBackground,
+    PortEditWasChanged { port_key: NodeGraphKey },
 }

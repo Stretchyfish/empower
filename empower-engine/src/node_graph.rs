@@ -48,7 +48,7 @@ impl NodeGraph
 
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 100.0 } ));
-        let _ = node_graph.add_node("start", Some( egui::Pos2{ x: 0.0, y: 100.0 } ));
+        let _ = node_graph.add_node("number", Some( egui::Pos2{ x: 0.0, y: 100.0 } ));
 
         node_graph
     }

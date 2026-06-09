@@ -12,6 +12,12 @@ const NODE_BOTTOM_RECT_HEIGHT: f32 = 20.0;
 const NODE_BODY_TITLE_AREA_OVERLAP: f32 = 12.0; // Due to the drawing of the body in 3 steps, a bit of overlap is done to smoothen
 const NODE_BODY_BUTTON_AREA_OVERLAP: f32 = 12.0;
 
+pub struct NodeWidgetBodyResponse
+{
+    pub title_bar_width: f32,
+    pub vertical_offset_before_drawing_ports: f32,
+}
+
 pub fn show(
             ui: &mut egui::Ui, 
             node_key: &NodeGraphKey,
@@ -21,7 +27,7 @@ pub fn show(
             area_select: &mut Option<AreaSelect>,
             cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
             developer_mode: &bool,
-        ) -> f32
+        ) -> NodeWidgetBodyResponse
 {
     let node_size = cached_node_sizes.get(node_key).copied().unwrap_or_default();
     let node_rect = egui::Rect::from_min_size(node.position, node_size);
@@ -49,13 +55,27 @@ pub fn show(
                         .size();
     
         
-    let title_box_rect = egui::Rect::from_min_size(
-        node_rect.min,
-        egui::Vec2 {
-            x: text_size.x + TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER * 2.0,
-            y: text_size.y * 2.0,
-        },
-    );
+    let title_box_rect = if cached_node_sizes.contains_key(node_key)
+    {
+        egui::Rect::from_min_size(
+            node_rect.min,
+            egui::Vec2 {
+                x: node_rect.size().x,
+                y: text_size.y * 2.0,
+            },
+        )
+    }
+    else
+    {
+        
+        egui::Rect::from_min_size(
+            node_rect.min,
+            egui::Vec2 {
+                x: text_size.x + TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER * 2.0,
+                y: text_size.y * 2.0,
+            },
+        )
+    };
     
     let node_title_pos = egui::Pos2 {
         x: title_box_rect.center().x,
@@ -143,6 +163,12 @@ pub fn show(
 
     cached_node_sizes.insert(*node_key, egui::Vec2 { x: title_box_rect.size().x, y: vertical_size });
 
-    // node_rect_without_title_and_bottom.min.y
-    title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP
+    // // node_rect_without_title_and_bottom.min.y
+    // title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP
+
+    NodeWidgetBodyResponse
+    {
+        title_bar_width: title_box_rect.size().x,
+        vertical_offset_before_drawing_ports: title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP,
+    }
 }

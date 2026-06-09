@@ -10,6 +10,9 @@ pub use port_kind::PortKind;
 mod port_direction;
 pub use port_direction::PortDirection;
 
+mod port_edit;
+pub use port_edit::PortEdit;
+
 pub struct Port
 {
     pub node_key: NodeGraphKey,
@@ -18,20 +21,36 @@ pub struct Port
     pub name: &'static str,
     pub value: Option<Value>,
     pub compatability: Vec<Value>,
+    pub edit: PortEdit,
+    pub parseble: bool,
 }
 
 impl Port
 {
     pub fn new(node_key: NodeGraphKey, port_definition: PortDefinition) -> Self
     {
+        let value = if port_definition.compatability.is_empty() { None } else { Some( port_definition.compatability[0].clone() ) }; 
+
+        let edit = match &value
+        {
+            None => PortEdit::None,
+            Some( value_type ) => match value_type
+            {
+                Value::Integer( integer ) => PortEdit::Interger( integer.to_string() ),
+                Value::Float( float ) => PortEdit::Float( float.to_string() ),
+            },
+        };
+        
         Self
         {
             node_key,
             direction: port_definition.direction,
             kind: port_definition.kind,
             name: port_definition.name,
-            value: if port_definition.compatability.is_empty() { None } else { Some( port_definition.compatability[0].clone() ) },
+            value,
             compatability: port_definition.compatability,
+            edit, 
+            parseble: true,
         }
     }
 
@@ -62,5 +81,31 @@ impl Port
                 }
             }
         }
+    }
+
+    pub fn attempt_to_parse_edit(&mut self)
+    {
+        match &self.edit
+        {
+            PortEdit::None => {},
+            PortEdit::Interger( integer_string ) =>
+            {
+                let parsed_integer = integer_string.parse::<i32>();
+
+                if parsed_integer.is_err()
+                {
+                    self.parseble = false;
+                    return;
+                }
+
+                self.value = Some(Value::Integer( parsed_integer.unwrap() ));
+            },
+            PortEdit::Float(_) =>
+            {
+                todo!();
+            },
+        }
+
+        self.parseble = true;
     }
 }

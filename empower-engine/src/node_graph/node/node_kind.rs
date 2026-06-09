@@ -9,6 +9,9 @@ use print_node::PrintNode;
 mod start_node;
 use start_node::StartNode;
 
+mod number_node;
+use number_node::NumberNode;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -49,6 +52,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
 
     r.insert( PrintNode::new().name(), || PrintNode::new());
     r.insert( StartNode::new().name(), || StartNode::new());
+    r.insert( NumberNode::new().name(), || NumberNode::new());
 
     r
 });
