@@ -3,7 +3,6 @@ use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
 
 use super::NodeKind;
-use super::DrawnStateResponse;
 use super::ControlFlowKind;
 
 #[derive(Clone)]
@@ -28,21 +27,21 @@ impl NodeKind for PrintNode
         "print"
     }
 
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(300.0, 220.0)
+    }
+
     fn input_port_definitions(&self) -> Vec<PortDefinition>
     {
         vec![
             PortDefinition::new_input_execution_port(),
-            PortDefinition::new_input_data_port("value", vec![Value::Integer(0), Value::Float(0.0)])
+            PortDefinition::new_input_data_port("value", vec![ Value::Integer, Value::Float])
         ]
     }
 
     fn output_port_definitions(&self) -> Vec<PortDefinition>
     {
         Vec::new()
-    }
-
-    fn draw_state(&mut self, _: &mut egui::Ui) -> DrawnStateResponse {
-        DrawnStateResponse::None
     }
 
     fn compile(&self) -> Vec<Instruction> {
@@ -53,5 +52,13 @@ impl NodeKind for PrintNode
 
     fn control_flow(&self) -> ControlFlowKind {
         ControlFlowKind::Normal
+    }
+
+    fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {
+        None
+    }
+
+    fn sync_node_edit(&mut self, index: usize) {
+        todo!()
     }
 }

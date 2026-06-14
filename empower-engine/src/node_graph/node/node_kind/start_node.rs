@@ -3,7 +3,6 @@ use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
 
 use super::NodeKind;
-use super::DrawnStateResponse;
 use super::ControlFlowKind;
 
 #[derive(Clone)]
@@ -28,6 +27,10 @@ impl NodeKind for StartNode
         "start"
     }
 
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(200.0, 170.0)
+    }
+
     fn input_port_definitions(&self) -> Vec<PortDefinition>
     {
         Vec::new()
@@ -40,15 +43,19 @@ impl NodeKind for StartNode
         ]
     }
 
-    fn draw_state(&mut self, _: &mut egui::Ui) -> DrawnStateResponse {
-        DrawnStateResponse::None
-    }
-
     fn compile(&self) -> Vec<Instruction> {
         Vec::new()
     }
 
     fn control_flow(&self) -> ControlFlowKind {
         ControlFlowKind::Normal
+    }
+
+    fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {
+        None
+    }
+
+    fn sync_node_edit(&mut self, index: usize) {
+        todo!()
     }
 }

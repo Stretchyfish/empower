@@ -3,13 +3,13 @@ use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
 
 use super::NodeKind;
-use super::DrawnStateResponse;
 use super::ControlFlowKind;
+use super::NodeEdit;
 
 #[derive(Clone)]
 pub struct NumberNode
 {
-    
+    state: Vec<NodeEdit>,
 }
 
 impl NodeKind for NumberNode
@@ -17,9 +17,13 @@ impl NodeKind for NumberNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new( Self {
-            
-        })
+        Box::new(
+            Self {
+                state: vec![
+                            NodeEdit::Text { label: "value", text: "0".to_string(), parseble: true }
+                ],
+            }
+        )
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
@@ -30,18 +34,26 @@ impl NodeKind for NumberNode
         "number"
     }
 
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(230.0, 215.0)
+    }
+
     fn input_port_definitions(&self) -> Vec<PortDefinition> {
         Vec::new()
     }
 
     fn output_port_definitions(&self) -> Vec<PortDefinition> {
         vec![
-            PortDefinition::new_output_data_port("value", vec![ Value::Integer(0) ]),
+            PortDefinition::new_output_data_port("value", vec![ Value::Integer ]),
         ]
     }
 
-    fn draw_state(&mut self, _: &mut egui::Ui) -> DrawnStateResponse {
-        DrawnStateResponse::None
+    fn node_edits(&mut self) -> Option<&mut Vec<NodeEdit>> {
+        Some( &mut self.state )
+    }
+
+    fn sync_node_edit(&mut self, index: usize) {
+        todo!()
     }
 
     fn compile(&self) -> Vec<Instruction> {

@@ -19,7 +19,6 @@ pub struct Port
     pub direction: PortDirection,
     pub kind: PortKind,
     pub name: &'static str,
-    pub value: Option<Value>,
     pub compatability: Vec<Value>,
     pub edit: PortEdit,
     pub parseble: bool,
@@ -36,8 +35,8 @@ impl Port
             None => PortEdit::None,
             Some( value_type ) => match value_type
             {
-                Value::Integer( integer ) => PortEdit::Interger( integer.to_string() ),
-                Value::Float( float ) => PortEdit::Float( float.to_string() ),
+                Value::Integer => PortEdit::Interger( "0".to_string() ),
+                Value::Float => PortEdit::Float( "0.0".to_string() ),
             },
         };
         
@@ -47,7 +46,6 @@ impl Port
             direction: port_definition.direction,
             kind: port_definition.kind,
             name: port_definition.name,
-            value,
             compatability: port_definition.compatability,
             edit, 
             parseble: true,
@@ -74,38 +72,25 @@ impl Port
             PortKind::Execution => egui::Color32::WHITE,
             PortKind::Data =>
             {
-                match self.value.as_ref().unwrap() // This should never be false
+                match self.compatability[0] // This should never be false
                 {
-                    Value::Integer(_) => egui::Color32::YELLOW,
-                    Value::Float(_) => egui::Color32::BLUE,
+                    Value::Integer => egui::Color32::YELLOW,
+                    Value::Float => egui::Color32::BLUE,
                 }
             }
         }
     }
 
-    pub fn attempt_to_parse_edit(&mut self)
+    pub fn able_to_parse_edit(&mut self)
     {
-        match &self.edit
+        self.parseble = match &self.edit
         {
-            PortEdit::None => {},
-            PortEdit::Interger( integer_string ) =>
-            {
-                let parsed_integer = integer_string.parse::<i32>();
-
-                if parsed_integer.is_err()
-                {
-                    self.parseble = false;
-                    return;
-                }
-
-                self.value = Some(Value::Integer( parsed_integer.unwrap() ));
-            },
+            PortEdit::None => true,
+            PortEdit::Interger( integer_string ) => integer_string.parse::<i32>().is_ok(),
             PortEdit::Float(_) =>
             {
                 todo!();
             },
         }
-
-        self.parseble = true;
     }
 }

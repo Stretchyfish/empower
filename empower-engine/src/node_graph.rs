@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 mod node;
 pub use node::Node;
+pub use node::node_kind::NodeEdit;
 
 pub mod port;
 pub use port::Port;

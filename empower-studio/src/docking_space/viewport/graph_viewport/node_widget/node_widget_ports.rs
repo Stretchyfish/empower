@@ -13,12 +13,6 @@ const TEXT_AND_EDIT_HORIZONTAL_BUFFER: f32 = 20.0;
 
 const INTEGER_EDIT_BOX_LENGTH: f32 = 120.0;
 
-pub struct NodeWidgetPortResponse
-{
-    pub port_vertical_position: f32,
-    pub horizontal_element_size: f32,
-}
-
 pub fn show(
             ui: &mut egui::Ui, 
             node_position: &egui::Pos2,
@@ -28,14 +22,12 @@ pub fn show(
             port_has_connection: &bool,
             graph_viewport_title: &String, 
             graph_viewport_action: &mut VecDeque<GraphViewportAction>,
-            cached_node_sizes: &HashMap<NodeGraphKey, egui::Vec2>,
+            node_size: &egui::Vec2,
             cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
             vertical_offset_before_showing_ports: f32,
             developer_mode: &bool,
-) -> NodeWidgetPortResponse
+)
 {
-    let node_size = cached_node_sizes.get(&port.node_key).unwrap(); // This is safe to do, due to the cached size always being filled out first in node_widget_body::show
-
     let horizontal_offset = match port.direction
     {
         PortDirection::Input => 0.0,
@@ -75,12 +67,12 @@ pub fn show(
 
     if port.kind == PortKind::Execution
     {
-        return NodeWidgetPortResponse { port_vertical_position: port_position.y, horizontal_element_size: 0.0 };
+        return;
     }
 
     if port.direction == PortDirection::Output
     {
-        return NodeWidgetPortResponse { port_vertical_position: port_position.y, horizontal_element_size: 0.0 };
+        return;
     }
 
     let port_text_position = port_position + egui::Vec2 { x: PORT_AND_TEXT_HORIZONTAL_BUFFER, y: 0.0 };
@@ -95,7 +87,7 @@ pub fn show(
 
     if *port_has_connection // This only ever applies to the input ports
     {
-        return NodeWidgetPortResponse { port_vertical_position: port_position.y, horizontal_element_size: PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text.size().x };
+        return;
     }
 
     let painted_text_size = painted_text.size();
@@ -135,7 +127,5 @@ pub fn show(
         PortEdit::Interger(_) => 150.0,
         PortEdit::Float(_) => 150.0,
     };
-
-    NodeWidgetPortResponse { port_vertical_position: port_position.y, horizontal_element_size: PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text.size().x + edit_width }
 }
 

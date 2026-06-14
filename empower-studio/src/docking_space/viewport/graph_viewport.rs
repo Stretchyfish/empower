@@ -4,7 +4,7 @@ use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeEdit, NodeGraph, NodeGraphKey, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -139,7 +139,7 @@ impl GraphEditorViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_node_sizes, &mut self.cached_port_positions, developer_mode);
+                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -217,111 +217,115 @@ impl GraphEditorViewport
             match action
             {
                 GraphViewportAction::ClickedNodeTitle { node_key } =>
-                {
-                    if self.selected_nodes.len() == 1
-                    {
-                        if self.selected_nodes.contains(&node_key)
-                        {
-                            self.selected_nodes.clear();
-                        }
-                        else
-                        {
-                            self.selected_nodes.clear();
-                            self.selected_nodes.insert(node_key);
-                        }
+                            {
+                                if self.selected_nodes.len() == 1
+                                {
+                                    if self.selected_nodes.contains(&node_key)
+                                    {
+                                        self.selected_nodes.clear();
+                                    }
+                                    else
+                                    {
+                                        self.selected_nodes.clear();
+                                        self.selected_nodes.insert(node_key);
+                                    }
 
-                        break;
-                    }
+                                    break;
+                                }
 
-                    self.selected_nodes.insert(node_key);
-                },
+                                self.selected_nodes.insert(node_key);
+                            },
                 GraphViewportAction::ClickedPort { port_key } =>
-                {
-                    if self.graph_asset_id.is_none() // This should never happen, but placed here for safety
-                    {
-                        break;
-                    }
+                            {
+                                if self.graph_asset_id.is_none() // This should never happen, but placed here for safety
+                                {
+                                    break;
+                                }
 
-                    let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
+                                let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
 
-                    if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
-                    {
-                        let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
+                                if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
+                                {
+                                    let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
 
-                        if self.selected_port.is_none()
-                        {
-                            self.selected_port = Some( connected_output_port );
-                            break;
-                        }
-                    }
+                                    if self.selected_port.is_none()
+                                    {
+                                        self.selected_port = Some( connected_output_port );
+                                        break;
+                                    }
+                                }
 
-                    if self.selected_port.is_none()
-                    {
-                        self.selected_port = Some( port_key );
-                        break;
-                    }
+                                if self.selected_port.is_none()
+                                {
+                                    self.selected_port = Some( port_key );
+                                    break;
+                                }
                         
-                    if self.selected_port.unwrap() == port_key
-                    {
-                        self.selected_port = None;
-                        break;
-                    }
+                                if self.selected_port.unwrap() == port_key
+                                {
+                                    self.selected_port = None;
+                                    break;
+                                }
 
 
-                    let selected_port_direction;
+                                let selected_port_direction;
 
-                    {
-                        selected_port_direction = node_graph.ports.get(&self.selected_port.unwrap()).unwrap().direction;
-                        let clicked_port_direction = node_graph.ports.get(&port_key).unwrap().direction;
+                                {
+                                    selected_port_direction = node_graph.ports.get(&self.selected_port.unwrap()).unwrap().direction;
+                                    let clicked_port_direction = node_graph.ports.get(&port_key).unwrap().direction;
 
-                        if selected_port_direction == clicked_port_direction // If they are the same port direction, then they can't connect.
-                        {
-                            self.selected_port = None;
-                            break;
-                        }
-                    }
+                                    if selected_port_direction == clicked_port_direction // If they are the same port direction, then they can't connect.
+                                    {
+                                        self.selected_port = None;
+                                        break;
+                                    }
+                                }
 
-                    match selected_port_direction
-                    {
-                        PortDirection::Input => {
-                            node_graph.add_connection(&port_key, &self.selected_port.unwrap());
-                        },
-                        PortDirection::Output => {
-                            node_graph.add_connection(&self.selected_port.unwrap(), &port_key);
-                        },
-                    }
+                                match selected_port_direction
+                                {
+                                    PortDirection::Input => {
+                                        node_graph.add_connection(&port_key, &self.selected_port.unwrap());
+                                    },
+                                    PortDirection::Output => {
+                                        node_graph.add_connection(&self.selected_port.unwrap(), &port_key);
+                                    },
+                                }
 
-                    self.selected_port = None;
-                },
+                                self.selected_port = None;
+                            },
                 GraphViewportAction::DragSelecting =>
-                {
-                    if self.area_select.is_none()
-                    {
-                        self.area_select = Some( AreaSelect::new(self.mouse_scene_position_last_frame) );
-                        break;
-                    }
+                            {
+                                if self.area_select.is_none()
+                                {
+                                    self.area_select = Some( AreaSelect::new(self.mouse_scene_position_last_frame) );
+                                    break;
+                                }
 
-                    let area_select = self.area_select.as_mut().unwrap();
+                                let area_select = self.area_select.as_mut().unwrap();
 
-                    area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
-                },
+                                area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
+                            },
                 GraphViewportAction::StoppedDragSelecting =>
-                {
-                    if self.area_select.is_some()
-                    {
-                        self.selected_nodes = self.area_select.as_ref().unwrap().nodes_inside_rect.clone();
-                    }
+                            {
+                                if self.area_select.is_some()
+                                {
+                                    self.selected_nodes = self.area_select.as_ref().unwrap().nodes_inside_rect.clone();
+                                }
         
-                    self.area_select = None;
-                },
+                                self.area_select = None;
+                            },
                 GraphViewportAction::ClickedBackground =>
-                {
-                    self.selected_nodes.clear();
-                    self.selected_port = None;
-                },
+                            {
+                                self.selected_nodes.clear();
+                                self.selected_port = None;
+                            },
                 GraphViewportAction::PortEditWasChanged { port_key } =>
                 {
-                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().attempt_to_parse_edit(); // This has got to be the most questionable line of code I have ever written...
+                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().able_to_parse_edit(); // This has got to be the most questionable line of code I have ever written...
+                },
+                GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
+                {
+                    
                 },
             }
         }
@@ -341,5 +345,6 @@ enum GraphViewportAction
     DragSelecting,
     StoppedDragSelecting,
     ClickedBackground,
+    NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
 }

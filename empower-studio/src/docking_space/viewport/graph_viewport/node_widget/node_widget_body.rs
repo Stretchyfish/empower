@@ -1,22 +1,19 @@
-use std::{cmp, collections::{HashMap, VecDeque}};
+use std::collections::{HashMap, VecDeque};
 
-use empower_engine::node_graph::{Node, NodeGraphKey};
+use empower_engine::node_graph::{Node, NodeEdit, NodeGraphKey};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect, node_widget::VERTICAL_PORT_GAB};
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
-const TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER: f32 = 75.0;
+pub const TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER: f32 = 75.0;
 
 const NODE_BOTTOM_RECT_HEIGHT: f32 = 20.0;
 
 const NODE_BODY_TITLE_AREA_OVERLAP: f32 = 12.0; // Due to the drawing of the body in 3 steps, a bit of overlap is done to smoothen
 const NODE_BODY_BUTTON_AREA_OVERLAP: f32 = 12.0;
 
-pub struct NodeWidgetBodyResponse
-{
-    pub title_bar_width: f32,
-    pub vertical_offset_before_drawing_ports: f32,
-}
+const NODE_EDIT_GAP: f32 = 10.0;
+const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
 
 pub fn show(
             ui: &mut egui::Ui, 
@@ -25,12 +22,11 @@ pub fn show(
             graph_viewport_title: &String, 
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
-            cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
+            node_size: &egui::Vec2,
             developer_mode: &bool,
-        ) -> NodeWidgetBodyResponse
+        ) -> f32
 {
-    let node_size = cached_node_sizes.get(node_key).copied().unwrap_or_default();
-    let node_rect = egui::Rect::from_min_size(node.position, node_size);
+    let node_rect = egui::Rect::from_min_size(node.position, *node_size);
 
     if area_select.is_some()
     {
@@ -55,27 +51,13 @@ pub fn show(
                         .size();
     
         
-    let title_box_rect = if cached_node_sizes.contains_key(node_key)
-    {
-        egui::Rect::from_min_size(
+    let title_box_rect = egui::Rect::from_min_size(
             node_rect.min,
             egui::Vec2 {
                 x: node_rect.size().x,
                 y: text_size.y * 2.0,
             },
-        )
-    }
-    else
-    {
-        
-        egui::Rect::from_min_size(
-            node_rect.min,
-            egui::Vec2 {
-                x: text_size.x + TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER * 2.0,
-                y: text_size.y * 2.0,
-            },
-        )
-    };
+    );
     
     let node_title_pos = egui::Pos2 {
         x: title_box_rect.center().x,
@@ -158,17 +140,59 @@ pub fn show(
         egui::StrokeKind::Inside,
     );
 
-    let max_number_of_ports = cmp::max(node.input_port_keys.len(), node.output_port_keys.len());
-    let vertical_size = title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP + max_number_of_ports as f32 * VERTICAL_PORT_GAB;
+    let node_edits = node.kind.node_edits();
 
-    cached_node_sizes.insert(*node_key, egui::Vec2 { x: title_box_rect.size().x, y: vertical_size });
-
-    // // node_rect_without_title_and_bottom.min.y
-    // title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP
-
-    NodeWidgetBodyResponse
+    if node_edits.is_none()
     {
-        title_bar_width: title_box_rect.size().x,
-        vertical_offset_before_drawing_ports: title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP,
+        return title_box_rect.size().y;
     }
+
+    let node_edits = node_edits.unwrap();
+
+    let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
+
+    for (index, edit) in node_edits.iter_mut().enumerate()
+    {
+        let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
+        
+        let (changed, height) = match edit
+        {
+            NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text),
+        };
+
+        if changed
+        {
+            graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key, node_edit_index: index });
+        }
+
+        vertical_offset += height + NODE_EDIT_GAP;
+    }
+
+    vertical_offset
+}
+
+fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &'static str, text: &mut String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
+    let text_box_rect = egui::Rect::from_min_size(
+                                egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
+                                egui::vec2( 100.0, painted_text.size().y ));
+
+    let text_edit = egui::TextEdit::singleline(text)
+    .font(egui::FontId::proportional(35.0))
+    .text_color(egui::Color32::WHITE)
+    .background_color(egui::Color32::BLACK);
+
+    let response = ui.put(text_box_rect , text_edit);
+
+    (response.changed(), 40.0 )
 }

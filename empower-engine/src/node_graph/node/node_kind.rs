@@ -17,23 +17,21 @@ pub trait NodeKind
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
     where
         Self: Sized;
+
     fn clone_box(&self) -> Box<dyn NodeKind>;
     fn name(&self) -> &'static str; 
+    fn size(&self) -> egui::Vec2;
 
     fn input_port_definitions(&self) -> Vec<PortDefinition>;
     fn output_port_definitions(&self) -> Vec<PortDefinition>;
 
-    fn draw_state(&mut self, ui: &mut egui::Ui) -> DrawnStateResponse;
+    fn node_edits(&mut self) -> Option<&mut Vec<NodeEdit>>;
+
+    fn sync_node_edit(&mut self, index: usize);
 
     fn compile(&self) -> Vec<Instruction>;
 
     fn control_flow(&self) -> ControlFlowKind;
-}
-
-pub enum DrawnStateResponse
-{
-    None,
-    UpdatedNodeStructure
 }
 
 pub enum ControlFlowKind
@@ -43,6 +41,23 @@ pub enum ControlFlowKind
     Loop,
     Break,
     Return
+}
+
+#[derive(Clone)]
+pub enum NodeEdit
+{
+    Text { label: &'static str, text: String, parseble: bool },
+}
+
+impl NodeEdit
+{
+    pub fn ui(&mut self, ui: &mut egui::Ui) -> egui::Response
+    {
+        match self
+        {
+            NodeEdit::Text { label, text, parseble } => ui.text_edit_singleline(text) ,
+        }
+    }
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;
