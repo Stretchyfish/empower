@@ -1,4 +1,6 @@
+use crate::compiler::CompilerContext;
 use crate::compiler::Instruction;
+use crate::compiler::RegisterAddress;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
 
@@ -44,7 +46,7 @@ impl NodeKind for NumberNode
 
     fn output_port_definitions(&self) -> Vec<PortDefinition> {
         vec![
-            PortDefinition::new_output_data_port("value", vec![ Value::Integer ]),
+            PortDefinition::new_output_data_port("value", vec![ Value::Integer(0) ]),
         ]
     }
 
@@ -56,7 +58,7 @@ impl NodeKind for NumberNode
         todo!()
     }
 
-    fn compile(&self) -> Vec<Instruction> {
+    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) -> Vec<Instruction> {
         Vec::new()
     }
 

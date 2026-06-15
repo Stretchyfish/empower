@@ -2,6 +2,18 @@
 #[derive(PartialEq, PartialOrd, Clone)]
 pub enum Value
 {
-    Integer,
-    Float,
+    Integer( i32 ),
+    Float ( f32 ),
+}
+
+impl Value
+{
+    pub fn to_string(&self) -> String
+    {
+        match self
+        {
+            Value::Integer( integer ) => integer.to_string(),
+            Value::Float( float ) => float.to_string(),
+        }
+    }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
-use crate::{compiler::Instruction, node_graph::port::PortDefinition};
+use crate::{compiler::{CompilerContext, Instruction, RegisterAddress}, node_graph::port::PortDefinition};
 
 mod print_node;
 use print_node::PrintNode;
@@ -29,7 +29,7 @@ pub trait NodeKind
 
     fn sync_node_edit(&mut self, index: usize);
 
-    fn compile(&self) -> Vec<Instruction>;
+    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) -> Vec<Instruction>;
 
     fn control_flow(&self) -> ControlFlowKind;
 }

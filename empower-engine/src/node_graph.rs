@@ -7,15 +7,15 @@ pub use node::node_kind::NodeEdit;
 pub mod port;
 pub use port::Port;
 
-use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
+use crate::{node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition}, value::Value};
 
 pub type NodeGraphKey = i32;
 
 pub struct NodeGraph
 {
     pub name: &'static str,
-    input_nodes: HashSet<NodeGraphKey>,
-    output_nodes: HashSet<NodeGraphKey>,
+    pub input_nodes: Vec<NodeGraphKey>,
+    pub output_nodes: Vec<NodeGraphKey>,
     
     pub nodes: HashMap<NodeGraphKey, Node>,
     pub ports: HashMap<NodeGraphKey, Port>,
@@ -30,8 +30,8 @@ impl NodeGraph
         Self
         {
             name,
-            input_nodes: HashSet::new(),
-            output_nodes: HashSet::new(),
+            input_nodes: Vec::new(),
+            output_nodes: Vec::new(),
             
             nodes: HashMap::new(),
             ports: HashMap::new(),
@@ -45,7 +45,7 @@ impl NodeGraph
         let mut node_graph = NodeGraph::new("entry graph");
 
         let start_node_key = node_graph.add_node("start", None);
-        node_graph.input_nodes.insert(start_node_key);
+        node_graph.input_nodes.push(start_node_key);
 
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 100.0 } ));
@@ -85,7 +85,7 @@ impl NodeGraph
         for port_definition in port_definitions
         {
             let new_port_key = self.get_available_port_key();
-            let new_port = Port::new(*node_key, port_definition);
+            let new_port = Port::new(new_port_key, *node_key, port_definition);
             self.ports.insert(new_port_key, new_port);
 
             new_port_keys.push(new_port_key);
@@ -132,5 +132,26 @@ impl NodeGraph
     fn get_available_port_key(&self) -> NodeGraphKey
     {
         self.ports.keys().max().unwrap_or(&0) + 1
+    }
+
+    pub fn get_node_input_output(&self, node_key: NodeGraphKey) -> Option<(&Node, Vec<&Port>, Vec<&Port>)>
+    {
+        let node = self.nodes.get(&node_key).unwrap();
+        let mut inputs = Vec::new();
+        let mut ouptuts = Vec::new();
+
+        for port_key in &node.input_port_keys
+        {
+            let port = self.ports.get(port_key).unwrap();
+            inputs.push(port);
+        }
+
+        for port_key in &node.output_port_keys
+        {
+            let port = self.ports.get(port_key).unwrap();
+            ouptuts.push(port);
+        }
+        
+        Some( (node, inputs, ouptuts) )
     }
 }

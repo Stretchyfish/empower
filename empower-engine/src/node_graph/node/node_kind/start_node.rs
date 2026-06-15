@@ -1,5 +1,6 @@
+use crate::compiler::CompilerContext;
 use crate::compiler::Instruction;
-use crate::value::Value;
+use crate::compiler::RegisterAddress;
 use crate::node_graph::port::PortDefinition;
 
 use super::NodeKind;
@@ -43,7 +44,7 @@ impl NodeKind for StartNode
         ]
     }
 
-    fn compile(&self) -> Vec<Instruction> {
+    fn compile(&self, _: &mut CompilerContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) -> Vec<Instruction> {
         Vec::new()
     }
 

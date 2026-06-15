@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::project::Project;
+use empower_engine::{compiler::{self, InstructionSet, Program, release_compile}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -27,6 +27,7 @@ pub struct StudioContext
     layout: Layout,
     settings: Settings,
 
+    program: Option<Program>,
     user_state: Option<UserState>,
 
     windows: Windows,
@@ -45,6 +46,7 @@ impl StudioContext
             layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
             settings: Settings::new(),
 
+            program: None,
             user_state: None,
 
             windows: Windows::new(),
@@ -146,6 +148,28 @@ impl StudioContext
         (&mut self.windows, &mut self.settings, &self.user_state)
     }
 
+    pub fn request_compile(&mut self)
+    {
+        self.requests.push_back( Request::Compile );
+    }
+
+    fn compile(&mut self)
+    {
+        let program = compiler::release_compile(&self.project);
+
+        if let Err(e) = program 
+        {
+            println!("Failed to compile: {}", e);
+        }
+
+        self.program = Some( program.unwrap() );
+    }
+
+    pub fn get_program(&self) -> &Option<Program>
+    {
+        &self.program
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -163,6 +187,7 @@ impl StudioContext
             Request::LoadStudio => { self.load_studio(); },
             Request::UserStateClear => { self.user_state = None; },
             Request::UserStateChange { layer_or_viewport, new_action } => { self.user_state = Some( UserState::from(layer_or_viewport, new_action) )},
+            Request::Compile => { self.compile(); },
         }
     }
 }

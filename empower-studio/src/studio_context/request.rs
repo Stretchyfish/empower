@@ -8,4 +8,5 @@ pub enum Request
     LoadStudio,
     UserStateClear,
     UserStateChange { layer_or_viewport: String, new_action: UserAction },
+    Compile,
 }

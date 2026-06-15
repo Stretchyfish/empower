@@ -1,4 +1,6 @@
+use crate::compiler::CompilerContext;
 use crate::compiler::Instruction;
+use crate::compiler::RegisterAddress;
 use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
 
@@ -35,7 +37,7 @@ impl NodeKind for PrintNode
     {
         vec![
             PortDefinition::new_input_execution_port(),
-            PortDefinition::new_input_data_port("value", vec![ Value::Integer, Value::Float])
+            PortDefinition::new_input_data_port("value", vec![ Value::Integer(0), Value::Float(0.0)])
         ]
     }
 
@@ -44,9 +46,9 @@ impl NodeKind for PrintNode
         Vec::new()
     }
 
-    fn compile(&self) -> Vec<Instruction> {
+    fn compile(&self, _: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) -> Vec<Instruction> {
         vec![
-            Instruction::Print("Hello World".to_string())
+            Instruction::Print( input_port_register_adresses[ 0 ])
         ]
     }
 
