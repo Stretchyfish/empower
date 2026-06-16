@@ -114,4 +114,30 @@ impl Port
         self.parseble = new_value.is_some();
         self.value = new_value;
     }
+
+    pub fn get_value(&self) -> Option<Value>
+    {
+        match &self.edit
+        {
+            PortEdit::None => None,
+            PortEdit::Interger( integer_string ) =>
+            {
+                let parsed = integer_string.parse::<i32>();
+
+                if parsed.is_err()
+                {
+                    None
+                }
+                else
+                {
+                    Some( Value::Integer( parsed.unwrap() ) )
+                }
+            },
+            PortEdit::Float(_) =>
+            {
+                todo!();
+            },
+        }
+        
+    }
 }

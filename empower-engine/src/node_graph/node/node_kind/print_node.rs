@@ -46,10 +46,11 @@ impl NodeKind for PrintNode
         Vec::new()
     }
 
-    fn compile(&self, _: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) -> Vec<Instruction> {
-        vec![
+    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>)  {
+
+        ctx.add_instruction_to_current_graph(
             Instruction::Print( input_port_register_adresses[ 0 ])
-        ]
+        );
     }
 
     fn control_flow(&self) -> ControlFlowKind {

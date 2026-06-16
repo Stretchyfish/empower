@@ -4,6 +4,7 @@ use studio_context::StudioContext;
 mod menu_bar;
 mod global_space;
 mod docking_space;
+mod execution_space;
 
 mod user_inputs;
 mod user_state;
@@ -72,6 +73,7 @@ impl eframe::App for EmpowerStudioApplication
         menu_bar::show(ui, &mut self.studio_context);
         docking_space::show(ui, &mut self.studio_context, &user_inputs);
         global_space::show(ui, &mut self.studio_context);
+        execution_space::show(ui, &mut self.studio_context);
 
         self.studio_context.process_requests();
     }

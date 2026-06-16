@@ -58,8 +58,7 @@ impl NodeKind for NumberNode
         todo!()
     }
 
-    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) -> Vec<Instruction> {
-        Vec::new()
+    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
     }
 
     fn control_flow(&self) -> ControlFlowKind {

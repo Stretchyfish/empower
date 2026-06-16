@@ -9,4 +9,6 @@ pub enum Request
     UserStateClear,
     UserStateChange { layer_or_viewport: String, new_action: UserAction },
     Compile,
+    StartExecute,
+    StopExecute,
 }

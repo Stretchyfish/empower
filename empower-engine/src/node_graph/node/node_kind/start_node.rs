@@ -44,8 +44,7 @@ impl NodeKind for StartNode
         ]
     }
 
-    fn compile(&self, _: &mut CompilerContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) -> Vec<Instruction> {
-        Vec::new()
+    fn compile(&self, _: &mut CompilerContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
     }
 
     fn control_flow(&self) -> ControlFlowKind {

@@ -1,5 +1,3 @@
-use empower_engine::compiler::{Program, RegisterAddress};
-
 use crate::studio_context::StudioContext;
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
@@ -20,76 +18,40 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         let program = program.as_ref().unwrap();
 
-        ui.horizontal(|ui|
-        {
-            show_value_registers(ui, program);
-            show_instructions(ui, program);
-        });
-    });
-}
+        ui.heading("Compiled graphs");
 
-fn show_value_registers(ui: &mut egui::Ui, program: &Program)
-{
-    ui.vertical(|ui|
-    {
-        ui.push_id("value_visualization", |ui|
-        {
-            ui.heading("Values");
-            egui::ScrollArea::vertical()
-            .max_height(300.0)
-            .show(ui, |ui|
-            {
-                egui::Grid::new("value_registers_visualization_grid")
-                .num_columns(2)
-                .spacing([12.0, 4.0])
-                .striped(true)
-                .show(ui, |ui|
-                {
-                    ui.label("Addresses");
-                    ui.label("Values");
-                    ui.end_row();
-        
-                    for ( register_address, value ) in &program.registers
-                    {
-                        ui.label(register_address.to_string());
-                        ui.label(value.to_string());
-                        ui.end_row();
-                    }
-                });
-            });
-        });
-    });
-}
+        ui.label(format!("entry graph: {}", program.entry_graph_id));
 
-fn show_instructions(ui: &mut egui::Ui, program: &Program)
-{
-    ui.vertical(|ui|
-    {
-        ui.push_id("instruction_visualization", |ui|
+        egui::ScrollArea::vertical()
+        .max_height(300.0)
+        .show(ui, |ui|
         {
-            ui.heading("Instructions");
-            egui::ScrollArea::vertical()
-            .max_height(300.0)
-            .show(ui, |ui|
+            for (graph_id, compiled_graph) in &program.compiled_graphs
             {
-                egui::Grid::new("instructions_visualization_grid")
-                .num_columns(2)
-                .spacing([12.0, 4.0])
-                .striped(true)
-                .show(ui, |ui|
+                ui.menu_button(format!("graph: {}", graph_id), |ui|
                 {
-                    ui.label("Addresses");
-                    ui.label("Instructions");
-                    ui.end_row();
-            
-                    for ( instruction_address, instruction ) in program.instructions.iter().enumerate()
+                    egui::ScrollArea::vertical()
+                    .max_height(300.0)
+                    .show(ui, |ui|
                     {
-                        ui.label(instruction_address.to_string());
-                        ui.label(instruction.to_string());
-                        ui.end_row();
-                    }
+                        ui.label(format!("registers: {}", compiled_graph.register_size));
+
+                        egui::Grid::new("graph_instructions_visualization")
+                        .num_columns(2)
+                        .spacing([12.0, 4.0])
+                        .striped(true)
+                        .show(ui, |ui|
+                        {
+                            for ( instruction_address, instruction) in compiled_graph.instructions.iter().enumerate()
+                            {
+                                ui.label(instruction_address.to_string());
+                                ui.label(instruction.to_string());
+                                ui.end_row();
+                            }
+                        });
+                    });
                 });
-            });
+            }
         });
     });
 }

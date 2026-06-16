@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::{compiler::{self, InstructionSet, Program, release_compile}, project::Project};
+use empower_engine::{compiler::{self, InstructionSet, Program, release_compile}, executor::Executor, project::Project};
 use layout::Layout;
 
 mod request;
@@ -27,6 +27,8 @@ pub struct StudioContext
     layout: Layout,
     settings: Settings,
 
+    executor: Option<Executor>,
+
     program: Option<Program>,
     user_state: Option<UserState>,
 
@@ -46,6 +48,7 @@ impl StudioContext
             layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
             settings: Settings::new(),
 
+            executor: None,
             program: None,
             user_state: None,
 
@@ -153,6 +156,32 @@ impl StudioContext
         self.requests.push_back( Request::Compile );
     }
 
+    pub fn can_execute(&self) -> bool
+    {
+        self.program.is_some()
+    }
+
+    pub fn is_executing(&self) -> bool
+    {
+        if self.executor.is_some()
+        {
+            return self.executor.as_ref().unwrap().is_running();
+        }
+
+        false
+    }
+
+    pub fn request_compile_and_start_execute(&mut self)
+    {
+        self.requests.push_back( Request::Compile ); // @TODO, need to add checks to make sure it even needs to compile!
+        self.requests.push_back( Request::StartExecute );
+    }
+
+    pub fn request_stop_execute(&mut self)
+    {
+        self.requests.push_back( Request::StopExecute );
+    }
+
     fn compile(&mut self)
     {
         let program = compiler::release_compile(&self.project);
@@ -168,6 +197,26 @@ impl StudioContext
     pub fn get_program(&self) -> &Option<Program>
     {
         &self.program
+    }
+
+    fn start_execution(&mut self)
+    {
+        if self.program.is_none()
+        {
+            panic!("Tried to start execution without a compiled program");
+        }
+
+        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
+    }
+
+    fn stop_execution(&mut self)
+    {
+        self.executor = None;
+    }
+
+    pub fn get_executor_mut(&mut self) -> &mut Option<Executor>
+    {
+        &mut self.executor
     }
 
     pub fn process_requests(&mut self)
@@ -188,6 +237,8 @@ impl StudioContext
             Request::UserStateClear => { self.user_state = None; },
             Request::UserStateChange { layer_or_viewport, new_action } => { self.user_state = Some( UserState::from(layer_or_viewport, new_action) )},
             Request::Compile => { self.compile(); },
+            Request::StartExecute => { self.start_execution(); },
+            Request::StopExecute => { self.stop_execution(); },
         }
     }
 }

@@ -29,7 +29,7 @@ pub trait NodeKind
 
     fn sync_node_edit(&mut self, index: usize);
 
-    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) -> Vec<Instruction>;
+    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>);
 
     fn control_flow(&self) -> ControlFlowKind;
 }
