@@ -1,6 +1,7 @@
-use crate::compiler::CompilerContext;
+use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
 
@@ -41,12 +42,14 @@ impl NodeKind for NumberNode
     }
 
     fn input_port_definitions(&self) -> Vec<PortDefinition> {
-        Vec::new()
+        vec![
+            PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0) ]),
+        ]
     }
 
     fn output_port_definitions(&self) -> Vec<PortDefinition> {
         vec![
-            PortDefinition::new_output_data_port("value", vec![ Value::Integer(0) ]),
+            PortDefinition::new_output_data_port("value".to_string(), vec![ Value::Integer(0) ]),
         ]
     }
 
@@ -54,11 +57,14 @@ impl NodeKind for NumberNode
         Some( &mut self.state )
     }
 
-    fn sync_node_edit(&mut self, index: usize) {
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
 
-    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>) {
+        ctx.add_instruction(
+            Instruction::Copy(input_registers_addresses[0], output_register_addresses[0])
+        );
     }
 
     fn control_flow(&self) -> ControlFlowKind {

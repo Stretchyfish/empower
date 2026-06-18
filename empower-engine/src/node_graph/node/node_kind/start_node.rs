@@ -1,6 +1,6 @@
-use crate::compiler::CompilerContext;
-use crate::compiler::Instruction;
+use crate::compiler::CompiledGraphContext;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::node_graph::port::PortDefinition;
 
 use super::NodeKind;
@@ -44,7 +44,7 @@ impl NodeKind for StartNode
         ]
     }
 
-    fn compile(&self, _: &mut CompilerContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
+    fn compile(&self, _: &mut CompiledGraphContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
     }
 
     fn control_flow(&self) -> ControlFlowKind {
@@ -55,7 +55,7 @@ impl NodeKind for StartNode
         None
     }
 
-    fn sync_node_edit(&mut self, index: usize) {
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
 }

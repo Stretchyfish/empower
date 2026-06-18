@@ -1,5 +1,3 @@
-use std::char::ParseCharError;
-
 use crate::node_graph::NodeGraphKey;
 use crate::value::Value;
 
@@ -21,10 +19,9 @@ pub struct Port
     pub node_key: NodeGraphKey,
     pub direction: PortDirection,
     pub kind: PortKind,
-    pub name: &'static str,
+    pub name: String,
     pub compatability: Vec<Value>,
     pub edit: PortEdit,
-    pub parseble: bool,
     pub value: Option<Value>,
 }
 
@@ -39,12 +36,12 @@ impl Port
             None => PortEdit::None,
             Some( value_type ) => match value_type
             {
-                Value::Integer( _ ) => PortEdit::Interger( "0".to_string() ),
-                Value::Float( _ ) => PortEdit::Float( "0.0".to_string() ),
+                Value::Integer( _ ) => PortEdit::Text( "0".to_string() ),
+                Value::Float(_) => PortEdit::Text("0.0".to_string()),
             },
         };
-        
-        Self
+
+        let mut port = Self
         {
             key,
             node_key,
@@ -53,9 +50,12 @@ impl Port
             name: port_definition.name,
             compatability: port_definition.compatability,
             edit, 
-            parseble: true,
             value: None,
-        }
+        };
+
+        port.check_if_parseble(); // @TODO, rewrite this
+
+        port
     }
 
     pub fn compatible_with(&self, port: &Port) -> bool
@@ -78,7 +78,16 @@ impl Port
             PortKind::Execution => egui::Color32::WHITE,
             PortKind::Data =>
             {
-                match self.compatability[0] // This should never be false
+                let value = if self.value.is_some()
+                {
+                    self.value.as_ref().unwrap()
+                }
+                else
+                {
+                    &self.compatability[0] // This should never be false
+                };
+                
+                match value 
                 {
                     Value::Integer(_) => egui::Color32::YELLOW,
                     Value::Float(_) => egui::Color32::BLUE,
@@ -87,57 +96,9 @@ impl Port
         }
     }
 
-    pub fn able_to_parse_edit(&mut self)
+    pub fn check_if_parseble(&mut self) // @TODO, change name
     {
-        let new_value = match &self.edit
-        {
-            PortEdit::None => None,
-            PortEdit::Interger( integer_string ) =>
-            {
-                let parsed = integer_string.parse::<i32>();
-
-                if parsed.is_err()
-                {
-                    None
-                }
-                else
-                {
-                    Some( Value::Integer( parsed.unwrap() ) )
-                }
-            },
-            PortEdit::Float(_) =>
-            {
-                todo!();
-            },
-        };
-
-        self.parseble = new_value.is_some();
-        self.value = new_value;
-    }
-
-    pub fn get_value(&self) -> Option<Value>
-    {
-        match &self.edit
-        {
-            PortEdit::None => None,
-            PortEdit::Interger( integer_string ) =>
-            {
-                let parsed = integer_string.parse::<i32>();
-
-                if parsed.is_err()
-                {
-                    None
-                }
-                else
-                {
-                    Some( Value::Integer( parsed.unwrap() ) )
-                }
-            },
-            PortEdit::Float(_) =>
-            {
-                todo!();
-            },
-        }
-        
+        self.value = self.edit.convert_to_value(&self.compatability);
     }
 }
+

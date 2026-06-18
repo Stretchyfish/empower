@@ -1,8 +1,8 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use empower_engine::node_graph::{Node, NodeEdit, NodeGraphKey};
 
-use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect, node_widget::VERTICAL_PORT_GAB};
+use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 pub const TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER: f32 = 75.0;
@@ -157,7 +157,8 @@ pub fn show(
         
         let (changed, height) = match edit
         {
-            NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text),
+            NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
+            NodeEdit::CheckBox { toggle } => todo!(),
         };
 
         if changed
@@ -171,7 +172,7 @@ pub fn show(
     vertical_offset
 }
 
-fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &'static str, text: &mut String) -> (bool, f32)
+fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &'static str, text: &mut String, parseble: bool) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -187,9 +188,11 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &'s
                                 egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
                                 egui::vec2( 100.0, painted_text.size().y ));
 
+    let text_edit_color = if parseble { egui::Color32::WHITE } else { egui::Color32::RED };
+
     let text_edit = egui::TextEdit::singleline(text)
     .font(egui::FontId::proportional(35.0))
-    .text_color(egui::Color32::WHITE)
+    .text_color(text_edit_color)
     .background_color(egui::Color32::BLACK);
 
     let response = ui.put(text_box_rect , text_edit);

@@ -30,7 +30,7 @@ pub fn show(
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
-        let port_has_connection = node_graph.connections.contains_key(input_port_key);
+        let port_has_connection = node_graph.connections_in.contains_key(input_port_key);
 
         let input_port = node_graph.ports.get_mut(input_port_key).unwrap();
         node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &port_has_connection, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);

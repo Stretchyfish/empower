@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, num::ParseIntError};
 use once_cell::sync::Lazy;
 
-use crate::{compiler::{CompilerContext, Instruction, RegisterAddress}, node_graph::port::PortDefinition};
+use crate::{compiler::{CompiledGraphContext, RegisterAddress}, node_graph::port::PortDefinition};
 
 mod print_node;
 use print_node::PrintNode;
@@ -11,6 +11,9 @@ use start_node::StartNode;
 
 mod number_node;
 use number_node::NumberNode;
+
+mod list_node;
+use list_node::ListNode;
 
 pub trait NodeKind
 {
@@ -27,9 +30,9 @@ pub trait NodeKind
 
     fn node_edits(&mut self) -> Option<&mut Vec<NodeEdit>>;
 
-    fn sync_node_edit(&mut self, index: usize);
+    fn sync_node_edit(&mut self, index: usize) -> NodeSyncResponse;
 
-    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>);
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>);
 
     fn control_flow(&self) -> ControlFlowKind;
 }
@@ -47,17 +50,31 @@ pub enum ControlFlowKind
 pub enum NodeEdit
 {
     Text { label: &'static str, text: String, parseble: bool },
+    CheckBox { toggle: bool },
 }
 
 impl NodeEdit
 {
-    pub fn ui(&mut self, ui: &mut egui::Ui) -> egui::Response
+    pub fn parse_to_usize(&mut self) -> Result<usize, ParseIntError>
     {
-        match self
+        let (text, parse) = match self
         {
-            NodeEdit::Text { label, text, parseble } => ui.text_edit_singleline(text) ,
-        }
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<usize>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
     }
+}
+
+pub enum NodeSyncResponse
+{
+    Nothing,
+    NodesStructureChanged,
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;
@@ -68,6 +85,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( PrintNode::new().name(), || PrintNode::new());
     r.insert( StartNode::new().name(), || StartNode::new());
     r.insert( NumberNode::new().name(), || NumberNode::new());
+    r.insert( ListNode::new().name(), || ListNode::new());
 
     r
 });

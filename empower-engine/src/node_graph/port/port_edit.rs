@@ -1,8 +1,56 @@
+use crate::value::Value;
+
 
 #[derive(Clone)]
 pub enum PortEdit
 {
     None,
-    Interger(String),
-    Float(String),
+    Text(String),
+}
+
+impl PortEdit
+{
+    pub fn convert_to_value(&self, compatabilities: &Vec<Value>) -> Option<Value>
+    {
+        match &self
+        {
+            PortEdit::None => None,
+            PortEdit::Text( text ) => attempt_to_parse_text(text, compatabilities),
+        }
+    }
+}
+
+
+fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<Value>
+{
+    for value in compatabilities
+    {
+        match value
+        {
+            Value::Integer(_) =>
+            {
+                let parsed = text.parse::<i32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Integer( parsed.unwrap() ) );
+            },
+            Value::Float(_) =>
+            {
+                let parsed = text.parse::<f32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Float( parsed.unwrap() ) );
+            },
+        }
+    }
+
+    None
 }

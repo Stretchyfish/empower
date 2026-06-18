@@ -16,4 +16,13 @@ impl Value
             Value::Float( float ) => float.to_string(),
         }
     }
+
+    pub fn type_string(&self) -> String
+    {
+        match self
+        {
+            Value::Integer( _ ) => "integer".to_string(),
+            Value::Float( _ ) => "float".to_string(),
+        }
+    }
 }

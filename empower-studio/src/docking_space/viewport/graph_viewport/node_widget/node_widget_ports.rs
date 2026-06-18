@@ -37,11 +37,27 @@ pub fn show(
     let port_position  = *node_position + egui::Vec2 { x: horizontal_offset, y: vertical_offset_before_showing_ports + VERTICAL_PORT_GAB / 2.0 + port_index as f32 * VERTICAL_PORT_GAB};
     let port_rect = egui::Rect::from_center_size(port_position, PORT_SIZE);
 
-    let output_port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click());
-    if output_port_response.clicked()
+    let port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click());
+    if port_response.clicked()
     {
         graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
     }
+
+    let type_text = if port.value.is_some() // @TODO, take a second look at this, should only ever fail when its exec port
+    {
+        port.value.as_ref().unwrap().type_string()
+    }
+    else if !port.compatability.is_empty() {
+        port.compatability[0].type_string()
+    }
+    else
+    {
+        "".to_string()
+    };
+
+    let compatible_type_text: Vec<String> = port.compatability.iter().map(|e| e.type_string()).collect();
+
+    port_response.on_hover_text( format!("{} : {:?}", type_text, compatible_type_text ));
 
     let port_color = port.color();
 
@@ -93,27 +109,25 @@ pub fn show(
     let painted_text_size = painted_text.size();
     let port_edit_position = port_text_position + egui::Vec2 { x: painted_text_size.x + TEXT_AND_EDIT_HORIZONTAL_BUFFER, y: - painted_text_size.y / 2.0 };
 
-    let text_edit_color = if port.parseble { egui::Color32::WHITE } else { egui::Color32::RED };
+    let text_edit_color = if port.value.is_some() { egui::Color32::WHITE } else { egui::Color32::RED };
     let edit_was_changed = match &mut port.edit
     {
         PortEdit::None => false,
-        PortEdit::Interger( integer_string ) =>
+        PortEdit::Text( text ) =>
         {
             let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
             let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
 
-            let text_edit = egui::TextEdit::singleline(integer_string)
+            let text_edit = egui::TextEdit::singleline(text)
             // .char_limit(5)
             .font(egui::FontId::proportional(35.0))
             // .interactive(!port_has_connection)
             .text_color(text_edit_color)
             .background_color(egui::Color32::BLACK);
 
-
             let response = ui.put(input_port_value_box_rect, text_edit);
             response.changed()
         },
-        PortEdit::Float(_) => todo!(),
     };
 
     if edit_was_changed
@@ -124,8 +138,7 @@ pub fn show(
     let edit_width = match port.edit
     {
         PortEdit::None => PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text_size.x,
-        PortEdit::Interger(_) => 150.0,
-        PortEdit::Float(_) => 150.0,
+        PortEdit::Text(_) => 150.0,
     };
 }
 

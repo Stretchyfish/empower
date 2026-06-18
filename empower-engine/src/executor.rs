@@ -51,6 +51,10 @@ impl Executor
                 {
                     frame.value_registers.insert(*register_address, value.clone());
                 },
+                Instruction::Copy( from_register_address, to_register_address) =>
+                {
+                    frame.value_registers.insert( *to_register_address, frame.value_registers.get(from_register_address).unwrap().clone() );
+                }
                 Instruction::Jump(_) => todo!(),
                 Instruction::Print( register_address ) =>
                 {

@@ -3,9 +3,10 @@ use crate::value::Value;
 use super::PortDirection;
 use super::PortKind;
 
+#[derive(Clone)]
 pub struct PortDefinition
 {
-    pub name: &'static str,
+    pub name: String, // @TODO, considering changing this to &'static str (blocked by alphabet counter)
     pub direction: PortDirection,
     pub kind: PortKind,
     pub compatability: Vec<Value>,
@@ -17,7 +18,7 @@ impl PortDefinition
     {
         Self
         {
-            name: "",
+            name: "".to_string(),
             direction: PortDirection::Input,
             kind: PortKind::Execution,
             compatability: Vec::new(),
@@ -28,14 +29,14 @@ impl PortDefinition
     {
         Self
         {
-            name: "",
+            name: "".to_string(),
             direction: PortDirection::Output,
             kind: PortKind::Execution,
             compatability: Vec::new(),
         }
     }
 
-    pub fn new_input_data_port(name: &'static str, compatability: Vec<Value>) -> Self
+    pub fn new_input_data_port(name: String, compatability: Vec<Value>) -> Self
     {
         Self
         {
@@ -46,7 +47,7 @@ impl PortDefinition
         }
     }
 
-    pub fn new_output_data_port(name: &'static str, compatability: Vec<Value>) -> Self
+    pub fn new_output_data_port(name: String, compatability: Vec<Value>) -> Self
     {
         Self
         {

@@ -4,7 +4,7 @@ use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeEdit, NodeGraph, NodeGraphKey, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeEdit, NodeGraph, NodeGraphKey, node::node_kind::NodeSyncResponse, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -118,7 +118,7 @@ impl GraphEditorViewport
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
-            for connection in &node_graph.connections
+            for connection in &node_graph.connections_in
             {
                 connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
             }
@@ -210,7 +210,7 @@ impl GraphEditorViewport
         }
     }
 
-    fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, graph_viewport_actions: VecDeque<GraphViewportAction>, viewport_name: &String)
+    fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, graph_viewport_actions: VecDeque<GraphViewportAction>, _: &String)
     {
         for action in graph_viewport_actions
         {
@@ -321,11 +321,21 @@ impl GraphEditorViewport
                             },
                 GraphViewportAction::PortEditWasChanged { port_key } =>
                 {
-                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().able_to_parse_edit(); // This has got to be the most questionable line of code I have ever written...
+                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
                 {
-                    
+                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap();
+                    let sync_response = graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index );
+
+                    match sync_response
+                    {
+                        NodeSyncResponse::Nothing => {},
+                        NodeSyncResponse::NodesStructureChanged => {
+                            graph.refresh_node(&node_key);
+                            println!("refreshed node");
+                        },
+                    }
                 },
             }
         }

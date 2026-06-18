@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
-mod node;
+pub mod node;
 pub use node::Node;
 pub use node::node_kind::NodeEdit;
 
 pub mod port;
 pub use port::Port;
 
-use crate::{node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition}, value::Value};
+use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
 
 pub type NodeGraphKey = i32;
 
@@ -20,7 +20,8 @@ pub struct NodeGraph
     pub nodes: HashMap<NodeGraphKey, Node>,
     pub ports: HashMap<NodeGraphKey, Port>,
 
-    pub connections: HashMap<NodeGraphKey, NodeGraphKey>, // inputs -> outputs
+    pub connections_in: HashMap<NodeGraphKey, NodeGraphKey>, // inputs -> outputs
+    pub connections_out: HashMap<NodeGraphKey, HashSet<NodeGraphKey>>, // outputs -> inputs
 }
 
 impl NodeGraph
@@ -36,7 +37,8 @@ impl NodeGraph
             nodes: HashMap::new(),
             ports: HashMap::new(),
 
-            connections: HashMap::new(),
+            connections_out: HashMap::new(),
+            connections_in: HashMap::new(),
         }
     }
 
@@ -48,8 +50,8 @@ impl NodeGraph
         node_graph.input_nodes.push(start_node_key);
 
         let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
-        let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 100.0 } ));
-        let _ = node_graph.add_node("number", Some( egui::Pos2{ x: 0.0, y: 100.0 } ));
+        let _ = node_graph.add_node("list", Some( egui::Pos2{ x: 400.0, y: 150.0 } ));
+        let _ = node_graph.add_node("number", Some( egui::Pos2{ x: 0.0, y: 150.0 } ));
 
         node_graph
     }
@@ -78,6 +80,75 @@ impl NodeGraph
 
         node_key
     }
+
+    pub fn refresh_node(&mut self, node_key: &NodeGraphKey)
+    {
+        // @TODO, this function is still far from finished
+        
+        let mut ports_to_replace = Vec::new();
+        let mut ports_to_add = Vec::new();
+        let mut ports_to_remove = Vec::new();
+
+        {
+            let (node, input_ports, output_ports) = self.get_node_input_output(*node_key).unwrap();
+
+            let new_input_port_definitions = node.kind.input_port_definitions();
+            let new_output_port_definitions = node.kind.output_port_definitions();
+
+            for (index, new_input_port_definition) in new_input_port_definitions.iter().enumerate()
+            {
+                let port = input_ports.get(index);
+
+                if port.is_none()
+                {
+                    ports_to_add.push(new_input_port_definition.clone());
+                    continue;
+                }
+
+                let port = port.as_ref().unwrap();
+            
+                if port.compatability == new_input_port_definition.compatability
+                {
+                    continue;
+                }
+
+                ports_to_replace.push( ( port.key, new_input_port_definition.clone()) );
+            }
+
+            if new_input_port_definitions.len() < node.input_port_keys.len()
+            {
+                ports_to_remove = node.input_port_keys[new_input_port_definitions.len()..].to_vec();
+            }
+        }
+
+        for (port_key, port_definition) in ports_to_replace
+        {
+            self.ports.insert(port_key, Port::new(port_key, *node_key, port_definition));
+        }
+
+        let mut new_input_port_keys = Vec::new();
+        for port_definition in ports_to_add
+        {
+            let new_port_key = self.get_available_port_key();
+            self.ports.insert(new_port_key, Port::new(new_port_key, *node_key, port_definition));
+
+            new_input_port_keys.push(new_port_key);
+        }
+
+        let node = self.nodes.get_mut(node_key).unwrap();
+        node.input_port_keys.extend(new_input_port_keys);
+
+        for port_key in &ports_to_remove
+        {
+            node.input_port_keys.retain(|e| e != port_key);
+            self.ports.remove(&port_key);
+        }
+
+        for port_key in ports_to_remove
+        {
+            self.remove_connection(&port_key);
+        }
+    } 
 
     fn add_ports(&mut self, node_key: &NodeGraphKey, port_definitions: Vec<PortDefinition>) -> Vec<NodeGraphKey>
     {
@@ -109,19 +180,40 @@ impl NodeGraph
             return false;
         }
 
-        self.connections.insert(*to_port_key, *from_port_key); // The ports are switched upon insert as output ports has an 1:N relation and inputs have a 1:1 relation to other ports, the order is then reversed during compilation.
+        self.connections_in.insert(*to_port_key, *from_port_key); // The ports are switched upon insert as output ports has an 1:N relation and inputs have a 1:1 relation to other ports, the order is then reversed during compilation.
+        self.connections_out.entry(*from_port_key).or_default().insert(*to_port_key);
 
         true
     }
 
     pub fn remove_connection(&mut self, to_port_key: &NodeGraphKey) -> Option<NodeGraphKey>
     {
-        self.connections.remove(to_port_key)
+        if !self.connections_in.contains_key(to_port_key)
+        {
+            return None;
+        }
+        
+        let from_port_key = self.connections_in.remove(to_port_key).unwrap();
+
+        let remove_connection_out = 
+        {
+            let to_port_keys = self.connections_out.get_mut(&from_port_key).unwrap();
+            to_port_keys.remove(to_port_key);
+
+            to_port_keys.is_empty()
+        };
+
+        if remove_connection_out
+        {
+            self.connections_out.remove(&from_port_key);
+        }
+
+        Some( from_port_key )
     }
 
     pub fn contains_connection(&mut self, to_port_key: &NodeGraphKey) -> bool
     {
-        self.connections.contains_key(to_port_key)
+        self.connections_in.contains_key(to_port_key) // We don't need to check both connections, as they should be macthing
     }
 
     fn get_available_node_key(&self) -> NodeGraphKey
@@ -153,5 +245,61 @@ impl NodeGraph
         }
         
         Some( (node, inputs, ouptuts) )
+    }
+
+    pub fn get_node_input_output_mut(&mut self, node_key: NodeGraphKey) -> Option<(&mut Node, Vec<&mut Port>, Vec<&mut Port>)>
+    {
+        let node = self.nodes.get_mut(&node_key).unwrap();
+        let mut inputs = Vec::new();
+        let mut ouptuts = Vec::new();
+
+        // let port = self.ports.get_disjoint_mut(node.input_port_keys).unwrap();
+        // for port_key in &node.input_port_keys
+        // {
+        //     inputs.push(port);
+        // }
+
+        for port_key in &node.output_port_keys
+        {
+            // let port = self.ports.get_mut(port_key).unwrap();
+            // ouptuts.push(port);
+        }
+        
+        Some( (node, inputs, ouptuts) )
+    }
+
+    pub fn get_connected_exec_nodes(&self, node_key: NodeGraphKey) -> Vec<NodeGraphKey>
+    {
+        let node = self.nodes.get(&node_key).unwrap();
+
+        if node.output_port_keys.is_empty()
+        {
+            return Vec::new();
+        }
+
+        let exec_port = self.ports.get(&node.output_port_keys[0]).unwrap();
+        
+        match exec_port.kind
+        {
+            port::PortKind::Execution => {},
+            port::PortKind::Data => { return Vec::new(); },
+        }
+
+
+        Vec::new()
+
+        
+
+        
+
+        
+
+        
+
+        
+
+
+        
+        
     }
 }

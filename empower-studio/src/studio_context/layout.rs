@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::{Path, PathBuf}};
+use std::{collections::HashMap, path::Path};
 use serde::{Serialize, Deserialize};
 
 use crate::docking_space::{Viewport, VIEWPORT_REGISTRY};

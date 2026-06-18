@@ -1,6 +1,7 @@
-use crate::compiler::CompilerContext;
+use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
 
@@ -37,7 +38,7 @@ impl NodeKind for PrintNode
     {
         vec![
             PortDefinition::new_input_execution_port(),
-            PortDefinition::new_input_data_port("value", vec![ Value::Integer(0), Value::Float(0.0)])
+            PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)])
         ]
     }
 
@@ -46,9 +47,9 @@ impl NodeKind for PrintNode
         Vec::new()
     }
 
-    fn compile(&self, ctx: &mut CompilerContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>)  {
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>)  {
 
-        ctx.add_instruction_to_current_graph(
+        ctx.add_instruction(
             Instruction::Print( input_port_register_adresses[ 0 ])
         );
     }
@@ -61,7 +62,7 @@ impl NodeKind for PrintNode
         None
     }
 
-    fn sync_node_edit(&mut self, index: usize) {
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
 }
