@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
-use crate::{studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{docking_space::viewport::graph_viewport, studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeEdit, NodeGraph, NodeGraphKey, node::node_kind::NodeSyncResponse, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::NodeSyncResponse, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -12,6 +12,9 @@ mod connection_widget;
 
 mod area_select;
 use area_select::AreaSelect;
+
+mod node_picker;
+use node_picker::NodePicker;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GraphEditorViewport
@@ -33,6 +36,9 @@ pub struct GraphEditorViewport
 
     #[serde(skip)]
     area_select: Option<AreaSelect>,
+
+    #[serde(skip)]
+    node_picker: NodePicker,
     
     #[serde(skip)]
     cached_node_sizes: HashMap<NodeGraphKey, egui::Vec2>,
@@ -59,6 +65,7 @@ impl Viewport for GraphEditorViewport
                 selected_nodes: HashSet::new(),
                 selected_port: None,
                 area_select: None,
+                node_picker: NodePicker::new(),
                 cached_node_sizes: HashMap::new(),
                 cached_port_positions: HashMap::new(),
             }
@@ -77,32 +84,31 @@ impl Viewport for GraphEditorViewport
     fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
     {
         let developer_mode = studio_context.get_settings().developer_mode;
-        
-        let graph_viewport_actions = {
 
-            let project = studio_context.get_project_mut();
+        let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
+                
+        let project = studio_context.get_project_mut();
 
-            if self.graph_asset_id.is_none() // @TODO, this is a temporary approach to choose which node graph to show
-            {
-                self.graph_asset_id = Some( project.entry_graph );
-            }
+        if self.graph_asset_id.is_none() // @TODO, this is a temporary approach to choose which node graph to show
+        {
+            self.graph_asset_id = Some( project.entry_graph );
+        }
 
-            let node_graph = project.assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph editor tried to read a node graph but didn't get it from assets");
+        let node_graph = project.assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph editor tried to read a node graph but didn't get it from assets");
 
-            self.apply_viewport_state_to_node_graph(node_graph);
-            self.show_canvas(ui, node_graph, user_inputs, viewport_name, &developer_mode)
-        };
+        self.node_picker.show(ui, node_graph, &self.mouse_scene_position_last_frame);
 
-        self.process_graph_viewport_actions(studio_context, graph_viewport_actions, viewport_name);
+        self.apply_viewport_state_to_node_graph(node_graph);
+        self.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &developer_mode);
+
+        self.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
     }
 }
 
 impl GraphEditorViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, developer_mode: &bool) -> VecDeque<GraphViewportAction>
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, developer_mode: &bool)
     {
-        let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
-
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
         {
@@ -167,8 +173,6 @@ impl GraphEditorViewport
         });
 
         self.scene_rect = scene_rect;
-
-        graph_viewport_actions
     }
 
     fn apply_viewport_state_to_node_graph(&mut self, node_graph: &mut NodeGraph)
@@ -206,11 +210,16 @@ impl GraphEditorViewport
 
         if user_inputs.clicked_primary_mouse_button
         {
-            graph_viewport_actions.push_back( GraphViewportAction::ClickedBackground );
+            graph_viewport_actions.push_back( GraphViewportAction::PrimaryClickedBackground );
+        }
+
+        if user_inputs.clicked_secondary_mouse_button
+        {
+            graph_viewport_actions.push_back( GraphViewportAction::SecondaryClickedBackground );
         }
     }
 
-    fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, graph_viewport_actions: VecDeque<GraphViewportAction>, _: &String)
+    fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, user_inputs: &UserInputs, graph_viewport_actions: VecDeque<GraphViewportAction>, _: &String)
     {
         for action in graph_viewport_actions
         {
@@ -314,11 +323,15 @@ impl GraphEditorViewport
         
                                 self.area_select = None;
                             },
-                GraphViewportAction::ClickedBackground =>
-                            {
-                                self.selected_nodes.clear();
-                                self.selected_port = None;
-                            },
+                GraphViewportAction::PrimaryClickedBackground =>
+                {
+                    self.selected_nodes.clear();
+                    self.selected_port = None;
+                },
+                GraphViewportAction::SecondaryClickedBackground =>
+                {
+                    self.node_picker.toggle_show( &user_inputs.mouse_position );
+                }
                 GraphViewportAction::PortEditWasChanged { port_key } =>
                 {
                     studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
@@ -333,7 +346,6 @@ impl GraphEditorViewport
                         NodeSyncResponse::Nothing => {},
                         NodeSyncResponse::NodesStructureChanged => {
                             graph.refresh_node(&node_key);
-                            println!("refreshed node");
                         },
                     }
                 },
@@ -345,16 +357,14 @@ impl GraphEditorViewport
 enum GraphViewportAction
 {
     ClickedNodeTitle { node_key: NodeGraphKey },
-    // RefreshedNodeStructure { node_key: NodeGraphKey },
     ClickedPort { port_key: NodeGraphKey },
-    // ClickedOutputPort { port_key: NodeGraphKey },
-    // SetInputPortValue { port_key: NodeGraphKey, display_value: DisplayValue },
     // CopySelectedNodes,
     // DeleteSelectedNodes,
     // StartExecutionFromEntry { node_key: NodeGraphKey },
     DragSelecting,
     StoppedDragSelecting,
-    ClickedBackground,
+    PrimaryClickedBackground,
+    SecondaryClickedBackground,
     NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
 }

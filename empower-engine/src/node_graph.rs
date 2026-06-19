@@ -49,10 +49,6 @@ impl NodeGraph
         let start_node_key = node_graph.add_node("start", None);
         node_graph.input_nodes.push(start_node_key);
 
-        let _ = node_graph.add_node("print", Some( egui::Pos2{ x: 300.0, y: 0.0 } ));
-        let _ = node_graph.add_node("list", Some( egui::Pos2{ x: 400.0, y: 150.0 } ));
-        let _ = node_graph.add_node("number", Some( egui::Pos2{ x: 0.0, y: 150.0 } ));
-
         node_graph
     }
 
@@ -84,6 +80,9 @@ impl NodeGraph
     pub fn refresh_node(&mut self, node_key: &NodeGraphKey)
     {
         // @TODO, this function is still far from finished
+        // - output ports changing
+        // - check if a connection is still valid for all ports
+        // - removal of the first ports withuot overwritting all other ports (maybe?)
         
         let mut ports_to_replace = Vec::new();
         let mut ports_to_add = Vec::new();

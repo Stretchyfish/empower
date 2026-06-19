@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::ParseIntError};
+use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 
 use crate::{compiler::{CompiledGraphContext, RegisterAddress}, node_graph::port::PortDefinition};
@@ -14,6 +14,12 @@ use number_node::NumberNode;
 
 mod list_node;
 use list_node::ListNode;
+
+mod branch_node;
+use branch_node::BranchNode;
+
+mod wait_node;
+use wait_node::WaitNode;
 
 pub trait NodeKind
 {
@@ -69,6 +75,36 @@ impl NodeEdit
 
         parsed_value
     }
+
+    pub fn parse_to_i32(&mut self) -> Result<i32, ParseIntError>
+    {
+        let (text, parse) = match self
+        {
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<i32>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
+    }
+
+    pub fn parse_to_f32(&mut self) -> Result<f32, ParseFloatError>
+    {
+        let (text, parse) = match self
+        {
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<f32>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
+    }
 }
 
 pub enum NodeSyncResponse
@@ -86,6 +122,8 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( StartNode::new().name(), || StartNode::new());
     r.insert( NumberNode::new().name(), || NumberNode::new());
     r.insert( ListNode::new().name(), || ListNode::new());
+    r.insert( BranchNode::new().name(), || BranchNode::new());
+    r.insert( WaitNode::new().name(), || WaitNode::new());
 
     r
 });

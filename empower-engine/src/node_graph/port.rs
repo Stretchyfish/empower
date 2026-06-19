@@ -36,8 +36,8 @@ impl Port
             None => PortEdit::None,
             Some( value_type ) => match value_type
             {
-                Value::Integer( _ ) => PortEdit::Text( "0".to_string() ),
-                Value::Float(_) => PortEdit::Text("0.0".to_string()),
+                Value::Integer( int ) => PortEdit::Text( int.to_string() ),
+                Value::Float( float ) => PortEdit::Text(float.to_string()),
             },
         };
 

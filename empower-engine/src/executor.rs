@@ -7,7 +7,7 @@ pub struct Executor
 {
     program: Program,
 
-    frame_stack: Vec<GraphFrame>,
+    frames: Vec<GraphFrame>,
 }
 
 impl Executor
@@ -20,30 +20,45 @@ impl Executor
         {
             program,
 
-            frame_stack: Vec::from( vec![initial_frame] ),
+            frames: Vec::from( vec![initial_frame] ),
         }
     }
 
     pub fn is_running(&self) -> bool
     {
-        !self.frame_stack.is_empty()
+        !self.frames.is_empty()
     }
 
     pub fn run(&mut self)
     {
-        if self.frame_stack.is_empty()
+        if self.frames.is_empty()
         {
             return;
         }
 
-        let should_pop_frame =
+        let mut frames_to_remove = Vec::new();
+
+        for (frame_index, frame) in self.frames.iter_mut().enumerate()
         {
-            let frame = self.frame_stack.last_mut().unwrap();
             let graph = self.program.compiled_graphs.get(&frame.graph_id).unwrap();
 
-            let next_instruction = &graph.instructions.get(frame.next_address).unwrap();
+            let time_now = std::time::Instant::now();
 
-            let mut pop_frame = false;
+            match frame.state
+            {
+                GraphFrameState::Running => {},
+                GraphFrameState::Sleeping(time_wake) =>
+                {
+                    if time_now < time_wake
+                    {
+                        continue;
+                    }
+
+                    frame.state = GraphFrameState::Running;
+                },
+            }
+            
+            let next_instruction = &graph.instructions.get(frame.next_address).unwrap();
 
             match next_instruction
             {
@@ -60,19 +75,23 @@ impl Executor
                 {
                     println!("{}", frame.value_registers.get(register_address).unwrap().to_string());
                 },
-                Instruction::Return => {
-                    pop_frame = true;
+                Instruction::Return =>
+                {
+                    frames_to_remove.push( frame_index );
+                },
+                Instruction::JumpIfFalse(_, _) => todo!(),
+                Instruction::Wait( register_address ) =>
+                {
+                    frame.state = GraphFrameState::Sleeping( std::time::Instant::now() + std::time::Duration::from_secs_f32( frame.value_registers.get(register_address).unwrap().as_f32() ));
                 },
             }
     
             frame.next_address += 1;
+        }
 
-            pop_frame 
-        };
-
-        if should_pop_frame
+        for frame_index in frames_to_remove
         {
-            self.frame_stack.pop();
+            self.frames.remove(frame_index);
         }
     }
 }
@@ -82,6 +101,7 @@ pub struct GraphFrame
     graph_id: AssetId,
     next_address: usize,
     value_registers: HashMap<i32, Value>,
+    state: GraphFrameState,
 }
 
 impl GraphFrame
@@ -93,8 +113,15 @@ impl GraphFrame
             graph_id,
             next_address: 0,
             value_registers: HashMap::new(),
+            state: GraphFrameState::Running,
         }
     }
+}
+
+enum GraphFrameState
+{
+    Running,
+    Sleeping( std::time::Instant ),
 }
 
 

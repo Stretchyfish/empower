@@ -63,7 +63,8 @@ impl NodeKind for NumberNode
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>) {
         ctx.add_instruction(
-            Instruction::Copy(input_registers_addresses[0], output_register_addresses[0])
+            Instruction::Copy(input_registers_addresses[0], output_register_addresses[0]),
+            // Instruction::SetConst(output_register_addresses[0], Value::Integer( state ))
         );
     }
 

@@ -267,27 +267,27 @@ fn invert_connections(connections: &HashMap<NodeGraphKey, NodeGraphKey>) -> Hash
 
 fn get_connected_exec_ports(ports: Vec<&Port>, connections_out: &HashMap<NodeGraphKey, HashSet<NodeGraphKey>>) -> HashSet<NodeGraphKey>
 {
-    if ports.is_empty()
+    let mut connected_exec_ports = HashSet::new();
+    
+    for port in ports
     {
-        return HashSet::new();
+        match port.kind
+        {
+            port::PortKind::Execution => {},
+            port::PortKind::Data => { continue; },
+        }
+
+        let connections = connections_out.get(&port.key);
+
+        if connections.is_none()
+        {
+            continue;
+        }
+
+        connected_exec_ports.extend( connections.unwrap().clone() );
     }
 
-    let exec_port = ports[0];
-
-    match exec_port.kind
-    {
-        port::PortKind::Execution => {},
-        port::PortKind::Data => { return HashSet::new(); },
-    }
-
-    let connections = connections_out.get(&exec_port.key);
-
-    if connections.is_none()
-    {
-        return HashSet::new();
-    }
-
-    connections.unwrap().clone()
+    connected_exec_ports
 }
 
 fn get_next_nodes_to_compile(connected_exec_ports: &HashSet<NodeGraphKey>, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
