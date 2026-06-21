@@ -27,7 +27,18 @@ impl Layout
     {
         let mut new_default_layout = Self::new();
         
-        let _ = new_default_layout.add_viewport("graph viewport");
+        let graph_viewport_name = new_default_layout.add_viewport("graph viewport");
+
+        let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state("terminal viewport");
+        let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state("content browser viewport");
+
+        // This is all to place the initial docking configuration
+        let graph_viewport_index = new_default_layout.docking_state.find_tab(&graph_viewport_name).expect("Unable to find initial graph viewport tab");
+
+        new_default_layout.docking_state.main_surface_mut().split_below(graph_viewport_index.node, 0.7, vec![content_browser_viewport_name.clone()]);
+
+        let content_browser_index = new_default_layout.docking_state.find_tab(&content_browser_viewport_name).expect("Unable to find initial content browser tab");
+        new_default_layout.docking_state.main_surface_mut().split_right(content_browser_index.node, 0.6, vec![terminal_viewport_name]);
 
         new_default_layout
     }
@@ -58,6 +69,24 @@ impl Layout
 
         self.viewports.insert(adjusted_viewport_name.clone(), new_viewport);
         self.docking_state.push_to_focused_leaf(adjusted_viewport_name.clone());
+
+        adjusted_viewport_name
+    }
+
+    // @TODO, this function only has a very specific usecase, consider if it should be a bool in the add_viewport function instead
+    pub fn add_viewport_without_docking_state(&mut self, new_viewport_name: &'static str) -> String
+    {
+        let new_viewport_constructor = match VIEWPORT_REGISTRY.get(new_viewport_name)
+        {
+           Some( constructor ) => constructor,
+           None => panic!("Tried to create a non-existing viewport name : {}", new_viewport_name), 
+        };
+
+        let adjusted_viewport_name = self.adjust_viewport_name( new_viewport_name );
+
+        let new_viewport = new_viewport_constructor();
+
+        self.viewports.insert(adjusted_viewport_name.clone(), new_viewport);
 
         adjusted_viewport_name
     }

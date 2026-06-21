@@ -10,6 +10,12 @@ use empty_viewport::EmptyViewport;
 mod graph_viewport;
 use graph_viewport::GraphEditorViewport;
 
+mod terminal_viewport;
+use terminal_viewport::TerminalViewport;
+
+mod content_browser_viewport;
+use content_browser_viewport::ContentBrowserViewport;
+
 #[typetag::serde(tag="viewport_name")]
 pub trait Viewport
 {
@@ -37,6 +43,8 @@ pub static VIEWPORT_REGISTRY: Lazy<HashMap<&'static str, ViewportConstructor>> =
 
     r.insert(EmptyViewport::new().name(), || EmptyViewport::new());
     r.insert(GraphEditorViewport::new().name(), || GraphEditorViewport::new());
+    r.insert(TerminalViewport::new().name(), || TerminalViewport::new());
+    r.insert(ContentBrowserViewport::new().name(), || ContentBrowserViewport::new());
 
     r
 });
