@@ -6,6 +6,7 @@ pub enum PortEdit
 {
     None,
     Text(String),
+    CheckBox(bool),
 }
 
 impl PortEdit
@@ -16,10 +17,10 @@ impl PortEdit
         {
             PortEdit::None => None,
             PortEdit::Text( text ) => attempt_to_parse_text(text, compatabilities),
+            PortEdit::CheckBox( toggle ) => Some( Value::Bool( *toggle ) ),
         }
     }
 }
-
 
 fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<Value>
 {
@@ -49,6 +50,7 @@ fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<
 
                 return Some( Value::Float( parsed.unwrap() ) );
             },
+            _ => todo!(),
         }
     }
 

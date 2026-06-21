@@ -3,9 +3,11 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::assets::AssetId;
+use crate::compiler::instructions::InstructionAddress;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
+use crate::node_graph::node::node_kind::ControlFlowKind;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -55,16 +57,29 @@ pub fn release_compile(project: &Project) -> Result<Program, &'static str>
 
 pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project)
 {
-    let graph = project.assets.get_node_graph(&graph_id).unwrap(); 
-    let mut compiled_graph_context = CompiledGraphContext::new(graph_id, graph.input_nodes.clone());
+    let node_graph = project.assets.get_node_graph(&graph_id).unwrap(); 
+    let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
 
-    let mut next_nodes_to_compile = VecDeque::from(graph.input_nodes.clone());
+    for input_node in &node_graph.input_nodes
+    {
+        compile_node_chain(&mut compiled_graph_context, node_graph, input_node);
+    }
+
+    compiled_graph_context.add_instruction( Instruction::Return );
+
+    ctx.add_more_graphs_to_build(&compiled_graph_context.additional_graphs_to_compile);
+    ctx.add_compiled_graph(graph_id, CompiledGraph::from_compiled_graph_context(compiled_graph_context));
+}
+
+fn compile_node_chain(compiled_graph_context: &mut CompiledGraphContext, node_graph: &NodeGraph, start_node_key: &NodeGraphKey)
+{
+    let mut next_nodes_to_compile = VecDeque::from( vec![ *start_node_key ]);
 
     while !next_nodes_to_compile.is_empty()
     {
         let node_to_compile = next_nodes_to_compile.front().unwrap();
 
-        let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(&mut compiled_graph_context, node_to_compile, graph);
+        let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(compiled_graph_context, node_to_compile, &node_graph);
 
         if other_node_to_compile_first.is_some()
         {
@@ -72,27 +87,125 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
             continue;
         }
 
-        let connected_exec_ports;
+        // let connected_exec_ports;
 
+        let (output_port_keys, control_flow) = 
         {
-            let (node, inputs, outputs) = graph.get_node_input_output(*node_to_compile).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
+            let (node, inputs, outputs) = node_graph.get_node_input_output(*node_to_compile).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
 
-            let input_slots = allocate_input_port_registers(&mut compiled_graph_context, &inputs, &graph.connections_in);
-            let output_slots = allocate_output_port_registers(&mut compiled_graph_context, &outputs);
+            let input_slots = allocate_input_port_registers(compiled_graph_context, &inputs, &node_graph.connections_in);
+            let output_slots = allocate_output_port_registers(compiled_graph_context, &outputs);
 
-            node.kind.compile(&mut compiled_graph_context, input_slots, output_slots);
+            node.kind.compile(compiled_graph_context, input_slots, output_slots);
 
-            connected_exec_ports = get_connected_exec_ports(outputs, &graph.connections_out);
-        }
-        
-        next_nodes_to_compile.extend( get_next_nodes_to_compile(&connected_exec_ports, graph) );
+            (node.output_port_keys.clone(), node.kind.control_flow())
+        };
+
         next_nodes_to_compile.pop_front();
+
+        if output_port_keys.is_empty() // This is for nodes with no outputs
+        {
+            continue;
+        }
+
+        match control_flow
+        {
+            ControlFlowKind::Normal =>
+            {
+                next_nodes_to_compile.extend( get_nodes_connected_to_port(output_port_keys[0], node_graph) );
+            },
+            ControlFlowKind::Branch =>
+            {
+                let nodes_connected_to_true_branch = get_nodes_connected_to_port(output_port_keys[0], node_graph);
+                let nodes_connected_to_false_branch = get_nodes_connected_to_port(output_port_keys[1], node_graph);
+
+                if nodes_connected_to_true_branch.is_empty() && nodes_connected_to_false_branch.is_empty()
+                {
+                    compiled_graph_context.instructions.pop();
+                    continue;
+                }
+
+                let jump_if_false_instruction_placeholder_address = compiled_graph_context.get_latest_instruction_address();
+
+                for node_key in nodes_connected_to_true_branch
+                {
+                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
+                }
+
+                let jump_after_true_branch_placeholder_address = compiled_graph_context.add_instruction_placeholder( Instruction::Jump(0) );
+                compiled_graph_context.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &(jump_after_true_branch_placeholder_address + 1));
+
+                for node_key in nodes_connected_to_false_branch
+                {
+                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
+                }
+
+                let instruction_after_false_branch_address = compiled_graph_context.instructions.len(); // This makes the dangerous assumption that there always is an instruction after. That should be the case with the current implementation.
+
+                compiled_graph_context.patch_jump_instruction(&jump_after_true_branch_placeholder_address, &instruction_after_false_branch_address);
+            },
+            ControlFlowKind::Loop => todo!(),
+        }
     }
 
-    compiled_graph_context.add_instruction( Instruction::Return );
+}
 
-    ctx.add_more_graphs_to_build(&compiled_graph_context.additional_graphs_to_compile);
-    ctx.add_compiled_graph(graph_id, CompiledGraph::from_compiled_graph_context(compiled_graph_context));
+fn get_nodes_connected_to_port(port_key: NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
+{
+    let ports_connected_port = node_graph.connections_out.get(&port_key);
+
+    if ports_connected_port.is_none()
+    {
+        return Vec::new();
+    }
+
+    let ports_connected_port = ports_connected_port.unwrap();
+
+    let mut nodes_connected = Vec::with_capacity(ports_connected_port.len());
+
+    for port in ports_connected_port
+    {
+        nodes_connected.push( node_graph.ports.get(port).unwrap().node_key );
+    }
+
+    nodes_connected
+}
+
+fn get_nodes_connected_to_node_with_normal_flow(node_key: &NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
+{
+    let (_, _, node_output_ports) = node_graph.get_node_input_output(*node_key).unwrap(); // @TODO, make a standalone function
+    let connections_out = &node_graph.connections_out;
+
+    let mut connected_exec_ports = HashSet::new();
+    
+    for port in node_output_ports
+    {
+        match port.kind
+        {
+            port::PortKind::Execution => {},
+            port::PortKind::Data => { continue; },
+        }
+
+        let connections = connections_out.get(&port.key);
+
+        if connections.is_none()
+        {
+            continue;
+        }
+
+        connected_exec_ports.extend( connections.unwrap().clone() );
+    }
+
+    let mut connected_nodes = Vec::with_capacity(connected_exec_ports.len());
+
+    for connected_exec_port in &connected_exec_ports
+    {
+        let node_containing_port = node_graph.ports.get(connected_exec_port).unwrap().node_key;
+
+        connected_nodes.push(node_containing_port);
+    }
+
+    connected_nodes
 }
 
 fn check_if_node_needs_another_node_compiled_first(ctx: &mut CompiledGraphContext, node_key: &NodeGraphKey, node_graph: &NodeGraph) -> Option<NodeGraphKey>
@@ -190,7 +303,6 @@ fn allocate_output_port_registers(ctx: &mut CompiledGraphContext, ports: &Vec<&P
 pub struct CompiledGraphContext
 {
     pub graph_id: AssetId,
-    pub nodes_to_compile_queue: VecDeque<NodeGraphKey>,
     pub allocated_ports: HashMap<NodeGraphKey, RegisterAddress>,
     
     pub register_size: i32, 
@@ -201,12 +313,11 @@ pub struct CompiledGraphContext
 
 impl CompiledGraphContext
 {
-    pub fn new(graph_id: AssetId, start_nodes: Vec<NodeGraphKey>) -> Self
+    pub fn new(graph_id: AssetId) -> Self
     {
         Self
         {
             graph_id,
-            nodes_to_compile_queue: VecDeque::from(start_nodes),
             allocated_ports: HashMap::new(),
 
             register_size: 0,
@@ -219,6 +330,29 @@ impl CompiledGraphContext
     pub fn add_instruction(&mut self, instruction: Instruction)
     {
         self.instructions.push(instruction);
+    }
+
+    pub fn add_instruction_placeholder(&mut self, instruction: Instruction) -> InstructionAddress
+    {
+        let instruction_address = self.instructions.len();
+        self.instructions.push(instruction);
+
+        instruction_address
+    }
+
+    pub fn patch_jump_instruction(&mut self, patch_instruction_address: &InstructionAddress, new_jump_address: &InstructionAddress)
+    {
+        match &mut self.instructions[*patch_instruction_address]
+        {
+            Instruction::Jump( instruction_address ) => { *instruction_address = *new_jump_address },
+            Instruction::JumpIfFalse( instruction_address, _) => { *instruction_address = *new_jump_address },
+            _ => todo!(),
+        }
+    }
+
+    pub fn get_latest_instruction_address(&self) -> InstructionAddress
+    {
+        self.instructions.len() - 1
     }
 }
 
@@ -251,19 +385,6 @@ impl CompiledGraph
 }
 
 pub type RegisterAddress = i32;
-
-fn invert_connections(connections: &HashMap<NodeGraphKey, NodeGraphKey>) -> HashMap<i32, Vec<i32>>
-{
-    let mut inverted_connections: HashMap<i32, Vec<i32>> = HashMap::new();
-
-    for (&key, &value) in connections
-    {
-        inverted_connections.entry(value).or_default().push(key);
-
-    }
-    
-    inverted_connections
-}
 
 fn get_connected_exec_ports(ports: Vec<&Port>, connections_out: &HashMap<NodeGraphKey, HashSet<NodeGraphKey>>) -> HashSet<NodeGraphKey>
 {
@@ -303,3 +424,4 @@ fn get_next_nodes_to_compile(connected_exec_ports: &HashSet<NodeGraphKey>, node_
 
     connected_nodes
 }
+

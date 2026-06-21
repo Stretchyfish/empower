@@ -46,10 +46,8 @@ pub trait NodeKind
 pub enum ControlFlowKind
 {
     Normal,
-    If,
+    Branch,
     Loop,
-    Break,
-    Return
 }
 
 #[derive(Clone)]

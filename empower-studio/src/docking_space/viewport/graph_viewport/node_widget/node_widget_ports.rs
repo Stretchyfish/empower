@@ -128,6 +128,19 @@ pub fn show(
             let response = ui.put(input_port_value_box_rect, text_edit);
             response.changed()
         },
+        PortEdit::CheckBox( toggle ) =>
+        {
+            let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
+            let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
+
+            // @TODO, improve this, and fix box size
+            let checkbox = egui::Checkbox::new(
+                                            toggle, 
+                                            egui::RichText::new("").font(egui::FontId::proportional(35.0))
+            );
+
+            ui.put(input_port_checkbox_rect, checkbox).changed()
+        }
     };
 
     if edit_was_changed
@@ -139,6 +152,7 @@ pub fn show(
     {
         PortEdit::None => PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text_size.x,
         PortEdit::Text(_) => 150.0,
+        PortEdit::CheckBox(_) => 150.0,
     };
 }
 

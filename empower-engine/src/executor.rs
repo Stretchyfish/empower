@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
-
 pub struct Executor
 {
     program: Program,
@@ -70,7 +69,10 @@ impl Executor
                 {
                     frame.value_registers.insert( *to_register_address, frame.value_registers.get(from_register_address).unwrap().clone() );
                 }
-                Instruction::Jump(_) => todo!(),
+                Instruction::Jump( instruction_address ) =>
+                {
+                    frame.next_address = *instruction_address - 1;
+                },
                 Instruction::Print( register_address ) =>
                 {
                     println!("{}", frame.value_registers.get(register_address).unwrap().to_string());
@@ -79,7 +81,13 @@ impl Executor
                 {
                     frames_to_remove.push( frame_index );
                 },
-                Instruction::JumpIfFalse(_, _) => todo!(),
+                Instruction::JumpIfFalse( instruction_address, register_address ) =>
+                {
+                    if !frame.value_registers.get(register_address).unwrap().as_bool()
+                    {
+                        frame.next_address = *instruction_address - 1;
+                    }
+                },
                 Instruction::Wait( register_address ) =>
                 {
                     frame.state = GraphFrameState::Sleeping( std::time::Instant::now() + std::time::Duration::from_secs_f32( frame.value_registers.get(register_address).unwrap().as_f32() ));

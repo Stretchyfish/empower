@@ -1,5 +1,5 @@
 
-use crate::{node_graph::port::PortDefinition, value::Value};
+use crate::{compiler::Instruction, node_graph::port::PortDefinition, value::Value};
 
 use super::NodeKind;
 
@@ -33,7 +33,7 @@ impl NodeKind for BranchNode
     fn input_port_definitions(&self) -> Vec<crate::node_graph::port::PortDefinition> {
         vec![
             PortDefinition::new_input_execution_port(),
-            PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0) ]),
+            PortDefinition::new_input_data_port("a".to_string(), vec![ Value::Bool(false) ]),
         ]
     }
 
@@ -52,10 +52,11 @@ impl NodeKind for BranchNode
         todo!()
     }
 
-    fn compile(&self, _: &mut crate::compiler::CompiledGraphContext, _: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {
+    fn compile(&self, ctx: &mut crate::compiler::CompiledGraphContext, input_register_addresses: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {
+        let _ = ctx.add_instruction_placeholder( Instruction::JumpIfFalse(0, input_register_addresses[0]));
     }
 
     fn control_flow(&self) -> super::ControlFlowKind {
-        super::ControlFlowKind::Normal
+        super::ControlFlowKind::Branch
     }
 }

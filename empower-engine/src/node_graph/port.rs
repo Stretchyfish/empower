@@ -38,6 +38,7 @@ impl Port
             {
                 Value::Integer( int ) => PortEdit::Text( int.to_string() ),
                 Value::Float( float ) => PortEdit::Text(float.to_string()),
+                Value::Bool( boolean ) => PortEdit::CheckBox( *boolean ),
             },
         };
 
@@ -91,6 +92,7 @@ impl Port
                 {
                     Value::Integer(_) => egui::Color32::YELLOW,
                     Value::Float(_) => egui::Color32::BLUE,
+                    Value::Bool(_) => egui::Color32::PURPLE,
                 }
             }
         }
