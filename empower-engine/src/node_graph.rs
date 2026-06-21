@@ -89,10 +89,10 @@ impl NodeGraph
         let mut ports_to_remove = Vec::new();
 
         {
-            let (node, input_ports, output_ports) = self.get_node_input_output(*node_key).unwrap();
+            let (node, input_ports, _) = self.get_node_input_output(*node_key).unwrap();
 
             let new_input_port_definitions = node.kind.input_port_definitions();
-            let new_output_port_definitions = node.kind.output_port_definitions();
+            let _ = node.kind.output_port_definitions();
 
             for (index, new_input_port_definition) in new_input_port_definitions.iter().enumerate()
             {
@@ -246,27 +246,6 @@ impl NodeGraph
         Some( (node, inputs, ouptuts) )
     }
 
-    pub fn get_node_input_output_mut(&mut self, node_key: NodeGraphKey) -> Option<(&mut Node, Vec<&mut Port>, Vec<&mut Port>)>
-    {
-        let node = self.nodes.get_mut(&node_key).unwrap();
-        let mut inputs = Vec::new();
-        let mut ouptuts = Vec::new();
-
-        // let port = self.ports.get_disjoint_mut(node.input_port_keys).unwrap();
-        // for port_key in &node.input_port_keys
-        // {
-        //     inputs.push(port);
-        // }
-
-        for port_key in &node.output_port_keys
-        {
-            // let port = self.ports.get_mut(port_key).unwrap();
-            // ouptuts.push(port);
-        }
-        
-        Some( (node, inputs, ouptuts) )
-    }
-
     pub fn get_connected_exec_nodes(&self, node_key: NodeGraphKey) -> Vec<NodeGraphKey>
     {
         let node = self.nodes.get(&node_key).unwrap();
@@ -284,21 +263,6 @@ impl NodeGraph
             port::PortKind::Data => { return Vec::new(); },
         }
 
-
         Vec::new()
-
-        
-
-        
-
-        
-
-        
-
-        
-
-
-        
-        
     }
 }

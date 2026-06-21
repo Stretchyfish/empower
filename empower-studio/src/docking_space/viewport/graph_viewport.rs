@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{docking_space::viewport::graph_viewport, studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};

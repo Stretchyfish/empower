@@ -1,6 +1,6 @@
 use crate::studio_context::StudioContext;
 
-pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
+pub fn show(ui: &mut egui::Ui, _: &mut StudioContext)
 {
     ui.checkbox(&mut true, "debug mode");
 

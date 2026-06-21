@@ -148,11 +148,11 @@ pub fn show(
         graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
     }
 
-    let edit_width = match port.edit
-    {
-        PortEdit::None => PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text_size.x,
-        PortEdit::Text(_) => 150.0,
-        PortEdit::CheckBox(_) => 150.0,
-    };
+    // let edit_width = match port.edit
+    // {
+    //     PortEdit::None => PORT_AND_TEXT_HORIZONTAL_BUFFER + painted_text_size.x,
+    //     PortEdit::Text(_) => 150.0,
+    //     PortEdit::CheckBox(_) => 150.0,
+    // };
 }
 

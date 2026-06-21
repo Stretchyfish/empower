@@ -1,10 +1,8 @@
-use crate::{studio_context::Settings, user_state::{self, UserState}};
-
+use crate::{studio_context::Settings, user_state::UserState};
 
 pub struct DeveloperPanel
 {
     show: bool,
-    
 }
 
 impl DeveloperPanel
@@ -42,7 +40,7 @@ impl DeveloperPanel
                 ui.label(format!("User state: {:?}", user_state))
             });
 
-            ui.collapsing("node graph", |ui|
+            ui.collapsing("node graph", |_|
             {
                 
             });

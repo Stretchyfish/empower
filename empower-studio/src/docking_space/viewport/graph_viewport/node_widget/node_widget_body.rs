@@ -5,7 +5,6 @@ use empower_engine::node_graph::{Node, NodeEdit, NodeGraphKey};
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
-pub const TITLE_TEXT_HORIZONTAL_OFFSET_PUFFER: f32 = 75.0;
 
 const NODE_BOTTOM_RECT_HEIGHT: f32 = 20.0;
 
@@ -158,7 +157,7 @@ pub fn show(
         let (changed, height) = match edit
         {
             NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
-            NodeEdit::CheckBox { toggle } => todo!(),
+            NodeEdit::CheckBox { toggle: _ } => todo!(),
         };
 
         if changed

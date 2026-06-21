@@ -1,4 +1,4 @@
-use crate::user_state::{UserAction, UserState};
+use crate::user_state::UserAction;
 
 pub enum Request
 {

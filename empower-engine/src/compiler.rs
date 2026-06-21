@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 use crate::assets::AssetId;
 use crate::compiler::instructions::InstructionAddress;
@@ -29,7 +28,7 @@ pub struct Program
     pub compiled_graphs: HashMap<AssetId, CompiledGraph>,
 }
 
-pub fn debug_compile(project: &Project, debug_settings: &DebugSettings)
+pub fn debug_compile(_: &Project, _: &DebugSettings)
 {
     
 }
@@ -186,43 +185,6 @@ fn get_nodes_connected_to_port(port_key: NodeGraphKey, node_graph: &NodeGraph) -
     }
 
     nodes_connected
-}
-
-fn get_nodes_connected_to_node_with_normal_flow(node_key: &NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
-{
-    let (_, _, node_output_ports) = node_graph.get_node_input_output(*node_key).unwrap(); // @TODO, make a standalone function
-    let connections_out = &node_graph.connections_out;
-
-    let mut connected_exec_ports = HashSet::new();
-    
-    for port in node_output_ports
-    {
-        match port.kind
-        {
-            port::PortKind::Execution => {},
-            port::PortKind::Data => { continue; },
-        }
-
-        let connections = connections_out.get(&port.key);
-
-        if connections.is_none()
-        {
-            continue;
-        }
-
-        connected_exec_ports.extend( connections.unwrap().clone() );
-    }
-
-    let mut connected_nodes = Vec::with_capacity(connected_exec_ports.len());
-
-    for connected_exec_port in &connected_exec_ports
-    {
-        let node_containing_port = node_graph.ports.get(connected_exec_port).unwrap().node_key;
-
-        connected_nodes.push(node_containing_port);
-    }
-
-    connected_nodes
 }
 
 fn check_if_node_needs_another_node_compiled_first(ctx: &mut CompiledGraphContext, node_key: &NodeGraphKey, node_graph: &NodeGraph) -> Option<NodeGraphKey>
@@ -405,43 +367,3 @@ impl CompiledGraph
 }
 
 pub type RegisterAddress = i32;
-
-fn get_connected_exec_ports(ports: Vec<&Port>, connections_out: &HashMap<NodeGraphKey, HashSet<NodeGraphKey>>) -> HashSet<NodeGraphKey>
-{
-    let mut connected_exec_ports = HashSet::new();
-    
-    for port in ports
-    {
-        match port.kind
-        {
-            port::PortKind::Execution => {},
-            port::PortKind::Data => { continue; },
-        }
-
-        let connections = connections_out.get(&port.key);
-
-        if connections.is_none()
-        {
-            continue;
-        }
-
-        connected_exec_ports.extend( connections.unwrap().clone() );
-    }
-
-    connected_exec_ports
-}
-
-fn get_next_nodes_to_compile(connected_exec_ports: &HashSet<NodeGraphKey>, node_graph: &NodeGraph) -> Vec<NodeGraphKey>
-{
-    let mut connected_nodes = Vec::with_capacity(connected_exec_ports.len());
-
-    for connected_exec_port in connected_exec_ports
-    {
-        let node_containing_port = node_graph.ports.get(connected_exec_port).unwrap().node_key;
-
-        connected_nodes.push(node_containing_port);
-    }
-
-    connected_nodes
-}
-

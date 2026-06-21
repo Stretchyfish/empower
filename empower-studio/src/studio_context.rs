@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::{compiler::{self, InstructionSet, Program, release_compile}, executor::Executor, project::Project};
+use empower_engine::{compiler::{self, Program}, executor::Executor, project::Project};
 use layout::Layout;
 
 mod request;

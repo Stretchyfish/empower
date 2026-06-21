@@ -1,7 +1,6 @@
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
-use crate::node_graph::NodeEdit;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
 use super::ControlFlowKind;

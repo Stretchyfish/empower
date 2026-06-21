@@ -1,8 +1,4 @@
-use std::collections::VecDeque;
-
 use empower_engine::node_graph::NodeGraph;
-
-use super::GraphViewportAction;
 
 const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "number",
