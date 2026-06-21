@@ -25,7 +25,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             start_stop_button::show(ui, studio_context);
             compile_button::show(ui, studio_context);
             start_graph_selector::show(ui, studio_context);
-            bar_debug_settings::show(ui, studio_context);
+            bar_debug_settings::show(ui, studio_context); // @TODO, change this name
         });
 
         ui.add_space(2.0);

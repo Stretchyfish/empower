@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::{compiler::{self, Program}, executor::Executor, project::Project};
+use empower_engine::{compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -27,6 +27,7 @@ pub struct StudioContext
     layout: Layout,
     settings: Settings,
 
+    executor_settings: ExecutorSettings,
     executor: Option<Executor>,
 
     program: Option<Program>,
@@ -48,6 +49,7 @@ impl StudioContext
             layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
             settings: Settings::new(),
 
+            executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
             program: None,
             user_state: None,
@@ -206,12 +208,19 @@ impl StudioContext
             panic!("Tried to start execution without a compiled program");
         }
 
-        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
+        self.executor_settings.clear_cache();
+
+        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
     }
 
     fn stop_execution(&mut self)
     {
         self.executor = None;
+    }
+
+    pub fn get_executor(&self) -> &Option<Executor>
+    {
+        &self.executor
     }
 
     pub fn get_executor_mut(&mut self) -> &mut Option<Executor>

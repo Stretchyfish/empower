@@ -2,22 +2,28 @@ use std::collections::HashMap;
 
 use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
+mod executor_settings;
+pub use executor_settings::ExecutorSettings;
+
 pub struct Executor
 {
     program: Program,
+    pub settings: ExecutorSettings,
 
     frames: Vec<GraphFrame>,
 }
 
 impl Executor
 {
-    pub fn new(program: Program) -> Self
+    pub fn new(program: Program, settings: ExecutorSettings) -> Self
     {
         let initial_frame = GraphFrame::new(program.entry_graph_id);
         
         Self
         {
             program,
+
+            settings,
 
             frames: Vec::from( vec![initial_frame] ),
         }
@@ -75,7 +81,13 @@ impl Executor
                 },
                 Instruction::Print( register_address ) =>
                 {
-                    println!("{}", frame.value_registers.get(register_address).unwrap().to_string());
+                    let text = frame.value_registers.get(register_address).unwrap().to_string();
+                    println!("{}", text);
+
+                    if let Some(outputs) = &mut self.settings.outputs
+                    {
+                        outputs.push(text);
+                    }
                 },
                 Instruction::Return =>
                 {
