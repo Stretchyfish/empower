@@ -103,7 +103,7 @@ fn compile_node_chain(compiled_graph_context: &mut CompiledGraphContext, node_gr
 
         next_nodes_to_compile.pop_front();
 
-        if output_port_keys.is_empty() // This is for nodes with no outputs
+        if output_port_keys.is_empty() // This is for nodes with no output ports
         {
             continue;
         }
@@ -144,7 +144,24 @@ fn compile_node_chain(compiled_graph_context: &mut CompiledGraphContext, node_gr
 
                 compiled_graph_context.patch_jump_instruction(&jump_after_true_branch_placeholder_address, &instruction_after_false_branch_address);
             },
-            ControlFlowKind::Loop => todo!(),
+            ControlFlowKind::Loop =>
+            {
+                let nodes_connected_to_exec_port = get_nodes_connected_to_port(output_port_keys[0], node_graph);
+
+                if nodes_connected_to_exec_port.is_empty()
+                {
+                    continue;
+                }
+
+                let first_instruction_in_loop_address = compiled_graph_context.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
+
+                for node_key in nodes_connected_to_exec_port
+                {
+                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
+                }
+
+                compiled_graph_context.add_instruction( Instruction::Jump(first_instruction_in_loop_address) );
+            },
         }
     }
 
@@ -273,8 +290,6 @@ fn allocate_input_port_registers(ctx: &mut CompiledGraphContext, ports: &Vec<&Po
         input_registers.push(*already_allocate_register_address);
     }
 
-    println!("Registers added {:?}", input_registers);
-
     input_registers
 }
 
@@ -352,6 +367,11 @@ impl CompiledGraphContext
 
     pub fn get_latest_instruction_address(&self) -> InstructionAddress
     {
+        if self.instructions.len() == 0
+        {
+            return 0;
+        }
+
         self.instructions.len() - 1
     }
 }

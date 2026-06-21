@@ -10,6 +10,7 @@ const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "branch",
     "wait",
     "list",
+    "loop",
 ];
 
 #[derive(Clone, Default)]

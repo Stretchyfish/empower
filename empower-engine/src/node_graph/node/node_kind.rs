@@ -21,6 +21,9 @@ use branch_node::BranchNode;
 mod wait_node;
 use wait_node::WaitNode;
 
+mod loop_node;
+use loop_node::LoopNode;
+
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -122,6 +125,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( ListNode::new().name(), || ListNode::new());
     r.insert( BranchNode::new().name(), || BranchNode::new());
     r.insert( WaitNode::new().name(), || WaitNode::new());
+    r.insert( LoopNode::new().name(), || LoopNode::new());
 
     r
 });
