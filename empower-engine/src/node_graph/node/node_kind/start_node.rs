@@ -2,16 +2,18 @@ use crate::compiler::CompiledGraphContext;
 use crate::compiler::RegisterAddress;
 use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::node_graph::port::PortDefinition;
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
 use super::ControlFlowKind;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct StartNode
 {
     
 }
 
+#[typetag::serde]
 impl NodeKind for StartNode
 {
     fn new() -> Box<dyn NodeKind> where

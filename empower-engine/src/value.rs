@@ -1,5 +1,6 @@
+use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, PartialOrd, Clone)]
+#[derive(PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub enum Value
 {
     Integer( i32 ),

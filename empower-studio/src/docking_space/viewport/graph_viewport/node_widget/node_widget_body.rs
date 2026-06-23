@@ -171,7 +171,7 @@ pub fn show(
     vertical_offset
 }
 
-fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &'static str, text: &mut String, parseble: bool) -> (bool, f32)
+fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: bool) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 

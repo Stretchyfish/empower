@@ -4,17 +4,19 @@ use crate::compiler::RegisterAddress;
 use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
 use super::ControlFlowKind;
 use super::NodeEdit;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NumberNode
 {
     state: Vec<NodeEdit>,
 }
 
+#[typetag::serde]
 impl NodeKind for NumberNode
 {
     fn new() -> Box<dyn NodeKind> where
@@ -23,7 +25,7 @@ impl NodeKind for NumberNode
         Box::new(
             Self {
                 state: vec![
-                            NodeEdit::Text { label: "value", text: "0".to_string(), parseble: true }
+                            NodeEdit::Text { label: "value".to_string(), text: "0".to_string(), parseble: true }
                 ],
             }
         )

@@ -57,7 +57,7 @@ impl Project
         let mut assets = Assets::new();
 
         let entry_graph = NodeGraph::new_entry_graph();
-        let entry_graph_asset_id = assets.add_node_graph(entry_graph);
+        let entry_graph_asset_id = assets.add_node_graph(entry_graph, &temp_directory_root.join("assets"));
 
         Self
         {

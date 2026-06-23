@@ -1,7 +1,7 @@
 use crate::value::Value;
+use serde::{Deserialize, Serialize};
 
-
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum PortEdit
 {
     None,

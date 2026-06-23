@@ -6,14 +6,16 @@ pub use node::node_kind::NodeEdit;
 
 pub mod port;
 pub use port::Port;
+use serde::{Deserialize, Serialize};
 
 use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
 
 pub type NodeGraphKey = i32;
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NodeGraph
 {
-    pub name: &'static str,
+    pub name: String,
     pub input_nodes: Vec<NodeGraphKey>,
     pub output_nodes: Vec<NodeGraphKey>,
     
@@ -30,7 +32,7 @@ impl NodeGraph
     {
         Self
         {
-            name,
+            name: name.to_string(),
             input_nodes: Vec::new(),
             output_nodes: Vec::new(),
             
@@ -40,6 +42,16 @@ impl NodeGraph
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
         }
+    }
+
+    pub fn from_json(node_graph_json: &String) -> Result<NodeGraph, serde_json::Error>
+    {
+        serde_json::from_str(node_graph_json)
+    }
+
+    pub fn to_json(&self) -> String
+    {
+        serde_json::to_string_pretty(&self).unwrap()
     }
 
     pub fn new_entry_graph() -> Self

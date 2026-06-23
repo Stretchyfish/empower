@@ -1,14 +1,15 @@
-
 use crate::{compiler::Instruction, node_graph::port::PortDefinition, value::Value};
 
+use serde::{Deserialize, Serialize};
 use super::NodeKind;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct BranchNode
 {
     
 }
 
+#[typetag::serde]
 impl NodeKind for BranchNode
 {
     fn new() -> Box<dyn NodeKind> where

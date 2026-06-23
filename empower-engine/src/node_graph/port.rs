@@ -1,5 +1,6 @@
 use crate::node_graph::NodeGraphKey;
 use crate::value::Value;
+use serde::{Deserialize, Serialize};
 
 mod port_definition;
 pub use port_definition::PortDefinition;
@@ -13,6 +14,7 @@ pub use port_direction::PortDirection;
 mod port_edit;
 pub use port_edit::PortEdit;
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Port
 {
     pub key: NodeGraphKey,

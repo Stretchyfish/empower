@@ -4,16 +4,18 @@ use crate::compiler::RegisterAddress;
 use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
 use super::ControlFlowKind;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PrintNode
 {
     
 }
 
+#[typetag::serde]
 impl NodeKind for PrintNode
 {
     fn new() -> Box<dyn NodeKind> where

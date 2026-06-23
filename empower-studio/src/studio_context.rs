@@ -113,6 +113,11 @@ impl StudioContext
         self.requests.push_back( Request::LoadStudio );
     }
 
+    pub fn get_project(&self) -> &Project
+    {
+        &self.project
+    }
+
     pub fn get_project_mut(&mut self) -> &mut Project
     {
         &mut self.project

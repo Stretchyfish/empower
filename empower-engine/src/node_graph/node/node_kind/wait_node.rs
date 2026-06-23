@@ -6,13 +6,15 @@ use crate::value::Value;
 use super::ControlFlowKind;
 use super::NodeSyncResponse; 
 use super::NodeKind;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct WaitNode
 {
 
 }
 
+#[typetag::serde]
 impl NodeKind for WaitNode
 {
     fn new() -> Box<dyn NodeKind> where

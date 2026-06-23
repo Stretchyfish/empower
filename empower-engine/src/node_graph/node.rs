@@ -2,7 +2,9 @@ use super::NodeGraphKey;
 
 pub mod node_kind;
 use node_kind::NodeKind;
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Node
 {
     pub position: egui::Pos2,

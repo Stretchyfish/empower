@@ -34,7 +34,7 @@ impl Viewport for TerminalViewport
         "terminal viewport"
     }
 
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
+    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, _: &UserInputs)
     {
         self.extract_new_outputs(studio_context);
 
@@ -56,15 +56,17 @@ impl Viewport for TerminalViewport
             }
         });
 
+        ui.separator();
+
         egui::ScrollArea::vertical()
-        .id_salt(egui::Id::from(self.name()))
+        .id_salt(egui::Id::from(self.name())) // @TODO, might need to be tied to viewportname?
         .auto_shrink(false)
         .stick_to_bottom(true)
         .show(ui, |ui|
         {
             for text in &self.entries
             {
-                ui.label(text); 
+                ui.label(text);
             }
         });
     }

@@ -1,14 +1,16 @@
 use crate::{node_graph::{NodeEdit, node::node_kind::NodeSyncResponse, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
 
+use serde::{Deserialize, Serialize};
 use super::NodeKind;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ListNode
 {
     state: Vec<NodeEdit>,
     size: usize,
 }
 
+#[typetag::serde]
 impl NodeKind for ListNode
 {
     fn new() -> Box<dyn NodeKind> where
@@ -17,7 +19,7 @@ impl NodeKind for ListNode
         Box::new( Self {
 
             state: vec![
-                NodeEdit::Text { label: "size", text: "2".to_string(), parseble: true }
+                NodeEdit::Text { label: "size".to_string(), text: "2".to_string(), parseble: true }
             ],
             size: 2,
         })

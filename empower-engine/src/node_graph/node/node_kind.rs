@@ -1,5 +1,6 @@
 use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 
 use crate::{compiler::{CompiledGraphContext, RegisterAddress}, node_graph::port::PortDefinition};
 
@@ -24,6 +25,7 @@ use wait_node::WaitNode;
 mod loop_node;
 use loop_node::LoopNode;
 
+#[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
@@ -46,6 +48,14 @@ pub trait NodeKind
     fn control_flow(&self) -> ControlFlowKind;
 }
 
+impl Clone for Box<dyn NodeKind>
+{
+    fn clone(&self) -> Self
+    {
+        self.clone_box()
+    }
+}
+
 pub enum ControlFlowKind
 {
     Normal,
@@ -53,10 +63,10 @@ pub enum ControlFlowKind
     Loop,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum NodeEdit
 {
-    Text { label: &'static str, text: String, parseble: bool },
+    Text { label: String, text: String, parseble: bool },
     CheckBox { toggle: bool },
 }
 

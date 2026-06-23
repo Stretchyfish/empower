@@ -1,13 +1,15 @@
 use crate::node_graph::{node::node_kind::ControlFlowKind, port::PortDefinition};
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LoopNode
 {
     
 }
 
+#[typetag::serde]
 impl NodeKind for LoopNode
 {
     fn new() -> Box<dyn NodeKind> where
