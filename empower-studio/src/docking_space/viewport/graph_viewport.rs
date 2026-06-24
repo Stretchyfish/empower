@@ -17,9 +17,9 @@ mod node_picker;
 use node_picker::NodePicker;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct GraphEditorViewport
+pub struct GraphViewport
 {
-    graph_asset_id: Option<AssetId>,
+    graph_asset_id: AssetId,
     scene_rect: egui::Rect,
 
     #[serde(skip)]
@@ -47,65 +47,48 @@ pub struct GraphEditorViewport
     cached_port_positions: HashMap<NodeGraphKey, egui::Pos2>,
 }
 
-#[typetag::serde]
-impl Viewport for GraphEditorViewport
+impl GraphViewport
 {
-    fn new() -> Box<dyn Viewport> 
-    where
-        Self: Sized {
-
-        Box::new(
-            Self {
-                graph_asset_id: None,
-
-                scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
-
-                mouse_scene_position_last_frame: egui::Pos2::ZERO,
-                mouse_scene_delta_last_frame: egui::Vec2::ZERO,
-                selected_nodes: HashSet::new(),
-                selected_port: None,
-                area_select: None,
-                node_picker: NodePicker::new(),
-                cached_node_sizes: HashMap::new(),
-                cached_port_positions: HashMap::new(),
-            }
-        )
-    }
-
-    fn clone_box(&self) -> Box<dyn Viewport>
+    pub fn new( graph_asset_id: AssetId ) -> Self
     {
-        Box::new( self.clone() )
-    }
-
-    fn name(&self) -> &'static str {
-        "graph viewport"
-    }
-
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
-    {
-        let developer_mode = studio_context.get_settings().developer_mode;
-
-        let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
-                
-        let project = studio_context.get_project_mut();
-
-        if self.graph_asset_id.is_none() // @TODO, this is a temporary approach to choose which node graph to show
+        Self
         {
-            self.graph_asset_id = Some( project.entry_graph );
+            graph_asset_id,
+
+            scene_rect: egui::Rect { min: egui::Pos2 { x: -650.0, y: -650.0 }, max: egui::Pos2 { x: 650.0, y: 650.0 }},
+
+            mouse_scene_position_last_frame: egui::Pos2::ZERO,
+            mouse_scene_delta_last_frame: egui::Vec2::ZERO,
+            selected_nodes: HashSet::new(),
+            selected_port: None,
+            area_select: None,
+            node_picker: NodePicker::new(),
+            cached_node_sizes: HashMap::new(),
+            cached_port_positions: HashMap::new(),
         }
-
-        let node_graph = project.assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph editor tried to read a node graph but didn't get it from assets");
-
-        self.node_picker.show(ui, node_graph, &self.mouse_scene_position_last_frame);
-
-        self.apply_viewport_state_to_node_graph(node_graph);
-        self.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &developer_mode);
-
-        self.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
     }
 }
 
-impl GraphEditorViewport
+pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
+{
+    let developer_mode = studio_context.get_settings().developer_mode;
+
+    let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
+            
+    let project = studio_context.get_project_mut();
+
+    let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id).expect("graph editor tried to read a node graph but didn't get it from assets");
+    // @TODO, need to have a check for if no graph asset id is selected!
+
+    graph_viewport.node_picker.show(ui, node_graph, &graph_viewport.mouse_scene_position_last_frame);
+
+    graph_viewport.apply_viewport_state_to_node_graph(node_graph);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &developer_mode);
+
+    graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
+}
+
+impl GraphViewport
 {
     fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, developer_mode: &bool)
     {
@@ -246,12 +229,7 @@ impl GraphEditorViewport
                             },
                 GraphViewportAction::ClickedPort { port_key } =>
                             {
-                                if self.graph_asset_id.is_none() // This should never happen, but placed here for safety
-                                {
-                                    break;
-                                }
-
-                                let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
+                                let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
 
                                 if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
                                 {
@@ -334,11 +312,11 @@ impl GraphEditorViewport
                 }
                 GraphViewportAction::PortEditWasChanged { port_key } =>
                 {
-                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
+                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
                 {
-                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id.unwrap()).unwrap();
+                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
                     let sync_response = graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index );
 
                     match sync_response

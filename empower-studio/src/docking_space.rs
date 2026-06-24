@@ -2,9 +2,8 @@ use std::collections::HashMap;
 
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
-mod viewport;
+pub mod viewport;
 pub use viewport::Viewport;
-pub use viewport::VIEWPORT_REGISTRY;
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs)
 {
@@ -40,7 +39,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: 
 pub struct TabViewer<'a>
 {
     pub studio_context: &'a mut StudioContext,
-    pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
+    pub viewports: &'a mut HashMap<String, Viewport>,
     pub user_inputs: &'a UserInputs,
 }
 
@@ -63,7 +62,14 @@ impl egui_dock::TabViewer for TabViewer<'_>
         }
 
         let viewport = self.viewports.get_mut(&tab_name).unwrap();
-        viewport.show(ui, self.studio_context, &tab_name, self.user_inputs);
+
+        match viewport
+        {
+            Viewport::Graph { graph_viewport } => viewport::graph_viewport::show(graph_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::Terminal { terminal_viewport } => viewport::terminal_viewport::show(terminal_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::ContentBrowser { content_browser_viewport } => viewport::content_browser_viewport::show(content_browser_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::Empty { empty_viewport: _ } => {},
+        }
     }
 }
 

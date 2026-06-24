@@ -56,7 +56,7 @@ impl NodeGraph
 
     pub fn new_entry_graph() -> Self
     {
-        let mut node_graph = NodeGraph::new("entry graph");
+        let mut node_graph = NodeGraph::new("entry_graph");
 
         let start_node_key = node_graph.add_node("start", None);
         node_graph.input_nodes.push(start_node_key);

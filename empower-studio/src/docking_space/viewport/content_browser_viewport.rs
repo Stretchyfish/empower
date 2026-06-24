@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
-use super::Viewport;
+use empower_engine::assets::AssetKind;
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -12,57 +12,45 @@ pub struct ContentBrowserViewport
     selected_asset: Option<PathBuf>,
     quick_menu: Option<egui::Pos2>,
     renaming_file: Option<ViewportRenameState>,
-    
 }
 
-#[typetag::serde]
-impl Viewport for ContentBrowserViewport
+impl ContentBrowserViewport
 {
-    fn new() -> Box<dyn Viewport>where Self:Sized {
-
-        Box::new( Self {
+    pub fn new() -> Self
+    {
+        Self {
             known_project_directory: PathBuf::new(),
             current_directory: None, 
             selected_asset: None, 
             quick_menu: None,
 
             renaming_file: None,
-        } )
+        }
+    }
+}
+
+pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
+{
+    if ui.max_rect().contains(user_inputs.mouse_position)
+    {
+        content_browser_viewport.process_user_inputs(user_inputs, studio_context);
     }
 
-    fn clone_box(&self) -> Box<dyn Viewport>  {
+    {
+        let project_directory = studio_context.get_project().location.clone();
 
-        Box::new( self.clone() )
-    }
-
-    fn name(&self) ->  &'static str {
-        "content browser viewport"
-    }
-
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, user_inputs: &UserInputs) {
-
-        if ui.max_rect().contains(user_inputs.mouse_position)
+        if *project_directory != content_browser_viewport.known_project_directory // @TODO, find a better way! This will probably be naturally fixes when using an ViewportConfigurations
         {
-            self.process_user_inputs(user_inputs, studio_context);
+            content_browser_viewport.known_project_directory = project_directory.clone();
+            content_browser_viewport.current_directory = Some( project_directory.join("assets") );
         }
 
-        {
-            let project_directory = studio_context.get_project().location.clone();
-
-            if *project_directory != self.known_project_directory // @TODO, find a better way! This will probably be naturally fixes when using an ViewportConfigurations
-            {
-                self.known_project_directory = project_directory.clone();
-                self.current_directory = Some( project_directory.join("assets") );
-            }
-
-            self.show_asset_import_and_directory_navigation(ui);
-            self.show_breadcrum_path(ui);
-            ui.separator();
-        }
-
-        self.show_content_browser_elements_panel(ui, studio_context, user_inputs);
-        
+        content_browser_viewport.show_asset_import_and_directory_navigation(ui);
+        content_browser_viewport.show_breadcrum_path(ui);
+        ui.separator();
     }
+
+    content_browser_viewport.show_content_browser_elements_panel(ui, studio_context, user_inputs);
 }
 
 impl ContentBrowserViewport
@@ -385,11 +373,9 @@ impl ContentBrowserViewport
 
             if ui.add(egui::Button::new("create graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let new_asset_path = self.current_directory.as_ref().unwrap().clone();
+                assets.create_asset(self.current_directory.as_ref().unwrap(), AssetKind::Graph);
 
-                assets.create_node_graph(&new_asset_path);
-
-                self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
                 self.quick_menu = None;
             };
 

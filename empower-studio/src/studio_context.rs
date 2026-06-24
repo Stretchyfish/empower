@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::{compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
+use empower_engine::{assets::Assets, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -14,7 +14,7 @@ pub use windows::Windows;
 mod settings;
 pub use settings::Settings;
 
-use crate::user_state::{UserAction, UserState};
+use crate::{docking_space::Viewport, user_state::{UserAction, UserState}};
 
 static CONFIG_DIRECTORY: Lazy<directories::ProjectDirs> = Lazy::new(|| {
     directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory")
@@ -75,9 +75,9 @@ impl StudioContext
         self.requests.push_back( Request::DefaultLayout );
     }
 
-    pub fn request_new_viewport(&mut self, new_viewport_name: &'static str)
+    pub fn request_new_viewport(&mut self, viewport: Viewport )
     {
-        self.requests.push_back( Request::AddViewport { name: new_viewport_name });
+        self.requests.push_back( Request::AddViewport { viewport: viewport});
     }
 
     fn save_studio(&mut self)
@@ -153,9 +153,19 @@ impl StudioContext
         &self.settings
     }
 
-    pub fn get_windows_and_settings_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &mut Settings, &Option<UserState>)
+    pub fn get_settings_mut(&mut self) -> &mut Settings
+    {
+        &mut self.settings
+    }
+
+    pub fn get_windows_and_settings_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &mut Settings, &Option<UserState>) // @TODO, this is a deprecated helper
     {
         (&mut self.windows, &mut self.settings, &self.user_state)
+    }
+
+    pub fn get_windows_and_settings_mut_and_assets(&mut self) -> (&mut Windows, &mut Settings, &Assets)
+    {
+        (&mut self.windows, &mut self.settings, &self.project.assets)
     }
 
     pub fn request_compile(&mut self)
@@ -245,7 +255,7 @@ impl StudioContext
         match request_to_process
         {
             Request::DefaultLayout => { self.layout = Layout::default_layout() },
-            Request::AddViewport { name } => { self.layout.add_viewport( name ); },
+            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
             Request::SaveStudio => { self.save_studio(); },
             Request::LoadStudio => { self.load_studio(); },
             Request::UserStateClear => { self.user_state = None; },

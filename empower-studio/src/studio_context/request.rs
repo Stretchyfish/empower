@@ -1,9 +1,9 @@
-use crate::user_state::UserAction;
+use crate::{docking_space::Viewport, user_state::UserAction};
 
 pub enum Request
 {
     DefaultLayout,
-    AddViewport { name: &'static str },
+    AddViewport { viewport: Viewport },
     SaveStudio,
     LoadStudio,
     UserStateClear,

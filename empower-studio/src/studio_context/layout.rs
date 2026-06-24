@@ -1,14 +1,14 @@
 use std::{collections::HashMap, path::Path};
 use serde::{Serialize, Deserialize};
 
-use crate::docking_space::{Viewport, VIEWPORT_REGISTRY};
+use crate::docking_space::{Viewport, viewport::{ContentBrowserViewport, GraphViewport, TerminalViewport}};
 
 const CONFIG_LAYOUT_FILE_NAME: &'static str = "layout.json";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Layout
 {
-    pub viewports: HashMap<String, Box<dyn Viewport>>,
+    pub viewports: HashMap<String, Viewport>,
     pub docking_state: egui_dock::DockState<String>,
 }
 
@@ -27,10 +27,10 @@ impl Layout
     {
         let mut new_default_layout = Self::new();
         
-        let graph_viewport_name = new_default_layout.add_viewport("graph viewport");
+        let graph_viewport_name = new_default_layout.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 1 ) } ); // entry graph should always have this id
 
-        let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state("terminal viewport");
-        let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state("content browser viewport");
+        let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::Terminal { terminal_viewport: TerminalViewport::new() } );
+        let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() });
 
         // This is all to place the initial docking configuration
         let graph_viewport_index = new_default_layout.docking_state.find_tab(&graph_viewport_name).expect("Unable to find initial graph viewport tab");
@@ -43,8 +43,16 @@ impl Layout
         new_default_layout
     }
 
-    fn adjust_viewport_name(&self, name: &'static str) -> String
+    fn get_viewport_name(&self, new_viewport: &Viewport) -> String
     {
+        let name = match new_viewport // @TODO, combine this with the adjust_viewport_name, to just get_viewport_name
+        {
+            Viewport::Graph { graph_viewport: _ } => "graph viewport",
+            Viewport::Terminal { terminal_viewport: _ } => "terminal viewport",
+            Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport",
+            Viewport::Empty { empty_viewport: _ } => "empty viewport",
+        };
+        
         let number_of_viewports_containing_the_name = self.viewports.iter().filter(|(viewport_name, _)| viewport_name.contains(name) ).count();
 
         if number_of_viewports_containing_the_name == 0
@@ -55,40 +63,24 @@ impl Layout
         format!("{} ({})", name, number_of_viewports_containing_the_name)
     }
 
-    pub fn add_viewport(&mut self, new_viewport_name: &'static str) -> String
+    pub fn add_viewport(&mut self, new_viewport: Viewport) -> String // @TODO, look into if this function can be written with a template instead?
     {
-        let new_viewport_constructor = match VIEWPORT_REGISTRY.get(new_viewport_name)
-        {
-           Some( constructor ) => constructor,
-           None => panic!("Tried to create a non-existing viewport name : {}", new_viewport_name), 
-        };
+        let viewport_name = self.get_viewport_name(&new_viewport);
+        
+        self.viewports.insert(viewport_name .clone(), new_viewport);
+        self.docking_state.push_to_focused_leaf(viewport_name .clone());
 
-        let adjusted_viewport_name = self.adjust_viewport_name( new_viewport_name );
-
-        let new_viewport = new_viewport_constructor();
-
-        self.viewports.insert(adjusted_viewport_name.clone(), new_viewport);
-        self.docking_state.push_to_focused_leaf(adjusted_viewport_name.clone());
-
-        adjusted_viewport_name
+        viewport_name 
     }
 
     // @TODO, this function only has a very specific usecase, consider if it should be a bool in the add_viewport function instead
-    pub fn add_viewport_without_docking_state(&mut self, new_viewport_name: &'static str) -> String
+    pub fn add_viewport_without_docking_state(&mut self, new_viewport: Viewport) -> String
     {
-        let new_viewport_constructor = match VIEWPORT_REGISTRY.get(new_viewport_name)
-        {
-           Some( constructor ) => constructor,
-           None => panic!("Tried to create a non-existing viewport name : {}", new_viewport_name), 
-        };
+        let viewport_name = self.get_viewport_name(&new_viewport);
+        
+        self.viewports.insert(viewport_name .clone(), new_viewport);
 
-        let adjusted_viewport_name = self.adjust_viewport_name( new_viewport_name );
-
-        let new_viewport = new_viewport_constructor();
-
-        self.viewports.insert(adjusted_viewport_name.clone(), new_viewport);
-
-        adjusted_viewport_name
+        viewport_name 
     }
 
     pub fn save(&self, config_directory_path: &Path)

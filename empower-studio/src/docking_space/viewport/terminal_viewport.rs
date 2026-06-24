@@ -1,6 +1,5 @@
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
-use super::Viewport;
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -13,63 +12,53 @@ pub struct TerminalViewport
     entries: Vec<String>,
 }
 
-#[typetag::serde]
-impl Viewport for TerminalViewport
+impl TerminalViewport
 {
-    fn new() -> Box<dyn Viewport>
-        where Self:Sized
+    pub fn new() -> Self
     {
-
-        Box::new( Self {
+        Self
+        {
             index_after_last_observed_output_value: None,
             entries: Vec::new(),
-        })
+        }
     }
+}
 
-    fn clone_box(&self) -> Box<dyn Viewport>  {
-        Box::new( self.clone() )
-    }
+pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, _: &UserInputs)
+{
+    terminal_viewport.extract_new_outputs(studio_context);
 
-    fn name(&self) ->  &'static str {
-        "terminal viewport"
-    }
-
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, _: &UserInputs)
+    ui.horizontal_top(|ui|
     {
-        self.extract_new_outputs(studio_context);
-
-        ui.horizontal_top(|ui|
+        if ui.button("Clear").clicked()
         {
-            if ui.button("Clear").clicked()
-            {
-                self.entries.clear();
-            }
+            terminal_viewport.entries.clear();
+        }
 
-            if ui.button("Add text").clicked()
-            {
-
-            }
-
-            if ui.button("Add line").clicked()
-            {
-
-            }
-        });
-
-        ui.separator();
-
-        egui::ScrollArea::vertical()
-        .id_salt(egui::Id::from(self.name())) // @TODO, might need to be tied to viewportname?
-        .auto_shrink(false)
-        .stick_to_bottom(true)
-        .show(ui, |ui|
+        if ui.button("Add text").clicked()
         {
-            for text in &self.entries
-            {
-                ui.label(text);
-            }
-        });
-    }
+
+        }
+
+        if ui.button("Add line").clicked()
+        {
+
+        }
+    });
+
+    ui.separator();
+
+    egui::ScrollArea::vertical()
+    .id_salt(egui::Id::from(viewport_name.clone())) 
+    .auto_shrink(false)
+    .stick_to_bottom(true)
+    .show(ui, |ui|
+    {
+        for text in &terminal_viewport.entries
+        {
+            ui.label(text);
+        }
+    });
 }
 
 impl TerminalViewport

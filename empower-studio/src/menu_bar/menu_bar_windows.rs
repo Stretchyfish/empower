@@ -1,4 +1,4 @@
-use crate::studio_context::StudioContext;
+use crate::{docking_space::{Viewport, viewport::{ContentBrowserViewport, EmptyViewport, GraphViewport, TerminalViewport}}, studio_context::StudioContext};
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
@@ -12,28 +12,28 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             if ui.button("Graph Viewport").clicked()
             {
-                studio_context.request_new_viewport("graph viewport");
+                studio_context.request_new_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 1 ) } ); // @TODO, find a better way to handle the graph asset id
             }
             if ui.button("Terminal Viewport").clicked()
             {
-                studio_context.request_new_viewport("terminal viewport");
+                studio_context.request_new_viewport( Viewport::Terminal { terminal_viewport: TerminalViewport::new() } );
             }
             if ui.button("Content Browser Viewport").clicked()
             {
-                studio_context.request_new_viewport("content browser viewport");
+                studio_context.request_new_viewport( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() } );
             }
             if ui.button("Empty Viewport").clicked()
             {
-                studio_context.request_new_viewport("empty viewport");
+                studio_context.request_new_viewport( Viewport::Empty { empty_viewport: EmptyViewport::new() });
             }
-            if ui.button("Variable Editor Viewport").clicked()
-            {
-                studio_context.request_new_viewport("variable editor viewport");
-            }
-            if ui.button("Timeline Viewport").clicked()
-            {
-                studio_context.request_new_viewport("timeline viewport");
-            }
+            // if ui.button("Variable Editor Viewport").clicked()
+            // {
+            //     studio_context.request_new_viewport("variable editor viewport");
+            // }
+            // if ui.button("Timeline Viewport").clicked()
+            // {
+            //     studio_context.request_new_viewport("timeline viewport");
+            // }
         });
 
         if ui.button("save layout").clicked()
