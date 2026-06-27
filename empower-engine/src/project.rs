@@ -1,4 +1,4 @@
-use crate::assets::{AssetId, Assets};
+use crate::assets::{AssetId, AssetKind, Assets};
 use crate::node_graph::NodeGraph;
 use std::path::PathBuf;
 use std::fs;
@@ -56,8 +56,10 @@ impl Project
 
         let mut assets = Assets::new();
 
-        let entry_graph = NodeGraph::new_entry_graph();
-        let entry_graph_asset_id = assets.add_node_graph(entry_graph, &temp_directory_root.join("assets"));
+        let entry_graph_location = assets.create_node_graph(&temp_directory_root.join("assets"), Some( "entry_graph" )).unwrap(); // @TODO, find a better way of creating the entry graph
+
+        let entry_graph_asset_id = assets.import_asset(&entry_graph_location);
+        assets.load_asset(entry_graph_asset_id);
 
         Self
         {

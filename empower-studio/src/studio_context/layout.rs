@@ -52,6 +52,8 @@ impl Layout
             Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport",
             Viewport::Empty { empty_viewport: _ } => "empty viewport",
         };
+
+        // @TODO, consider using the asset name aswell for grpah viewport, so example "graph viewport (entry graph)" and "graph viewport (entry graph) (1)
         
         let number_of_viewports_containing_the_name = self.viewports.iter().filter(|(viewport_name, _)| viewport_name.contains(name) ).count();
 
@@ -69,6 +71,16 @@ impl Layout
         
         self.viewports.insert(viewport_name .clone(), new_viewport);
         self.docking_state.push_to_focused_leaf(viewport_name .clone());
+
+        viewport_name 
+    }
+
+    pub fn add_viewport_at_first_leaf(&mut self, new_viewport: Viewport) -> String // @TODO, look into if this function can be written with a template instead?
+    {
+        let viewport_name = self.get_viewport_name(&new_viewport);
+        
+        self.viewports.insert(viewport_name .clone(), new_viewport);
+        self.docking_state.push_to_first_leaf(viewport_name .clone());
 
         viewport_name 
     }

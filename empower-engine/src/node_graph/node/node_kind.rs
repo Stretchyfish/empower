@@ -25,6 +25,9 @@ use wait_node::WaitNode;
 mod loop_node;
 use loop_node::LoopNode;
 
+mod sub_graph_node;
+use sub_graph_node::SubGraphNode;
+
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {
@@ -136,6 +139,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( BranchNode::new().name(), || BranchNode::new());
     r.insert( WaitNode::new().name(), || WaitNode::new());
     r.insert( LoopNode::new().name(), || LoopNode::new());
+    r.insert( SubGraphNode::new().name(), || SubGraphNode::new());
 
     r
 });

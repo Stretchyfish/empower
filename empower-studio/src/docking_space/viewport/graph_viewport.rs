@@ -77,8 +77,15 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
             
     let project = studio_context.get_project_mut();
 
-    let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id).expect("graph editor tried to read a node graph but didn't get it from assets");
-    // @TODO, need to have a check for if no graph asset id is selected!
+    let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id); //.expect("graph editor tried to read a node graph but didn't get it from assets");
+
+    if node_graph.is_none()
+    {
+        ui.label("unable to find node graph");
+        return;
+    }
+
+    let node_graph = node_graph.unwrap();
 
     graph_viewport.node_picker.show(ui, node_graph, &graph_viewport.mouse_scene_position_last_frame);
 

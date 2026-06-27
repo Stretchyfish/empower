@@ -15,6 +15,7 @@ pub struct Assets
 {
     pub node_graphs: HashMap<AssetId, NodeGraph>,
     pub meta: HashMap<AssetId, AssetMeta>,
+    pub path_to_asset_id: HashMap<PathBuf, AssetId>,
 }
 
 impl Assets
@@ -25,22 +26,27 @@ impl Assets
         {
             node_graphs: HashMap::new(),
             meta: HashMap::new(),
+            path_to_asset_id: HashMap::new(),
         }
     }
 
-    pub fn create_asset(&mut self, location: &PathBuf, asset_kind: AssetKind) -> Option<AssetId>
+    pub fn create_asset(&mut self, directory: &PathBuf, asset_kind: AssetKind, name: Option<&'static str>) -> Option<AssetId> // @TODO, not sure if the optional name is ever used in this case, but might be usefull in the future, so leaving it for now.
     {
         let asset_creation_result = match asset_kind
         {
-            AssetKind::Graph => self.create_node_graph( location ),
+            AssetKind::Graph => self.create_node_graph( directory, name ),
         };
 
         if asset_creation_result.is_err()
         {
             return None;
         }
-        
-        Some( self.import_asset(&asset_creation_result.unwrap()) )
+
+        let asset_new_path = asset_creation_result.unwrap();
+        let asset_id = self.import_asset( &asset_new_path );
+        self.load_asset(asset_id); // This could potentially be problematic later, but we will here assume that if the user creates an asset they will most likely also use them soon, and preloading them makes sense.
+
+        Some( asset_id )
     }
 
     pub fn load_asset(&mut self, asset_id: AssetId)
@@ -66,10 +72,43 @@ impl Assets
         }
     }
 
-    pub fn create_node_graph(&mut self, location: &PathBuf) -> Result<PathBuf, ()> // @TODO, this should probably be a bool or result aswell?
+    pub fn create_node_graph(&mut self, directory: &PathBuf, name: Option<&'static str>) -> Result<PathBuf, ()> // @TODO, this should probably be a bool or result aswell?
     {
-        let new_node_graph = NodeGraph::new("unamed"); // @TODO, this approach for naming the node graph needs a second look
-        self.save_node_graph(&new_node_graph, location)
+        let new_node_graph = if name.is_some()
+        {
+            if name.unwrap() == "entry_graph" // @TODO, find a better way to create the entry graph, this is really bad
+            {
+                NodeGraph::new_entry_graph()
+            }
+            else
+            {
+                NodeGraph::new(name.unwrap())
+            }
+        }
+        else
+        {
+            NodeGraph::new("unamed")
+        };
+        // let new_node_graph = NodeGraph::new("unamed"); // @TODO, this approach for naming the node graph needs a second look
+        // self.save_node_graph(&new_node_graph, location)
+
+        let node_graph_json = new_node_graph.to_json();
+        let node_graph_save_path = directory.join(format!("{}.graph", new_node_graph.name));
+        
+        println!("File added path: {}", node_graph_save_path.to_string_lossy());
+        let saving_node_graph_file_results = std::fs::write(&node_graph_save_path, node_graph_json);
+
+        match saving_node_graph_file_results
+        {
+            Ok(_) => println!("Saved succesfully"),
+            Err( error ) =>
+            {
+                println!("Error, failed to write: {}, {}", node_graph_save_path.to_string_lossy(), error.kind().to_string());
+                return Result::Err(());
+            }
+        }
+
+        Ok( node_graph_save_path )
     }
 
     pub fn import_asset(&mut self, location: &PathBuf) -> AssetId // @TODO, consider having an optional AssetKind in the input for determining the file type
@@ -91,21 +130,9 @@ impl Assets
         };
 
         self.meta.insert(id, asset_meta);
+        self.path_to_asset_id.insert(location.clone(), id);
 
         id
-    }
-
-    pub fn create_file(&mut self, path: &PathBuf)
-    {
-        let create_file_result = fs::File::create(path);
-        match create_file_result
-        {
-            Ok(_) => {},
-            Err( error ) => 
-            {
-                println!("Error when creating file : {}", error.kind().to_string());
-            },
-        }
     }
 
     pub fn get_all_node_graph_names(&mut self) -> Vec<String>

@@ -16,8 +16,8 @@ pub type NodeGraphKey = i32;
 pub struct NodeGraph
 {
     pub name: String,
-    pub input_nodes: Vec<NodeGraphKey>,
-    pub output_nodes: Vec<NodeGraphKey>,
+    pub start_node_key: NodeGraphKey,
+    pub end_node_key: Option<NodeGraphKey>,
     
     pub nodes: HashMap<NodeGraphKey, Node>,
     pub ports: HashMap<NodeGraphKey, Port>,
@@ -30,18 +30,22 @@ impl NodeGraph
 {
     pub fn new(name: &'static str) -> Self
     {
-        Self
+        let mut node_graph = Self
         {
             name: name.to_string(),
-            input_nodes: Vec::new(),
-            output_nodes: Vec::new(),
+            start_node_key: 0,
+            end_node_key: None,
             
             nodes: HashMap::new(),
             ports: HashMap::new(),
 
             connections_out: HashMap::new(),
             connections_in: HashMap::new(),
-        }
+        };
+
+        let _ = node_graph.add_node("start", None);
+
+        node_graph
     }
 
     pub fn from_json(node_graph_json: &String) -> Result<NodeGraph, serde_json::Error>
@@ -54,14 +58,9 @@ impl NodeGraph
         serde_json::to_string_pretty(&self).unwrap()
     }
 
-    pub fn new_entry_graph() -> Self
+    pub fn new_entry_graph() -> Self // @TODO, this function could probably be removed
     {
-        let mut node_graph = NodeGraph::new("entry_graph");
-
-        let start_node_key = node_graph.add_node("start", None);
-        node_graph.input_nodes.push(start_node_key);
-
-        node_graph
+        NodeGraph::new("entry_graph")
     }
 
     pub fn add_node(&mut self, node_name: &'static str, position: Option<egui::Pos2>) -> NodeGraphKey

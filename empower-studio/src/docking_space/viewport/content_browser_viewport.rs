@@ -1,16 +1,25 @@
 use std::{fs, path::PathBuf};
 
-use crate::{studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{docking_space::{Viewport, viewport::GraphViewport}, studio_context::StudioContext, user_inputs::UserInputs};
 use empower_engine::assets::AssetKind;
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ContentBrowserViewport
 {
+    #[serde(skip)]
     known_project_directory: PathBuf, // This is used to detect if the project directory change
+
+    #[serde(skip)]
     current_directory: Option<PathBuf>,
+
+    #[serde(skip)]
     selected_asset: Option<PathBuf>,
+
+    #[serde(skip)]
     quick_menu: Option<egui::Pos2>,
+
+    #[serde(skip)]
     renaming_file: Option<ViewportRenameState>,
 }
 
@@ -202,7 +211,7 @@ impl ContentBrowserViewport
         }
     }
 
-    fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, _: &mut StudioContext)
+    fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, studio_context: &mut StudioContext)
     {
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
@@ -271,8 +280,24 @@ impl ContentBrowserViewport
 
                         self.current_directory = Some( asset_path.clone() );
                         // self.selected_asset = None;
+                        return;
                     }
 
+                    let asset_id = studio_context.get_project().assets.path_to_asset_id.get(asset_path);
+
+                    if asset_id.is_none()
+                    {
+                        panic!("Content browser tried to access an id which is not in the asset"); // @TODO, find a proper way of handling this
+                    }
+
+                    let asset_meta = studio_context.get_project().assets.meta.get(asset_id.unwrap()).unwrap();
+
+                    match asset_meta.kind
+                    {
+                        AssetKind::Graph => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::Graph { graph_viewport: GraphViewport::new(asset_meta.id) }) },
+                    }
+
+                    return;
                 }
 
                 if file_is_being_renamed // @TODO, This is a somewhat dangerous (should be save, but still)
@@ -341,7 +366,10 @@ impl ContentBrowserViewport
 
     fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, mouse_position_when_activated: &egui::Pos2)
     {
-        let assets = &mut studio_context.get_project_mut().assets; // @TODO, maybe this should be handled differently
+        let project = studio_context.get_project_mut();
+
+        let project_path = &project.location; // @TODO, in the future this needs to be handled at runtime
+        let assets = &mut project.assets;
         
         egui::Window::new("")
         .current_pos(egui::Pos2 {
@@ -355,10 +383,10 @@ impl ContentBrowserViewport
         {
             if ui.add(egui::Button::new("create file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed.txt");
-                assets.create_file(&new_asset_path);
+                // let new_asset_path = self.current_directory.as_ref().unwrap().clone().join("unamed.txt");
+                // assets.create_file(&new_asset_path);
 
-                self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
                 self.quick_menu = None;
             };
             
@@ -373,9 +401,13 @@ impl ContentBrowserViewport
 
             if ui.add(egui::Button::new("create graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                assets.create_asset(self.current_directory.as_ref().unwrap(), AssetKind::Graph);
+                let asset_id = assets.create_asset(self.current_directory.as_ref().unwrap(), AssetKind::Graph, None);
 
-                // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                if asset_id.is_some()
+                {
+                    // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) ); // @TODO, add this back, but it needs to use asset id instead of path
+                }
+
                 self.quick_menu = None;
             };
 

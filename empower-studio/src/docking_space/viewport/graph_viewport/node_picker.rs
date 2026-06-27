@@ -7,6 +7,7 @@ const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "wait",
     "list",
     "loop",
+    "sub graph"
 ];
 
 #[derive(Clone, Default)]

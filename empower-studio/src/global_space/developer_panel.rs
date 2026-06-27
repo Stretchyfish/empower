@@ -1,6 +1,6 @@
 use empower_engine::assets::Assets;
 
-use crate::studio_context::{Settings, StudioContext};
+use crate::studio_context::Settings;
 
 pub struct DeveloperPanel
 {
@@ -61,6 +61,23 @@ impl DeveloperPanel
                         {
                             ui.label(asset_id.to_string());
                             ui.label(meta.to_string());
+                            ui.end_row();
+                        }
+                    });
+                });
+
+                ui.collapsing("path to id", |ui|
+                {
+                    egui::Grid::new("assets_path_to_id_visualization")
+                    .num_columns(2)
+                    .spacing([12.0, 4.0])
+                    .striped(true)
+                    .show(ui, |ui|
+                    {
+                        for (path, asset_id) in &assets.path_to_asset_id
+                        {
+                            ui.label(path.to_string_lossy());
+                            ui.label(asset_id.to_string());
                             ui.end_row();
                         }
                     });

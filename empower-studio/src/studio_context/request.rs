@@ -4,6 +4,7 @@ pub enum Request
 {
     DefaultLayout,
     AddViewport { viewport: Viewport },
+    AddViewportAtFirstLeaf { viewport: Viewport }, // @TODO, look into a better way of doing this?
     SaveStudio,
     LoadStudio,
     UserStateClear,

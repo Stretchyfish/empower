@@ -80,6 +80,11 @@ impl StudioContext
         self.requests.push_back( Request::AddViewport { viewport: viewport});
     }
 
+    pub fn request_new_viewport_at_first_docking_leaf(&mut self, viewport: Viewport )
+    {
+        self.requests.push_back( Request::AddViewportAtFirstLeaf { viewport: viewport} );
+    }
+
     fn save_studio(&mut self)
     {
         let created_config_directory = std::fs::create_dir(CONFIG_DIRECTORY.config_dir()); // In case there isn't already a config directory, one is created
@@ -256,6 +261,7 @@ impl StudioContext
         {
             Request::DefaultLayout => { self.layout = Layout::default_layout() },
             Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
+            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
             Request::SaveStudio => { self.save_studio(); },
             Request::LoadStudio => { self.load_studio(); },
             Request::UserStateClear => { self.user_state = None; },
