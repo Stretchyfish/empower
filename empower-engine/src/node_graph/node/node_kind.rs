@@ -71,6 +71,7 @@ pub enum NodeEdit
 {
     Text { label: String, text: String, parseble: bool },
     CheckBox { toggle: bool },
+    GraphSelector { },
 }
 
 impl NodeEdit

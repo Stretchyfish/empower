@@ -77,6 +77,8 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
             
     let project = studio_context.get_project_mut();
 
+    let node_graph_names = project.assets.get_all_node_graph_names(); // This is used later in the node widget drawing stage
+
     let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id); //.expect("graph editor tried to read a node graph but didn't get it from assets");
 
     if node_graph.is_none()
@@ -90,14 +92,14 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     graph_viewport.node_picker.show(ui, node_graph, &graph_viewport.mouse_scene_position_last_frame);
 
     graph_viewport.apply_viewport_state_to_node_graph(node_graph);
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &node_graph_names, &developer_mode);
 
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
 }
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, node_graph_names: &Vec<String>, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -135,7 +137,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, developer_mode);
+                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, node_graph_names, developer_mode);
             }
 
             if self.selected_port.is_some()

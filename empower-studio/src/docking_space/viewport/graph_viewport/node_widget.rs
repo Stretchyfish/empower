@@ -19,6 +19,7 @@ pub fn show(
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
     cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+    node_graph_names: &Vec<String>,
     developer_mode: &bool,
 )
 {
@@ -26,7 +27,7 @@ pub fn show(
 
     let node_size = node.kind.size();
 
-    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, &node_size, developer_mode);
+    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, &node_size, node_graph_names, developer_mode);
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {

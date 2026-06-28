@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SubGraphNode
 {
+    edit_state: Vec<NodeEdit>,
     
 }
 
@@ -21,6 +22,10 @@ impl NodeKind for SubGraphNode
     fn new() -> Box<dyn NodeKind>where Self:Sized {
 
         Box::new( Self {
+
+            edit_state: vec![
+                NodeEdit::GraphSelector {  },
+            ],
             
         })
     }
@@ -47,14 +52,14 @@ impl NodeKind for SubGraphNode
     }
 
     fn node_edits(&mut self) -> Option< &mut Vec<NodeEdit> >  {
-        None
+        Some( &mut self.edit_state )
     }
 
-    fn sync_node_edit(&mut self, index: usize) -> NodeSyncResponse {
-        todo!()
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
+        NodeSyncResponse::Nothing
     }
 
-    fn compile(&self,ctx: &mut CompiledGraphContext,input_port_register_adresses:Vec<RegisterAddress> ,output_port_register_adresses:Vec<RegisterAddress>) {
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
     }
 
     fn control_flow(&self) -> ControlFlowKind {

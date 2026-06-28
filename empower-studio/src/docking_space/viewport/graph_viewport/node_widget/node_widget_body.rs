@@ -22,6 +22,7 @@ pub fn show(
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
+            node_graph_names: &Vec<String>,
             developer_mode: &bool,
         ) -> f32
 {
@@ -158,6 +159,7 @@ pub fn show(
         {
             NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
             NodeEdit::CheckBox { toggle: _ } => todo!(),
+            NodeEdit::GraphSelector {  } => draw_graph_selector_edit(ui, &edit_position, &mut "a".to_string(), node_graph_names),
         };
 
         if changed
@@ -197,4 +199,31 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     let response = ui.put(text_box_rect , text_edit);
 
     (response.changed(), 40.0 )
+}
+
+fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph_name: &mut String, node_graph_names: &Vec<String>) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        "node graph",
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+    
+    let graph_selector_rect = egui::Rect::from_min_size(
+                                egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
+                                egui::vec2( 100.0, painted_text.size().y ));
+
+    ui.menu_button(selected_graph_name.clone(), |ui|
+    {
+        for text in node_graph_names
+        {
+            ui.label(text);
+        }
+    });
+
+    (false, 40.0)
 }
