@@ -29,7 +29,7 @@ impl NodeGraph {
     pub fn new(name: &'static str) -> Self {
         let mut node_graph = Self {
             name: name.to_string(),
-            start_node_key: 0,
+            start_node_key: 1, // @TODO, make this some kind of const?
             end_node_key: None,
 
             nodes: HashMap::new(),
@@ -251,6 +251,34 @@ impl NodeGraph {
         }
 
         Some((node, inputs, ouptuts))
+    }
+
+    pub fn get_node_input_ports(&self, node_key: NodeGraphKey) -> Vec<Port>
+    {
+        let node = self.nodes.get(&node_key).unwrap();
+        let mut inputs = Vec::new();
+
+        for port_key in &node.input_port_keys
+        {
+            let port = self.ports.get(port_key).unwrap().clone();
+            inputs.push(port);
+        }
+
+        inputs
+    }
+
+    pub fn get_node_output_ports(&self, node_key: NodeGraphKey) -> Vec<Port>
+    {
+        let node = self.nodes.get(&node_key).unwrap();
+        let mut outputs = Vec::new();
+
+        for port_key in &node.output_port_keys
+        {
+            let port = self.ports.get(port_key).unwrap().clone();
+            outputs.push(port);
+        }
+
+        outputs
     }
 
     pub fn get_connected_exec_nodes(&self, node_key: NodeGraphKey) -> Vec<NodeGraphKey> {

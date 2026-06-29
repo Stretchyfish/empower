@@ -61,6 +61,17 @@ impl Port
         port
     }
 
+    pub fn to_port_definitions(&self) -> PortDefinition
+    {
+        PortDefinition
+        {
+            name: self.name.clone(),
+            direction: self.direction,
+            kind: self.kind,
+            compatability: self.compatability.clone()
+        }
+    }
+
     pub fn compatible_with(&self, port: &Port) -> bool
     {
         match (self.kind, port.kind)

@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-use crate::{compiler::{CompiledGraphContext, RegisterAddress}, node_graph::port::PortDefinition};
+use crate::{assets::AssetId, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{NodeGraphKey, Port, port::PortDefinition}};
 
 mod print_node;
 use print_node::PrintNode;
@@ -46,6 +46,8 @@ pub trait NodeKind
 
     fn sync_node_edit(&mut self, index: usize) -> NodeSyncResponse;
 
+    fn sync_node_state(&mut self, node_state: NodeState);
+
     fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>);
 
     fn control_flow(&self) -> ControlFlowKind;
@@ -71,7 +73,7 @@ pub enum NodeEdit
 {
     Text { label: String, text: String, parseble: bool },
     CheckBox { toggle: bool },
-    GraphSelector { },
+    GraphSelector { graph_id: Option<AssetId> },
 }
 
 impl NodeEdit
@@ -126,6 +128,12 @@ pub enum NodeSyncResponse
 {
     Nothing,
     NodesStructureChanged,
+    LoadSubgraph( AssetId ),
+}
+
+pub enum NodeState
+{
+    GraphStartAndEndPorts { start_input_ports: Vec<Port>, end_output_ports: Vec<Port>},
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;

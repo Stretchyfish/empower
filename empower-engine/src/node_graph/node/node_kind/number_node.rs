@@ -1,6 +1,7 @@
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeState;
 use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
@@ -61,6 +62,10 @@ impl NodeKind for NumberNode
 
     fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>) {

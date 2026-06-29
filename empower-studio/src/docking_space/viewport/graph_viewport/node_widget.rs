@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, VecDeque}, f32};
 
-use empower_engine::node_graph::{NodeGraph, NodeGraphKey};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey}};
 use crate::docking_space::viewport::graph_viewport::{area_select::AreaSelect};
 
 use super::GraphViewportAction;
@@ -19,7 +19,7 @@ pub fn show(
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
     cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
-    node_graph_names: &Vec<String>,
+    node_graph_names: &HashMap<AssetId, String>,
     developer_mode: &bool,
 )
 {

@@ -1,6 +1,7 @@
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeState;
 use crate::node_graph::port::PortDefinition;
 use crate::value::Value;
 use super::ControlFlowKind;
@@ -57,6 +58,10 @@ impl NodeKind for WaitNode
 
     fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         NodeSyncResponse::Nothing
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {

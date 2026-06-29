@@ -4,7 +4,7 @@ use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 use super::Viewport;
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::NodeSyncResponse, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -99,7 +99,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, node_graph_names: &Vec<String>, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -325,13 +325,32 @@ impl GraphViewport
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
                 {
-                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    let sync_response = graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index );
+                    let sync_response = {
+                        let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                        graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index )
+                    };
 
                     match sync_response
                     {
                         NodeSyncResponse::Nothing => {},
-                        NodeSyncResponse::NodesStructureChanged => {
+                        NodeSyncResponse::NodesStructureChanged =>
+                        {
+                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            graph.refresh_node(&node_key);
+                        },
+                        NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
+                        {
+                            let sub_graph = studio_context.get_project_mut().assets.get_node_graph(&node_graph_id).unwrap();
+
+                            println!("Start node key: {}", sub_graph.start_node_key);
+                            let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
+
+                            println!("Got here with node graph id: {}, and two vectors {}", node_graph_id, start_node_input_ports.len());
+
+                            let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
+                            
+                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
                             graph.refresh_node(&node_key);
                         },
                     }

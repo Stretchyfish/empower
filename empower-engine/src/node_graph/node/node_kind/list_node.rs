@@ -1,4 +1,4 @@
-use crate::{node_graph::{NodeEdit, node::node_kind::NodeSyncResponse, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
+use crate::{node_graph::{NodeEdit, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
 
 use serde::{Deserialize, Serialize};
 use super::NodeKind;
@@ -75,6 +75,10 @@ impl NodeKind for ListNode
         self.size = size.unwrap();
 
         NodeSyncResponse::NodesStructureChanged
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
 
     fn compile(&self, _: &mut crate::compiler::CompiledGraphContext, _: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {

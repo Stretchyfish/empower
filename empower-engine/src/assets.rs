@@ -135,34 +135,9 @@ impl Assets
         id
     }
 
-    pub fn get_all_node_graph_names(&mut self) -> Vec<String>
+    pub fn get_all_node_graph_names(&mut self) -> HashMap<AssetId, String> 
     {
-        let mut names = Vec::new();
-
-        let mut graph_assets_to_load = Vec::new();
-        for (id, meta) in &self.meta
-        {
-            if meta.kind != AssetKind::Graph
-            {
-                continue;
-            }
-
-            if self.node_graphs.contains_key(id)
-            {
-                names.push( self.node_graphs.get(id).unwrap().name.clone() );
-                continue;
-            }
-
-            graph_assets_to_load.push(id.clone());
-        }
-
-        for asset_id in &graph_assets_to_load
-        {
-            self.load_asset(*asset_id);
-            names.push( self.node_graphs.get(asset_id).unwrap().name.clone() );
-        }
-
-        names
+        self.node_graphs.iter().map(|(id, node_graph)| (id.clone(), node_graph.name.clone())).collect()
     }
 
 

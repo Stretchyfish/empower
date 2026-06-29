@@ -1,4 +1,4 @@
-use crate::{compiler::Instruction, node_graph::port::PortDefinition, value::Value};
+use crate::{compiler::Instruction, node_graph::{node::node_kind::NodeState, port::PortDefinition}, value::Value};
 
 use serde::{Deserialize, Serialize};
 use super::NodeKind;
@@ -51,6 +51,10 @@ impl NodeKind for BranchNode
 
     fn sync_node_edit(&mut self, _: usize) -> super::NodeSyncResponse {
         todo!()
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
 
     fn compile(&self, ctx: &mut crate::compiler::CompiledGraphContext, input_register_addresses: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {

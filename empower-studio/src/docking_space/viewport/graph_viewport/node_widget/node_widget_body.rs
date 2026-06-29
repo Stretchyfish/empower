@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-use empower_engine::node_graph::{Node, NodeEdit, NodeGraphKey};
+use empower_engine::{assets::AssetId, node_graph::{Node, NodeEdit, NodeGraphKey}};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -22,7 +22,7 @@ pub fn show(
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
-            node_graph_names: &Vec<String>,
+            node_graph_names: &HashMap<AssetId, String>,
             developer_mode: &bool,
         ) -> f32
 {
@@ -159,7 +159,7 @@ pub fn show(
         {
             NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
             NodeEdit::CheckBox { toggle: _ } => todo!(),
-            NodeEdit::GraphSelector {  } => draw_graph_selector_edit(ui, &edit_position, &mut "a".to_string(), node_graph_names),
+            NodeEdit::GraphSelector { graph_id } => draw_graph_selector_edit(ui, &edit_position, graph_id, node_graph_names),
         };
 
         if changed
@@ -201,7 +201,7 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     (response.changed(), 40.0 )
 }
 
-fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph_name: &mut String, node_graph_names: &Vec<String>) -> (bool, f32)
+fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph: &mut Option<AssetId>, node_graph_names: &HashMap<AssetId, String>) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -212,18 +212,39 @@ fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         egui::FontId::proportional(35.0),
         egui::Color32::WHITE,
     );
-    
-    let graph_selector_rect = egui::Rect::from_min_size(
-                                egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
-                                egui::vec2( 100.0, painted_text.size().y ));
 
-    ui.menu_button(selected_graph_name.clone(), |ui|
+    let graph_name =
+    if selected_graph.is_some()
     {
-        for text in node_graph_names
-        {
-            ui.label(text);
-        }
-    });
+        node_graph_names.get(&selected_graph.unwrap()).unwrap().clone() // @TODO, take a second look at this, might be dangerous
+    }
+    else
+    {
+        "unknown".to_string()
+    };
 
-    (false, 40.0)
+    let id_before_change = *selected_graph;
+
+    // let combo_rect = egui::Rect::from_min_size(
+    //     egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
+    //     egui::vec2(100.0, painted_text.size().y)
+    // );
+
+    egui::Area::new("graph selector".into())
+    .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
+    .show(&ui.ctx(), |ui|
+    {
+        egui::ComboBox::from_id_salt("graph selector") // @TODO, make ids unique, otherwise it will have conflicts later
+        .selected_text( graph_name )
+        .show_ui(ui, |ui|
+        {
+            for (id, text) in node_graph_names
+            {
+                ui.selectable_value( selected_graph, Some( *id ), text);
+            }
+        });
+
+    });
+    
+    (id_before_change != *selected_graph, 40.0)
 }

@@ -2,8 +2,9 @@ use crate::value::Value;
 
 use super::PortDirection;
 use super::PortKind;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PortDefinition
 {
     pub name: String, // @TODO, considering changing this to &'static str (blocked by alphabet counter)

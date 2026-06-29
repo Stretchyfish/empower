@@ -1,6 +1,7 @@
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeState;
 use crate::node_graph::node::node_kind::NodeSyncResponse;
 use crate::value::Value;
 use crate::node_graph::port::PortDefinition;
@@ -67,4 +68,9 @@ impl NodeKind for PrintNode
     fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
+    }
+
 }

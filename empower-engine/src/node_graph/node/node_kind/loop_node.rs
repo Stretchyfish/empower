@@ -1,4 +1,4 @@
-use crate::node_graph::{node::node_kind::ControlFlowKind, port::PortDefinition};
+use crate::node_graph::{node::node_kind::{ControlFlowKind, NodeState}, port::PortDefinition};
 use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
@@ -49,6 +49,10 @@ impl NodeKind for LoopNode
 
     fn sync_node_edit(&mut self, _: usize) -> super::NodeSyncResponse {
         super::NodeSyncResponse::Nothing
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
 
     fn compile(&self, _: &mut crate::compiler::CompiledGraphContext, _: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {
