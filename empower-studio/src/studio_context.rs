@@ -1,7 +1,7 @@
 mod layout;
 use std::collections::VecDeque;
 
-use empower_engine::{assets::Assets, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
+use empower_engine::{assets::{AssetId, Assets}, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -83,6 +83,11 @@ impl StudioContext
     pub fn request_new_viewport_at_first_docking_leaf(&mut self, viewport: Viewport )
     {
         self.requests.push_back( Request::AddViewportAtFirstLeaf { viewport: viewport} );
+    }
+
+    pub fn request_add_or_focus_graph_viewport(&mut self, graph_id: AssetId )
+    {
+        self.requests.push_back( Request::AddOrFocusGraphViewport { graph_id: graph_id });
     }
 
     fn save_studio(&mut self)
@@ -261,6 +266,7 @@ impl StudioContext
         {
             Request::DefaultLayout => { self.layout = Layout::default_layout() },
             Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
+            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id); },
             Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
             Request::SaveStudio => { self.save_studio(); },
             Request::LoadStudio => { self.load_studio(); },

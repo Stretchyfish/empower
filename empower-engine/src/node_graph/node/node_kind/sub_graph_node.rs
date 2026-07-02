@@ -1,13 +1,11 @@
-use crate::assets::Assets;
+use crate::assets::AssetId;
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
 use crate::node_graph::NodeEdit;
-use crate::node_graph::Port;
 use crate::node_graph::node::node_kind::NodeState;
 use crate::node_graph::port::PortDefinition;
 use crate::node_graph::port::PortDirection;
-use crate::value::Value;
 use super::ControlFlowKind;
 use super::NodeSyncResponse; 
 use super::NodeKind;
@@ -16,6 +14,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SubGraphNode
 {
+    graph_id: Option<AssetId>,
+    
     edit_state: Vec<NodeEdit>,
 
     graph_start_node_input_port_definitions: Vec<PortDefinition>,
@@ -29,8 +29,12 @@ impl NodeKind for SubGraphNode
 
         Box::new( Self {
 
+            graph_id: None,
+
             edit_state: vec![
                 NodeEdit::GraphSelector { graph_id: None }, 
+                NodeEdit::GraphViewportOpener { graph_id: None }
+
             ],
 
             graph_start_node_input_port_definitions: Vec::new(),
@@ -48,7 +52,13 @@ impl NodeKind for SubGraphNode
     }
 
     fn size(&self) -> egui::Vec2 {
-        egui::vec2(300.0, 220.0)
+
+        if self.graph_id.is_none()
+        {
+            return egui::vec2(300.0, 220.0);
+        }
+        
+        egui::vec2(300.0, 280.0)
     }
 
     fn input_port_definitions(&self) -> Vec<PortDefinition>  {
@@ -65,15 +75,20 @@ impl NodeKind for SubGraphNode
 
     fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
 
-        let graph_id = match self.edit_state[0] // @TODO, this is not a great approach, and should be fixed in the future
+        self.graph_id = match self.edit_state[0] // @TODO, this is not a great approach, and should be fixed in the future
         {
-            NodeEdit::GraphSelector { graph_id } => graph_id.unwrap(),
+            NodeEdit::GraphSelector { graph_id } => graph_id,
             _ => { return NodeSyncResponse::Nothing; }, 
         };
 
-        println!("Sub graph id to edit: {}", graph_id);
+        match &mut self.edit_state[1]
+        {
+            
+            NodeEdit::GraphViewportOpener { graph_id } => { *graph_id = self.graph_id; },
+            _ => {},
+        }
 
-        NodeSyncResponse::LoadSubgraph( graph_id )
+        NodeSyncResponse::LoadSubgraph( self.graph_id.unwrap() )
     }
 
     fn sync_node_state(&mut self, node_state: NodeState) {
@@ -100,6 +115,24 @@ impl NodeKind for SubGraphNode
     }
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
+
+        let graph_id = match self.edit_state[0]
+        {
+            NodeEdit::GraphSelector { graph_id } => graph_id,
+            _ => None,
+        };
+
+        if graph_id.is_none()
+        {
+            return;
+        }
+
+        let graph_id = graph_id.unwrap();
+
+        ctx.additional_graphs_to_compile.push(graph_id);
+        ctx.add_instruction( Instruction::CallGraph(graph_id));
+
+        
     }
 
     fn control_flow(&self) -> ControlFlowKind {

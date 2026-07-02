@@ -14,6 +14,7 @@ const VERTICAL_PORT_GAB: f32 = 60.0;
 pub fn show(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
+    graph_id: &AssetId,
     node_graph: &mut NodeGraph, 
     graph_viewport_title: &String, 
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
@@ -27,7 +28,7 @@ pub fn show(
 
     let node_size = node.kind.size();
 
-    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, &node_size, node_graph_names, developer_mode);
+    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_id, graph_viewport_title, graph_viewport_actions, area_select, &node_size, node_graph_names, developer_mode);
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {

@@ -158,7 +158,7 @@ impl Assets
     pub fn add_node_graph(&mut self, node_graph: NodeGraph, location: &PathBuf) -> AssetId // @TODO, don't know how good this name is
     {
         let id = self.get_asset_id();
-        self.save_node_graph(&node_graph, location);
+        let _ = self.save_node_graph(&node_graph, location);
         
         self.node_graphs.insert(id, node_graph);
         id

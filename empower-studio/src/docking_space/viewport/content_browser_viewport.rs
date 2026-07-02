@@ -38,7 +38,7 @@ impl ContentBrowserViewport
     }
 }
 
-pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
+pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, user_inputs: &UserInputs)
 {
     if ui.max_rect().contains(user_inputs.mouse_position)
     {

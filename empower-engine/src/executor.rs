@@ -41,6 +41,7 @@ impl Executor
             return;
         }
 
+        let mut frames_to_add = Vec::new();
         let mut frames_to_remove = Vec::new();
 
         for (frame_index, frame) in self.frames.iter_mut().enumerate()
@@ -104,6 +105,10 @@ impl Executor
                 {
                     frame.state = GraphFrameState::Sleeping( std::time::Instant::now() + std::time::Duration::from_secs_f32( frame.value_registers.get(register_address).unwrap().as_f32() ));
                 },
+                Instruction::CallGraph( node_graph_id ) =>
+                {
+                    frames_to_add.push( GraphFrame::new(*node_graph_id) );
+                },
             }
     
             frame.next_address += 1;
@@ -112,6 +117,11 @@ impl Executor
         for frame_index in frames_to_remove
         {
             self.frames.remove(frame_index);
+        }
+
+        for frame in frames_to_add
+        {
+            self.frames.push(frame);
         }
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use empower_engine::{assets::AssetId, node_graph::{Node, NodeEdit, NodeGraphKey}};
 
@@ -18,6 +18,7 @@ pub fn show(
             ui: &mut egui::Ui, 
             node_key: &NodeGraphKey,
             node: &mut Node,
+            viewport_graph_id: &AssetId,
             graph_viewport_title: &String, 
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
@@ -159,7 +160,8 @@ pub fn show(
         {
             NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
             NodeEdit::CheckBox { toggle: _ } => todo!(),
-            NodeEdit::GraphSelector { graph_id } => draw_graph_selector_edit(ui, &edit_position, graph_id, node_graph_names),
+            NodeEdit::GraphSelector { graph_id } => draw_graph_selector_edit(ui, &edit_position, graph_id, viewport_graph_id, node_graph_names),
+            NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions ),
         };
 
         if changed
@@ -201,7 +203,7 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     (response.changed(), 40.0 )
 }
 
-fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph: &mut Option<AssetId>, node_graph_names: &HashMap<AssetId, String>) -> (bool, f32)
+fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph: &mut Option<AssetId>, viewport_graph_id: &AssetId, node_graph_names: &HashMap<AssetId, String>) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -225,26 +227,61 @@ fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
 
     let id_before_change = *selected_graph;
 
-    // let combo_rect = egui::Rect::from_min_size(
-    //     egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
-    //     egui::vec2(100.0, painted_text.size().y)
-    // );
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        // egui::vec2(200.0, painted_text.size().y * 2.0)
+        egui::Vec2::INFINITY
+    );
 
-    egui::Area::new("graph selector".into())
-    .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
-    .show(&ui.ctx(), |ui|
+    let sorted_names: BTreeMap<&AssetId, &String> = node_graph_names.into_iter().collect();
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt("graph selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( graph_name )
+    .show_ui(&mut child_ui, |ui|
     {
-        egui::ComboBox::from_id_salt("graph selector") // @TODO, make ids unique, otherwise it will have conflicts later
-        .selected_text( graph_name )
-        .show_ui(ui, |ui|
+        for (id, text) in sorted_names
         {
-            for (id, text) in node_graph_names
+            if id == viewport_graph_id
             {
-                ui.selectable_value( selected_graph, Some( *id ), text);
+                continue;
             }
-        });
-
+            
+            ui.selectable_value( selected_graph, Some( *id ), text);
+        }
     });
+    // egui::Area::new("graph selector".into())
+    // .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
+    // .show(&mut child_ui.ctx(), |ui|
+    // {
+
+    // });
     
     (id_before_change != *selected_graph, 40.0)
+}
+
+fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, graph_id: &Option<AssetId>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> (bool, f32)
+{
+    if graph_id.is_none()
+    {
+        return (false, 40.0);
+    }
+
+    let button_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let button_rect = egui::Rect::from_min_size(
+        button_position,
+        egui::vec2(200.0, 40.0)
+    );
+
+    let button = egui::Button::new("open viewport");
+
+    let response = ui.put(button_rect, button);
+
+    if response.clicked()
+    {
+        graph_viewport_actions.push_back( GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id: graph_id.unwrap() });
+    }
+    
+    (false, 40.0)
 }

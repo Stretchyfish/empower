@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
-use super::Viewport;
 use std::collections::{HashMap, HashSet};
 use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDirection}};
 use serde::{Serialize, Deserialize};
@@ -19,7 +18,7 @@ use node_picker::NodePicker;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GraphViewport
 {
-    graph_asset_id: AssetId,
+    pub graph_asset_id: AssetId,
     scene_rect: egui::Rect,
 
     #[serde(skip)]
@@ -112,7 +111,7 @@ impl GraphViewport
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
         egui::Scene::new()
         .zoom_range(0.01..=2.0)
-        .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
+        // .max_inner_size(egui::Vec2 { x: 200.0, y: 200.0 })
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
@@ -137,7 +136,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, node_graph_names, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, node_graph_names, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -342,10 +341,7 @@ impl GraphViewport
                         {
                             let sub_graph = studio_context.get_project_mut().assets.get_node_graph(&node_graph_id).unwrap();
 
-                            println!("Start node key: {}", sub_graph.start_node_key);
                             let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
-
-                            println!("Got here with node graph id: {}, and two vectors {}", node_graph_id, start_node_input_ports.len());
 
                             let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
                             
@@ -355,6 +351,11 @@ impl GraphViewport
                         },
                     }
                 },
+
+                GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
+                {
+                    studio_context.request_add_or_focus_graph_viewport( graph_id );
+                }
             }
         }
     }
@@ -373,4 +374,5 @@ enum GraphViewportAction
     SecondaryClickedBackground,
     NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
+    RequestNewGraphViewportOrFocus { graph_id: AssetId },
 }

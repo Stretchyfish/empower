@@ -1,4 +1,4 @@
-use crate::{compiler::RegisterAddress, value::Value};
+use crate::{assets::AssetId, compiler::RegisterAddress, value::Value};
 
 pub type InstructionSet = Vec<Instruction>;
 
@@ -14,6 +14,7 @@ pub enum Instruction
     Print(RegisterAddress),
     Return,
     Wait(RegisterAddress),
+    CallGraph ( AssetId ),
 }
 
 impl Instruction
@@ -29,6 +30,7 @@ impl Instruction
             Instruction::Print( register_address ) => format!("Print ({})", register_address),
             Instruction::Return => "Return".to_string(),
             Instruction::Wait( register_address ) => format!("Wait ({})", register_address),
+            Instruction::CallGraph( node_graph_id ) => format!("CallGraph ({})", node_graph_id),
         }
     }
 }

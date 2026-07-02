@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{NodeGraphKey, Port, port::PortDefinition}};
+use crate::{assets::AssetId, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}};
 
 mod print_node;
 use print_node::PrintNode;
@@ -74,6 +74,7 @@ pub enum NodeEdit
     Text { label: String, text: String, parseble: bool },
     CheckBox { toggle: bool },
     GraphSelector { graph_id: Option<AssetId> },
+    GraphViewportOpener { graph_id: Option<AssetId> },
 }
 
 impl NodeEdit

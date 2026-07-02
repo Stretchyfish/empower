@@ -1,4 +1,5 @@
 use std::{collections::HashMap, path::Path};
+use empower_engine::assets::AssetId;
 use serde::{Serialize, Deserialize};
 
 use crate::docking_space::{Viewport, viewport::{ContentBrowserViewport, GraphViewport, TerminalViewport}};
@@ -75,6 +76,14 @@ impl Layout
         viewport_name 
     }
 
+    pub fn add_viewport_with_custom_name(&mut self, name: String, new_viewport: Viewport) -> String
+    {
+        self.viewports.insert(name .clone(), new_viewport);
+        self.docking_state.push_to_focused_leaf(name .clone());
+
+        name 
+    }
+
     pub fn add_viewport_at_first_leaf(&mut self, new_viewport: Viewport) -> String // @TODO, look into if this function can be written with a template instead?
     {
         let viewport_name = self.get_viewport_name(&new_viewport);
@@ -93,6 +102,31 @@ impl Layout
         self.viewports.insert(viewport_name .clone(), new_viewport);
 
         viewport_name 
+    }
+
+    pub fn add_or_focus_graph_viewport(&mut self, graph_id: AssetId )
+    {
+        for (viewport_name, viewport) in &self.viewports
+        {
+            match viewport
+            {
+                Viewport::Graph { graph_viewport } =>
+                {
+                    if graph_viewport.graph_asset_id == graph_id
+                    {
+                        let graph_viewport_index = self.docking_state.find_tab(&viewport_name).expect("Unable to find graph viewport tab");
+                        self.docking_state.remove_tab( egui_dock::TabPath { surface: graph_viewport_index.surface, node: graph_viewport_index.node, tab: graph_viewport_index.tab });
+                        self.docking_state.push_to_focused_leaf(viewport_name.clone());
+                        return;
+                    }
+                },
+                _ => {},
+            }
+        }
+
+        println!("Got here");
+
+        self.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new(graph_id) });
     }
 
     pub fn save(&self, config_directory_path: &Path)
