@@ -1,7 +1,5 @@
 use serde::{Serialize, Deserialize};
 
-use once_cell::sync::Lazy;
-
 pub mod empty_viewport;
 pub use empty_viewport::EmptyViewport;
 

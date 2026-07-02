@@ -1,8 +1,10 @@
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 use empower_engine::assets::AssetId;
 use serde::{Serialize, Deserialize};
 
 use crate::docking_space::{Viewport, viewport::{ContentBrowserViewport, GraphViewport, TerminalViewport}};
+
+use super::CONFIG_DIRECTORY;
 
 const CONFIG_LAYOUT_FILE_NAME: &'static str = "layout.json";
 
@@ -129,9 +131,9 @@ impl Layout
         self.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new(graph_id) });
     }
 
-    pub fn save(&self, config_directory_path: &Path)
+    pub fn save(&self)
     {
-        let file_path = config_directory_path.join(CONFIG_LAYOUT_FILE_NAME);
+        let file_path = CONFIG_DIRECTORY.config_dir().join(CONFIG_LAYOUT_FILE_NAME);
 
         let editor_json = serde_json::to_string_pretty(self).unwrap();
 
@@ -147,9 +149,9 @@ impl Layout
         }
     }
 
-    pub fn load(config_directory_path: &Path) -> Self
+    pub fn load() -> Self
     {
-        let editor_state_path = config_directory_path.join(CONFIG_LAYOUT_FILE_NAME);
+        let editor_state_path = CONFIG_DIRECTORY.config_dir().join(CONFIG_LAYOUT_FILE_NAME);
 
         let read_editor_state_result = std::fs::read_to_string(editor_state_path);
 

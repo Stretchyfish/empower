@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use super::asset_kind::AssetKind;
 
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AssetMeta
 {
     pub id: AssetId,

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
-use crate::node_graph::NodeGraph;
+use crate::node_graph::{self, NodeGraph};
 
 pub type AssetId = i32;
 
@@ -10,10 +10,14 @@ use asset_meta::AssetMeta;
 mod asset_kind;
 pub use asset_kind::AssetKind;
 
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Assets
 {
+    #[serde(skip)]
     pub node_graphs: HashMap<AssetId, NodeGraph>,
+
     pub meta: HashMap<AssetId, AssetMeta>,
     pub path_to_asset_id: HashMap<PathBuf, AssetId>,
 }
@@ -158,17 +162,28 @@ impl Assets
     pub fn add_node_graph(&mut self, node_graph: NodeGraph, location: &PathBuf) -> AssetId // @TODO, don't know how good this name is
     {
         let id = self.get_asset_id();
-        let _ = self.save_node_graph(&node_graph, location);
+        
+        let _ = self.save_node_graph(&node_graph, &location.join(format!("{}.graph", node_graph.name)));
         
         self.node_graphs.insert(id, node_graph);
         id
     }
 
-    pub fn save_node_graph(&mut self, node_graph: &NodeGraph, location: &PathBuf) -> Result<PathBuf, ()>
+    pub fn save(&mut self)
+    {
+        // We only need to save what is actively being worked on, so we only loop through the active assets
+        
+        for (node_graph_key, node_graph) in self.node_graphs.clone() // @TODO, this is a potentially crazy expensive call, find a better way
+        {
+            let node_graph_path = self.meta.get(&node_graph_key).unwrap().relative_path.clone();
+            let _ = self.save_node_graph(&node_graph, &node_graph_path);
+        }
+    }
+
+    pub fn save_node_graph(&mut self, node_graph: &NodeGraph, node_graph_save_path: &PathBuf) -> Result<PathBuf, ()>
     {
         let node_graph_json = node_graph.to_json();
 
-        let node_graph_save_path = location.join(format!("{}.graph", node_graph.name));
         
         // let created_node_graph_json_file_results = std::fs::File::create_new(&node_graph_save_path);
 
@@ -191,10 +206,20 @@ impl Assets
             }
         }
 
-        Ok( node_graph_save_path )
+        Ok( node_graph_save_path.clone() )
     }
 
-    pub fn get_node_graph(&self, id: &AssetId) -> Option<&NodeGraph>
+    pub fn get_node_graph(&mut self, id: &AssetId) -> Option<&NodeGraph>
+    {
+        if !self.node_graphs.contains_key(id)
+        {
+            self.load_asset(*id);
+        }
+
+        self.node_graphs.get(id)
+    }
+
+    pub fn get_node_graph_naive(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look
     {
         self.node_graphs.get(id)
     }

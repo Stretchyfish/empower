@@ -72,7 +72,7 @@ impl eframe::App for EmpowerStudioApplication
 
         menu_bar::show(ui, &mut self.studio_context);
         docking_space::show(ui, &mut self.studio_context, &user_inputs);
-        global_space::show(ui, &mut self.studio_context);
+        global_space::show(ui, &mut self.studio_context, &user_inputs);
         execution_space::show(ui, &mut self.studio_context);
 
         self.studio_context.process_requests();

@@ -56,7 +56,7 @@ pub fn release_compile(project: &Project) -> Result<Program, &'static str>
 
 pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project)
 {
-    let node_graph = project.assets.get_node_graph(&graph_id).unwrap(); 
+    let node_graph = project.assets.get_node_graph_naive(&graph_id).unwrap(); // @TODO, this will fail if the asset is not loaded
     let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
 
     compile_node_chain(&mut compiled_graph_context, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph

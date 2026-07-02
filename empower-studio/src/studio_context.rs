@@ -1,5 +1,5 @@
 mod layout;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, path::PathBuf};
 
 use empower_engine::{assets::{AssetId, Assets}, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
@@ -13,6 +13,9 @@ pub use windows::Windows;
 
 mod settings;
 pub use settings::Settings;
+
+mod cache;
+pub use cache::Cache;
 
 use crate::{docking_space::Viewport, user_state::{UserAction, UserState}};
 
@@ -36,6 +39,8 @@ pub struct StudioContext
     windows: Windows,
 
     requests: VecDeque<Request>,
+
+    cache: Cache,
 }
 
 impl StudioContext
@@ -46,7 +51,7 @@ impl StudioContext
         {
             project: Project::new(),
             
-            layout: Layout::load(&CONFIG_DIRECTORY.config_dir()),
+            layout: Layout::load(),
             settings: Settings::new(),
 
             executor_settings: ExecutorSettings::new_debug_mode(),
@@ -57,6 +62,8 @@ impl StudioContext
             windows: Windows::new(),
 
             requests: VecDeque::new(),
+
+            cache: Cache::load(),
         }
     }
 
@@ -105,12 +112,14 @@ impl StudioContext
             },
         }
 
-        self.layout.save(&CONFIG_DIRECTORY.config_dir());
+        self.layout.save();
+        self.cache.save();
     }
 
     fn load_studio(&mut self)
     {
-        self.layout = Layout::load(&CONFIG_DIRECTORY.config_dir());
+        self.layout = Layout::load();
+        self.cache = Cache::load();
     }
 
     pub fn request_save_studio(&mut self)
@@ -173,9 +182,19 @@ impl StudioContext
         (&mut self.windows, &mut self.settings, &self.user_state)
     }
 
-    pub fn get_windows_and_settings_mut_and_assets(&mut self) -> (&mut Windows, &mut Settings, &Assets)
+    pub fn get_windows(&mut self) -> Windows
     {
-        (&mut self.windows, &mut self.settings, &self.project.assets)
+        self.windows.clone()
+    }
+
+    pub fn set_windows(&mut self, windows: Windows)
+    {
+        self.windows = windows;
+    }
+
+    pub fn get_settings_mut_and_assets(&mut self) -> (&mut Settings, &Assets)
+    {
+        (&mut self.settings, &self.project.assets)
     }
 
     pub fn request_compile(&mut self)
@@ -253,6 +272,31 @@ impl StudioContext
         &mut self.executor
     }
 
+    pub fn request_save_project(&mut self)
+    {
+        self.requests.push_back( Request::SaveProject );
+    }
+
+    pub fn request_save_project_as(&mut self)
+    {
+        self.requests.push_back( Request::SaveProjectAs );
+    }
+
+    pub fn request_load_project(&mut self)
+    {
+        self.requests.push_back( Request::LoadProject );
+    }
+
+    pub fn get_cache(&self) -> &Cache
+    {
+        &self.cache
+    }
+
+    pub fn request_load_specific_project(&mut self, project_path: PathBuf)
+    {
+        self.requests.push_back( Request::LoadSpecificProject { project_path });
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -269,6 +313,14 @@ impl StudioContext
             Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id); },
             Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
             Request::SaveStudio => { self.save_studio(); },
+            Request::SaveProject =>
+            {
+                let _ = self.project.save();
+                self.cache.add_previous_project(self.project.location.clone());
+            },
+            Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
+            Request::LoadProject => {  self.project.load(); },
+            Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
             Request::LoadStudio => { self.load_studio(); },
             Request::UserStateClear => { self.user_state = None; },
             Request::UserStateChange { layer_or_viewport, new_action } => { self.user_state = Some( UserState::from(layer_or_viewport, new_action) )},

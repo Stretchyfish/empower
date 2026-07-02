@@ -13,7 +13,16 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     let graph_names = project.assets.get_all_node_graph_names(); // @TODO, this is currently unsorted
     let sorted_names: BTreeMap<AssetId, String> = graph_names.into_iter().collect();
 
-    let selected_graph_name = project.assets.get_node_graph( &project.entry_graph ).expect("Menu bar was asked to get an graph asset id that doesn't exist in assets").name.clone();
+    let selected_graph_name = match project.assets.get_node_graph( &project.entry_graph )
+    {
+        Some( node_graph ) => node_graph.name.clone(),
+        None =>
+        {
+            println!("Menu bar was asked to get an graph asset id that doesn't exist in assets");
+            "unknown".to_string()   
+        },
+    };
+
 
     ui.menu_button(selected_graph_name, |ui|
     {

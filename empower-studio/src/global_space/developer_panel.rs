@@ -1,7 +1,8 @@
 use empower_engine::assets::Assets;
 
-use crate::studio_context::Settings;
+use crate::studio_context::{Settings, StudioContext};
 
+#[derive(Clone)]
 pub struct DeveloperPanel
 {
     show: bool,
@@ -23,12 +24,14 @@ impl DeveloperPanel
         self.show = !self.show;
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, settings: &mut Settings, assets: &Assets)
+    pub fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         if !self.show 
         {
             return;
         }
+
+        let (settings, assets) = studio_context.get_settings_mut_and_assets();
 
         egui::Window::new("Developer Panel")
         .collapsible(true)
