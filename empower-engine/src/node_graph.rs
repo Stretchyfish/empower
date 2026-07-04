@@ -89,6 +89,61 @@ impl NodeGraph {
         node_key
     }
 
+    pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeGraphKey
+    {
+        // @TODO, this whole function needs a second look
+
+        let mut cloned_node = self.nodes.get(node_key).expect("ERROR in create_node_copy, asked to get node with incorrect key").clone();
+
+        let new_node_key = self.get_available_node_key();
+
+        // cloned_node.key = new_node_key;
+
+        // @TODO, consider finding a way of utilizing the create input and output port function here
+        let mut new_input_port_keys = Vec::with_capacity(cloned_node.input_port_keys.len());
+        for input_port_key in &cloned_node.input_port_keys
+        {
+            let mut input_port_copy = self.ports.get(input_port_key).expect("ERROR in create_node_copy, requested to fetch input port with a key not in the input port list")
+                                                                                .clone();
+            let new_copied_input_port_key = self.get_available_port_key();
+            input_port_copy.key = new_copied_input_port_key;
+            input_port_copy.node_key = new_node_key;
+
+            new_input_port_keys.push(input_port_copy.key);
+            self.ports.insert(input_port_copy.key, input_port_copy);
+
+            if self.connections_in.contains_key(input_port_key)
+            {
+                let connection = self.connections_in.get(input_port_key).unwrap().clone();
+                let add_connection_result = self.add_connection(&connection, &new_copied_input_port_key);
+
+                if !add_connection_result
+                {
+                    println!("{:?}", "failed to transfer connection to new port");
+                }
+            }
+        }
+
+        let mut new_output_port_keys = Vec::with_capacity(cloned_node.output_port_keys.len());
+        for output_port_key in &cloned_node.output_port_keys
+        {
+            let mut output_port_copy = self.ports.get(output_port_key).expect("ERROR in create_node_copy, requested to fetch output port with a key not in the output port list")
+                                                                                    .clone();
+            output_port_copy.key = self.get_available_port_key();
+            output_port_copy.node_key = new_node_key;
+
+            new_output_port_keys.push(output_port_copy.key);
+            self.ports.insert(output_port_copy.key, output_port_copy);
+        }
+
+        cloned_node.input_port_keys = new_input_port_keys.clone();
+        cloned_node.output_port_keys = new_output_port_keys.clone();
+
+        self.nodes.insert(new_node_key, cloned_node);
+
+        new_node_key
+    }
+
     pub fn refresh_node(&mut self, node_key: &NodeGraphKey) {
         // @TODO, this function is still far from finished
         // - output ports changing
@@ -155,6 +210,38 @@ impl NodeGraph {
         for port_key in ports_to_remove {
             self.remove_connection(&port_key);
         }
+    }
+
+    pub fn remove_node(&mut self, node_key: &NodeGraphKey) -> bool
+    {
+        let (input_port_keys, output_port_keys) =
+        {
+            let node = self.nodes.get(node_key).unwrap();
+            ( node.input_port_keys.clone() , node.output_port_keys.clone() )
+        };
+
+        self.nodes.remove(node_key);
+
+        for input_port_key in input_port_keys
+        {
+            self.ports.remove(&input_port_key);
+            self.remove_connection(&input_port_key);
+        }
+
+        for output_port_key in output_port_keys
+        {
+            self.ports.remove(&output_port_key);
+
+            if self.connections_out.contains_key(&output_port_key) // @TODO, this approach is not great, but works for now
+            {
+                for input_port_key in self.connections_out.get(&output_port_key).unwrap().clone()
+                {
+                    self.remove_connection(&input_port_key);
+                }
+            }
+        }
+
+        true
     }
 
     fn add_ports(

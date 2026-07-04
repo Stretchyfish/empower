@@ -15,6 +15,9 @@ use area_select::AreaSelect;
 mod node_picker;
 use node_picker::NodePicker;
 
+mod selected_nodes_quick_menu;
+use selected_nodes_quick_menu::SelectedNodesQuickMenu;
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GraphViewport
 {
@@ -39,11 +42,14 @@ pub struct GraphViewport
     #[serde(skip)]
     node_picker: NodePicker,
     
-    #[serde(skip)]
-    cached_node_sizes: HashMap<NodeGraphKey, egui::Vec2>,
+    // #[serde(skip)]
+    // cached_node_sizes: HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back later
 
     #[serde(skip)]
     cached_port_positions: HashMap<NodeGraphKey, egui::Pos2>,
+
+    #[serde(skip)]
+    selected_nodes_quick_menu: SelectedNodesQuickMenu,
 }
 
 impl GraphViewport
@@ -62,8 +68,8 @@ impl GraphViewport
             selected_port: None,
             area_select: None,
             node_picker: NodePicker::new(),
-            cached_node_sizes: HashMap::new(),
             cached_port_positions: HashMap::new(),
+            selected_nodes_quick_menu: SelectedNodesQuickMenu::new(),
         }
     }
 }
@@ -75,9 +81,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
     let project = studio_context.get_project_mut();
-
     let node_graph_names = project.assets.get_all_node_graph_names(); // This is used later in the node widget drawing stage
-
     let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id); //.expect("graph editor tried to read a node graph but didn't get it from assets");
 
     if node_graph.is_none()
@@ -89,6 +93,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     let node_graph = node_graph.unwrap();
 
     graph_viewport.node_picker.show(ui, node_graph, &graph_viewport.mouse_scene_position_last_frame);
+    graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
     graph_viewport.apply_viewport_state_to_node_graph(node_graph);
     graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &node_graph_names, &developer_mode);
@@ -125,14 +130,14 @@ impl GraphViewport
             {
                 if self.selected_nodes.contains(&node_key)
                 {
-                    node_widget::highlight(scene_ui, &node_key, node_graph, &mut self.cached_node_sizes);
+                    node_widget::highlight(scene_ui, &node_key, node_graph);
                 }
 
                 if self.area_select.is_some()
                 {
                     if self.area_select.as_ref().unwrap().nodes_inside_rect.contains(&node_key)
                     {
-                        node_widget::highlight(scene_ui, &node_key, node_graph, &mut self.cached_node_sizes);
+                        node_widget::highlight(scene_ui, &node_key, node_graph);
                     }
                 }
 
@@ -168,6 +173,11 @@ impl GraphViewport
 
     fn apply_viewport_state_to_node_graph(&mut self, node_graph: &mut NodeGraph)
     {
+        if self.selected_nodes_quick_menu.is_active()
+        {
+            return;
+        }
+        
         for node_key in &self.selected_nodes
         {
             let node = node_graph.nodes.get_mut(node_key).unwrap();
@@ -312,11 +322,23 @@ impl GraphViewport
                 GraphViewportAction::PrimaryClickedBackground =>
                 {
                     self.selected_nodes.clear();
+
+                    if self.selected_nodes_quick_menu.is_active()
+                    {
+                        self.selected_nodes_quick_menu.off();
+                    }
+                    
                     self.selected_port = None;
                 },
                 GraphViewportAction::SecondaryClickedBackground =>
                 {
-                    self.node_picker.toggle_show( &user_inputs.mouse_position );
+                    if self.selected_nodes.is_empty()
+                    {
+                        self.node_picker.toggle_show( &user_inputs.mouse_position );
+                        return;
+                    }
+
+                    self.selected_nodes_quick_menu.toggle_active( &user_inputs.mouse_position );
                 }
                 GraphViewportAction::PortEditWasChanged { port_key } =>
                 {
@@ -356,6 +378,33 @@ impl GraphViewport
                 {
                     studio_context.request_add_or_focus_graph_viewport( graph_id );
                 }
+
+                GraphViewportAction::CopySelectedNodes =>
+                {
+                    let selected_nodes_copy = self.selected_nodes.clone();
+                    self.selected_nodes.clear();
+                    self.selected_nodes_quick_menu.off();
+
+                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+
+                    for node_key in &selected_nodes_copy  
+                    {
+                        let new_node_key = graph.create_node_copy(node_key); 
+                        self.selected_nodes.insert(new_node_key);
+                    } 
+                }
+
+                GraphViewportAction::DeleteSelectedNodes =>
+                {
+                    let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+
+                    for node_key in &self.selected_nodes
+                    {
+                        graph.remove_node(node_key);
+                    }
+
+                    self.selected_nodes.clear();
+                }
             }
         }
     }
@@ -365,9 +414,8 @@ enum GraphViewportAction
 {
     ClickedNodeTitle { node_key: NodeGraphKey },
     ClickedPort { port_key: NodeGraphKey },
-    // CopySelectedNodes,
-    // DeleteSelectedNodes,
-    // StartExecutionFromEntry { node_key: NodeGraphKey },
+    CopySelectedNodes,
+    DeleteSelectedNodes,
     DragSelecting,
     StoppedDragSelecting,
     PrimaryClickedBackground,

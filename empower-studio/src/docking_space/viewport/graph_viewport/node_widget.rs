@@ -48,21 +48,22 @@ pub fn show(
 pub fn highlight(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    node_graph: &mut NodeGraph, 
-    cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>,
+    node_graph: &mut NodeGraph 
+    // cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back
 )
 {
-    if !cached_node_sizes.contains_key(node_key)
-    {
-        return;
-    }
+    // if !cached_node_sizes.contains_key(node_key)
+    // {
+    //     return;
+    // }
 
     let node = node_graph.nodes.get(node_key).unwrap();
-    let node_size = cached_node_sizes.get(node_key).unwrap();
+    // let node_size = cached_node_sizes.get(node_key).unwrap();
+    let node_size = node.kind.size();
     
     let node_rect = egui::Rect::from_min_size(
         node.position,
-        *node_size
+        node_size
     );
 
     let node_body_outline_margin = egui::Vec2 { x: 10.0, y: 10.0 };
