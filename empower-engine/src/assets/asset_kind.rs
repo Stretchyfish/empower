@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum AssetKind
 {
     Graph,
+    Image,
 }
 
 impl AssetKind
@@ -14,6 +15,7 @@ impl AssetKind
         match self
         {
             AssetKind::Graph => "graph".to_string(),
+            AssetKind::Image => "image".to_string(),
         }
     }
 }

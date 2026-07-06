@@ -54,6 +54,7 @@ impl Layout
             Viewport::Terminal { terminal_viewport: _ } => "terminal viewport",
             Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport",
             Viewport::Empty { empty_viewport: _ } => "empty viewport",
+            Viewport::ImageViewer { image_asset_id: _ } => "image viewer viewport",
         };
 
         // @TODO, consider using the asset name aswell for grpah viewport, so example "graph viewport (entry graph)" and "graph viewport (entry graph) (1)

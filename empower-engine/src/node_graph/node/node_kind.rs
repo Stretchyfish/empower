@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}};
+use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}};
 
 mod print_node;
 use print_node::PrintNode;
@@ -27,6 +27,9 @@ use loop_node::LoopNode;
 
 mod sub_graph_node;
 use sub_graph_node::SubGraphNode;
+
+mod image_node;
+use image_node::ImageNode;
 
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
@@ -73,8 +76,8 @@ pub enum NodeEdit
 {
     Text { label: String, text: String, parseble: bool },
     CheckBox { toggle: bool },
-    GraphSelector { graph_id: Option<AssetId> },
-    GraphViewportOpener { graph_id: Option<AssetId> },
+    AssetSelector { asset_id: Option<AssetId>, kind: AssetKind },
+    GraphViewportOpener { graph_id: Option<AssetId>},
 }
 
 impl NodeEdit
@@ -150,6 +153,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( WaitNode::new().name(), || WaitNode::new());
     r.insert( LoopNode::new().name(), || LoopNode::new());
     r.insert( SubGraphNode::new().name(), || SubGraphNode::new());
+    r.insert( ImageNode::new().name(), || ImageNode::new());
 
     r
 });

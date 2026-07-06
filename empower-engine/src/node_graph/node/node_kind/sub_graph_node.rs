@@ -1,4 +1,5 @@
 use crate::assets::AssetId;
+use crate::assets::AssetKind;
 use crate::compiler::CompiledGraphContext;
 use crate::compiler::Instruction;
 use crate::compiler::RegisterAddress;
@@ -32,7 +33,7 @@ impl NodeKind for SubGraphNode
             graph_id: None,
 
             edit_state: vec![
-                NodeEdit::GraphSelector { graph_id: None }, 
+                NodeEdit::AssetSelector { asset_id: None, kind: AssetKind::Graph }, 
                 NodeEdit::GraphViewportOpener { graph_id: None }
 
             ],
@@ -77,7 +78,7 @@ impl NodeKind for SubGraphNode
 
         self.graph_id = match self.edit_state[0] // @TODO, this is not a great approach, and should be fixed in the future
         {
-            NodeEdit::GraphSelector { graph_id } => graph_id,
+            NodeEdit::AssetSelector { asset_id, kind: _ } => asset_id,
             _ => { return NodeSyncResponse::Nothing; }, 
         };
 
@@ -116,18 +117,12 @@ impl NodeKind for SubGraphNode
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
 
-        let graph_id = match self.edit_state[0]
-        {
-            NodeEdit::GraphSelector { graph_id } => graph_id,
-            _ => None,
-        };
-
-        if graph_id.is_none()
+        if self.graph_id.is_none()
         {
             return;
         }
 
-        let graph_id = graph_id.unwrap();
+        let graph_id = self.graph_id.unwrap();
 
         ctx.additional_graphs_to_compile.push(graph_id);
         ctx.add_instruction( Instruction::CallGraph(graph_id));

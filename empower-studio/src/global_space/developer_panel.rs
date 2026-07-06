@@ -1,6 +1,4 @@
-use empower_engine::assets::Assets;
-
-use crate::studio_context::{Settings, StudioContext};
+use crate::studio_context::StudioContext;
 
 #[derive(Clone)]
 pub struct DeveloperPanel
@@ -94,7 +92,7 @@ impl DeveloperPanel
                     .striped(true)
                     .show(ui, |ui|
                     {
-                        for (asset_id, node_graph) in &assets.node_graphs
+                        for (asset_id, node_graph) in &assets.loaded_node_graphs
                         {
                             ui.label(asset_id.to_string());
                             ui.label(node_graph.name.to_string());

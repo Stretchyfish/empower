@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
-use crate::node_graph::{self, NodeGraph};
+use crate::node_graph::NodeGraph;
 
 pub type AssetId = i32;
 
@@ -16,7 +16,10 @@ use serde::{Deserialize, Serialize};
 pub struct Assets
 {
     #[serde(skip)]
-    pub node_graphs: HashMap<AssetId, NodeGraph>,
+    pub loaded_node_graphs: HashMap<AssetId, NodeGraph>,
+
+    #[serde(skip)]
+    pub loaded_images: HashMap<AssetId, egui::ColorImage>,
 
     pub meta: HashMap<AssetId, AssetMeta>,
     pub path_to_asset_id: HashMap<PathBuf, AssetId>,
@@ -28,7 +31,9 @@ impl Assets
     {
         Self
         {
-            node_graphs: HashMap::new(),
+            loaded_node_graphs: HashMap::new(),
+            loaded_images: HashMap::new(),
+
             meta: HashMap::new(),
             path_to_asset_id: HashMap::new(),
         }
@@ -39,6 +44,7 @@ impl Assets
         let asset_creation_result = match asset_kind
         {
             AssetKind::Graph => self.create_node_graph( directory, name ),
+            AssetKind::Image => todo!(),
         };
 
         if asset_creation_result.is_err()
@@ -53,9 +59,16 @@ impl Assets
         Some( asset_id )
     }
 
-    pub fn load_asset(&mut self, asset_id: AssetId)
+    pub fn load_asset(&mut self, asset_id: AssetId) -> bool
     {
-        let meta = self.meta.get(&asset_id).unwrap();
+        let meta = self.meta.get(&asset_id);
+
+        if meta.is_none()
+        {
+            return false;
+        }
+
+        let meta = meta.unwrap();
 
         println!("File path read: {}", meta.relative_path.to_string_lossy());
 
@@ -70,10 +83,28 @@ impl Assets
                     Ok(_) => {},
                     Err( error ) => { panic!( "Error when loading node graph asset: {}", error.kind().to_string() ) },
                 }
-                
-                self.node_graphs.insert(asset_id, NodeGraph::from_json( &std::fs::read_to_string(&meta.relative_path).unwrap() ).unwrap() );
+        
+                self.loaded_node_graphs.insert(asset_id, NodeGraph::from_json( &std::fs::read_to_string(&meta.relative_path).unwrap() ).unwrap() );
+            },
+            AssetKind::Image =>
+            {
+                let image = image::open(&meta.relative_path);
+
+                if image.is_err()
+                {
+                    panic!("failed to load image asset");
+                }
+
+                let image = image.unwrap().to_rgba8();
+                let (image_width, image_height) = image.dimensions();
+
+                let color_image = egui::ColorImage::from_rgba_unmultiplied([image_width as usize, image_height as usize], image.as_raw());
+
+                self.loaded_images.insert(asset_id, color_image);
             },
         }
+
+        true
     }
 
     pub fn create_node_graph(&mut self, directory: &PathBuf, name: Option<&'static str>) -> Result<PathBuf, ()> // @TODO, this should probably be a bool or result aswell?
@@ -126,6 +157,11 @@ impl Assets
             asset_kind = AssetKind::Graph;
         }
 
+        if file_name.contains(".png")
+        {
+            asset_kind = AssetKind::Image;
+        }
+
         let asset_meta = AssetMeta
         {
             id,
@@ -141,9 +177,23 @@ impl Assets
 
     pub fn get_all_node_graph_names(&mut self) -> HashMap<AssetId, String> 
     {
-        self.node_graphs.iter().map(|(id, node_graph)| (id.clone(), node_graph.name.clone())).collect()
+        self.loaded_node_graphs.iter().map(|(id, node_graph)| (id.clone(), node_graph.name.clone())).collect() // @TODO, maybe this should use asset meta instead
     }
 
+    pub fn get_all_image_names(&mut self) -> HashMap<AssetId, String>
+    {
+        let mut images = HashMap::new();
+
+        for (id, meta) in &self.meta
+        {
+            if meta.kind == AssetKind::Image
+            {
+                images.insert(*id, meta.relative_path.file_name().unwrap().to_string_lossy().to_string());
+            }
+        }
+
+        images
+    }
 
     pub fn create_folder(&mut self, path: &PathBuf)
     {
@@ -165,7 +215,7 @@ impl Assets
         
         let _ = self.save_node_graph(&node_graph, &location.join(format!("{}.graph", node_graph.name)));
         
-        self.node_graphs.insert(id, node_graph);
+        self.loaded_node_graphs.insert(id, node_graph);
         id
     }
 
@@ -173,7 +223,7 @@ impl Assets
     {
         // We only need to save what is actively being worked on, so we only loop through the active assets
         
-        for (node_graph_key, node_graph) in self.node_graphs.clone() // @TODO, this is a potentially crazy expensive call, find a better way
+        for (node_graph_key, node_graph) in self.loaded_node_graphs.clone() // @TODO, this is a potentially crazy expensive call, find a better way
         {
             let node_graph_path = self.meta.get(&node_graph_key).unwrap().relative_path.clone();
             let _ = self.save_node_graph(&node_graph, &node_graph_path);
@@ -211,27 +261,37 @@ impl Assets
 
     pub fn get_node_graph(&mut self, id: &AssetId) -> Option<&NodeGraph>
     {
-        if !self.node_graphs.contains_key(id)
+        if !self.loaded_node_graphs.contains_key(id)
         {
             self.load_asset(*id);
         }
 
-        self.node_graphs.get(id)
+        self.loaded_node_graphs.get(id)
     }
 
     pub fn get_node_graph_naive(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look
     {
-        self.node_graphs.get(id)
+        self.loaded_node_graphs.get(id)
     }
 
     pub fn get_node_graph_mut(&mut self, id: &AssetId) -> Option<&mut NodeGraph>
     {
-        self.node_graphs.get_mut(id)
+        self.loaded_node_graphs.get_mut(id)
     }
+
+    pub fn get_image(&mut self, id: &AssetId) -> Option<&egui::ColorImage>
+    {
+        if !self.loaded_images.contains_key(id)
+        {
+            self.load_asset(*id);
+        }
+        
+        self.loaded_images.get(id)
+    } 
 
     fn get_asset_id(&self) -> AssetId
     {
-        self.node_graphs.keys().max().unwrap_or(&0) + 1 // @TODO, this approach needs to get fixed later!
+        self.loaded_node_graphs.keys().max().unwrap_or(&0) + 1 // @TODO, this approach needs to get fixed later!
     }
     
     pub fn rename_file(&mut self, original_path: PathBuf, new_path: PathBuf)

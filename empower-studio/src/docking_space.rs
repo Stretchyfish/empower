@@ -69,6 +69,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
             Viewport::Terminal { terminal_viewport } => viewport::terminal_viewport::show(terminal_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
             Viewport::ContentBrowser { content_browser_viewport } => viewport::content_browser_viewport::show(content_browser_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
             Viewport::Empty { empty_viewport: _ } => {},
+            Viewport::ImageViewer { image_asset_id } => viewport::image_viewer_viewport::show(&image_asset_id, ui, self.studio_context, &tab_name),
         }
     }
 }

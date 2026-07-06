@@ -151,21 +151,23 @@ impl NodeGraph {
         // - removal of the first ports withuot overwritting all other ports (maybe?)
 
         let mut ports_to_replace = Vec::new();
-        let mut ports_to_add = Vec::new();
-        let mut ports_to_remove = Vec::new();
+        let mut input_ports_to_add = Vec::new();
+        let mut output_ports_to_add = Vec::new();
+        let mut input_ports_to_remove = Vec::new();
+        let mut output_ports_to_remove = Vec::new();
 
         {
-            let (node, input_ports, _) = self.get_node_input_output(*node_key).unwrap();
+            let (node, input_ports, output_ports) = self.get_node_input_output(*node_key).unwrap();
 
             let new_input_port_definitions = node.kind.input_port_definitions();
-            let _ = node.kind.output_port_definitions();
+            let new_output_port_definitions = node.kind.output_port_definitions();
 
             for (index, new_input_port_definition) in new_input_port_definitions.iter().enumerate()
             {
                 let port = input_ports.get(index);
 
                 if port.is_none() {
-                    ports_to_add.push(new_input_port_definition.clone());
+                    input_ports_to_add.push(new_input_port_definition.clone());
                     continue;
                 }
 
@@ -178,8 +180,32 @@ impl NodeGraph {
                 ports_to_replace.push((port.key, new_input_port_definition.clone()));
             }
 
+            for (index, new_output_port_definitions) in new_output_port_definitions.iter().enumerate()
+            {
+                let port = output_ports.get(index);
+
+                if port.is_none()
+                {
+                    output_ports_to_add.push(new_output_port_definitions.clone());
+                    continue;
+                }
+
+                let port = port.as_ref().unwrap();
+
+                if port.compatability == new_output_port_definitions.compatability
+                {
+                    continue;
+                }
+
+                ports_to_replace.push((port.key, new_output_port_definitions.clone()));
+            }
+
             if new_input_port_definitions.len() < node.input_port_keys.len() {
-                ports_to_remove = node.input_port_keys[new_input_port_definitions.len()..].to_vec();
+                input_ports_to_remove = node.input_port_keys[new_input_port_definitions.len()..].to_vec();
+            }
+
+            if new_output_port_definitions.len() < node.output_port_keys.len() {
+                output_ports_to_remove = node.output_port_keys[new_output_port_definitions.len()..].to_vec();
             }
         }
 
@@ -189,7 +215,7 @@ impl NodeGraph {
         }
 
         let mut new_input_port_keys = Vec::new();
-        for port_definition in ports_to_add {
+        for port_definition in input_ports_to_add {
             let new_port_key = self.get_available_port_key();
             self.ports.insert(
                 new_port_key,
@@ -199,17 +225,36 @@ impl NodeGraph {
             new_input_port_keys.push(new_port_key);
         }
 
+        let mut new_output_port_keys = Vec::new();
+        for port_definition in output_ports_to_add {
+            let new_port_key = self.get_available_port_key();
+            self.ports.insert(
+                new_port_key,
+                Port::new(new_port_key, *node_key, port_definition),
+            );
+
+            new_output_port_keys.push(new_port_key);
+        }
+
         let node = self.nodes.get_mut(node_key).unwrap();
         node.input_port_keys.extend(new_input_port_keys);
+        node.output_port_keys.extend(new_output_port_keys);
 
-        for port_key in &ports_to_remove {
+        for port_key in &input_ports_to_remove {
             node.input_port_keys.retain(|e| e != port_key);
             self.ports.remove(&port_key);
         }
 
-        for port_key in ports_to_remove {
+        for port_key in &output_ports_to_remove {
+            node.input_port_keys.retain(|e| e != port_key);
+            self.ports.remove(&port_key);
+        }
+
+        for port_key in input_ports_to_remove {
             self.remove_connection(&port_key);
         }
+
+        // @TODO, still need to add removal of output port connections
     }
 
     pub fn remove_node(&mut self, node_key: &NodeGraphKey) -> bool

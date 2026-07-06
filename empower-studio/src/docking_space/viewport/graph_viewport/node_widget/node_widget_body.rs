@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::AssetId, node_graph::{Node, NodeEdit, NodeGraphKey}};
+use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeEdit, NodeGraphKey}};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -24,6 +24,7 @@ pub fn show(
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
             node_graph_names: &HashMap<AssetId, String>,
+            image_names: &HashMap<AssetId, String>,
             developer_mode: &bool,
         ) -> f32
 {
@@ -160,8 +161,8 @@ pub fn show(
         {
             NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
             NodeEdit::CheckBox { toggle: _ } => todo!(),
-            NodeEdit::GraphSelector { graph_id } => draw_graph_selector_edit(ui, &edit_position, graph_id, viewport_graph_id, node_graph_names),
-            NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions ),
+            NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions),
+            NodeEdit::AssetSelector { asset_id, kind } => draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, kind, node_graph_names, image_names),
         };
 
         if changed
@@ -203,29 +204,38 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     (response.changed(), 40.0 )
 }
 
-fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_graph: &mut Option<AssetId>, viewport_graph_id: &AssetId, node_graph_names: &HashMap<AssetId, String>) -> (bool, f32)
+fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let label = match asset_kind
+    {
+        AssetKind::Graph => "graph",
+        AssetKind::Image => "image",
+    };
 
     let painted_text = ui.painter().text(
         label_position,
         egui::Align2::LEFT_TOP,
-        "node graph",
+        label,
         egui::FontId::proportional(35.0),
         egui::Color32::WHITE,
     );
 
-    let graph_name =
-    if selected_graph.is_some()
+    let current_asset_name = if selected_asset.is_some()
     {
-        node_graph_names.get(&selected_graph.unwrap()).unwrap().clone() // @TODO, take a second look at this, might be dangerous
+        match asset_kind
+        {
+            AssetKind::Graph => node_graph_names.get(&selected_asset.unwrap()).unwrap().clone(), // @TODO, take a second look at this, might be dangerous,
+            AssetKind::Image => image_names.get(&selected_asset.unwrap()).unwrap().clone(),
+        }
     }
     else
     {
         "unknown".to_string()
     };
-
-    let id_before_change = *selected_graph;
+    
+    let id_before_change = *selected_asset;
 
     let combo_rect = egui::Rect::from_min_size(
         egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
@@ -233,11 +243,15 @@ fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         egui::Vec2::INFINITY
     );
 
-    let sorted_names: BTreeMap<&AssetId, &String> = node_graph_names.into_iter().collect();
+    let sorted_names: BTreeMap<&AssetId, &String> = match asset_kind
+    {
+        AssetKind::Graph => node_graph_names.into_iter().collect(),
+        AssetKind::Image => image_names.into_iter().collect(),
+    };
 
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt("graph selector") // @TODO, make ids unique, otherwise it will have conflicts later
-    .selected_text( graph_name )
+    egui::ComboBox::from_id_salt("asset selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( current_asset_name )
     .show_ui(&mut child_ui, |ui|
     {
         for (id, text) in sorted_names
@@ -247,7 +261,7 @@ fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
                 continue;
             }
             
-            ui.selectable_value( selected_graph, Some( *id ), text);
+            ui.selectable_value( selected_asset, Some( *id ), text);
         }
     });
     // egui::Area::new("graph selector".into())
@@ -257,7 +271,7 @@ fn draw_graph_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
 
     // });
     
-    (id_before_change != *selected_graph, 40.0)
+    (id_before_change != *selected_asset, 40.0)
 }
 
 fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, graph_id: &Option<AssetId>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> (bool, f32)
@@ -285,3 +299,4 @@ fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, gra
     
     (false, 40.0)
 }
+

@@ -6,6 +6,7 @@ pub enum Value
     Integer( i32 ),
     Float( f32 ),
     Bool( bool ),
+    Image,
 }
 
 impl Value
@@ -17,6 +18,7 @@ impl Value
             Value::Integer( integer ) => integer.to_string(),
             Value::Float( float ) => float.to_string(),
             Value::Bool( boolean ) => boolean.to_string(),
+            Value::Image => "image".to_string(),
         }
     }
 
@@ -27,6 +29,7 @@ impl Value
             Value::Integer( _ ) => "integer".to_string(),
             Value::Float( _ ) => "float".to_string(),
             Value::Bool( _ ) => "bool".to_string(),
+            Value::Image => "image".to_string(),
         }
     }
 

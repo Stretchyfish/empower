@@ -54,7 +54,7 @@ pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui
             content_browser_viewport.current_directory = Some( project_directory.join("assets") );
         }
 
-        content_browser_viewport.show_asset_import_and_directory_navigation(ui);
+        content_browser_viewport.show_asset_import_and_directory_navigation(ui, studio_context);
         content_browser_viewport.show_breadcrum_path(ui);
         ui.separator();
     }
@@ -64,28 +64,30 @@ pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui
 
 impl ContentBrowserViewport
 {
-    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui)
+    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
         ui.horizontal(|ui|
         {
             if ui.button("import asset").clicked()
             {
-                // let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
-                //                                     .set_title("Import asset") // @TODO, this should probably be in the action of import asset
-                //                                     .pick_file();
+                let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
+                                                    .set_title("Import asset") // @TODO, this should probably be in the action of import asset
+                                                    .pick_file();
 
-                let file_path: Option<PathBuf> = None; // @TODO, fix this!
+                // let file_path: Option<PathBuf> = None; // @TODO, fix this!
 
                 if file_path.is_some()
                 {
                     let import_location = self.current_directory.as_ref().unwrap().clone().join(file_path.as_ref().unwrap().file_name().unwrap());
-                    let file_copy_result = fs::copy(file_path.as_ref().unwrap(), import_location);
+                    let file_copy_result = fs::copy(file_path.as_ref().unwrap(), &import_location);
 
                     match file_copy_result
                     {
                         Ok(_) => {},
                         Err( error ) => println!("Error when copying imported file: {}", error.kind().to_string()),
                     }
+
+                    studio_context.get_project_mut().assets.import_asset(&import_location);
                 }
             }
 
@@ -295,6 +297,7 @@ impl ContentBrowserViewport
                     match asset_meta.kind
                     {
                         AssetKind::Graph => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::Graph { graph_viewport: GraphViewport::new(asset_meta.id) }) },
+                        AssetKind::Image => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::ImageViewer { image_asset_id: asset_meta.id }) },
                     }
 
                     return;

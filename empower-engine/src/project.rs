@@ -61,8 +61,8 @@ impl Project
         let entry_graph_location = assets.create_node_graph(&temp_directory_root.join("assets"), Some( "entry_graph" )).unwrap(); // @TODO, find a better way of creating the entry graph
 
         let entry_graph_asset_id = assets.import_asset(&entry_graph_location);
-        assets.load_asset(entry_graph_asset_id);
 
+        assets.load_asset(entry_graph_asset_id);
         Self
         {
             name: String::from("untitled"),
@@ -110,7 +110,7 @@ impl Project
 
     pub fn load(&mut self)
     {
-        let folder_path = rfd::FileDialog::new()
+        let folder_path = rfd::FileDialog::new() // @TODO, this should probably not be in the engine?
                                         .set_title("Choose project location")
                                         .set_can_create_directories(true)
                                         .pick_folder();
