@@ -115,7 +115,7 @@ impl NodeKind for SubGraphNode
         // }
     }
 
-    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
+    fn compile(&self, ctx: &mut CompiledGraphContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
 
         if self.graph_id.is_none()
         {

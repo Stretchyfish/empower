@@ -31,6 +31,9 @@ use sub_graph_node::SubGraphNode;
 mod image_node;
 use image_node::ImageNode;
 
+mod show_image_node;
+use show_image_node::ShowImageNode;
+
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {
@@ -154,6 +157,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( LoopNode::new().name(), || LoopNode::new());
     r.insert( SubGraphNode::new().name(), || SubGraphNode::new());
     r.insert( ImageNode::new().name(), || ImageNode::new());
+    r.insert( ShowImageNode::new().name(), || ShowImageNode::new());
 
     r
 });

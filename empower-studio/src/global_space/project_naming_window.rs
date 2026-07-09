@@ -24,11 +24,6 @@ impl ProjectNameWindow
         self.possible_project_name = current_project_name;
     }
 
-    pub fn deactivate_show(&mut self)
-    {
-        self.show = false;
-    }
-
     pub fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs)
     {
         if !self.show { return; }
