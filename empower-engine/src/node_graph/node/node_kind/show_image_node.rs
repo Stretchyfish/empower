@@ -1,4 +1,4 @@
-use crate::{compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{NodeEdit, node::node_kind::{ControlFlowKind, NodeState, NodeSyncResponse}, port::PortDefinition}, value::Value};
+use crate::{compiler::{CompiledGraphContext, Instruction, RegisterAddress}, node_graph::{NodeEdit, node::node_kind::{ControlFlowKind, NodeState, NodeSyncResponse}, port::PortDefinition}, value::Value};
 
 use super::NodeKind;
 
@@ -32,7 +32,7 @@ impl NodeKind for ShowImageNode
     fn input_port_definitions(&self) -> Vec<PortDefinition>  {
         vec![
             PortDefinition::new_input_execution_port(),
-            PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image ])
+            // PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image ])
         ]
     }
 
@@ -48,12 +48,12 @@ impl NodeKind for ShowImageNode
         todo!()
     }
 
-    fn sync_node_state(&mut self,node_state:NodeState) {
+    fn sync_node_state(&mut self, node_state: NodeState) {
         todo!()
     }
 
-    fn compile(&self,ctx: &mut CompiledGraphContext,input_port_register_adresses:Vec<RegisterAddress> ,output_port_register_adresses:Vec<RegisterAddress>) {
-        todo!()
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
+        ctx.add_instruction( Instruction::ShowImage( 0 ) );
     }
 
     fn control_flow(&self) -> ControlFlowKind {

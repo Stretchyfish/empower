@@ -15,6 +15,7 @@ pub enum Instruction
     Return,
     Wait(RegisterAddress),
     CallGraph ( AssetId ),
+    ShowImage ( AssetId ),
 }
 
 impl Instruction
@@ -31,6 +32,7 @@ impl Instruction
             Instruction::Return => "Return".to_string(),
             Instruction::Wait( register_address ) => format!("Wait ({})", register_address),
             Instruction::CallGraph( node_graph_id ) => format!("CallGraph ({})", node_graph_id),
+            Instruction::ShowImage( image_id ) => format!("ShowImage({})", image_id),
         }
     }
 }

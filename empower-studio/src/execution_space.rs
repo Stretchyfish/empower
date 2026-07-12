@@ -1,6 +1,6 @@
 use crate::studio_context::StudioContext;
 
-pub fn show(_: &mut egui::Ui, studio_context: &mut StudioContext)
+pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
     let executor = studio_context.get_executor_mut();
 
@@ -17,5 +17,5 @@ pub fn show(_: &mut egui::Ui, studio_context: &mut StudioContext)
         return;
     }
 
-    executor.run();
+    executor.run(Some( ui ));
 }

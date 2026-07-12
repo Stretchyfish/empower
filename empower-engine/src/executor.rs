@@ -1,14 +1,19 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
 mod executor_settings;
 pub use executor_settings::ExecutorSettings;
 
+mod window_manager;
+use window_manager::WindowManager;
+use window_manager::WindowType;
+
 pub struct Executor
 {
     program: Program,
     pub settings: ExecutorSettings,
+    window_manager: WindowManager,
 
     frames: Vec<GraphFrame>,
 }
@@ -24,6 +29,7 @@ impl Executor
             program,
 
             settings,
+            window_manager: WindowManager::new(),
 
             frames: Vec::from( vec![initial_frame] ),
         }
@@ -34,7 +40,7 @@ impl Executor
         !self.frames.is_empty()
     }
 
-    pub fn run(&mut self)
+    pub fn run(&mut self, ui: Option<&mut egui::Ui>)
     {
         if self.frames.is_empty()
         {
@@ -50,17 +56,38 @@ impl Executor
 
             let time_now = std::time::Instant::now();
 
-            match frame.state
+            match &frame.state
             {
                 GraphFrameState::Running => {},
                 GraphFrameState::Sleeping(time_wake) =>
                 {
-                    if time_now < time_wake
+                    if time_now < *time_wake
                     {
                         continue;
                     }
 
                     frame.state = GraphFrameState::Running;
+                },
+                GraphFrameState::ShowImage( window_name ) =>
+                {
+                    let mut window_got_closed = false;
+                    ui.as_ref().unwrap().show_viewport_immediate(
+                        egui::ViewportId::from_hash_of(window_name.clone()),
+                        egui::ViewportBuilder::default()
+                        .with_title(window_name)
+                        .with_inner_size([600.0, 400.0]),
+                        |ui, _class| {
+
+                            window_got_closed = ui.input(|i| i.viewport().close_requested());
+                        },
+                    );
+
+                    if !window_got_closed
+                    {
+                        continue;
+                    }
+
+                    self.window_manager.remove_window(window_name);
                 },
             }
             
@@ -109,6 +136,11 @@ impl Executor
                 {
                     frames_to_add.push( GraphFrame::new(*node_graph_id) );
                 },
+                Instruction::ShowImage(_) =>
+                {
+                    let window_name = self.window_manager.add_new_window("show image".to_string());
+                    frame.state = GraphFrameState::ShowImage( window_name );
+                },
             }
     
             frame.next_address += 1;
@@ -152,6 +184,7 @@ enum GraphFrameState
 {
     Running,
     Sleeping( std::time::Instant ),
+    ShowImage( String ),
 }
 
 
