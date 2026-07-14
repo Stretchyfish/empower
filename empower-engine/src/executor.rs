@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
@@ -7,7 +7,11 @@ pub use executor_settings::ExecutorSettings;
 
 mod window_manager;
 use window_manager::WindowManager;
-use window_manager::WindowType;
+
+type FrameIndex = usize;
+type PointerIndex = usize;
+
+type InstructionAddress = usize;
 
 pub struct Executor
 {
@@ -47,8 +51,7 @@ impl Executor
             return;
         }
 
-        let mut frames_to_add = Vec::new();
-        let mut frames_to_remove = Vec::new();
+        let mut execution_actions = Vec::new();
 
         for (frame_index, frame) in self.frames.iter_mut().enumerate()
         {
@@ -56,104 +59,129 @@ impl Executor
 
             let time_now = std::time::Instant::now();
 
-            match &frame.state
+            for (pointer_index, pointer) in frame.pointers.iter_mut().enumerate()
             {
-                GraphFrameState::Running => {},
-                GraphFrameState::Sleeping(time_wake) =>
+                match &pointer.state
                 {
-                    if time_now < *time_wake
+                    InstructionPointerState::Running => {},
+                    InstructionPointerState::Sleeping(time_wake) =>
                     {
-                        continue;
-                    }
+                        if time_now < *time_wake
+                        {
+                            continue;
+                        }
 
-                    frame.state = GraphFrameState::Running;
-                },
-                GraphFrameState::ShowImage( window_name ) =>
-                {
-                    let mut window_got_closed = false;
-                    ui.as_ref().unwrap().show_viewport_immediate(
-                        egui::ViewportId::from_hash_of(window_name.clone()),
-                        egui::ViewportBuilder::default()
-                        .with_title(window_name)
-                        .with_inner_size([600.0, 400.0]),
-                        |ui, _class| {
-
-                            window_got_closed = ui.input(|i| i.viewport().close_requested());
-                        },
-                    );
-
-                    if !window_got_closed
+                        pointer.state = InstructionPointerState::Running;
+                    },
+                    InstructionPointerState::ShowImage( window_name ) =>
                     {
-                        continue;
-                    }
+                        let mut window_got_closed = false;
+                        ui.as_ref().unwrap().show_viewport_immediate(
+                            egui::ViewportId::from_hash_of(window_name.clone()),
+                            egui::ViewportBuilder::default()
+                            .with_title(window_name)
+                            .with_inner_size([600.0, 400.0]),
+                            |ui, _class| {
 
-                    self.window_manager.remove_window(window_name);
-                },
-            }
-            
-            let next_instruction = &graph.instructions.get(frame.next_address).unwrap();
+                                window_got_closed = ui.input(|i| i.viewport().close_requested());
+                            },
+                        );
 
-            match next_instruction
-            {
-                Instruction::SetConst( register_address, value) =>
-                {
-                    frame.value_registers.insert(*register_address, value.clone());
-                },
-                Instruction::Copy( from_register_address, to_register_address) =>
-                {
-                    frame.value_registers.insert( *to_register_address, frame.value_registers.get(from_register_address).unwrap().clone() );
+                        if !window_got_closed
+                        {
+                            continue;
+                        }
+
+                        self.window_manager.remove_window(window_name);
+                    },
                 }
-                Instruction::Jump( instruction_address ) =>
-                {
-                    frame.next_address = *instruction_address - 1;
-                },
-                Instruction::Print( register_address ) =>
-                {
-                    let text = frame.value_registers.get(register_address).unwrap().to_string();
-                    println!("{}", text);
 
-                    if let Some(outputs) = &mut self.settings.outputs
+                let next_instruction = &graph.instructions.get(pointer.next_address).unwrap();
+
+                match next_instruction
+                {
+                    Instruction::SetConst( register_address, value) =>
                     {
-                        outputs.push(text);
-                    }
-                },
-                Instruction::Return =>
-                {
-                    frames_to_remove.push( frame_index );
-                },
-                Instruction::JumpIfFalse( instruction_address, register_address ) =>
-                {
-                    if !frame.value_registers.get(register_address).unwrap().as_bool()
+                        frame.value_registers.insert(*register_address, value.clone());
+                    },
+                    Instruction::Copy( from_register_address, to_register_address) =>
                     {
-                        frame.next_address = *instruction_address - 1;
+                        frame.value_registers.insert( *to_register_address, frame.value_registers.get(from_register_address).unwrap().clone() );
                     }
-                },
-                Instruction::Wait( register_address ) =>
+                    Instruction::Jump( instruction_address ) =>
+                    {
+                        pointer.next_address = *instruction_address - 1;
+                    },
+                    Instruction::Print( register_address ) =>
+                    {
+                        let text = frame.value_registers.get(register_address).unwrap().to_string();
+                        println!("{}", text);
+
+                        if let Some(outputs) = &mut self.settings.outputs
+                        {
+                            outputs.push(text);
+                        }
+                    },
+                    Instruction::Return =>
+                    {
+                        execution_actions.push( ExecutionAction::RemovePointer( frame_index, pointer_index ) );
+                    },
+                    Instruction::JumpIfFalse( instruction_address, register_address ) =>
+                    {
+                        if !frame.value_registers.get(register_address).unwrap().as_bool()
+                        {
+                            pointer.next_address = *instruction_address - 1;
+                        }
+                    },
+                    Instruction::Wait( register_address ) =>
+                    {
+                        pointer.state = InstructionPointerState::Sleeping( std::time::Instant::now() + std::time::Duration::from_secs_f32( frame.value_registers.get(register_address).unwrap().as_f32() ));
+                    },
+                    Instruction::CallGraph( node_graph_id ) =>
+                    {
+                        execution_actions.push( ExecutionAction::AddFrame( *node_graph_id ) );
+                    },
+                    Instruction::ShowImage(_) =>
+                    {
+                        let window_name = self.window_manager.add_new_window("show image".to_string());
+                        pointer.state = InstructionPointerState::ShowImage( window_name );
+                    },
+                    Instruction::Fork( instruction_address ) =>
+                    {
+                        execution_actions.push( ExecutionAction::AddPointer( frame_index, *instruction_address ) );
+                    },
+                }
+    
+                pointer.next_address += 1;
+            }
+        }
+
+        for action in execution_actions
+        {
+            match action
+            {
+                ExecutionAction::AddFrame( node_graph_asset_id ) =>
                 {
-                    frame.state = GraphFrameState::Sleeping( std::time::Instant::now() + std::time::Duration::from_secs_f32( frame.value_registers.get(register_address).unwrap().as_f32() ));
+                    self.frames.push( GraphFrame::new(node_graph_asset_id) );
                 },
-                Instruction::CallGraph( node_graph_id ) =>
+                ExecutionAction::RemoveFrame( frame_index ) =>
                 {
-                    frames_to_add.push( GraphFrame::new(*node_graph_id) );
+                    self.frames.remove( frame_index );
                 },
-                Instruction::ShowImage(_) =>
+                ExecutionAction::AddPointer( frame_index, start_instruction_address ) =>
                 {
-                    let window_name = self.window_manager.add_new_window("show image".to_string());
-                    frame.state = GraphFrameState::ShowImage( window_name );
+                    self.frames[frame_index].pointers.push( InstructionPointer::from( start_instruction_address ) ); // This is potentially slightly dangerous in the future, as it might access a frame that has been removed
+                },
+                ExecutionAction::RemovePointer( frame_index, pointer_index ) =>
+                {
+                    self.frames[frame_index].pointers.remove(pointer_index); // Also potentially dangerous
+
+                    if self.frames[frame_index].pointers.is_empty()
+                    {
+                        self.frames.remove(frame_index);
+                    }
                 },
             }
-    
-            frame.next_address += 1;
-        }
-
-        for frame_index in frames_to_remove
-        {
-            self.frames.remove(frame_index);
-        }
-
-        for frame in frames_to_add
-        {
-            self.frames.push(frame);
         }
     }
 }
@@ -161,9 +189,8 @@ impl Executor
 pub struct GraphFrame
 {
     graph_id: AssetId,
-    next_address: usize,
     value_registers: HashMap<i32, Value>,
-    state: GraphFrameState,
+    pointers: Vec<InstructionPointer>,
 }
 
 impl GraphFrame
@@ -173,18 +200,51 @@ impl GraphFrame
         GraphFrame
         {
             graph_id,
-            next_address: 0,
             value_registers: HashMap::new(),
-            state: GraphFrameState::Running,
+            pointers: vec![ InstructionPointer::new() ],
         }
     }
 }
 
-enum GraphFrameState
+struct InstructionPointer
+{
+    next_address: usize,
+    state: InstructionPointerState,
+}
+
+impl InstructionPointer
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            next_address: 0,
+            state: InstructionPointerState::Running,
+        }
+    }
+
+    pub fn from(instruction_address: usize) -> Self
+    {
+        Self
+        {
+            next_address: instruction_address,
+            state: InstructionPointerState::Running,
+        }
+    }
+}
+
+enum InstructionPointerState
 {
     Running,
     Sleeping( std::time::Instant ),
     ShowImage( String ),
 }
 
+enum ExecutionAction
+{
+    AddFrame( AssetId ),
+    RemoveFrame( FrameIndex ),
+    AddPointer( FrameIndex, InstructionAddress ),
+    RemovePointer( FrameIndex, PointerIndex ),
+}
 

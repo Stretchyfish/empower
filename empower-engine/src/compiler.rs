@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::collections::HashMap;
 
 use crate::assets::AssetId;
@@ -67,100 +66,85 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
     ctx.add_compiled_graph(graph_id, CompiledGraph::from_compiled_graph_context(compiled_graph_context));
 }
 
-fn compile_node_chain(compiled_graph_context: &mut CompiledGraphContext, node_graph: &NodeGraph, start_node_key: &NodeGraphKey)
+fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, node_key: &NodeGraphKey)
 {
-    let mut next_nodes_to_compile = VecDeque::from( vec![ *start_node_key ]);
+    let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
 
-    while !next_nodes_to_compile.is_empty()
+    if other_node_to_compile_first.is_some()
     {
-        let node_to_compile = next_nodes_to_compile.front().unwrap();
-
-        let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(compiled_graph_context, node_to_compile, &node_graph);
-
-        if other_node_to_compile_first.is_some()
-        {
-            next_nodes_to_compile.push_front(other_node_to_compile_first.unwrap());
-            continue;
-        }
-
-        // let connected_exec_ports;
-
-        let (output_port_keys, control_flow) = 
-        {
-            let (node, inputs, outputs) = node_graph.get_node_input_output(*node_to_compile).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
-
-            let input_slots = allocate_input_port_registers(compiled_graph_context, &inputs, &node_graph.connections_in);
-            let output_slots = allocate_output_port_registers(compiled_graph_context, &outputs);
-
-            node.kind.compile(compiled_graph_context, input_slots, output_slots);
-
-            (node.output_port_keys.clone(), node.kind.control_flow())
-        };
-
-        next_nodes_to_compile.pop_front();
-
-        if output_port_keys.is_empty() // This is for nodes with no output ports
-        {
-            continue;
-        }
-
-        match control_flow
-        {
-            ControlFlowKind::Normal =>
-            {
-                next_nodes_to_compile.extend( get_nodes_connected_to_port(output_port_keys[0], node_graph) );
-            },
-            ControlFlowKind::Branch =>
-            {
-                let nodes_connected_to_true_branch = get_nodes_connected_to_port(output_port_keys[0], node_graph);
-                let nodes_connected_to_false_branch = get_nodes_connected_to_port(output_port_keys[1], node_graph);
-
-                if nodes_connected_to_true_branch.is_empty() && nodes_connected_to_false_branch.is_empty()
-                {
-                    compiled_graph_context.instructions.pop();
-                    continue;
-                }
-
-                let jump_if_false_instruction_placeholder_address = compiled_graph_context.get_latest_instruction_address();
-
-                for node_key in nodes_connected_to_true_branch
-                {
-                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
-                }
-
-                let jump_after_true_branch_placeholder_address = compiled_graph_context.add_instruction_placeholder( Instruction::Jump(0) );
-                compiled_graph_context.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &(jump_after_true_branch_placeholder_address + 1));
-
-                for node_key in nodes_connected_to_false_branch
-                {
-                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
-                }
-
-                let instruction_after_false_branch_address = compiled_graph_context.instructions.len(); // This makes the dangerous assumption that there always is an instruction after. That should be the case with the current implementation.
-
-                compiled_graph_context.patch_jump_instruction(&jump_after_true_branch_placeholder_address, &instruction_after_false_branch_address);
-            },
-            ControlFlowKind::Loop =>
-            {
-                let nodes_connected_to_exec_port = get_nodes_connected_to_port(output_port_keys[0], node_graph);
-
-                if nodes_connected_to_exec_port.is_empty()
-                {
-                    continue;
-                }
-
-                let first_instruction_in_loop_address = compiled_graph_context.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
-
-                for node_key in nodes_connected_to_exec_port
-                {
-                    compile_node_chain(compiled_graph_context, node_graph, &node_key);
-                }
-
-                compiled_graph_context.add_instruction( Instruction::Jump(first_instruction_in_loop_address) );
-            },
-        }
+        compile_node_chain(ctx, node_graph, &other_node_to_compile_first.unwrap());
     }
 
+    let (output_port_keys, control_flow) = 
+    {
+        let (node, inputs, outputs) = node_graph.get_node_input_output(*node_key).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
+
+        let input_slots = allocate_input_port_registers(ctx, &inputs, &node_graph.connections_in);
+        let output_slots = allocate_output_port_registers(ctx, &outputs);
+
+        node.kind.compile(ctx, input_slots, output_slots);
+
+        (node.output_port_keys.clone(), node.kind.control_flow())
+    };
+
+    if output_port_keys.is_empty() // This is for nodes with no output ports
+    {
+        return;
+    }
+
+    match control_flow
+    {
+        ControlFlowKind::Normal =>
+        {
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+        },
+        ControlFlowKind::Branch =>
+        {
+            // This implementation right now still adds a few instructions if no nodes at all are connected, could be optimized in the future
+            
+            let jump_if_false_instruction_placeholder_address = ctx.get_latest_instruction_address(); // Since the branch needs access to input port keys, the actual jump_if_false instrcution is added in the branch node compile function
+
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+
+            let jump_after_true_branch_placeholder_address = ctx.add_instruction_placeholder( Instruction::Jump(0) );
+            ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
+
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[1]);
+
+            ctx.patch_jump_instruction(&jump_after_true_branch_placeholder_address, &ctx.instructions.len());
+        },
+        ControlFlowKind::Loop =>
+        {
+            let first_instruction_in_loop_address = ctx.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+
+            ctx.add_instruction( Instruction::Jump( first_instruction_in_loop_address ) );
+        },
+    };
+}
+
+fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, port_key: &NodeGraphKey)
+{
+    let connected_nodes = get_nodes_connected_to_port(*port_key, node_graph);
+
+    for (index, connected_node_key) in connected_nodes.iter().enumerate()
+    {
+        if index == connected_nodes.len() - 1
+        {
+            compile_node_chain(ctx, node_graph, connected_node_key);
+            continue;
+        }
+
+        ctx.add_instruction( Instruction::Fork( ctx.instructions.len() + 2 ));
+        let jump_instruction_address = ctx.add_instruction_placeholder( Instruction::Jump( 0) );
+
+        compile_node_chain(ctx, node_graph, connected_node_key);
+
+        ctx.add_instruction( Instruction::Return );
+
+        ctx.patch_jump_instruction(&jump_instruction_address, &ctx.instructions.len() );
+        
+    }
 }
 
 fn get_nodes_connected_to_port(port_key: NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>

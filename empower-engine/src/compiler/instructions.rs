@@ -16,6 +16,7 @@ pub enum Instruction
     Wait(RegisterAddress),
     CallGraph ( AssetId ),
     ShowImage ( AssetId ),
+    Fork( InstructionAddress ),
 }
 
 impl Instruction
@@ -33,6 +34,7 @@ impl Instruction
             Instruction::Wait( register_address ) => format!("Wait ({})", register_address),
             Instruction::CallGraph( node_graph_id ) => format!("CallGraph ({})", node_graph_id),
             Instruction::ShowImage( image_id ) => format!("ShowImage({})", image_id),
+            Instruction::Fork( instruction_address ) => format!("Fork({})", instruction_address),
         }
     }
 }
