@@ -73,7 +73,7 @@ impl Executor
 
                         pointer.state = InstructionPointerState::Running;
                     },
-                    InstructionPointerState::ShowImage( window_name ) =>
+                    InstructionPointerState::ShowImage( window_name, image_asset_id ) =>
                     {
                         let mut window_got_closed = false;
                         ui.as_ref().unwrap().show_viewport_immediate(
@@ -84,6 +84,18 @@ impl Executor
                             |ui, _class| {
 
                                 window_got_closed = ui.input(|i| i.viewport().close_requested());
+
+                                if image_asset_id.is_none()
+                                {
+                                    
+                                }
+                                else
+                                {
+                                    let image = self.program.loaded_assets.loaded_images.get(&image_asset_id.unwrap()).expect("image asset id is not in loaded_assets");
+
+                                    let image_texture = ui.load_texture("image", image.clone(), Default::default());
+                                    ui.image(&image_texture);
+                                }
                             },
                         );
 
@@ -141,10 +153,12 @@ impl Executor
                     {
                         execution_actions.push( ExecutionAction::AddFrame( *node_graph_id ) );
                     },
-                    Instruction::ShowImage(_) =>
+                    Instruction::ShowImage( register_address ) =>
                     {
+                        let image_asset_id = frame.value_registers.get( register_address ).unwrap().as_asset_id();
+                        
                         let window_name = self.window_manager.add_new_window("show image".to_string());
-                        pointer.state = InstructionPointerState::ShowImage( window_name );
+                        pointer.state = InstructionPointerState::ShowImage( window_name, image_asset_id );
                     },
                     Instruction::Fork( instruction_address ) =>
                     {
@@ -237,7 +251,7 @@ enum InstructionPointerState
 {
     Running,
     Sleeping( std::time::Instant ),
-    ShowImage( String ),
+    ShowImage( String, Option<AssetId> ),
 }
 
 enum ExecutionAction

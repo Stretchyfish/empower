@@ -43,9 +43,17 @@ impl DeveloperPanel
             //     ui.label(format!("User state: {:?}", user_state))
             // });
 
-            ui.collapsing("node graph", |_|
+            ui.collapsing("node graph", |ui|
             {
-                
+                for (asset_id, node_graph) in &assets.loaded_assets.loaded_node_graphs
+                {
+                    let name = format!("{}:[{}]", node_graph.name, asset_id);
+
+                    ui.collapsing(name, |ui|
+                    {
+                        
+                    });
+                }
             });
 
             ui.collapsing("assets", |ui|
@@ -84,20 +92,33 @@ impl DeveloperPanel
                     });
                 });
 
-                ui.collapsing("node graphs", |ui|
+                ui.collapsing("loaded assets", |ui|
                 {
-                    egui::Grid::new("assets_node_graph_visualization")
+                    egui::Grid::new("loaded_assets_visualization")
                     .num_columns(2)
                     .spacing([12.0, 4.0])
                     .striped(true)
                     .show(ui, |ui|
                     {
-                        for (asset_id, node_graph) in &assets.loaded_node_graphs
+                        ui.collapsing("node graphs", |ui|
                         {
-                            ui.label(asset_id.to_string());
-                            ui.label(node_graph.name.to_string());
-                            ui.end_row();
-                        }
+                            for (asset_id, node_graph) in &assets.loaded_assets.loaded_node_graphs
+                            {
+                                ui.label(asset_id.to_string());
+                                ui.label(node_graph.name.to_string());
+                                ui.end_row();
+                            }
+                        });
+
+                        ui.collapsing("images", |ui|
+                        {
+                            for (asset_id, image) in &assets.loaded_assets.loaded_images
+                            {
+                                ui.label(asset_id.to_string());
+                                ui.label(format!("size: {},{}", image.size[0], image.size[1]));
+                                ui.end_row();
+                            }
+                        });
                     });
                 });
             });

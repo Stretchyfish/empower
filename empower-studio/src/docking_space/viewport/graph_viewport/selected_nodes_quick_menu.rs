@@ -38,7 +38,7 @@ impl SelectedNodesQuickMenu
         self.active = false;
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, selected_nodes: &HashSet<NodeGraphKey>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
+    pub fn show(&mut self, ui: &mut egui::Ui, _: &HashSet<NodeGraphKey>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
     {
         if !self.active
         {

@@ -72,6 +72,6 @@ impl NodeKind for WaitNode
     }
 
     fn control_flow(&self) -> ControlFlowKind {
-        ControlFlowKind::Normal
+        ControlFlowKind::Linear
     }
 }

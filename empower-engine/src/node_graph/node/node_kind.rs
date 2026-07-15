@@ -69,7 +69,8 @@ impl Clone for Box<dyn NodeKind>
 
 pub enum ControlFlowKind
 {
-    Normal,
+    None,
+    Linear,
     Branch,
     Loop,
 }

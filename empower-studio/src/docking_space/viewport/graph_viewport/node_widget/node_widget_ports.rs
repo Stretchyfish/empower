@@ -43,17 +43,36 @@ pub fn show(
         graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
     }
 
-    let type_text = if port.value.is_some() // @TODO, take a second look at this, should only ever fail when its exec port
+    let type_text; 
+    if !*developer_mode
     {
-        port.value.as_ref().unwrap().type_string()
-    }
-    else if !port.compatability.is_empty() {
-        port.compatability[0].type_string()
+        type_text = if port.value.is_some() // @TODO, take a second look at this, should only ever fail when its exec port
+        {
+            port.value.as_ref().unwrap().type_string()
+        }
+        else if !port.compatability.is_empty() {
+            port.compatability[0].type_string()
+        }
+        else
+        {
+            "".to_string()
+        };
     }
     else
     {
-        "".to_string()
-    };
+        type_text = if port.value.is_some()
+        {
+            port.value.as_ref().unwrap().type_string() + " (" + port.value.as_ref().unwrap().to_string().as_str() + ")"
+        }
+        else if !port.compatability.is_empty()
+        {
+            "undefined, will default to: ".to_string() + port.compatability[0].type_string().as_str() + " (" + port.compatability[0].to_string().as_str() + ")"
+        }
+        else
+        {
+            "undefined".to_string()
+        }
+    }
 
     let compatible_type_text: Vec<String> = port.compatability.iter().map(|e| e.type_string()).collect();
 

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::assets::AssetId;
+use crate::assets::LoadedAssets;
 use crate::compiler::instructions::InstructionAddress;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
@@ -9,6 +10,7 @@ use crate::node_graph::node::node_kind::ControlFlowKind;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
+use crate::value::Value;
 
 mod debugger;
 use debugger::DebugSettings;
@@ -25,6 +27,7 @@ pub struct Program
 {
     pub entry_graph_id: AssetId,
     pub compiled_graphs: HashMap<AssetId, CompiledGraph>,
+    pub loaded_assets: LoadedAssets,
 }
 
 pub fn debug_compile(_: &Project, _: &DebugSettings)
@@ -32,7 +35,7 @@ pub fn debug_compile(_: &Project, _: &DebugSettings)
     
 }
 
-pub fn release_compile(project: &Project) -> Result<Program, &'static str>
+pub fn release_compile(project: &mut Project) -> Result<Program, String>
 {
     let mut ctx = CompilerContext::new_with_graph_to_compile(project.entry_graph);
 
@@ -45,17 +48,35 @@ pub fn release_compile(project: &Project) -> Result<Program, &'static str>
             break;
         }
 
-        let next_graph_to_compile =next_graph_to_compile.unwrap();
+        let next_graph_to_compile = next_graph_to_compile.unwrap();
         
-        compile_graph(&mut ctx, next_graph_to_compile, project);
+        project.assets.load_asset(next_graph_to_compile); // Safety implementation in case it isn't loaded
+        let result = compile_graph(&mut ctx, next_graph_to_compile, project);
+
+        if result.is_err()
+        {
+            return Err( result.err().unwrap() );
+        }
     }
 
-    Ok( ctx.get_program(project.entry_graph) )
+    project.assets.load_assets( ctx.get_assets_to_load() );
+
+    Ok( ctx.get_program(project.entry_graph, project.assets.loaded_assets.clone() ) )
 }
 
-pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project)
+pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project) -> Result<(), String>
 {
-    let node_graph = project.assets.get_node_graph_naive(&graph_id).unwrap(); // @TODO, this will fail if the asset is not loaded
+    let node_graph = project.assets.get_node_graph_naive(&graph_id).unwrap();
+
+    let integrity = check_node_graph_compile_integrity(node_graph);
+
+    if integrity.is_err()
+    {
+        return integrity;
+    }
+    
+    ctx.add_assets_to_load( detect_assets_to_preload(node_graph) );
+
     let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
 
     compile_node_chain(&mut compiled_graph_context, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
@@ -64,11 +85,14 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     ctx.add_more_graphs_to_build(&compiled_graph_context.additional_graphs_to_compile);
     ctx.add_compiled_graph(graph_id, CompiledGraph::from_compiled_graph_context(compiled_graph_context));
+
+    Ok(())
 }
 
 fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, node_key: &NodeGraphKey)
 {
     let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
+    println!("compiling: {}, and need to also compile first: {:?}", node_key, other_node_to_compile_first);
 
     if other_node_to_compile_first.is_some()
     {
@@ -94,7 +118,8 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
     match control_flow
     {
-        ControlFlowKind::Normal =>
+        ControlFlowKind::None => {},
+        ControlFlowKind::Linear =>
         {
             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
         },
@@ -115,12 +140,60 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         },
         ControlFlowKind::Loop =>
         {
+            // @TOD, current loop implementation, has bug that when its connected to multiple other nodes, it will continue loop if the main branch finished, and it will not wait for the others to finish
+            
             let first_instruction_in_loop_address = ctx.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
 
             ctx.add_instruction( Instruction::Jump( first_instruction_in_loop_address ) );
         },
     };
+}
+
+fn check_node_graph_compile_integrity(node_graph: &NodeGraph) -> Result<(), String>
+{
+    for (port_key, port) in &node_graph.ports
+    {
+        match port.kind
+        {
+            PortKind::Execution => { continue; },
+            PortKind::Data => {},
+        }
+        
+        if port.compatability.is_empty() // @TODO, this function might not even be needed anymore, due to new implementation
+        {
+            return Err(format!("Port ({}), does not contain value values", port_key));
+        }
+    }
+
+    Ok(())
+}
+
+fn detect_assets_to_preload(node_graph: &NodeGraph) -> Vec<AssetId>
+{
+    let mut asset_to_load = Vec::new();
+
+    for (_, port) in &node_graph.ports
+    {
+        if port.value.is_none()
+        {
+            continue;
+        }
+
+        match port.value.as_ref().unwrap()
+        {
+            Value::Image( assset_id ) =>
+            {
+                if assset_id.is_some()
+                {
+                    asset_to_load.push( assset_id.unwrap() );
+                }
+            },
+            _ => {},
+        }
+    }
+
+    asset_to_load
 }
 
 fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, port_key: &NodeGraphKey)
@@ -214,6 +287,8 @@ fn allocate_input_port_registers(ctx: &mut CompiledGraphContext, ports: &Vec<&Po
 
         if !connections_in.contains_key(&port.key)
         {
+            // @TODO, need to add a warning here to stop compilation, since it might be the case that a port has no defined value yet
+
             ctx.instructions.push( Instruction::SetConst(ctx.register_size, port.value.as_ref().unwrap().clone()));
 
             ctx.allocated_ports.insert(port.key, ctx.register_size);

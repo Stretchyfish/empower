@@ -58,7 +58,7 @@ impl NodeKind for PrintNode
     }
 
     fn control_flow(&self) -> ControlFlowKind {
-        ControlFlowKind::Normal
+        ControlFlowKind::Linear
     }
 
     fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {

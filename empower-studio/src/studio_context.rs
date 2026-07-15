@@ -230,11 +230,13 @@ impl StudioContext
 
     fn compile(&mut self)
     {
-        let program = compiler::release_compile(&self.project);
+        let program = compiler::release_compile(&mut self.project);
 
         if let Err(e) = program 
         {
             println!("Failed to compile: {}", e);
+            self.executor_settings.outputs.as_mut().unwrap().push( e.to_string() ); // @TODO, find a proper way to do logging
+            return;
         }
 
         self.program = Some( program.unwrap() );
@@ -249,7 +251,9 @@ impl StudioContext
     {
         if self.program.is_none()
         {
-            panic!("Tried to start execution without a compiled program");
+            self.executor_settings.outputs.as_mut().unwrap().push( "Tried to start execution without a compiled program".to_string() ); // @TODO, find a proper solution for this
+            // panic!("Tried to start execution without a compiled program");
+            return;
         }
 
         self.executor_settings.clear_cache();

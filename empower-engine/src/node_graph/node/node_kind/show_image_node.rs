@@ -32,7 +32,7 @@ impl NodeKind for ShowImageNode
     fn input_port_definitions(&self) -> Vec<PortDefinition>  {
         vec![
             PortDefinition::new_input_execution_port(),
-            // PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image ])
+            PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image( None ) ])
         ]
     }
 
@@ -44,19 +44,19 @@ impl NodeKind for ShowImageNode
         None
     }
 
-    fn sync_node_edit(&mut self,index:usize) -> NodeSyncResponse {
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
 
-    fn sync_node_state(&mut self, node_state: NodeState) {
+    fn sync_node_state(&mut self, _: NodeState) {
         todo!()
     }
 
     fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
-        ctx.add_instruction( Instruction::ShowImage( 0 ) );
+        ctx.add_instruction( Instruction::ShowImage( input_port_register_adresses[0] ) );
     }
 
     fn control_flow(&self) -> ControlFlowKind {
-        ControlFlowKind::Normal
+        ControlFlowKind::Linear
     }
 }

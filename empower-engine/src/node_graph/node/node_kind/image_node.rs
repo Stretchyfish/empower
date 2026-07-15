@@ -1,4 +1,4 @@
-use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{NodeEdit, node::node_kind::{ControlFlowKind, NodeState, NodeSyncResponse}, port::PortDefinition}, value::Value};
+use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, Instruction, RegisterAddress}, node_graph::{NodeEdit, node::node_kind::{ControlFlowKind, NodeState, NodeSyncResponse}, port::PortDefinition}, value::Value};
 
 use super::NodeKind;
 
@@ -47,7 +47,7 @@ impl NodeKind for ImageNode
         }
 
         vec![
-            PortDefinition::new_output_data_port("image".to_string(), vec![ Value::Image ])
+            PortDefinition::new_output_data_port("image".to_string(), vec![ Value::Image( self.image_asset_id ) ])
         ]
     }
 
@@ -77,10 +77,13 @@ impl NodeKind for ImageNode
         todo!()
     }
 
-    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>) {
+    fn compile(&self, ctx: &mut CompiledGraphContext, _: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>) {
+        ctx.add_instruction(
+            Instruction::SetConst(output_register_addresses[0], Value::Image( self.image_asset_id ))
+        );
     }
 
     fn control_flow(&self) -> ControlFlowKind {
-        ControlFlowKind::Normal
+        ControlFlowKind::None
     }
 }

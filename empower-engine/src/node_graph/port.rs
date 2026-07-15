@@ -24,28 +24,28 @@ pub struct Port
     pub name: String,
     pub compatability: Vec<Value>,
     pub edit: PortEdit,
-    pub value: Option<Value>,
+    pub value: Option<Value>, // Is optional because of exec port
 }
 
 impl Port
 {
     pub fn new(key: NodeGraphKey, node_key: NodeGraphKey, port_definition: PortDefinition) -> Self
     {
-        let value = if port_definition.compatability.is_empty() { None } else { Some( port_definition.compatability[0].clone() ) }; 
+        let value = if port_definition.compatability.is_empty() { None } else { Some( port_definition.compatability[0].clone() ) };
 
         let edit = match &value
         {
             None => PortEdit::None,
-            Some( value_type ) => match value_type
+            Some( actual_value ) => match actual_value
             {
                 Value::Integer( int ) => PortEdit::Text( int.to_string() ),
                 Value::Float( float ) => PortEdit::Text(float.to_string()),
                 Value::Bool( boolean ) => PortEdit::CheckBox( *boolean ),
-                Value::Image => PortEdit::None,
+                Value::Image( _ ) => PortEdit::None,
             },
         };
 
-        let mut port = Self
+        let port = Self
         {
             key,
             node_key,
@@ -54,10 +54,10 @@ impl Port
             name: port_definition.name,
             compatability: port_definition.compatability,
             edit, 
-            value: None,
+            value: value,
         };
 
-        port.check_if_parseble(); // @TODO, rewrite this
+        // port.check_if_parseble(); // @TODO, rewrite this
 
         port
     }
@@ -81,7 +81,7 @@ impl Port
                 return true,
             (PortKind::Data, PortKind::Data) =>
                 self.compatability.iter()
-                .any(|from_possible_value| port.compatability.iter().any(|to_possible_value| *from_possible_value == *to_possible_value )),
+                .any(|from_possible_value| port.compatability.iter().any(|to_possible_value| *from_possible_value.type_string() == *to_possible_value.type_string() )),
             _ => false,
         }
     }
@@ -107,7 +107,7 @@ impl Port
                     Value::Integer(_) => egui::Color32::YELLOW,
                     Value::Float(_) => egui::Color32::BLUE,
                     Value::Bool(_) => egui::Color32::PURPLE,
-                    Value::Image => egui::Color32::GREEN,
+                    Value::Image(_) => egui::Color32::GREEN,
                 }
             }
         }

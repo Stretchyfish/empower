@@ -76,6 +76,6 @@ impl NodeKind for NumberNode
     }
 
     fn control_flow(&self) -> ControlFlowKind {
-        ControlFlowKind::Normal
+        ControlFlowKind::Linear
     }
 }
