@@ -61,7 +61,7 @@ impl Executor
 
             for (pointer_index, pointer) in frame.pointers.iter_mut().enumerate()
             {
-                match &pointer.state
+                match &pointer.state // @TODO, consider moving this state bahavior into the instructions
                 {
                     InstructionPointerState::Running => {},
                     InstructionPointerState::Sleeping(time_wake) =>
@@ -105,6 +105,7 @@ impl Executor
                         }
 
                         self.window_manager.remove_window(window_name);
+                        pointer.state = InstructionPointerState::Running;
                     },
                 }
 
@@ -122,7 +123,8 @@ impl Executor
                     }
                     Instruction::Jump( instruction_address ) =>
                     {
-                        pointer.next_address = *instruction_address - 1;
+                        pointer.next_address = *instruction_address;
+                        continue; // To skip the pointer increment in the end
                     },
                     Instruction::Print( register_address ) =>
                     {
@@ -142,7 +144,8 @@ impl Executor
                     {
                         if !frame.value_registers.get(register_address).unwrap().as_bool()
                         {
-                            pointer.next_address = *instruction_address - 1;
+                            pointer.next_address = *instruction_address;
+                            continue; // To skip the pointer increment in the end
                         }
                     },
                     Instruction::Wait( register_address ) =>
@@ -162,7 +165,14 @@ impl Executor
                     },
                     Instruction::Fork( instruction_address ) =>
                     {
-                        execution_actions.push( ExecutionAction::AddPointer( frame_index, *instruction_address ) );
+                        execution_actions.push( ExecutionAction::AddPointer( frame_index, pointer_index, *instruction_address ) );
+                    },
+                    Instruction::Join =>
+                    {
+                        if pointer.active_children > 0
+                        {
+                            continue;
+                        }
                     },
                 }
     
@@ -182,13 +192,21 @@ impl Executor
                 {
                     self.frames.remove( frame_index );
                 },
-                ExecutionAction::AddPointer( frame_index, start_instruction_address ) =>
+                ExecutionAction::AddPointer( frame_index, parent_pointer_index, start_instruction_address ) =>
                 {
-                    self.frames[frame_index].pointers.push( InstructionPointer::from( start_instruction_address ) ); // This is potentially slightly dangerous in the future, as it might access a frame that has been removed
+                    self.frames[frame_index].pointers[parent_pointer_index].active_children += 1;
+                    self.frames[frame_index].pointers.push( InstructionPointer::from( start_instruction_address, parent_pointer_index ) ); // This is potentially slightly dangerous in the future, as it might access a frame that has been removed
                 },
                 ExecutionAction::RemovePointer( frame_index, pointer_index ) =>
                 {
-                    self.frames[frame_index].pointers.remove(pointer_index); // Also potentially dangerous
+                    let frame = self.frames.get_mut(frame_index).unwrap();
+
+                    let removed_pointer = frame.pointers.remove(pointer_index);
+
+                    if removed_pointer.parent.is_some()
+                    {
+                        frame.pointers.get_mut(removed_pointer.parent.unwrap()).unwrap().active_children -= 1;
+                    }
 
                     if self.frames[frame_index].pointers.is_empty()
                     {
@@ -224,6 +242,9 @@ struct InstructionPointer
 {
     next_address: usize,
     state: InstructionPointerState,
+
+    parent: Option<usize>,
+    active_children: usize,
 }
 
 impl InstructionPointer
@@ -234,15 +255,21 @@ impl InstructionPointer
         {
             next_address: 0,
             state: InstructionPointerState::Running,
+
+            parent: None,
+            active_children: 0,
         }
     }
 
-    pub fn from(instruction_address: usize) -> Self
+    pub fn from(instruction_address: usize, parent: usize) -> Self
     {
         Self
         {
             next_address: instruction_address,
             state: InstructionPointerState::Running,
+
+            parent: Some( parent),
+            active_children: 0,
         }
     }
 }
@@ -258,7 +285,7 @@ enum ExecutionAction
 {
     AddFrame( AssetId ),
     RemoveFrame( FrameIndex ),
-    AddPointer( FrameIndex, InstructionAddress ),
+    AddPointer( FrameIndex, PointerIndex, InstructionAddress ),
     RemovePointer( FrameIndex, PointerIndex ),
 }
 

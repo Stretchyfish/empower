@@ -75,6 +75,11 @@ impl Assets
         {
             AssetKind::Graph =>
             {
+                if self.loaded_assets.loaded_node_graphs.contains_key(&asset_id)
+                {
+                    return true;
+                }
+                
                 let file = std::fs::read_to_string(&meta.relative_path);
 
                 match file
@@ -87,6 +92,11 @@ impl Assets
             },
             AssetKind::Image =>
             {
+                if self.loaded_assets.loaded_images.contains_key(&asset_id)
+                {
+                    return true;
+                }
+
                 let image = image::open(&meta.relative_path);
 
                 if image.is_err()

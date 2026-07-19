@@ -17,6 +17,7 @@ pub enum Instruction
     CallGraph ( AssetId ),
     ShowImage ( RegisterAddress ),
     Fork( InstructionAddress ),
+    Join,
 }
 
 impl Instruction
@@ -35,6 +36,7 @@ impl Instruction
             Instruction::CallGraph( node_graph_id ) => format!("CallGraph ( asse_id: {})", node_graph_id),
             Instruction::ShowImage( register_address ) => format!("ShowImage( r_addr: {})", register_address ),
             Instruction::Fork( instruction_address ) => format!("Fork( i_addr: {})", instruction_address),
+            Instruction::Join => String::from("Join"),
         }
     }
 }

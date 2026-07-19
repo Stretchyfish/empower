@@ -91,6 +91,8 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
 fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, node_key: &NodeGraphKey)
 {
+    let next_instruction_address = ctx.instructions.len();
+    
     let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
     println!("compiling: {}, and need to also compile first: {:?}", node_key, other_node_to_compile_first);
 
@@ -142,10 +144,12 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         {
             // @TOD, current loop implementation, has bug that when its connected to multiple other nodes, it will continue loop if the main branch finished, and it will not wait for the others to finish
             
-            let first_instruction_in_loop_address = ctx.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
+            // let first_instruction_in_loop_address = ctx.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
+            let first_instruction_in_loop_address = ctx.get_latest_instruction_address(); // this might have issues if there are no next instructions (stay aware of this in the future)
             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
 
-            ctx.add_instruction( Instruction::Jump( first_instruction_in_loop_address ) );
+            // ctx.add_instruction( Instruction::Jump( first_instruction_in_loop_address ) );
+            ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
         },
     };
 }
@@ -202,11 +206,13 @@ fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &
 
     for (index, connected_node_key) in connected_nodes.iter().enumerate()
     {
+        println!("Crashed here? 1");
         if index == connected_nodes.len() - 1
         {
             compile_node_chain(ctx, node_graph, connected_node_key);
             continue;
         }
+        println!("Crashed here? 2");
 
         ctx.add_instruction( Instruction::Fork( ctx.instructions.len() + 2 ));
         let jump_instruction_address = ctx.add_instruction_placeholder( Instruction::Jump( 0) );
@@ -217,6 +223,11 @@ fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &
 
         ctx.patch_jump_instruction(&jump_instruction_address, &ctx.instructions.len() );
         
+    }
+
+    if connected_nodes.len() > 1
+    {
+        ctx.add_instruction( Instruction::Join );
     }
 }
 
