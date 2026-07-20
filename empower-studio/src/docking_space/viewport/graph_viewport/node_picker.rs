@@ -10,6 +10,7 @@ const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "sub graph",
     "image",
     "show image",
+    "show math graph",
 ];
 
 #[derive(Clone, Default)]

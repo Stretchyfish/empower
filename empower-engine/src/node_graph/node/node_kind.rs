@@ -34,6 +34,9 @@ use image_node::ImageNode;
 mod show_image_node;
 use show_image_node::ShowImageNode;
 
+mod show_math_graph;
+use show_math_graph::ShowMathGraph;
+
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {
@@ -82,6 +85,7 @@ pub enum NodeEdit
     CheckBox { toggle: bool },
     AssetSelector { asset_id: Option<AssetId>, kind: AssetKind },
     GraphViewportOpener { graph_id: Option<AssetId>},
+    EnumBox { label: String, states: Vec<String>, current_state: String },
 }
 
 impl NodeEdit
@@ -159,6 +163,7 @@ pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = La
     r.insert( SubGraphNode::new().name(), || SubGraphNode::new());
     r.insert( ImageNode::new().name(), || ImageNode::new());
     r.insert( ShowImageNode::new().name(), || ShowImageNode::new());
+    r.insert( ShowMathGraph::new().name(), || ShowMathGraph::new());
 
     r
 });

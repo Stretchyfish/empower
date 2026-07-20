@@ -39,9 +39,11 @@ impl Port
             Some( actual_value ) => match actual_value
             {
                 Value::Integer( int ) => PortEdit::Text( int.to_string() ),
-                Value::Float( float ) => PortEdit::Text(float.to_string()),
+                Value::Float( float ) => PortEdit::Text( float.to_string() ),
                 Value::Bool( boolean ) => PortEdit::CheckBox( *boolean ),
                 Value::Image( _ ) => PortEdit::None,
+                Value::Point2d( x, y ) => PortEdit::TwoBox( x.to_string(), y.to_string() ),
+                Value::List( _ ) => PortEdit::None,
             },
         };
 
@@ -108,6 +110,8 @@ impl Port
                     Value::Float(_) => egui::Color32::BLUE,
                     Value::Bool(_) => egui::Color32::PURPLE,
                     Value::Image(_) => egui::Color32::GREEN,
+                    Value::Point2d(_, _) => egui::Color32::ORANGE,
+                    Value::List(_) => egui::Color32::PURPLE,
                 }
             }
         }

@@ -213,6 +213,32 @@ fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob
         {
             job.append("Join", 0.0, egui::TextFormat::default() );
         },
+        Instruction::ShowMathGraph( register_address ) =>
+        {
+            job.append("ShowMathGraph( ", 0.0, egui::TextFormat::default() );
+            job.append(register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        }
+        Instruction::CreateList( list_element_register_addresses, to_register_address ) =>
+        {
+            job.append("CreateList( ", 0.0, egui::TextFormat::default() );
+            job.append(format!("{:?}", list_element_register_addresses).as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(to_register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        }
     }
 
     job

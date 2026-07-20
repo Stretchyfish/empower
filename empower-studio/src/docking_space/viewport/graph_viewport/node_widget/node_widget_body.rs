@@ -163,6 +163,7 @@ pub fn show(
             NodeEdit::CheckBox { toggle: _ } => todo!(),
             NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions),
             NodeEdit::AssetSelector { asset_id, kind } => draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, kind, node_graph_names, image_names),
+            NodeEdit::EnumBox { label, states, current_state } => draw_enum_box_edit(ui, &edit_position, label, &states, current_state)
         };
 
         if changed
@@ -300,3 +301,40 @@ fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, gra
     (false, 40.0)
 }
 
+fn draw_enum_box_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, possible_states: &Vec<String>, selected_state: &mut String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+    
+    let state_before_change = selected_state.clone();
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        egui::Vec2::INFINITY
+    );
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt("enum box selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( selected_state.clone() ) // @TODO, figure out if this is needed
+    .show_ui(&mut child_ui, |ui|
+    {
+        for text in possible_states
+        {
+            if text == selected_state
+            {
+                continue;
+            }
+            
+            ui.selectable_value( selected_state, text.clone(), text);
+        }
+    });
+    
+    (state_before_change != *selected_state, 40.0)
+}

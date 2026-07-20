@@ -7,6 +7,7 @@ pub enum PortEdit
     None,
     Text(String),
     CheckBox(bool),
+    TwoBox(String, String),
 }
 
 impl PortEdit
@@ -18,6 +19,7 @@ impl PortEdit
             PortEdit::None => None,
             PortEdit::Text( text ) => attempt_to_parse_text(text, compatabilities),
             PortEdit::CheckBox( toggle ) => Some( Value::Bool( *toggle ) ),
+            PortEdit::TwoBox( text1, text2 ) => attempt_to_parse_two_box(text1, text2),
         }
     }
 }
@@ -55,4 +57,23 @@ fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<
     }
 
     None
+}
+
+fn attempt_to_parse_two_box(text1: &String, text2: &String) -> Option<Value>
+{
+    let parsed1 = text1.parse::<f32>();
+
+    if parsed1.is_err()
+    {
+        return None;
+    }
+
+    let parsed2 = text2.parse::<f32>();
+
+    if parsed2.is_err()
+    {
+        return None;
+    }
+
+    return Some( Value::Point2d( parsed1.unwrap(), parsed2.unwrap() ) );
 }

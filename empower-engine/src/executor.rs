@@ -1,6 +1,7 @@
+use egui_plot::{Legend, Line, Plot, PlotPoints};
 use std::collections::HashMap;
 
-use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
+use crate::{assets::AssetId, compiler::{Instruction, Program, RegisterAddress}, value::Value};
 
 mod executor_settings;
 pub use executor_settings::ExecutorSettings;
@@ -107,6 +108,38 @@ impl Executor
                         self.window_manager.remove_window(window_name);
                         pointer.state = InstructionPointerState::Running;
                     },
+                    InstructionPointerState::ShowMathGraph( window_name, graph ) =>
+                    {
+                        let mut window_got_closed = false;
+                        ui.as_ref().unwrap().show_viewport_immediate(
+                            egui::ViewportId::from_hash_of(window_name.clone()),
+                            egui::ViewportBuilder::default()
+                            .with_title(window_name)
+                            .with_inner_size([600.0, 400.0]),
+                            |ui, _class| {
+
+                                window_got_closed = ui.input(|i| i.viewport().close_requested());
+
+                                Plot::new("My Plot")
+                                .legend(Legend::default())
+                                .show(ui, |plot_ui| 
+                                {
+                                    plot_ui.line(Line::new(
+                                        "Graph",
+                                        PlotPoints::from(graph.clone()),
+                                    ));
+                                });
+                            },
+                        );
+
+                        if !window_got_closed
+                        {
+                            continue;
+                        }
+
+                        self.window_manager.remove_window(window_name);
+                        pointer.state = InstructionPointerState::Running;
+                    }
                 }
 
                 let next_instruction = &graph.instructions.get(pointer.next_address).unwrap();
@@ -120,6 +153,17 @@ impl Executor
                     Instruction::Copy( from_register_address, to_register_address) =>
                     {
                         frame.value_registers.insert( *to_register_address, frame.value_registers.get(from_register_address).unwrap().clone() );
+                    }
+                    Instruction::CreateList( list_element_register_addresses, to_register_address ) =>
+                    {
+                        let mut elements = Vec::with_capacity(list_element_register_addresses.len());
+
+                        for register_address in list_element_register_addresses
+                        {
+                            elements.push( frame.value_registers.get( register_address).unwrap().clone() );
+                        }
+
+                        frame.value_registers.insert( *to_register_address, Value::List( elements ) );
                     }
                     Instruction::Jump( instruction_address ) =>
                     {
@@ -174,6 +218,30 @@ impl Executor
                             continue;
                         }
                     },
+                    Instruction::ShowMathGraph( register_address ) =>
+                    {
+                        let list = frame.value_registers.get( register_address ).unwrap().as_list();
+                        
+                        let mut x = Vec::with_capacity(list.len());
+                        let mut y = Vec::with_capacity(list.len());
+
+                        for point_value in list
+                        {
+                            let point = match point_value
+                            {
+                                Value::Point2d( x, y) => (x, y),
+                                _ => panic!("tried to read invalid value in show math graph"),
+                            };
+
+                            x.push(point.0);
+                            y.push(point.1);
+                        }
+                        
+                        let graph = x.iter().zip(y.iter()).map(|(&x1, &y1)| [x1 as f64, y1 as f64]).collect();
+
+                        let window_name = self.window_manager.add_new_window("show math graph".to_string());
+                        pointer.state = InstructionPointerState::ShowMathGraph( window_name, graph );
+                    }
                 }
     
                 pointer.next_address += 1;
@@ -279,6 +347,7 @@ enum InstructionPointerState
     Running,
     Sleeping( std::time::Instant ),
     ShowImage( String, Option<AssetId> ),
+    ShowMathGraph ( String, Vec<[f64; 2]>),
 }
 
 enum ExecutionAction

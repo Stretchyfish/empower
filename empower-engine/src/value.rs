@@ -9,6 +9,8 @@ pub enum Value
     Float( f32 ),
     Bool( bool ),
     Image( Option<AssetId> ),
+    Point2d ( f32, f32),
+    List ( Vec<Value> ),
 }
 
 impl Value
@@ -21,6 +23,8 @@ impl Value
             Value::Float( float ) => float.to_string(),
             Value::Bool( boolean ) => boolean.to_string(),
             Value::Image( asset_id ) => if asset_id.is_none() { "none".to_string() } else { asset_id.unwrap().to_string() },
+            Value::Point2d( x, y) => format!("[{},{}]", x, y),
+            Value::List( _ ) => "list".to_string(),
         }
     }
 
@@ -32,6 +36,8 @@ impl Value
             Value::Float( _ ) => "float".to_string(),
             Value::Bool( _ ) => "bool".to_string(),
             Value::Image( _ ) => "image".to_string(),
+            Value::Point2d( _, _) => "point2d".to_string(),
+            Value::List( _ ) => "list".to_string(),
         }
     }
 
@@ -59,6 +65,15 @@ impl Value
         {
             Value::Image( asset_id ) => *asset_id,
             _ => panic!("tried to convert impossible value to asset_id"),
+        }
+    }
+
+    pub fn as_list(&self) -> Vec<Value>
+    {
+        match self
+        {
+            Value::List( list ) => list.clone(), // @TODO, this is potentially very expensive, consider a better way
+            _ => panic!("tried to convert impossible value to list"),
         }
     }
 }
