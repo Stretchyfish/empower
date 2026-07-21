@@ -119,6 +119,6 @@ impl NodeKind for ListNode
     }
 
     fn control_flow(&self) -> super::ControlFlowKind {
-        super::ControlFlowKind::Linear
+        super::ControlFlowKind::None
     }
 }

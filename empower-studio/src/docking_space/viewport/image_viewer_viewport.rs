@@ -5,7 +5,8 @@ use crate::studio_context::StudioContext;
 
 pub fn show(image_asset_id: &AssetId, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String)
 {
-    let image = studio_context.get_project_mut().assets.get_image(image_asset_id);
+    let project = studio_context.get_project_mut();
+    let image = project.assets.get_image(&project.location, image_asset_id);
 
     if image.is_none()
     {

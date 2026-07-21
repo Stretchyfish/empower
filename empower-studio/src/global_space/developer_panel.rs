@@ -1,3 +1,5 @@
+use empower_engine::project::Project;
+
 use crate::studio_context::StudioContext;
 
 #[derive(Clone)]
@@ -29,7 +31,8 @@ impl DeveloperPanel
             return;
         }
 
-        let (settings, assets) = studio_context.get_settings_mut_and_assets();
+        // let (settings, assets) = studio_context.get_settings_mut_and_assets();
+        let (settings, project) = studio_context.get_settings_mut_and_project();
 
         egui::Window::new("Developer Panel")
         .collapsible(true)
@@ -38,10 +41,9 @@ impl DeveloperPanel
         .open(&mut self.show)
         .show(ui, |ui| 
         {
-            // ui.horizontal(|ui|
-            // {
-            //     ui.label(format!("User state: {:?}", user_state))
-            // });
+            show_project_developer_panel(ui, project);
+
+            let assets = &project.assets;
 
             ui.collapsing("node graph", |ui|
             {
@@ -129,4 +131,14 @@ impl DeveloperPanel
             }
         });
     }
+}
+
+fn show_project_developer_panel(ui: &mut egui::Ui, project: &Project)
+{
+    ui.collapsing("project", |ui|
+    {
+        ui.label(format!("name: {}", project.name));
+        ui.label(format!("location: {}", project.location.to_string_lossy()));
+        ui.label(format!("state: {}", project.state.to_string()));
+    });
 }

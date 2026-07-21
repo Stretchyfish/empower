@@ -50,7 +50,7 @@ pub fn release_compile(project: &mut Project) -> Result<Program, String>
 
         let next_graph_to_compile = next_graph_to_compile.unwrap();
         
-        project.assets.load_asset(next_graph_to_compile); // Safety implementation in case it isn't loaded
+        project.assets.load_asset(&project.location, next_graph_to_compile); // Safety implementation in case it isn't loaded
         let result = compile_graph(&mut ctx, next_graph_to_compile, project);
 
         if result.is_err()
@@ -59,7 +59,7 @@ pub fn release_compile(project: &mut Project) -> Result<Program, String>
         }
     }
 
-    project.assets.load_assets( ctx.get_assets_to_load() );
+    project.assets.load_assets(&project.location, ctx.get_assets_to_load() );
 
     Ok( ctx.get_program(project.entry_graph, project.assets.loaded_assets.clone() ) )
 }

@@ -58,11 +58,11 @@ impl Project
 
         let mut assets = Assets::new();
 
-        let entry_graph_location = assets.create_node_graph(&temp_directory_root.join("assets"), Some( "entry_graph" )).unwrap(); // @TODO, find a better way of creating the entry graph
+        let entry_graph_location = assets.create_node_graph(&temp_directory_root, &PathBuf::from("assets"), Some( "entry_graph" )).unwrap(); // @TODO, find a better way of creating the entry graph
 
         let entry_graph_asset_id = assets.import_asset(&entry_graph_location);
 
-        assets.load_asset(entry_graph_asset_id);
+        assets.load_asset(&temp_directory_root, entry_graph_asset_id);
         Self
         {
             name: String::from("untitled"),
@@ -101,7 +101,7 @@ impl Project
                     Err( error ) => println!("Error, failed to save: {}", error.kind().to_string()),
                 }
 
-                self.assets.save();
+                self.assets.save(&self.location);
 
                 Ok(())
             },
@@ -121,11 +121,17 @@ impl Project
             panic!("Error when loading project directory");
         }
 
-        // @TODO, do more checks here
+        let folder_path = folder_path.unwrap();
 
-        let corrected_path = folder_path.unwrap().join("project.json");
+        // @TODO, check that this is actually a valid project
+
+        let corrected_path = folder_path.join("project.json");
         let node_graph_json = std::fs::read_to_string(corrected_path).unwrap();
-        *self = serde_json::from_str(&node_graph_json).unwrap();
+
+        let mut project: Project = serde_json::from_str(&node_graph_json).unwrap();
+        project.location = folder_path;
+
+        *self = project;
     }
 
     pub fn load_specific_path(&mut self, project_path: PathBuf)

@@ -192,6 +192,11 @@ impl StudioContext
         self.windows = windows;
     }
 
+    pub fn get_settings_mut_and_project(&mut self) -> (&mut Settings, &Project)
+    {
+        (&mut self.settings, &self.project)
+    }
+
     pub fn get_settings_mut_and_assets(&mut self) -> (&mut Settings, &Assets)
     {
         (&mut self.settings, &self.project.assets)

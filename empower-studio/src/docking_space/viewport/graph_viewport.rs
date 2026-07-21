@@ -364,7 +364,8 @@ impl GraphViewport
                         },
                         NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
                         {
-                            let sub_graph = studio_context.get_project_mut().assets.get_node_graph(&node_graph_id).unwrap();
+                            let project_path = &studio_context.get_project().location.clone();
+                            let sub_graph = studio_context.get_project_mut().assets.get_node_graph(project_path, &node_graph_id).unwrap();
 
                             let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
 
