@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::{AssetId, Assets}, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, project::Project};
+use empower_engine::{assets::{AssetId, Assets}, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
 use layout::Layout;
 
 mod request;
@@ -296,6 +296,11 @@ impl StudioContext
         self.requests.push_back( Request::LoadProject );
     }
 
+    pub fn request_export_project(&mut self, config: distribution::ExportConfig)
+    {
+        self.requests.push_back( Request::ExportProject { config } );
+    }
+
     pub fn get_cache(&self) -> &Cache
     {
         &self.cache
@@ -336,6 +341,18 @@ impl StudioContext
             Request::Compile => { self.compile(); },
             Request::StartExecute => { self.start_execution(); },
             Request::StopExecute => { self.stop_execution(); },
+            Request::ExportProject { config } => {
+
+                let _ = self.project.save();
+                self.compile(); // @TODO, double check, this behavior might appear twice
+
+                if self.program.is_none()
+                {
+                    panic!("Cannot export project, as it is not build yet");
+                }
+                
+                let _ = distribution::export(self.program.as_ref().unwrap(), &config);
+            },
         }
     }
 }

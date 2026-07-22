@@ -8,6 +8,9 @@ use project_settings::ProjectSettings;
 mod project_state;
 use project_state::ProjectState;
 
+mod export_settings;
+pub use export_settings::ExportSettings;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -63,6 +66,7 @@ impl Project
         let entry_graph_asset_id = assets.import_asset(&entry_graph_location);
 
         assets.load_asset(&temp_directory_root, entry_graph_asset_id);
+
         Self
         {
             name: String::from("untitled"),

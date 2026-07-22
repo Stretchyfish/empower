@@ -4,7 +4,9 @@ pub type InstructionSet = Vec<Instruction>;
 
 pub type InstructionAddress = usize;
 
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Instruction
 {
     SetConst( RegisterAddress, Value ),

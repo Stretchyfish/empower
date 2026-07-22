@@ -27,6 +27,5 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 }
             }
         });
-
     });
 }

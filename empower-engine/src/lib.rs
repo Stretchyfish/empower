@@ -5,5 +5,6 @@ pub mod compiler;
 pub mod executor;
 pub mod runtime;
 pub mod value;
+pub mod distribution;
 
 pub mod utility;

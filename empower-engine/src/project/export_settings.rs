@@ -1,20 +1,20 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct ProjectSettings
+pub struct ExportSettings
 {
-
+    pub export_name: String,
+    
 }
 
-impl ProjectSettings
+impl ExportSettings
 {
     pub fn new() -> Self
     {
         Self
         {
-
+            export_name: String::new(),
+            
         }
     }
 }
-
-

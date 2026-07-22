@@ -22,12 +22,29 @@ pub use instructions::InstructionSet;
 mod compiler_context;
 pub use compiler_context::CompilerContext;
 
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+
+pub type RegisterAddress = i32;
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Program
 {
     pub entry_graph_id: AssetId,
     pub compiled_graphs: HashMap<AssetId, CompiledGraph>,
     pub loaded_assets: LoadedAssets,
+}
+
+impl Program
+{
+    pub fn from_json(program_json: &String) -> Result<Program, serde_json::Error>
+    {
+        serde_json::from_str(&program_json)
+    }
+
+    pub fn to_json(&self) -> String
+    {
+        serde_json::to_string_pretty(&self).unwrap()
+    }
 }
 
 pub fn debug_compile(_: &Project, _: &DebugSettings)
@@ -405,7 +422,7 @@ impl CompiledGraphContext
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CompiledGraph
 {
     pub register_size: i32, 
@@ -433,4 +450,3 @@ impl CompiledGraph
     }
 }
 
-pub type RegisterAddress = i32;

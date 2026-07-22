@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use empower_engine::assets::AssetId;
+use empower_engine::{assets::AssetId, distribution::ExportConfig};
 
 use crate::{docking_space::Viewport, user_state::UserAction};
 
@@ -21,4 +21,5 @@ pub enum Request
     Compile,
     StartExecute,
     StopExecute,
+    ExportProject { config: ExportConfig },
 }
