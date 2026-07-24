@@ -1,84 +1,242 @@
+mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-pub mod project;
-use empower_engine::{NodeGraphKey, runtime::EmpowerExecutor, utility::{log_buffer::LogBuffer, text_buffer::TextBuffer}};
-use project::Project;
+use empower_engine::{assets::AssetId, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
+use layout::Layout;
+
+mod request;
+use once_cell::sync::Lazy;
+use request::Request;
+
+mod windows;
+pub use windows::Windows;
 
 mod settings;
 pub use settings::Settings;
 
-pub mod layout;
-use layout::Layout;
-
-mod requests;
-use requests::Request;
-
 mod cache;
-use cache::Cache;
+pub use cache::Cache;
 
-mod windows;
-use windows::Windows;
+use crate::docking_space::Viewport;
 
-use crate::studio_context::project::ProjectState;
+static CONFIG_DIRECTORY: Lazy<directories::ProjectDirs> = Lazy::new(|| {
+    directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory")
+});
 
 pub struct StudioContext
 {
     project: Project,
+    
+    layout: Layout,
     settings: Settings,
 
+    executor_settings: ExecutorSettings,
+    executor: Option<Executor>,
+
+    program: Option<Program>,
+
     windows: Windows,
-    layout: Layout,
 
-    cache: Cache, 
-
-    executor: EmpowerExecutor,
-
-    dragged_asset: Option<PathBuf>,
     requests: VecDeque<Request>,
+
+    cache: Cache,
 }
 
 impl StudioContext
 {
     pub fn new() -> Self
     {
-        Self
+        StudioContext
         {
             project: Project::new(),
-            settings: Settings::load(),
+            
+            layout: Layout::load(),
+            settings: Settings::new(),
+
+            executor_settings: ExecutorSettings::new_debug_mode(),
+            executor: None,
+            program: None,
 
             windows: Windows::new(),
-            layout: Layout::load(),
-
-            cache: Cache::load(),
-
-            executor: EmpowerExecutor::new(true, false),
-
-            dragged_asset: None,
 
             requests: VecDeque::new(),
+
+            cache: Cache::load(),
         }
     }
 
-    fn save(&self) // @TODO, might need a better name, or needs atleast to seperate temporary saving from project
+    pub fn get_layout_clone(&self) -> Layout
     {
+        self.layout.clone()
+    }
+
+    pub fn set_layout(&mut self, layout: Layout)
+    {
+        self.layout = layout;
+    }
+
+    pub fn request_default_layout(&mut self)
+    {
+        self.requests.push_back( Request::DefaultLayout );
+    }
+
+    pub fn request_new_viewport(&mut self, viewport: Viewport )
+    {
+        self.requests.push_back( Request::AddViewport { viewport: viewport});
+    }
+
+    pub fn request_new_viewport_at_first_docking_leaf(&mut self, viewport: Viewport )
+    {
+        self.requests.push_back( Request::AddViewportAtFirstLeaf { viewport: viewport} );
+    }
+
+    pub fn request_add_or_focus_graph_viewport(&mut self, graph_id: AssetId )
+    {
+        self.requests.push_back( Request::AddOrFocusGraphViewport { graph_id: graph_id });
+    }
+
+    fn save_studio(&mut self)
+    {
+        let created_config_directory = std::fs::create_dir(CONFIG_DIRECTORY.config_dir()); // In case there isn't already a config directory, one is created
+        match created_config_directory
+        {
+            Ok(_) => {},
+            Err( error ) => match error.kind()
+            {
+                std::io::ErrorKind::AlreadyExists => {},
+                _ => {
+                    panic!("Failing to create config directory: {}", error.kind().to_string());
+                }
+            },
+        }
+
         self.layout.save();
         self.cache.save();
-        self.settings.save();
     }
 
-    pub fn request_save(&mut self) // @TODO, this should probably be a request instead
+    fn load_studio(&mut self)
     {
-        self.requests.push_back( Request::Save );
+        self.layout = Layout::load();
+        self.cache = Cache::load();
     }
 
-    pub fn request_save_layout(&mut self)
+    pub fn request_save_studio(&mut self)
     {
-        self.requests.push_back( Request::SaveLayout );
+        self.requests.push_back( Request::SaveStudio );
     }
 
-    pub fn request_load_layout(&mut self)
+    pub fn request_load_studio(&mut self)
     {
-        self.requests.push_back( Request::LoadLayout );
+        self.requests.push_back( Request::LoadStudio );
+    }
+
+    pub fn get_project(&self) -> &Project
+    {
+        &self.project
+    }
+
+    pub fn get_project_mut(&mut self) -> &mut Project
+    {
+        &mut self.project
+    }
+
+    pub fn get_windows_mut(&mut self) -> &mut Windows
+    {
+        &mut self.windows
+    }
+
+    pub fn get_settings(&self) -> &Settings
+    {
+        &self.settings
+    }
+
+    pub fn get_windows(&mut self) -> Windows
+    {
+        self.windows.clone()
+    }
+
+    pub fn set_windows(&mut self, windows: Windows)
+    {
+        self.windows = windows;
+    }
+
+    pub fn get_settings_mut_and_project(&mut self) -> (&mut Settings, &Project)
+    {
+        (&mut self.settings, &self.project)
+    }
+
+    pub fn request_compile(&mut self)
+    {
+        self.requests.push_back( Request::Compile );
+    }
+
+    pub fn is_executing(&self) -> bool
+    {
+        if self.executor.is_some()
+        {
+            return self.executor.as_ref().unwrap().is_running();
+        }
+
+        false
+    }
+
+    pub fn request_compile_and_start_execute(&mut self)
+    {
+        self.requests.push_back( Request::Compile ); // @TODO, need to add checks to make sure it even needs to compile!
+        self.requests.push_back( Request::StartExecute );
+    }
+
+    pub fn request_stop_execute(&mut self)
+    {
+        self.requests.push_back( Request::StopExecute );
+    }
+
+    fn compile(&mut self)
+    {
+        let program = compiler::release_compile(&mut self.project);
+
+        if let Err(e) = program 
+        {
+            println!("Failed to compile: {}", e);
+            self.executor_settings.outputs.as_mut().unwrap().push( e.to_string() ); // @TODO, find a proper way to do logging
+            return;
+        }
+
+        self.program = Some( program.unwrap() );
+    }
+
+    pub fn get_program(&self) -> &Option<Program>
+    {
+        &self.program
+    }
+
+    fn start_execution(&mut self)
+    {
+        if self.program.is_none()
+        {
+            self.executor_settings.outputs.as_mut().unwrap().push( "Tried to start execution without a compiled program".to_string() ); // @TODO, find a proper solution for this
+            // panic!("Tried to start execution without a compiled program");
+            return;
+        }
+
+        self.executor_settings.clear_cache();
+
+        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
+    }
+
+    fn stop_execution(&mut self)
+    {
+        self.executor = None;
+    }
+
+    pub fn get_executor(&self) -> &Option<Executor>
+    {
+        &self.executor
+    }
+
+    pub fn get_executor_mut(&mut self) -> &mut Option<Executor>
+    {
+        &mut self.executor
     }
 
     pub fn request_save_project(&mut self)
@@ -96,19 +254,9 @@ impl StudioContext
         self.requests.push_back( Request::LoadProject );
     }
 
-    pub fn request_load_specific_project(&mut self, project_path: PathBuf)
+    pub fn request_export_project(&mut self, config: distribution::ExportConfig)
     {
-        self.requests.push_back( Request::LoadSpecificProject { project_path });
-    }
-
-    pub fn get_layout_clone(&self) -> Layout
-    {
-        self.layout.clone()
-    }
-
-    pub fn set_layout(&mut self, layout: Layout)
-    {
-        self.layout = layout;
+        self.requests.push_back( Request::ExportProject { config } );
     }
 
     pub fn get_cache(&self) -> &Cache
@@ -116,113 +264,9 @@ impl StudioContext
         &self.cache
     }
 
-    pub fn get_windows_clone(&self) -> Windows // @TODO, find a better way to do this
+    pub fn request_load_specific_project(&mut self, project_path: PathBuf)
     {
-        self.windows.clone()
-    }
-
-    pub fn set_windows(&mut self, windows: Windows)
-    {
-        self.windows = windows;
-    }
-
-    pub fn project_is_temporary(&self) -> bool
-    {
-        match self.project.state
-        {
-            ProjectState::Temporary => true,
-            ProjectState::Saved => false,
-        }
-    }
-
-    pub fn get_project_mut(&mut self) -> &mut Project // @TODO, THIS IS ONLY TEMPORARY!
-    {
-        &mut self.project
-    }
-
-    pub fn get_settings_mut(&mut self) -> &mut Settings
-    {
-        &mut self.settings
-    }
-
-    pub fn get_settings_clone(&self) -> Settings
-    {
-        self.settings.clone()
-    }
-
-    pub fn exeucutor_is_running(&self) -> bool
-    {
-        self.executor.is_running()
-    }
-
-    pub fn request_executor_start(&mut self)
-    {
-        self.requests.push_back( Request::StartExecution );
-    }
-
-    pub fn request_executor_start_from(&mut self, node_key: NodeGraphKey)
-    {
-        self.requests.push_back( Request::StartExecutionFrom { node_key });
-    }
-
-    pub fn request_executor_stop(&mut self)
-    {
-        self.requests.push_back( Request::StopExeuction );
-    }
-
-    pub fn execute_node_graph(&mut self, ctx: &egui::Context)
-    {
-        self.executor.execute_node_graph(&mut self.project.graph_editor.node_graph, Some( ctx ));
-    }
-
-    pub fn get_execution_log(&self) -> &LogBuffer
-    {
-        &self.executor.logs
-    }
-
-    pub fn get_execution_history(&self) -> &TextBuffer
-    {
-        &self.executor.history
-    }
-
-    pub fn set_settings(&mut self, settings: Settings)
-    {
-        self.settings = settings;
-    }
-
-    pub fn request_new_layout(&mut self)
-    {
-        self.requests.push_back( Request::NewLayout );
-    }
-
-    pub fn request_default_layout(&mut self)
-    {
-        self.requests.push_back( Request::DefaultLayout );
-    }
-
-    pub fn request_new_viewport(&mut self, new_viewport_name: &'static str)
-    {
-        self.requests.push_back( Request::AddViewport { name: new_viewport_name });
-    }
-
-    pub fn get_dragged_asset(&self) -> &Option<PathBuf>
-    {
-        &self.dragged_asset
-    }
-
-    pub fn request_begin_dragging_asset(&mut self, asset_path: &PathBuf)
-    {
-        self.requests.push_back( Request::StartDraggingAsset { path: asset_path.clone() });
-    }
-
-    pub fn request_stop_dragging_asset(&mut self)
-    {
-        self.requests.push_back( Request::StopDraggingAsset );
-    }
-
-    pub fn has_request(&self) -> bool
-    {
-        !self.requests.is_empty()
+        self.requests.push_back( Request::LoadSpecificProject { project_path });
     }
 
     pub fn process_requests(&mut self)
@@ -236,42 +280,35 @@ impl StudioContext
 
         match request_to_process
         {
-            Request::NewLayout => { self.layout = Layout::new(); },
-            Request::DefaultLayout => { self.layout = Layout::default_layout(); },
-            Request::AddViewport { name } => { self.layout.add_viewport( name ); },
-            Request::Save => { self.save(); },
-            Request::SaveLayout => { self.layout.save(); },
-            Request::LoadLayout => { self.layout = Layout::load(); },
-            Request::SaveProject => { 
-                self.project.save(); 
+            Request::DefaultLayout => { self.layout = Layout::default_layout() },
+            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
+            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id); },
+            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
+            Request::SaveStudio => { self.save_studio(); },
+            Request::SaveProject =>
+            {
+                let _ = self.project.save();
                 self.cache.add_previous_project(self.project.location.clone());
             },
-            Request::SaveProjectAs =>
-            {
-                self.windows.project_name_window.activate_show(self.project.name.clone()); // This window will have the user set the projects name before calling regular save again
-            },
-            Request::LoadProject => { 
+            Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
+            Request::LoadProject => {  self.project.load(); },
+            Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
+            Request::LoadStudio => { self.load_studio(); },
+            Request::Compile => { self.compile(); },
+            Request::StartExecute => { self.start_execution(); },
+            Request::StopExecute => { self.stop_execution(); },
+            Request::ExportProject { config } => {
 
-                let project_path = rfd::FileDialog::new()
-                                                    .set_title("Find project to load")
-                                                    .set_can_create_directories(true)
-                                                    .pick_folder();
+                let _ = self.project.save();
+                self.compile(); // @TODO, double check, this behavior might appear twice
 
-                if project_path.is_none()
+                if self.program.is_none()
                 {
-                    println!("Failed to get folder path!"); // @TODO, in the future, handle this error properly!
-                    return;
+                    panic!("Cannot export project, as it is not build yet");
                 }
-
-                self.project.load(project_path.unwrap()); 
-                self.cache.add_previous_project( self.project.location.clone() );
+                
+                let _ = distribution::export(self.program.as_ref().unwrap(), &config);
             },
-            Request::LoadSpecificProject { project_path } => { self.project.load(project_path); },
-            Request::StartExecution => { self.executor.start_node_graph( &mut self.project.graph_editor.node_graph ); },
-            Request::StartExecutionFrom { node_key } => { self.executor.start_node_graph_from_entry(&mut self.project.graph_editor.node_graph, &node_key); },
-            Request::StopExeuction => { self.executor.stop_node_graph(); },
-            Request::StartDraggingAsset { path } => { self.dragged_asset = Some( path ); },
-            Request::StopDraggingAsset => { self.dragged_asset = None; },
-        };
+        }
     }
 }

@@ -1,13 +1,17 @@
-use crate::node_graph::node::port::{PortCompatability, PortValue};
+use crate::compiler::CompiledGraphContext;
+use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeState;
+use crate::node_graph::node::node_kind::NodeSyncResponse;
+use crate::node_graph::port::PortDefinition;
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
-use super::NodeSetupResponse;
-use super::NodeUpdateResponse;
+use super::ControlFlowKind;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct StartNode
 {
-
+    
 }
 
 #[typetag::serde]
@@ -16,46 +20,50 @@ impl NodeKind for StartNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-            Box::new(Self {} )
+        Box::new( Self {} )
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+        Box::new( self.clone() )
     }
 
     fn name(&self) -> &'static str {
         "start"
     }
 
-    fn clone_box(&self) -> Box<dyn NodeKind> {
-        Box::new(self.clone())
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(200.0, 170.0)
     }
 
-    fn input_compatabilities(&self) -> Vec<PortCompatability> {
+    fn input_port_definitions(&self) -> Vec<PortDefinition>
+    {
         Vec::new()
     }
 
-    fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::from(
-            [
-                PortCompatability::Exatch( PortValue::Trigger(false) )
-            ]
-        )
+    fn output_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        vec![
+            PortDefinition::new_output_execution_port(),
+        ]
     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
+    fn compile(&self, _: &mut CompiledGraphContext, _: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
-        NodeSetupResponse::Finished(  vec![ PortValue::Trigger(true )] )
+    fn control_flow(&self) -> ControlFlowKind {
+        ControlFlowKind::Linear
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {
+        None
+    }
+
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
         todo!()
     }
 
-    fn show(&mut self, _: &mut egui::Ui) {
-        todo!()
+    fn sync_node_state(&mut self, _: NodeState) {
+        
     }
+
 }

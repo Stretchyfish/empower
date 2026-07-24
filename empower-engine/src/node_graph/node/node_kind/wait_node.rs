@@ -1,21 +1,18 @@
-use std::fmt;
-use std::time::Duration;
-use std::time::Instant;
-
-use crate::node_graph::node::port::{PortCompatability, PortValue};
-
+use crate::compiler::CompiledGraphContext;
+use crate::compiler::Instruction;
+use crate::compiler::RegisterAddress;
+use crate::node_graph::node::node_kind::NodeState;
+use crate::node_graph::port::PortDefinition;
+use crate::value::Value;
+use super::ControlFlowKind;
+use super::NodeSyncResponse; 
 use super::NodeKind;
-use super::NodeSetupResponse;
-use super::NodeUpdateResponse;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct WaitNode
 {
-    pub time_interval_type: WaitTimeIntervals,
 
-    #[serde(skip)]
-    start_time: Option<Instant>, // Option is only used here to satisfy deserialization
-    pub wait_time: u64,
 }
 
 #[typetag::serde]
@@ -24,95 +21,57 @@ impl NodeKind for WaitNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new( Self { time_interval_type: WaitTimeIntervals::Seconds, start_time: Some( Instant::now() ), wait_time: 5 } )
-    }
+        Box::new( Self
+        {
 
-    fn name(&self) -> &'static str {
-        "wait"
+        })
     }
 
     fn clone_box(&self) -> Box<dyn NodeKind> {
         Box::new( self.clone() )
     }
 
-    fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
+    fn name(&self) -> &'static str {
+        "wait"
     }
 
-    fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ]
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(300.0, 220.0)
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
+    fn input_port_definitions(&self) -> Vec<crate::node_graph::port::PortDefinition> {
+        vec![
+            PortDefinition::new_input_execution_port(),
+            PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]),
+        ]
     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
+    fn output_port_definitions(&self) -> Vec<PortDefinition> {
+        vec![
+            PortDefinition::new_output_execution_port(),
+        ]
     }
 
-    fn setup(&mut self, _: Vec<&PortValue>) -> NodeSetupResponse {
+    fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {
+        None
+    }
 
-        self.start_time = Some( Instant::now() );
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
+        NodeSyncResponse::Nothing
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
         
-        NodeSetupResponse::Began
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
 
-        match self.time_interval_type
-        {
-            WaitTimeIntervals::Miliseconds =>
-            {
-                if self.start_time.unwrap().elapsed() >= Duration::from_millis(self.wait_time)
-                {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
-                }
-            },
-            WaitTimeIntervals::Seconds =>
-            {
-                if self.start_time.unwrap().elapsed() >= Duration::from_secs(self.wait_time)
-                {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
-                }
-            },
-            WaitTimeIntervals::Minutes =>
-            {
-                if self.start_time.unwrap().elapsed() >= Duration::from_mins(self.wait_time)
-                {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
-                }
-            },
-            WaitTimeIntervals::Hours =>
-            {
-                if self.start_time.unwrap().elapsed() >= Duration::from_hours(self.wait_time)
-                {
-                    return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true) ]);
-                }
-            },
-        }
-
-        NodeUpdateResponse::Running
+        ctx.add_instruction(
+            Instruction::Wait(input_port_register_adresses[0])
+        );
     }
 
-    fn show(&mut self, _: &mut egui::Ui) {
-        todo!()
-    }
-}
-
-#[derive(Default, Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
-pub enum WaitTimeIntervals
-{
-    Miliseconds,
-    #[default] Seconds,
-    Minutes,
-    Hours,
-}
-
-impl fmt::Display for WaitTimeIntervals
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result 
-    {
-        write!(f, "{:?}", self)
+    fn control_flow(&self) -> ControlFlowKind {
+        ControlFlowKind::Linear
     }
 }

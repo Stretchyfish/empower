@@ -1,55 +1,47 @@
-use empower_engine::NodeGraphKey;
-use empower_engine::node_graph::node::port::PortKind;
+use std::collections::HashMap;
 
-use crate::studio_context::project::graph_editor::GraphEditor;
+use empower_engine::node_graph::{NodeGraph, NodeGraphKey};
 
-pub fn show(ui: &mut egui::Ui, graph_editor: &GraphEditor, connection: (NodeGraphKey, NodeGraphKey))
+pub fn show(ui: &mut egui::Ui, port_from: &NodeGraphKey, port_to: &NodeGraphKey, node_graph: &NodeGraph, cached_port_position: &HashMap<NodeGraphKey, egui::Pos2>, developer_mode: &bool)
 {
-    let display_output_port = graph_editor.display_output_ports.get(&connection.0).expect("Tried to show connection but output port was not available");
-    let display_input_port = graph_editor.display_input_ports.get(&connection.1).expect("Tried to show connection but output port was not available");
+    if !cached_port_position.contains_key(&port_from) || !cached_port_position.contains_key(&port_to) // First time drawn, these values will not be there due to being drawn before node widget
+    {
+        return;
+    }
+
+    let port_from_position = cached_port_position.get(&port_from).unwrap();
+    let port_to_position = cached_port_position.get(&port_to).unwrap();
+
+    let connection_color = node_graph.ports.get(port_from).unwrap().color();
     
-    let output_port = graph_editor.node_graph.get_output_port(&connection.0).unwrap(); // @TODO, investigate a good way to remove this step
-    let input_port = graph_editor.node_graph.get_input_port(&connection.1).unwrap();
+    ui.painter().line_segment([ *port_from_position, *port_to_position], egui::Stroke::new(10.0, connection_color));
 
-    let display_output_port_node = graph_editor.display_nodes.get(&output_port.node_key).unwrap();
-    let display_input_port_node = graph_editor.display_nodes.get(&input_port.node_key).unwrap();
+    if !*developer_mode
+    {
+        return;
+    }
 
-    let output_port_position = display_output_port_node.position + display_output_port.relative_position;
-    let input_port_position = display_input_port_node.position + display_input_port.relative_position;
+    let connection_line_midpoint = (*port_from_position + port_to_position.to_vec2()) / 2.0;
 
-    let connection_color = display_output_port.color;
-
-    ui.painter().line_segment([output_port_position, input_port_position], egui::Stroke::new(10.0, connection_color));
+    ui.painter().text(
+        connection_line_midpoint,
+        egui::Align2::CENTER_CENTER,
+        port_to.to_string(),
+        egui::FontId::proportional(25.0),
+        egui::Color32::WHITE,
+    );
 }
 
-pub fn show_connection_search(ui: &mut egui::Ui, graph_editor: &GraphEditor, mouse_scene_position: &egui::Pos2)
+pub fn search_show(ui: &mut egui::Ui, selected_port: &NodeGraphKey, node_graph: &mut NodeGraph, mouse_scene_position: &egui::Pos2, cached_port_position: &HashMap<NodeGraphKey, egui::Pos2>)
 {
-    let port_searcher = graph_editor.port_searcher.as_ref().unwrap();
-
-    let display_port_position;
-    let display_port_color;
-    
-    match port_searcher.port_kind
+    if !cached_port_position.contains_key(selected_port)
     {
-        PortKind::Input =>
-        {
-            let display_input_port = graph_editor.display_input_ports.get(&port_searcher.port_key).unwrap();
-            let input_port = graph_editor.node_graph.get_input_port(&port_searcher.port_key).unwrap();
-            let display_input_port_node = graph_editor.display_nodes.get(&input_port.node_key).unwrap();
+        return;
+    }
 
-            display_port_position = display_input_port_node.position + display_input_port.relative_position;
-            display_port_color = display_input_port.color;
-        },
-        PortKind::Output =>
-        {
-            let display_output_port = graph_editor.display_output_ports.get(&port_searcher.port_key).unwrap();
-            let output_port = graph_editor.node_graph.get_output_port(&port_searcher.port_key).unwrap();
-            let display_output_port_node = graph_editor.display_nodes.get(&output_port.node_key).unwrap();
+    let port_position = cached_port_position.get(selected_port).unwrap();
+    
+    let connection_color = node_graph.ports.get(selected_port).unwrap().color();
 
-            display_port_position = display_output_port_node.position + display_output_port.relative_position;
-            display_port_color = display_output_port.color;
-        },
-    };
- 
-    ui.painter().line_segment([ display_port_position, *mouse_scene_position], egui::Stroke::new(10.0, display_port_color));
+    ui.painter().line_segment([ *port_position, *mouse_scene_position], egui::Stroke::new(10.0, connection_color));
 }

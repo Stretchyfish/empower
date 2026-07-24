@@ -1,83 +1,73 @@
-use crate::NodeGraph;
+use crate::{compiler::Program, executor::{Executor, ExecutorSettings}};
 
-pub mod analysis;
-mod visualizer;
-use visualizer::EmpowerVisualizer;
-
-mod executor;
-pub use executor::EmpowerExecutor;
-
-pub struct EmpowerRuntime
+pub fn run_cli(program: Program)
 {
-    node_graph: NodeGraph,
-    node_graph_executor: EmpowerExecutor,
-}
+    let mut executor = Executor::new(program, ExecutorSettings::new());
 
-impl EmpowerRuntime
-{
-    pub fn new(mut node_graph: NodeGraph, debug_mode: bool) -> Self
+    if !executor.is_running()
     {
-        // let mut node_graph_executor = EmpowerExecutor::new(node_graph, false, debug_mode);
-        let mut node_graph_executor = EmpowerExecutor::new(false, debug_mode);
-        node_graph_executor.start_node_graph(&mut node_graph);
- 
-        Self
-        {
-            node_graph,
-            node_graph_executor,
-        }
+        return;
     }
 
-    pub fn execute(&mut self)
+    loop
     {
-        let mut node_graph_uses_graphics = false;
-        if self.node_graph.contains_node_kind("math graph") ||
-            self.node_graph.contains_node_kind("show image")
-        {
-            node_graph_uses_graphics = true;
-        }
-
-        if node_graph_uses_graphics == false
-        {
-            while self.node_graph_executor.is_running()  
-            {
-                self.node_graph_executor.execute_node_graph(&mut self.node_graph, None);
-            }
-
-            return;
-        }
-        
-        let viewport_builder = egui::ViewportBuilder::default()
-        .with_always_on_top()
-        .with_active(true)
-        .with_clamp_size_to_monitor_size(true)
-        .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
-        .with_maximized(true); // @TODO, improve the maximized approach
-        
-        let native_options = eframe::NativeOptions { 
-                                                        vsync: false, 
-                                                        viewport: viewport_builder,
-                                                        ..Default::default()};
-
-        let node_graph = self.node_graph.clone(); // @TODO, this is expensive, find a better way
-        let executor = self.node_graph_executor.clone(); // @TODO, this can be potentially be a very expensive call, find a better way
-        
-        let _ = eframe::run_native(
-            "empower app",
-            native_options,
-            Box::new(|cc| 
-            {
-                egui_extras::install_image_loaders(&&cc.egui_ctx);
-                Ok(Box::new(EmpowerVisualizer::new(node_graph, executor)))
-            }),
-        );
-     }
-
-    // pub fn execute_with_ui(&mut self, ui: &mut egui::Ui)
-    // {
-    //     self.node_graph_executor.execute_node_graph(Some( ui ));
-
-    // }
+        executor.run(None);
+    }
 }
 
+pub fn run_gui(program: Program)
+{
+    let viewport_builder = egui::ViewportBuilder::default()
+    .with_always_on_top()
+    .with_active(true)
+    .with_clamp_size_to_monitor_size(true)
+    .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
+    .with_maximized(true); // @TODO, improve the maximized approach
+        
+    let native_options = eframe::NativeOptions { 
+                                                vsync: false, 
+                                                viewport: viewport_builder,
+                                                ..Default::default() };
 
+    let _ = eframe::run_native(
+        "empower app",
+        native_options,
+        Box::new(|cc| 
+        {
+            egui_extras::install_image_loaders(&&cc.egui_ctx);
+            Ok(Box::new(EmpowerVisualizer::new(program)))
+        }),
+    );
+}
+
+pub struct EmpowerVisualizer
+{
+    executor: Executor,
+}
+
+impl EmpowerVisualizer
+{
+    pub fn new(program: Program) -> Self
+    {
+        let settings = ExecutorSettings::new();
+        
+        Self
+        {
+            executor: Executor::new(program, settings),
+        }
+    }
+}
+
+impl eframe::App for EmpowerVisualizer
+{
+    fn ui(&mut self, ui: &mut egui::Ui, _: &mut eframe::Frame)
+    {
+        if !self.executor.is_running()
+        {
+            // Implement termination behavior here
+            return;
+        }
+
+        self.executor.run(Some( ui ));
+    }
+}

@@ -1,81 +1,102 @@
-use empower_engine::utility::log_buffer::LogBuffer;
-
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
-use super::Viewport;
+use serde::{Serialize, Deserialize};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TerminalViewport
 {
+    #[serde(skip)]
+    index_after_last_observed_output_value: Option<usize>,
 
-}
-
-#[typetag::serde]
-impl Viewport for TerminalViewport
-{
-    fn new() -> Box<dyn Viewport> 
-    where
-        Self: Sized {
-        
-
-        Box::new(
-            Self
-            {
-
-            }
-        )
-    }
-
-    fn clone_box(&self) -> Box<dyn Viewport>
-    {
-        Box::new( self.clone() )
-    }
-
-    fn name(&self) -> &'static str {
-        "terminal viewport"
-    }
-
-    fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, _: &UserInputs) {
-
-        let logs = studio_context.get_execution_log();
-        
-        self.show_text_in_buffer(logs, ui);
-    }
+    #[serde(skip)]
+    entries: Vec<String>,
 }
 
 impl TerminalViewport
 {
-    fn show_text_in_buffer(&mut self, logs: &LogBuffer, ui: &mut egui::Ui)
+    pub fn new() -> Self
     {
-        ui.horizontal_top(|ui|
+        Self
         {
-            if ui.button("Clear").clicked()
-            {
+            index_after_last_observed_output_value: None,
+            entries: Vec::new(),
+        }
+    }
+}
 
-            }
+pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, _: &UserInputs)
+{
+    terminal_viewport.extract_new_outputs(studio_context);
 
-            if ui.button("Add text").clicked()
-            {
-
-            }
-
-            if ui.button("Add line").clicked()
-            {
-
-            }
-        });
-
-        egui::ScrollArea::vertical()
-        .id_salt(egui::Id::from(self.name()))
-        .auto_shrink(false)
-        .stick_to_bottom(true)
-        .show(ui, |ui|
+    ui.horizontal_top(|ui|
+    {
+        if ui.button("Clear").clicked()
         {
-            for entry in &logs.entries
+            terminal_viewport.entries.clear();
+        }
+
+        if ui.button("Add text").clicked()
+        {
+
+        }
+
+        if ui.button("Add line").clicked()
+        {
+
+        }
+    });
+
+    ui.separator();
+
+    egui::ScrollArea::vertical()
+    .id_salt(egui::Id::from(viewport_name.clone())) 
+    .auto_shrink(false)
+    .stick_to_bottom(true)
+    .show(ui, |ui|
+    {
+        for text in &terminal_viewport.entries
+        {
+            ui.label(text);
+        }
+    });
+}
+
+impl TerminalViewport
+{
+    fn extract_new_outputs(&mut self, studio_context: &StudioContext)
+    {
+        let executor = studio_context.get_executor();
+
+        if executor.is_none()
+        {
+            return;
+        }
+
+        if executor.as_ref().unwrap().settings.outputs.is_none()
+        {
+            return;
+        }
+
+        let outputs = executor.as_ref().unwrap().settings.outputs.as_ref().unwrap();
+
+        if let Some( index_after_last_observed_output_value ) = self.index_after_last_observed_output_value // This is to handle edgecase when same setup is executed twice
+        {
+            if outputs.len() < index_after_last_observed_output_value
             {
-                let entry_text = format!("{}", entry.text);
-                ui.label(entry_text); 
+                self.index_after_last_observed_output_value = None;
             }
-        });
+        }
+
+        if outputs.is_empty()
+        {
+            return;
+        }
+
+        let index_after_last_observed_output_value = self.index_after_last_observed_output_value.unwrap_or(0);
+
+        let new_outputs = &outputs[index_after_last_observed_output_value..];
+        self.entries.extend_from_slice(new_outputs);
+
+        self.index_after_last_observed_output_value = Some( outputs.len() );
     }
 }

@@ -3,19 +3,19 @@ use std::collections::HashMap;
 use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 
 pub mod viewport;
-use viewport::Viewport;
+pub use viewport::Viewport;
 
-pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, user_inputs: &UserInputs)
+pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs)
 {
-    let mut layout_mut = studio_context.get_layout_clone(); // This is a rather expensive call, but needed to maintain structure
+    let mut layout_mut = studio_context.get_layout_clone(); // This is a rather expensive call, but needed to maintain structure and handle borrower rules
 
     egui::CentralPanel::default()
-    .frame(egui::Frame::central_panel(&ctx.style()).inner_margin(0.0))
-    .show(ctx, |ui| 
+    .frame(egui::Frame::central_panel(&ui.style()).inner_margin(0.0))
+    .show_inside(ui, |ui|
     {
         egui_dock::DockArea::new(&mut layout_mut.docking_state)
             .style({
-                let mut style = egui_dock::Style::from_egui(ctx.style().as_ref());
+                let mut style = egui_dock::Style::from_egui(ui.style().as_ref());
                 style.tab_bar.fill_tab_bar = true;
                 style
             })
@@ -39,7 +39,7 @@ pub fn show(ctx: &egui::Context, studio_context: &mut StudioContext, user_inputs
 pub struct TabViewer<'a>
 {
     pub studio_context: &'a mut StudioContext,
-    pub viewports: &'a mut HashMap<String, Box<dyn Viewport>>,
+    pub viewports: &'a mut HashMap<String, Viewport>,
     pub user_inputs: &'a UserInputs,
 }
 
@@ -58,10 +58,19 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
         if !self.viewports.contains_key(&tab_name)
         {
-            panic!("Requested a viewport not in the viewport that doesn't exist");
+            panic!("Docking space tried to show a viewport that doesn't exist");
         }
 
         let viewport = self.viewports.get_mut(&tab_name).unwrap();
-        viewport.show(ui, self.studio_context, &tab_name, self.user_inputs);
+
+        match viewport
+        {
+            Viewport::Graph { graph_viewport } => viewport::graph_viewport::show(graph_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::Terminal { terminal_viewport } => viewport::terminal_viewport::show(terminal_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::ContentBrowser { content_browser_viewport } => viewport::content_browser_viewport::show(content_browser_viewport, ui, self.studio_context, &tab_name, self.user_inputs),
+            Viewport::Empty { empty_viewport: _ } => {},
+            Viewport::ImageViewer { image_asset_id } => viewport::image_viewer_viewport::show(&image_asset_id, ui, self.studio_context, &tab_name),
+        }
     }
 }
+

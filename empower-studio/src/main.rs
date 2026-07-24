@@ -1,14 +1,12 @@
-use egui;
-use egui_extras;
-
-mod user_inputs;
-
 mod studio_context;
 use studio_context::StudioContext;
 
 mod menu_bar;
 mod global_space;
 mod docking_space;
+mod execution_space;
+
+mod user_inputs;
 
 fn main() -> Result<(), eframe::Error>
 {
@@ -31,12 +29,12 @@ fn main() -> Result<(), eframe::Error>
     .with_inner_size(egui::Vec2 { x: 1920.0, y: 1080.0 })
     .with_icon(app_icon)
     .with_maximized(true);
-    
+
     let native_options = eframe::NativeOptions { 
-                                                    vsync: false, 
-                                                    viewport: viewport_builder,
-                                                    ..Default::default()};
-    
+                                                vsync: false, 
+                                                viewport: viewport_builder,
+                                                ..Default::default()};
+
     eframe::run_native(
         "empower studio",
         native_options,
@@ -67,20 +65,21 @@ impl EmpowerStudioApplication
 
 impl eframe::App for EmpowerStudioApplication
 {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
+    fn ui(&mut self, ui: &mut egui::Ui, _: &mut eframe::Frame)
     {
-        let user_inputs = user_inputs::get_user_inputs(ctx);
+        let user_inputs = user_inputs::get_user_inputs(ui);
 
-        menu_bar::show(ctx, &mut self.studio_context);
-        docking_space::show(ctx, &mut self.studio_context, &user_inputs);
-        global_space::show(ctx, &mut self.studio_context, &user_inputs);
+        menu_bar::show(ui, &mut self.studio_context);
+        docking_space::show(ui, &mut self.studio_context, &user_inputs);
+        global_space::show(ui, &mut self.studio_context, &user_inputs);
+        execution_space::show(ui, &mut self.studio_context);
 
         self.studio_context.process_requests();
     }
 
-    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>)
+    fn on_exit(&mut self)
     {
-        self.studio_context.request_save();
+        self.studio_context.request_save_studio();
         self.studio_context.process_requests(); // Ensures everything is shut down in the correct order
     }
 }

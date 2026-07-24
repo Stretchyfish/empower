@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 fn main()
 {
+    println!("cargo:rerun-if-changed=.cargo_build_timestamp"); // A hack to make it always use the build
+
     let working_directory = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     let profile = match env::var("PROFILE") 

@@ -1,82 +1,62 @@
-use core::panic;
-
-use crate::node_graph::node::port::{PortCompatability, PortValue};
+use crate::{compiler::{CompiledGraphContext, Instruction, RegisterAddress}, node_graph::{NodeEdit, node::node_kind::{ControlFlowKind, NodeState, NodeSyncResponse}, port::PortDefinition}, value::Value};
 
 use super::NodeKind;
-use super::NodeSetupResponse;
-use super::NodeUpdateResponse;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ShowImageNode
 {
-    image_path: Option<String>,
+    
 }
 
 #[typetag::serde]
 impl NodeKind for ShowImageNode
 {
-    fn new() -> Box<dyn NodeKind> where
-        Self: Sized {
-        
-        Box::new( Self { image_path: None } )
+    fn new() -> Box<dyn NodeKind>where Self:Sized {
+        Box::new( Self {} )
     }
 
-    fn name(&self) -> &'static str {
-        "show image"
-    }
-
-    fn clone_box(&self) -> Box<dyn NodeKind> {
+    fn clone_box(&self) -> Box<dyn NodeKind>  {
         Box::new( self.clone() )
     }
 
-    fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        Vec::from(
-        [
-            PortCompatability::Exatch( PortValue::Trigger(false) ), 
-            PortCompatability::Exatch( PortValue::Text( String::new() ) ), 
-        ]
-    )
- 
+    fn name(&self) ->  &'static str {
+        "show image"
     }
 
-    fn output_compatabilities(&self) -> Vec<PortCompatability> {
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(300.0, 280.0)
+    }
+
+    fn input_port_definitions(&self) -> Vec<PortDefinition>  {
+        vec![
+            PortDefinition::new_input_execution_port(),
+            PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image( None ) ])
+        ]
+    }
+
+    fn output_port_definitions(&self) -> Vec<PortDefinition>  {
         Vec::new()
     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
+    fn node_edits(&mut self) -> Option< &mut Vec<NodeEdit> >  {
+        None
     }
 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse {
-
-        let input_text = match inputs[1]
-        {
-            PortValue::Text( text ) => text,
-            _ => panic!("show image node was requested to show an image without a path"), 
-        };
-
-        self.image_path = Some( input_text.clone() );
-
-        NodeSetupResponse::CreateWindow
+    fn sync_node_edit(&mut self, _: usize) -> NodeSyncResponse {
+        todo!()
     }
 
-    fn update(&mut self) -> NodeUpdateResponse {
-        NodeUpdateResponse::Running
+    fn sync_node_state(&mut self, _: NodeState) {
+        todo!()
     }
 
-    fn show(&mut self, ui: &mut egui::Ui) {
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, _: Vec<RegisterAddress>) {
+        ctx.add_instruction( Instruction::ShowImage( input_port_register_adresses[0] ) );
+    }
 
-        let full_file_path = self.image_path.clone().unwrap();
-
-        let image = egui::Image::new( format!(
-           "file://{}",
-           full_file_path 
-        ));
-
-        ui.add(image).on_hover_text_at_pointer(full_file_path);
+    fn control_flow(&self) -> ControlFlowKind {
+        ControlFlowKind::Linear
     }
 }

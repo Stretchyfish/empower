@@ -1,68 +1,41 @@
-use std::collections::HashMap;
-use std::any::Any; 
-
+use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 
-use super::port::{PortValue, PortCompatability};
+use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}};
+
+mod print_node;
+use print_node::PrintNode;
 
 mod start_node;
 use start_node::StartNode;
 
 mod number_node;
-pub use number_node::NumberNode;
-pub use number_node::NumberNodeValueKind;
-
-mod addition_node;
-use addition_node::AdditionNode;
-
-mod multiply_node;
-use multiply_node::MultiplyNode;
-
-mod boolean_node;
-use boolean_node::BooleanNode;
-
-mod print_node;
-use print_node::PrintNode;
-
-mod text_node;
-use text_node::TextNode;
+use number_node::NumberNode;
 
 mod list_node;
-pub use list_node::ListNode;
+use list_node::ListNode;
 
-mod math_graph_node;
-use math_graph_node::MathGraphNode;
+mod branch_node;
+use branch_node::BranchNode;
 
-mod file_path_node;
-pub use file_path_node::FilePathNode;
+mod wait_node;
+use wait_node::WaitNode;
+
+mod loop_node;
+use loop_node::LoopNode;
+
+mod sub_graph_node;
+use sub_graph_node::SubGraphNode;
+
+mod image_node;
+use image_node::ImageNode;
 
 mod show_image_node;
 use show_image_node::ShowImageNode;
 
-mod condition_node;
-pub use condition_node::ConditionNode;
-pub use condition_node::ConditionType;
-
-mod loop_node;
-pub use loop_node::LoopNode;
-pub use loop_node::LoopType;
-
-mod wait_node;
-pub use wait_node::WaitNode;
-pub use wait_node::WaitTimeIntervals;
-
-mod restart_loop_node;
-use restart_loop_node::RestartLoopNode;
-
-mod stop_loop_node;
-use stop_loop_node::StopLoopNode;
-
-mod variable_node;
-pub use variable_node::VariableNode;
-pub use variable_node::AccessType;
-
-mod range_node;
-use range_node::RangeNode;
+mod show_math_graph;
+use show_math_graph::ShowMathGraph;
 
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
@@ -70,15 +43,23 @@ pub trait NodeKind
     fn new() -> Box<dyn NodeKind> // This constructor is to allow for dyn
     where
         Self: Sized;
-    fn name(&self) -> &'static str;
-    fn clone_box(&self) -> Box<dyn NodeKind>; // This is needed to enable trait cloning
-    fn input_compatabilities(&self) -> Vec<PortCompatability>;
-    fn output_compatabilities(&self) -> Vec<PortCompatability>;
-    fn as_any_mut(&mut self) -> &mut dyn Any; 
-    fn as_any(&self) -> &dyn Any; 
-    fn setup(&mut self, inputs: Vec<&PortValue>) -> NodeSetupResponse;
-    fn update(&mut self) -> NodeUpdateResponse;
-    fn show(&mut self, ui: &mut egui::Ui); // @TODO, consider renaming show or other?
+
+    fn clone_box(&self) -> Box<dyn NodeKind>;
+    fn name(&self) -> &'static str; 
+    fn size(&self) -> egui::Vec2;
+
+    fn input_port_definitions(&self) -> Vec<PortDefinition>;
+    fn output_port_definitions(&self) -> Vec<PortDefinition>;
+
+    fn node_edits(&mut self) -> Option<&mut Vec<NodeEdit>>;
+
+    fn sync_node_edit(&mut self, index: usize) -> NodeSyncResponse;
+
+    fn sync_node_state(&mut self, node_state: NodeState);
+
+    fn compile(&self, ctx: &mut CompiledGraphContext, input_port_register_adresses: Vec<RegisterAddress>, output_port_register_adresses: Vec<RegisterAddress>);
+
+    fn control_flow(&self) -> ControlFlowKind;
 }
 
 impl Clone for Box<dyn NodeKind>
@@ -89,49 +70,100 @@ impl Clone for Box<dyn NodeKind>
     }
 }
 
-pub enum NodeSetupResponse
+pub enum ControlFlowKind
 {
-    Began,
-    Finished(Vec<PortValue>),
-    FinishedWithLog(Vec<PortValue>, String),
-    CreateWindow,
-    CreateLoop(Vec<PortValue>),
-    RestartLoop,
-    StopLoop,
-    Error(String),
+    None,
+    Linear,
+    Branch,
+    Loop,
 }
 
-pub enum NodeUpdateResponse
+#[derive(Clone, Serialize, Deserialize)]
+pub enum NodeEdit
 {
-    Finished(Vec<PortValue>),
-    Running, // @TODO, find a better name
-    ContinueLoop(Vec<PortValue>),
+    Text { label: String, text: String, parseble: bool },
+    CheckBox { toggle: bool },
+    AssetSelector { asset_id: Option<AssetId>, kind: AssetKind },
+    GraphViewportOpener { graph_id: Option<AssetId>},
+    EnumBox { label: String, states: Vec<String>, current_state: String },
+}
+
+impl NodeEdit
+{
+    pub fn parse_to_usize(&mut self) -> Result<usize, ParseIntError>
+    {
+        let (text, parse) = match self
+        {
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<usize>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
+    }
+
+    pub fn parse_to_i32(&mut self) -> Result<i32, ParseIntError>
+    {
+        let (text, parse) = match self
+        {
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<i32>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
+    }
+
+    pub fn parse_to_f32(&mut self) -> Result<f32, ParseFloatError>
+    {
+        let (text, parse) = match self
+        {
+            NodeEdit::Text { label: _, text, parseble } => ( text, parseble ),
+            _ => panic!("list node has an invalid node edit")
+        };
+
+        let parsed_value = text.parse::<f32>();
+
+        *parse = parsed_value.is_ok();
+
+        parsed_value
+    }
+}
+
+pub enum NodeSyncResponse
+{
+    Nothing,
+    NodesStructureChanged,
+    LoadSubgraph( AssetId ),
+}
+
+pub enum NodeState
+{
+    GraphStartAndEndPorts { start_input_ports: Vec<Port>, end_output_ports: Vec<Port>},
 }
 
 type NodeConstructor = fn() -> Box<dyn NodeKind>;
 
-// @TODO, rename this to node_kind_registry
-pub static NODE_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
-    let mut m: HashMap<&'static str, fn() -> Box<dyn NodeKind>> = HashMap::new();
+pub static NODE_KIND_REGISTRY: Lazy<HashMap<&'static str, NodeConstructor>> = Lazy::new(|| {
+    let mut r: HashMap<&'static str, NodeConstructor> = HashMap::new();
 
-    m.insert(StartNode::new().name(), || StartNode::new());
-    m.insert(NumberNode::new().name(), || NumberNode::new());
-    m.insert(AdditionNode::new().name(), || AdditionNode::new());
-    m.insert(MultiplyNode::new().name(), || MultiplyNode::new());
-    m.insert(BooleanNode::new().name(), || BooleanNode::new());
-    m.insert(PrintNode::new().name(), || PrintNode::new());
-    m.insert(TextNode::new().name(), || TextNode::new());
-    m.insert(ListNode::new().name(), || ListNode::new());
-    m.insert(MathGraphNode::new().name(), || MathGraphNode::new());
-    m.insert(FilePathNode::new().name(), || FilePathNode::new());
-    m.insert(ShowImageNode::new().name(), || ShowImageNode::new());
-    m.insert(ConditionNode::new().name(), || ConditionNode::new());
-    m.insert(LoopNode::new().name(), || LoopNode::new());
-    m.insert(WaitNode::new().name(), || WaitNode::new());
-    m.insert(RestartLoopNode::new().name(), || RestartLoopNode::new());
-    m.insert(StopLoopNode::new().name(), || StopLoopNode::new());
-    m.insert(VariableNode::new().name(), || VariableNode::new());
-    m.insert(RangeNode::new().name(), || RangeNode::new());
+    r.insert( PrintNode::new().name(), || PrintNode::new());
+    r.insert( StartNode::new().name(), || StartNode::new());
+    r.insert( NumberNode::new().name(), || NumberNode::new());
+    r.insert( ListNode::new().name(), || ListNode::new());
+    r.insert( BranchNode::new().name(), || BranchNode::new());
+    r.insert( WaitNode::new().name(), || WaitNode::new());
+    r.insert( LoopNode::new().name(), || LoopNode::new());
+    r.insert( SubGraphNode::new().name(), || SubGraphNode::new());
+    r.insert( ImageNode::new().name(), || ImageNode::new());
+    r.insert( ShowImageNode::new().name(), || ShowImageNode::new());
+    r.insert( ShowMathGraph::new().name(), || ShowMathGraph::new());
 
-    m
+    r
 });

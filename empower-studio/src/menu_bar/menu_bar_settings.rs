@@ -2,13 +2,13 @@ use crate::studio_context::StudioContext;
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
-    let settings = studio_context.get_settings_mut();
-   
+    let windows = studio_context.get_windows_mut();
+    
     ui.menu_button("Settings", |ui|
     {
-        if ui.button("Developer settings").on_hover_text("alt + d").clicked()
+        if ui.button("developer panel").clicked()
         {
-            settings.developer_settings.toggle_show();
+            windows.developer_panel.toggle_show();
         }
     });
 }

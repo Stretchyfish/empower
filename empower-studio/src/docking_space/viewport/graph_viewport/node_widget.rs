@@ -1,69 +1,70 @@
-use std::collections::VecDeque;
+use std::{collections::{HashMap, VecDeque}, f32};
 
-use empower_engine::NodeGraphKey;
-use crate::studio_context::project::graph_editor::GraphEditor;
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey}};
+use crate::docking_space::viewport::graph_viewport::{area_select::AreaSelect};
 
-use super::NodeAreaSelect;
 use super::GraphViewportAction;
 
 mod node_widget_body;
-mod node_widget_input_ports;
-mod node_widget_output_ports;
+mod node_widget_ports;
 
 const PORT_SIZE: egui::Vec2 = egui::Vec2 { x: 50.0, y: 50.0 };
+const VERTICAL_PORT_GAB: f32 = 60.0;
 
 pub fn show(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    graph_editor: &mut GraphEditor, 
-    graph_viewport_title: &String, // @TODO, consider finding a way to combine these?
-    node_area_select: &mut Option<NodeAreaSelect>,
-    show_ids: bool,
+    graph_id: &AssetId,
+    node_graph: &mut NodeGraph, 
+    graph_viewport_title: &String, 
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
+    area_select: &mut Option<AreaSelect>,
+    cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+    node_graph_names: &HashMap<AssetId, String>,
+    image_names: &HashMap<AssetId, String>,
+    developer_mode: &bool,
 )
 {
-    let debug_mode = show_ids; 
+    let node = node_graph.nodes.get_mut(node_key).unwrap();
 
-    let node_and_variables = graph_editor.node_graph.get_node_and_variables_mut(node_key); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
-    let node = node_and_variables.0.unwrap(); // THIS IS THE ONLY PLACE WITH MUTABLE ACCESS TO GRAPH EDITOR OUTSIDE OF STUDIO_CONTEXT!
-    let display_node = graph_editor.display_nodes.get_mut(node_key).unwrap();
-    let variables = node_and_variables.1;
+    let node_size = node.kind.size();
 
-    node_widget_body::show_node_body(ui, node, display_node, variables, graph_viewport_title, &debug_mode, node_area_select, graph_viewport_actions);
+    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_id, graph_viewport_title, graph_viewport_actions, area_select, &node_size, node_graph_names, image_names, developer_mode);
 
-    let node_handle = graph_editor.node_graph.get_node_handle(node_key);
-
-    for input_port_key in &node_handle.input_port_keys
+    for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
-        let port_has_connection = graph_editor.node_graph.input_port_has_connection(input_port_key); // This needs to be placed here for the borrow checker 
+        let port_has_connection = node_graph.connections_in.contains_key(input_port_key);
 
-        let input_port = graph_editor.node_graph.get_input_port(input_port_key).unwrap();
-        let display_input_port = graph_editor.display_input_ports.get(input_port_key).unwrap();
-
-        node_widget_input_ports::show_input_port(ui, &display_node.position, input_port, display_input_port, &port_has_connection, &String::from(graph_viewport_title), &debug_mode, graph_viewport_actions);
+        let input_port = node_graph.ports.get_mut(input_port_key).unwrap();
+        node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &port_has_connection, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
     }
 
-    for output_port_key in &node_handle.output_port_keys
+    for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
     {
-        let output_port = graph_editor.node_graph.get_output_port(output_port_key).unwrap();
-        let display_output_port = graph_editor.display_output_ports.get(output_port_key).unwrap();
-
-        node_widget_output_ports::show_output_port(ui, &display_node.position, output_port, display_output_port, &String::from(graph_viewport_title), &debug_mode, graph_viewport_actions);
+        let output_port = node_graph.ports.get_mut(output_port_key).unwrap();
+        node_widget_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &false, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
     }
 }
 
 pub fn highlight(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    graph_editor: &GraphEditor, 
+    node_graph: &mut NodeGraph 
+    // cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back
 )
 {
-    let node = graph_editor.node_graph.get_node(node_key).unwrap();
-    let display_node = graph_editor.display_nodes.get(node_key).unwrap();
+    // if !cached_node_sizes.contains_key(node_key)
+    // {
+    //     return;
+    // }
+
+    let node = node_graph.nodes.get(node_key).unwrap();
+    // let node_size = cached_node_sizes.get(node_key).unwrap();
+    let node_size = node.kind.size();
     
-    let node_rect= egui::Rect::from_min_size(
-        display_node.position,
-        display_node.display_kind.node_size(&node.kind), // @TODO, find a way to fix this node size implementation
+    let node_rect = egui::Rect::from_min_size(
+        node.position,
+        node_size
     );
 
     let node_body_outline_margin = egui::Vec2 { x: 10.0, y: 10.0 };

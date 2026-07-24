@@ -1,15 +1,12 @@
-use crate::node_graph::node::port::{PortCompatability, PortValue};
+use crate::node_graph::{node::node_kind::{ControlFlowKind, NodeState}, port::PortDefinition};
+use serde::{Deserialize, Serialize};
 
 use super::NodeKind;
-use super::NodeSetupResponse;
-use super::NodeUpdateResponse;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LoopNode
 {
-    pub loop_type: LoopType,
-    range: Option<(i32, i32, i32)>,
-    next_iteration_send: i32,
+    
 }
 
 #[typetag::serde]
@@ -18,108 +15,50 @@ impl NodeKind for LoopNode
     fn new() -> Box<dyn NodeKind> where
         Self: Sized {
 
-        Box::new(
-            Self
-            {
-                loop_type: LoopType::Forever,
-                range: None,
-                next_iteration_send: 0,
-            }
-        )
+        Box::new( Self {} )
+    }
+
+    fn clone_box(&self) -> Box<dyn NodeKind> {
+
+        Box::new( self.clone() )
     }
 
     fn name(&self) -> &'static str {
         "loop"
     }
 
-    fn clone_box(&self) -> Box<dyn NodeKind> {
-        Box::new( self.clone() )
+    fn size(&self) -> egui::Vec2 {
+        egui::vec2(230.0, 215.0)
     }
 
-    fn input_compatabilities(&self) -> Vec<PortCompatability> {
-        match self.loop_type
-        {
-            LoopType::Forever => vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ],
-            LoopType::Range => vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ), PortCompatability::Exatch( PortValue::Range( 0, 1, 1) )  ],
-        }
+    fn input_port_definitions(&self) -> Vec<crate::node_graph::port::PortDefinition> {
+        vec![
+            PortDefinition::new_input_execution_port(),
+        ]
+    }
+
+    fn output_port_definitions(&self) -> Vec<crate::node_graph::port::PortDefinition> {
+        vec![
+            PortDefinition::new_output_execution_port(),
+        ]
+    }
+
+    fn node_edits(&mut self) -> Option<&mut Vec<super::NodeEdit>> {
+        None
+    }
+
+    fn sync_node_edit(&mut self, _: usize) -> super::NodeSyncResponse {
+        super::NodeSyncResponse::Nothing
+    }
+
+    fn sync_node_state(&mut self, _: NodeState) {
         
     }
 
-    fn output_compatabilities(&self) -> Vec<PortCompatability> {
-        match self.loop_type
-        {
-            LoopType::Forever => vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ) ],
-            LoopType::Range => vec![ PortCompatability::Exatch( PortValue::Trigger( false ) ), PortCompatability::Exatch( PortValue::Integer( 0 ) ) ],
-        }
-        
+    fn compile(&self, _: &mut crate::compiler::CompiledGraphContext, _: Vec<crate::compiler::RegisterAddress>, _: Vec<crate::compiler::RegisterAddress>) {
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn setup(&mut self, input_port_value: Vec<&PortValue>) -> NodeSetupResponse {
-
-        if input_port_value.len() == 2
-        {
-            self.range = match input_port_value[1]
-            {
-                PortValue::Range( from, interval, to) => Some( (*from, *interval, *to) ),
-                _ => panic!("Tried to match incompatible port value in loop node"),
-            };
-
-            self.next_iteration_send = 0;
-        }
-
-
-        match self.loop_type
-        {
-            LoopType::Forever => { NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true) ] ) },
-            LoopType::Range => { NodeSetupResponse::CreateLoop( vec![ PortValue::Trigger(true), PortValue::Integer(0) ] ) },
-        }
-    }
-
-    fn update(&mut self) -> NodeUpdateResponse {
-
-        let mut next_value_to_send = None;
-        if self.range.is_some()
-        {
-            next_value_to_send = Some( self.range.unwrap().0 + self.next_iteration_send * self.range.unwrap().1 );
-            self.next_iteration_send += 1;
-
-            if next_value_to_send.unwrap() >= self.range.unwrap().2
-            {
-                return NodeUpdateResponse::Finished( vec![ PortValue::Trigger(true), PortValue::Integer( self.next_iteration_send ) ]  );
-            }
-        }
-
-        match self.loop_type
-        {
-            LoopType::Forever => { NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true) ] ) },
-            LoopType::Range => { NodeUpdateResponse::ContinueLoop( vec![ PortValue::Trigger(true), PortValue::Integer( next_value_to_send.unwrap() ) ] ) },
-        }
-    }
-
-    fn show(&mut self, _: &mut egui::Ui) {
-        todo!()
+    fn control_flow(&self) -> super::ControlFlowKind {
+        ControlFlowKind::Loop
     }
 }
-
-#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, Debug)]
-pub enum LoopType
-{
-    Forever,
-    Range,
-}
-
-// impl fmt::Display for LoopType
-// {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "{}", self)
-//     }
-// }
-

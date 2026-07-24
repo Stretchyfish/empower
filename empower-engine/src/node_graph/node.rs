@@ -1,32 +1,28 @@
-
 use super::NodeGraphKey;
 
-pub mod node_handle;
-pub use node_handle::NodeHandle;
-
-pub mod port;
 pub mod node_kind;
-pub use node_kind::NodeKind;
+use node_kind::NodeKind;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Node
 {
-    pub key: NodeGraphKey,
-    pub kind: Box<dyn NodeKind>,
+    pub position: egui::Pos2,
     pub input_port_keys: Vec<NodeGraphKey>,
     pub output_port_keys: Vec<NodeGraphKey>,
+    pub kind: Box<dyn NodeKind>,
 }
 
 impl Node
 {
-    pub fn new(key: NodeGraphKey, kind: Box<dyn NodeKind>, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>) -> Self
+    pub fn new(position: egui::Pos2, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>, kind: Box<dyn NodeKind>) -> Self
     {
-        Self 
-        { 
-            key, 
-            kind, 
-            input_port_keys, 
-            output_port_keys 
+        Self
+        {
+            position,
+            input_port_keys,
+            output_port_keys,
+            kind
         }
     }
 }

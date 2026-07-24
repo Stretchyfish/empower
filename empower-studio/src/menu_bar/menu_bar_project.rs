@@ -16,6 +16,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             studio_context.request_load_project();
         }
+
         ui.menu_button("Open Recent", |ui|
         {
             for project in studio_context.get_cache().previous_projects.clone()
@@ -26,13 +27,5 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                 }
             }
         });
-        if ui.button("Project Settings").clicked()
-        {
-            studio_context.get_settings_mut().project_settings.toggle_show();
-        }
-        if ui.button("Export").clicked()
-        {
-            studio_context.get_settings_mut().export_settings.toggle_show();
-        }
     });
 }

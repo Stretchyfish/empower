@@ -1,46 +1,49 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::node_graph::Variables;
-use empower_engine::node_graph::node::Node;
-use crate::studio_context::project::graph_editor::display_node::DisplayNodeStateResponse;
-use crate::studio_context::project::graph_editor::DisplayNode;
+use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeEdit, NodeGraphKey}};
 
-use super::NodeAreaSelect;
-use super::GraphViewportAction;
+use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 
-pub fn show_node_body(
-                        ui: &mut egui::Ui, 
-                        node: &mut Node,
-                        display_node: &mut DisplayNode,
-                        variables: &Variables,
-                        graph_viewport_title: &String, 
-                        debug_mode: &bool, 
-                        node_area_select: &mut Option<NodeAreaSelect>,
-                        graph_viewport_actions: &mut VecDeque<GraphViewportAction>
-                    )
-{
-    let node_position = display_node.position;
-    let node_size = display_node.display_kind.node_size(&node.kind);
-    let node_rect = egui::Rect::from_min_size(
-        node_position,
-        node_size,
-    );
+const NODE_BOTTOM_RECT_HEIGHT: f32 = 20.0;
 
-    if node_area_select.is_some()
+const NODE_BODY_TITLE_AREA_OVERLAP: f32 = 12.0; // Due to the drawing of the body in 3 steps, a bit of overlap is done to smoothen
+const NODE_BODY_BUTTON_AREA_OVERLAP: f32 = 12.0;
+
+const NODE_EDIT_GAP: f32 = 10.0;
+const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
+
+pub fn show(
+            ui: &mut egui::Ui, 
+            node_key: &NodeGraphKey,
+            node: &mut Node,
+            viewport_graph_id: &AssetId,
+            graph_viewport_title: &String, 
+            graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
+            area_select: &mut Option<AreaSelect>,
+            node_size: &egui::Vec2,
+            node_graph_names: &HashMap<AssetId, String>,
+            image_names: &HashMap<AssetId, String>,
+            developer_mode: &bool,
+        ) -> f32
+{
+    let node_rect = egui::Rect::from_min_size(node.position, *node_size);
+
+    if area_select.is_some()
     {
-        node_area_select.as_mut().unwrap().check_if_node_is_inside_area_select_and_add_if_it_is(&node.key, &node_rect);
+        area_select.as_mut().unwrap().check_if_node_is_inside_area_select_and_add_if_it_is(&node_key, &node_rect);
     }
 
     let title_text_font_size = 40.0;
 
-    let mut node_title = display_node.title.to_string();
-    if *debug_mode
+    let mut node_title = node.kind.name().to_string();
+
+    if *developer_mode
     {
-       node_title = format!("{} [{}]", node_title, node.key.to_string());
+       node_title = format!("{} [{}]", node_title, node_key.to_string());
     }
-    
+
     let text_size = ui.painter()
                         .layout_no_wrap(
                             node_title.to_string(),
@@ -48,40 +51,38 @@ pub fn show_node_body(
                             egui::Color32::YELLOW,
                         )
                         .size();
-
     
+        
     let title_box_rect = egui::Rect::from_min_size(
-        node_rect.min,
-        egui::Vec2 {
-            x: node_rect.size().x,
-            y: text_size.y * 2.0,
-        },
+            node_rect.min,
+            egui::Vec2 {
+                x: node_rect.size().x,
+                y: text_size.y * 2.0,
+            },
     );
-
-    let node_body_title_area_overlap = 12.0; // Due to the drawing of the body in 3 steps, a bit of overlap is done to smoothen
     
-    let node_title_pos= egui::Pos2 {
+    let node_title_pos = egui::Pos2 {
         x: title_box_rect.center().x,
         y: title_box_rect.min.y
-            + (title_box_rect.size().y - node_body_title_area_overlap) / 2.0,
+            + (title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP) / 2.0,
     };
-
-    let mut title_rect_color= egui::Color32::from_rgb(50, 50, 50);
+    
+    let mut title_rect_color = egui::Color32::from_rgb(50, 50, 50);
 
     let node_title_reponse = ui.interact(
         title_box_rect,
-        egui::Id::new(graph_viewport_title.to_owned() + "_node_body_" + node.key.to_string().as_str()),
+        egui::Id::new(graph_viewport_title.to_owned() + "_node_body_" + node_key.to_string().as_str()),
         egui::Sense::click_and_drag(),
     );
 
     if node_title_reponse.hovered() // Important that this is done before clicked
     {
-        title_rect_color= egui::Color32::from_rgb(40, 40, 40);
+        title_rect_color = egui::Color32::from_rgb(40, 40, 40);
     }
-    
+
     if node_title_reponse.clicked()
     {
-        graph_viewport_actions.push_back( GraphViewportAction::ClickedNodeTitle { node_key: node.key });
+        graph_viewport_actions.push_back( GraphViewportAction::ClickedNodeTitle { node_key: *node_key });
     }
 
     ui.painter().rect(
@@ -89,9 +90,8 @@ pub fn show_node_body(
         6.0,
         title_rect_color,
         egui::Stroke::NONE,
-            egui::StrokeKind::Inside,
+        egui::StrokeKind::Inside,
     );
-
 
     ui.painter().text(
         node_title_pos,
@@ -100,15 +100,16 @@ pub fn show_node_body(
         egui::FontId::proportional(title_text_font_size),
         egui::Color32::WHITE,
     );
-    
+
     let node_rect_round_bottom = egui::Rect::from_min_size(
         egui::Pos2 {
             x: node_rect.min.x,
-            y: node_rect.max.y - 20.0,
+            y: node_rect.max.y - NODE_BOTTOM_RECT_HEIGHT,
+            // y: node_rect.max.y,
         },
         egui::Vec2 {
             x: node_rect.size().x,
-            y: 20.0,
+            y: NODE_BOTTOM_RECT_HEIGHT,
         },
     );
 
@@ -117,20 +118,19 @@ pub fn show_node_body(
         6.0,
         NODE_BODY_COLOR,
         egui::Stroke::NONE,
-            egui::StrokeKind::Inside,
+        egui::StrokeKind::Inside,
     );
-
-    let node_body_bottom_area_overlap = 20.0;
     
     let node_rect_without_title_and_bottom = egui::Rect::from_min_size(
         egui::Pos2 {
             x: node_rect.min.x,
-            y: node_rect.min.y + title_box_rect.size().y - node_body_title_area_overlap,
+            y: node_rect.min.y + title_box_rect.size().y - NODE_BODY_TITLE_AREA_OVERLAP,
         },
         egui::Vec2 {
             x: node_rect.size().x,
-            y: node_rect.size().y - title_box_rect.size().y - node_rect_round_bottom.size().y
-                + node_body_bottom_area_overlap,
+            y: node_rect.size().y
+                                    - title_box_rect.size().y + NODE_BODY_TITLE_AREA_OVERLAP
+                                    - node_rect_round_bottom.size().y + NODE_BODY_BUTTON_AREA_OVERLAP,
         },
     );
 
@@ -139,38 +139,202 @@ pub fn show_node_body(
         0.0,
         NODE_BODY_COLOR,
         egui::Stroke::NONE,
-            egui::StrokeKind::Inside,
+        egui::StrokeKind::Inside,
     );
 
-    let state_size = display_node.display_kind.state_size();
-    
-    // @TODO, move this to const?
-    let node_state_margin = 5.0;
-    let state_top_left_corner = egui::Pos2 { x: display_node.position.x + node_state_margin, y: title_box_rect.max.y + node_state_margin };
-    let state_max_rect = egui::Rect::from_min_size(state_top_left_corner, state_size); 
+    let node_edits = node.kind.node_edits();
 
-    let state_ui_builder = egui::UiBuilder::new()
-    .max_rect(state_max_rect);
-
-    // let mut node_kind_copy = node.kind.clone();
-    // let mut display_node_kind_copy = display_node.display_kind.clone();
-
-    let mut display_node_state_response = DisplayNodeStateResponse::NoChange;
-    ui.scope_builder(state_ui_builder, |ui|
+    if node_edits.is_none()
     {
-        // This is to ensure the styles and sizes match the rest of the UI
-        let style = ui.style_mut();
-        style.override_font_id = Some ( egui::FontId::proportional(35.0));
+        return title_box_rect.size().y;
+    }
 
-        display_node_state_response = display_node.display_kind.state_show(ui, &mut node.kind, variables);
-    });
+    let node_edits = node_edits.unwrap();
 
-    match display_node_state_response
+    let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
+
+    for (index, edit) in node_edits.iter_mut().enumerate()
     {
-        DisplayNodeStateResponse::NoChange => (),
-        DisplayNodeStateResponse::RefreshNodeStructure =>
+        let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
+        
+        let (changed, height) = match edit
         {
-            graph_viewport_actions.push_back( GraphViewportAction::RefreshedNodeStructure { node_key:  node.key });
+            NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
+            NodeEdit::CheckBox { toggle: _ } => todo!(),
+            NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions),
+            NodeEdit::AssetSelector { asset_id, kind } => draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, kind, node_graph_names, image_names),
+            NodeEdit::EnumBox { label, states, current_state } => draw_enum_box_edit(ui, &edit_position, label, &states, current_state)
+        };
+
+        if changed
+        {
+            graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key, node_edit_index: index });
+        }
+
+        vertical_offset += height + NODE_EDIT_GAP;
+    }
+
+    vertical_offset
+}
+
+fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: bool) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
+    let text_box_rect = egui::Rect::from_min_size(
+                                egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
+                                egui::vec2( 100.0, painted_text.size().y ));
+
+    let text_edit_color = if parseble { egui::Color32::WHITE } else { egui::Color32::RED };
+
+    let text_edit = egui::TextEdit::singleline(text)
+    .font(egui::FontId::proportional(35.0))
+    .text_color(text_edit_color)
+    .background_color(egui::Color32::BLACK);
+
+    let response = ui.put(text_box_rect , text_edit);
+
+    (response.changed(), 40.0 )
+}
+
+fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let label = match asset_kind
+    {
+        AssetKind::Graph => "graph",
+        AssetKind::Image => "image",
+    };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
+    let current_asset_name = if selected_asset.is_some()
+    {
+        match asset_kind
+        {
+            AssetKind::Graph => node_graph_names.get(&selected_asset.unwrap()).unwrap().clone(), // @TODO, take a second look at this, might be dangerous,
+            AssetKind::Image => image_names.get(&selected_asset.unwrap()).unwrap().clone(),
         }
     }
+    else
+    {
+        "unknown".to_string()
+    };
+    
+    let id_before_change = *selected_asset;
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        // egui::vec2(200.0, painted_text.size().y * 2.0)
+        egui::Vec2::INFINITY
+    );
+
+    let sorted_names: BTreeMap<&AssetId, &String> = match asset_kind
+    {
+        AssetKind::Graph => node_graph_names.into_iter().collect(),
+        AssetKind::Image => image_names.into_iter().collect(),
+    };
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt("asset selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( current_asset_name )
+    .show_ui(&mut child_ui, |ui|
+    {
+        for (id, text) in sorted_names
+        {
+            if id == viewport_graph_id
+            {
+                continue;
+            }
+            
+            ui.selectable_value( selected_asset, Some( *id ), text);
+        }
+    });
+    // egui::Area::new("graph selector".into())
+    // .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
+    // .show(&mut child_ui.ctx(), |ui|
+    // {
+
+    // });
+    
+    (id_before_change != *selected_asset, 40.0)
+}
+
+fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, graph_id: &Option<AssetId>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> (bool, f32)
+{
+    if graph_id.is_none()
+    {
+        return (false, 40.0);
+    }
+
+    let button_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let button_rect = egui::Rect::from_min_size(
+        button_position,
+        egui::vec2(200.0, 40.0)
+    );
+
+    let button = egui::Button::new("open viewport");
+
+    let response = ui.put(button_rect, button);
+
+    if response.clicked()
+    {
+        graph_viewport_actions.push_back( GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id: graph_id.unwrap() });
+    }
+    
+    (false, 40.0)
+}
+
+fn draw_enum_box_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, possible_states: &Vec<String>, selected_state: &mut String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+    
+    let state_before_change = selected_state.clone();
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        egui::Vec2::INFINITY
+    );
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt("enum box selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( selected_state.clone() ) // @TODO, figure out if this is needed
+    .show_ui(&mut child_ui, |ui|
+    {
+        for text in possible_states
+        {
+            if text == selected_state
+            {
+                continue;
+            }
+            
+            ui.selectable_value( selected_state, text.clone(), text);
+        }
+    });
+    
+    (state_before_change != *selected_state, 40.0)
 }
