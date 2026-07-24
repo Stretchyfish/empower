@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use empower_engine::{assets::AssetId, distribution::ExportConfig};
 
-use crate::{docking_space::Viewport, user_state::UserAction};
+use crate::docking_space::Viewport;
 
 pub enum Request
 {
@@ -16,8 +16,6 @@ pub enum Request
     SaveProjectAs,
     LoadProject,
     LoadSpecificProject { project_path: PathBuf },
-    UserStateClear,
-    UserStateChange { layer_or_viewport: String, new_action: UserAction },
     Compile,
     StartExecute,
     StopExecute,

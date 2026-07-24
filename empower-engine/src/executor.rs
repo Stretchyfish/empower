@@ -1,7 +1,7 @@
 use egui_plot::{Legend, Line, Plot, PlotPoints};
 use std::collections::HashMap;
 
-use crate::{assets::AssetId, compiler::{Instruction, Program, RegisterAddress}, value::Value};
+use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
 mod executor_settings;
 pub use executor_settings::ExecutorSettings;
@@ -256,10 +256,10 @@ impl Executor
                 {
                     self.frames.push( GraphFrame::new(node_graph_asset_id) );
                 },
-                ExecutionAction::RemoveFrame( frame_index ) =>
-                {
-                    self.frames.remove( frame_index );
-                },
+                // ExecutionAction::RemoveFrame( frame_index ) =>
+                // {
+                //     self.frames.remove( frame_index );
+                // },
                 ExecutionAction::AddPointer( frame_index, parent_pointer_index, start_instruction_address ) =>
                 {
                     self.frames[frame_index].pointers[parent_pointer_index].active_children += 1;
@@ -353,7 +353,7 @@ enum InstructionPointerState
 enum ExecutionAction
 {
     AddFrame( AssetId ),
-    RemoveFrame( FrameIndex ),
+    // RemoveFrame( FrameIndex ), // @TODO, add this back with a "stop" node
     AddPointer( FrameIndex, PointerIndex, InstructionAddress ),
     RemovePointer( FrameIndex, PointerIndex ),
 }

@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::{AssetId, Assets}, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
+use empower_engine::{assets::AssetId, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
 use layout::Layout;
 
 mod request;
@@ -17,7 +17,7 @@ pub use settings::Settings;
 mod cache;
 pub use cache::Cache;
 
-use crate::{docking_space::Viewport, user_state::{UserAction, UserState}};
+use crate::docking_space::Viewport;
 
 static CONFIG_DIRECTORY: Lazy<directories::ProjectDirs> = Lazy::new(|| {
     directories::ProjectDirs::from("com", "empower", "empower-studio").expect("Could not find a config directory")
@@ -34,7 +34,6 @@ pub struct StudioContext
     executor: Option<Executor>,
 
     program: Option<Program>,
-    user_state: Option<UserState>,
 
     windows: Windows,
 
@@ -57,7 +56,6 @@ impl StudioContext
             executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
             program: None,
-            user_state: None,
 
             windows: Windows::new(),
 
@@ -142,26 +140,6 @@ impl StudioContext
         &mut self.project
     }
 
-    pub fn get_project_mut_and_borrow_user_state(&mut self) -> (&mut Project, &Option<UserState>) // This is a helper function to overcome borrower limitations
-    {
-        (&mut self.project, &self.user_state)
-    }
-
-    pub fn request_user_state_change(&mut self, layer_or_viewport: String, new_action: UserAction)
-    {
-        self.requests.push_back( Request::UserStateChange { layer_or_viewport, new_action } );
-    }
-
-    pub fn request_user_state_clear(&mut self)
-    {
-        self.requests.push_back( Request::UserStateClear );
-    }
-
-    pub fn get_user_state(&self) -> &Option<UserState>
-    {
-        &self.user_state
-    }
-
     pub fn get_windows_mut(&mut self) -> &mut Windows
     {
         &mut self.windows
@@ -170,16 +148,6 @@ impl StudioContext
     pub fn get_settings(&self) -> &Settings
     {
         &self.settings
-    }
-
-    pub fn get_settings_mut(&mut self) -> &mut Settings
-    {
-        &mut self.settings
-    }
-
-    pub fn get_windows_and_settings_mut_and_borrow_user_state(&mut self) -> (&mut Windows, &mut Settings, &Option<UserState>) // @TODO, this is a deprecated helper
-    {
-        (&mut self.windows, &mut self.settings, &self.user_state)
     }
 
     pub fn get_windows(&mut self) -> Windows
@@ -197,19 +165,9 @@ impl StudioContext
         (&mut self.settings, &self.project)
     }
 
-    pub fn get_settings_mut_and_assets(&mut self) -> (&mut Settings, &Assets)
-    {
-        (&mut self.settings, &self.project.assets)
-    }
-
     pub fn request_compile(&mut self)
     {
         self.requests.push_back( Request::Compile );
-    }
-
-    pub fn can_execute(&self) -> bool
-    {
-        self.program.is_some()
     }
 
     pub fn is_executing(&self) -> bool
@@ -336,8 +294,6 @@ impl StudioContext
             Request::LoadProject => {  self.project.load(); },
             Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
             Request::LoadStudio => { self.load_studio(); },
-            Request::UserStateClear => { self.user_state = None; },
-            Request::UserStateChange { layer_or_viewport, new_action } => { self.user_state = Some( UserState::from(layer_or_viewport, new_action) )},
             Request::Compile => { self.compile(); },
             Request::StartExecute => { self.start_execution(); },
             Request::StopExecute => { self.stop_execution(); },

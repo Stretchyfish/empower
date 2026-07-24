@@ -7,7 +7,6 @@ mod docking_space;
 mod execution_space;
 
 mod user_inputs;
-mod user_state;
 
 fn main() -> Result<(), eframe::Error>
 {

@@ -159,13 +159,8 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         },
         ControlFlowKind::Loop =>
         {
-            // @TOD, current loop implementation, has bug that when its connected to multiple other nodes, it will continue loop if the main branch finished, and it will not wait for the others to finish
-            
-            // let first_instruction_in_loop_address = ctx.get_latest_instruction_address() + 1; // this might have issues if there are no next instructions (stay aware of this in the future)
-            let first_instruction_in_loop_address = ctx.get_latest_instruction_address(); // this might have issues if there are no next instructions (stay aware of this in the future)
             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
 
-            // ctx.add_instruction( Instruction::Jump( first_instruction_in_loop_address ) );
             ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
         },
     };

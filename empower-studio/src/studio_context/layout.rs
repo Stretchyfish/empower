@@ -79,7 +79,7 @@ impl Layout
         viewport_name 
     }
 
-    pub fn add_viewport_with_custom_name(&mut self, name: String, new_viewport: Viewport) -> String
+    pub fn _add_viewport_with_custom_name(&mut self, name: String, new_viewport: Viewport) -> String // @TODO, this needs to get used
     {
         self.viewports.insert(name .clone(), new_viewport);
         self.docking_state.push_to_focused_leaf(name .clone());

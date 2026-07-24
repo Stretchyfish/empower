@@ -51,7 +51,7 @@ impl DeveloperPanel
                 {
                     let name = format!("{}:[{}]", node_graph.name, asset_id);
 
-                    ui.collapsing(name, |ui|
+                    ui.collapsing(name, |_|
                     {
                         
                     });
