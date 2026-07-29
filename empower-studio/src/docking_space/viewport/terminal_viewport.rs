@@ -26,6 +26,8 @@ impl TerminalViewport
 
 pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, _: &UserInputs)
 {
+    let developer_mode = studio_context.get_settings().developer_mode;
+    
     terminal_viewport.extract_new_outputs(studio_context);
 
     ui.horizontal_top(|ui|
@@ -59,44 +61,67 @@ pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_
             ui.label(text);
         }
     });
+
+    if developer_mode
+    {
+        show_terminal_viewport_debug_info(terminal_viewport, ui);
+    }
 }
 
 impl TerminalViewport
 {
     fn extract_new_outputs(&mut self, studio_context: &StudioContext)
     {
-        let executor = studio_context.get_executor();
-
-        if executor.is_none()
-        {
-            return;
-        }
-
-        if executor.as_ref().unwrap().settings.outputs.is_none()
-        {
-            return;
-        }
-
-        let outputs = executor.as_ref().unwrap().settings.outputs.as_ref().unwrap();
+        let cache = studio_context.get_cache();
 
         if let Some( index_after_last_observed_output_value ) = self.index_after_last_observed_output_value // This is to handle edgecase when same setup is executed twice
         {
-            if outputs.len() < index_after_last_observed_output_value
+            if cache.outputs.len() < index_after_last_observed_output_value
             {
                 self.index_after_last_observed_output_value = None;
             }
         }
 
-        if outputs.is_empty()
+        if cache.outputs.is_empty()
         {
             return;
         }
 
         let index_after_last_observed_output_value = self.index_after_last_observed_output_value.unwrap_or(0);
 
-        let new_outputs = &outputs[index_after_last_observed_output_value..];
+        let new_outputs = &cache.outputs[index_after_last_observed_output_value..];
         self.entries.extend_from_slice(new_outputs);
 
-        self.index_after_last_observed_output_value = Some( outputs.len() );
+        self.index_after_last_observed_output_value = Some( cache.outputs.len() );
     }
+}
+
+fn show_terminal_viewport_debug_info(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui)
+{
+    let debug_layer = egui::LayerId::new(
+        egui::Order::Foreground,
+        egui::Id::new("terminal_viewport_debug_info"), // @TODO, this id needs to be unique to viewport
+    );
+
+    let viewport_rect = ui.max_rect();
+
+    let painter = ui.layer_painter(debug_layer)
+                    .with_clip_rect(viewport_rect);
+
+    let debug_info = format!(
+        "\
+        Terminal Viewport
+        index_after_last_observed_output_value: {:?}
+        entries: (only showing length) {:?}"
+        , terminal_viewport.index_after_last_observed_output_value
+        , terminal_viewport.entries.len(),
+    );
+
+    painter.text(
+        viewport_rect.left_top() + egui::vec2(10.0, 10.0),
+        egui::Align2::LEFT_TOP,
+        debug_info,
+        egui::FontId::monospace(14.0),
+        egui::Color32::RED,
+    );
 }

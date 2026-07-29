@@ -36,6 +36,8 @@ impl ContentBrowserViewport
 
 pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, _: &String, user_inputs: &UserInputs)
 {
+    let developer_mode = studio_context.get_settings().developer_mode;
+
     if ui.max_rect().contains(user_inputs.mouse_position)
     {
         content_browser_viewport.process_user_inputs(user_inputs, studio_context);
@@ -74,6 +76,11 @@ pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui
     ui.separator();
 
     content_browser_viewport.show_content_browser_elements_panel(ui, studio_context, user_inputs, &project_directory, directory_read.unwrap());
+
+    if developer_mode
+    {
+        show_content_browser_debug_info(content_browser_viewport, ui);
+    }
 }
 
 impl ContentBrowserViewport
@@ -445,7 +452,7 @@ fn shorten_text(mut text: String, max_letters: usize) -> String // @TODO, make t
     text
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct ViewportRenameState
 {
     potential_new_name: String,
@@ -464,3 +471,36 @@ impl ViewportRenameState
     }
 }
 
+fn show_content_browser_debug_info(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui::Ui)
+{
+    let viewport_rect = ui.max_rect();
+
+    let debug_layer = egui::LayerId::new(
+        egui::Order::Foreground,
+        egui::Id::new("content_browser_debug_info"), // @TODO, this id needs to be unique to viewport
+    );
+
+    let painter = ui.layer_painter(debug_layer)
+                    .with_clip_rect(viewport_rect);
+
+    let debug_info = format!(
+        "\
+        Content Browser Viewport
+        current_directory: {:?}
+        selected_asset: {:?}
+        quick_menu: {:?}
+        renaming_file: {:?}"
+        , content_browser_viewport.current_directory
+        , content_browser_viewport.selected_asset
+        , content_browser_viewport.quick_menu
+        , content_browser_viewport.renaming_file
+    );
+
+    painter.text(
+        viewport_rect.left_top() + egui::vec2(10.0, 10.0),
+        egui::Align2::LEFT_TOP,
+        debug_info,
+        egui::FontId::monospace(14.0),
+        egui::Color32::RED,
+    );
+}

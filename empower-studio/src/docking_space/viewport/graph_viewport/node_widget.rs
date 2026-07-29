@@ -49,7 +49,8 @@ pub fn show(
 pub fn highlight(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    node_graph: &mut NodeGraph 
+    node_graph: &mut NodeGraph, 
+    color: egui::Color32,
     // cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back
 )
 {
@@ -73,7 +74,7 @@ pub fn highlight(
     ui.painter().rect(
         node_outline_rect,
         6.0,
-        egui::Color32::ORANGE,
+        color,
         egui::Stroke::NONE,
         egui::StrokeKind::Inside,
     );

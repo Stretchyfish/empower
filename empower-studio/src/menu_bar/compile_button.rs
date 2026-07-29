@@ -1,4 +1,4 @@
-use empower_engine::compiler::Instruction;
+use empower_engine::{compiler::Instruction, node_graph::NodeAddress};
 
 use crate::studio_context::StudioContext;
 
@@ -14,16 +14,19 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         studio_context.request_compile();
     }
 
-    let program = studio_context.get_program();
+    let compile_result = studio_context.get_compile_result();
 
-    if program.is_none()
+    if compile_result.is_none()
     {
         return;
     }
 
-    ui.menu_button("⚪", |ui|
+    let mut hovered_graph_and_node = None;
+
+    let compile_menu_response = ui.menu_button("⚪", |ui|
     {
-        let program = program.as_ref().unwrap();
+        let program = &compile_result.as_ref().unwrap().program;
+        let meta = &compile_result.as_ref().unwrap().meta;
 
         ui.heading("Compiled graphs");
 
@@ -80,7 +83,16 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                             for ( instruction_address, instruction) in compiled_graph.instructions.iter().enumerate()
                             {
                                 ui.label(instruction_address.to_string());
-                                ui.label(instruction_as_layout_job(instruction));
+                                let instruction_layout_response =  ui.label(instruction_as_layout_job(instruction));
+
+                                if instruction_layout_response.hovered()
+                                {
+                                    let instruction_node_address = meta.as_ref().unwrap().trace.get(graph_id).unwrap().get(&instruction_address).expect("trace doesn't contain this node");
+                                    // potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
+                                    hovered_graph_and_node = Some( NodeAddress { graph_id: *graph_id, node_key: *instruction_node_address } );
+                                    // studio_context.get_cache_mut().highlighted_nodes = vec![ *instruction_node ];
+                                }
+
                                 ui.end_row();
                             }
                         });
@@ -89,6 +101,20 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
     });
+
+    {
+        let cache = studio_context.get_cache_mut();
+
+        if hovered_graph_and_node.is_some()
+        {
+            cache.instruction_highlighted_nodes = hovered_graph_and_node;
+        }
+
+        if compile_menu_response.inner.is_none()
+        {
+            studio_context.get_cache_mut().instruction_highlighted_nodes = None;
+        }
+    }
 }
 
 fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob

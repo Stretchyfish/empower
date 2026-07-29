@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::AssetId, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
+use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -16,6 +16,10 @@ pub use settings::Settings;
 
 mod cache;
 pub use cache::Cache;
+
+mod logging;
+pub use logging::Log;
+pub use logging::LogLevel;
 
 use crate::docking_space::Viewport;
 
@@ -33,13 +37,14 @@ pub struct StudioContext
     executor_settings: ExecutorSettings,
     executor: Option<Executor>,
 
-    program: Option<Program>,
+    compile_result: Option<CompileResult>,
 
     windows: Windows,
 
-    requests: VecDeque<Request>,
+    logs: VecDeque<Log>,
 
     cache: Cache,
+    requests: VecDeque<Request>,
 }
 
 impl StudioContext
@@ -55,13 +60,15 @@ impl StudioContext
 
             executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
-            program: None,
+            compile_result: None,
 
             windows: Windows::new(),
 
-            requests: VecDeque::new(),
+            logs: VecDeque::new(),
 
             cache: Cache::load(),
+            requests: VecDeque::new(),
+
         }
     }
 
@@ -150,6 +157,11 @@ impl StudioContext
         &self.settings
     }
 
+    pub fn get_settings_mut(&mut self) -> &mut Settings
+    {
+        &mut self.settings
+    }
+
     pub fn get_windows(&mut self) -> Windows
     {
         self.windows.clone()
@@ -158,11 +170,6 @@ impl StudioContext
     pub fn set_windows(&mut self, windows: Windows)
     {
         self.windows = windows;
-    }
-
-    pub fn get_settings_mut_and_project(&mut self) -> (&mut Settings, &Project)
-    {
-        (&mut self.settings, &self.project)
     }
 
     pub fn request_compile(&mut self)
@@ -193,35 +200,35 @@ impl StudioContext
 
     fn compile(&mut self)
     {
-        let program = compiler::release_compile(&mut self.project);
+        let compile_result = compiler::compile(&mut self.project, &CompileSettings::new_with_meta() );
 
-        if let Err(e) = program 
+        if let Err(e) = compile_result
         {
             println!("Failed to compile: {}", e);
-            self.executor_settings.outputs.as_mut().unwrap().push( e.to_string() ); // @TODO, find a proper way to do logging
+            self.cache.outputs.push( e.to_string() ); // @TODO, find a proper way to do logging
             return;
         }
 
-        self.program = Some( program.unwrap() );
+        self.compile_result = Some( compile_result.unwrap() );
     }
 
-    pub fn get_program(&self) -> &Option<Program>
+    pub fn get_compile_result(&self) -> &Option<CompileResult>
     {
-        &self.program
+        &self.compile_result
     }
 
-    fn start_execution(&mut self)
+    fn start_execution(&mut self) -> Result<(), String>
     {
-        if self.program.is_none()
+        if self.compile_result.is_none()
         {
-            self.executor_settings.outputs.as_mut().unwrap().push( "Tried to start execution without a compiled program".to_string() ); // @TODO, find a proper solution for this
+             // @TODO, find a proper solution for this
             // panic!("Tried to start execution without a compiled program");
-            return;
+            return Err( "Tried to start execution without a compiled program".to_string() );
         }
 
-        self.executor_settings.clear_cache();
+        self.executor = Some( Executor::new(self.compile_result.as_ref().unwrap().program.clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
 
-        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
+        Ok(())
     }
 
     fn stop_execution(&mut self)
@@ -229,14 +236,19 @@ impl StudioContext
         self.executor = None;
     }
 
-    pub fn get_executor(&self) -> &Option<Executor>
-    {
-        &self.executor
-    }
-
     pub fn get_executor_mut(&mut self) -> &mut Option<Executor>
     {
         &mut self.executor
+    }
+
+    pub fn get_executor_settings(&self) -> &ExecutorSettings
+    {
+        &self.executor_settings
+    }
+
+    pub fn get_executor_settings_mut(&mut self) -> &mut ExecutorSettings
+    {
+        &mut self.executor_settings
     }
 
     pub fn request_save_project(&mut self)
@@ -264,9 +276,29 @@ impl StudioContext
         &self.cache
     }
 
+    pub fn get_cache_mut(&mut self) -> &mut Cache
+    {
+        &mut self.cache
+    }
+
     pub fn request_load_specific_project(&mut self, project_path: PathBuf)
     {
         self.requests.push_back( Request::LoadSpecificProject { project_path });
+    }
+
+    pub fn add_log(&mut self, log: Log)
+    {
+        if self.logs.len() > 10
+        {
+            self.logs.pop_front();
+        }
+
+        self.logs.push_back(log);
+    }
+
+    pub fn get_logs(&self) -> &VecDeque<Log>
+    {
+        &self.logs
     }
 
     pub fn process_requests(&mut self)
@@ -295,19 +327,19 @@ impl StudioContext
             Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
             Request::LoadStudio => { self.load_studio(); },
             Request::Compile => { self.compile(); },
-            Request::StartExecute => { self.start_execution(); },
+            Request::StartExecute => { let _ = self.start_execution(); },
             Request::StopExecute => { self.stop_execution(); },
             Request::ExportProject { config } => {
 
                 let _ = self.project.save();
                 self.compile(); // @TODO, double check, this behavior might appear twice
 
-                if self.program.is_none()
+                if self.compile_result.is_none()
                 {
                     panic!("Cannot export project, as it is not build yet");
                 }
                 
-                let _ = distribution::export(self.program.as_ref().unwrap(), &config);
+                let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
             },
         }
     }

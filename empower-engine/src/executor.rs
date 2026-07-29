@@ -6,6 +6,10 @@ use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 mod executor_settings;
 pub use executor_settings::ExecutorSettings;
 
+mod executor_output;
+pub use executor_output::ExecutorOutput;
+pub use executor_output::ExecuteUnit;
+
 mod window_manager;
 use window_manager::WindowManager;
 
@@ -45,11 +49,13 @@ impl Executor
         !self.frames.is_empty()
     }
 
-    pub fn run(&mut self, ui: Option<&mut egui::Ui>)
+    pub fn run(&mut self, ui: Option<&mut egui::Ui>) -> ExecutorOutput
     {
+        let mut execution_output = ExecutorOutput::new(); // @TODO, sice of instructions can be preallocated to the number of pointers
+        
         if self.frames.is_empty()
         {
-            return;
+            return execution_output ;
         }
 
         let mut execution_actions = Vec::new();
@@ -69,6 +75,11 @@ impl Executor
                     {
                         if time_now < *time_wake
                         {
+                            execution_output.execute_units.push( ExecuteUnit {
+                                                                        graph_id: frame.graph_id,
+                                                                        instruction_address: pointer.next_address - 1
+                                                                        }
+                                                                    ); // @TODo, look into if this can be done in another way
                             continue;
                         }
 
@@ -175,10 +186,7 @@ impl Executor
                         let text = frame.value_registers.get(register_address).unwrap().to_string();
                         println!("{}", text);
 
-                        if let Some(outputs) = &mut self.settings.outputs
-                        {
-                            outputs.push(text);
-                        }
+                        execution_output.outputs.push(text);
                     },
                     Instruction::Return =>
                     {
@@ -243,7 +251,22 @@ impl Executor
                         pointer.state = InstructionPointerState::ShowMathGraph( window_name, graph );
                     }
                 }
-    
+
+                if self.settings.artificial_delay.is_some()
+                {
+                    match pointer.state
+                    {
+                        InstructionPointerState::Sleeping(instant) =>
+                        {
+                            pointer.state = InstructionPointerState::Sleeping( instant + self.settings.artificial_delay.unwrap() );
+                        },
+                        _ => {
+                            pointer.state = InstructionPointerState::Sleeping( std::time::Instant::now() + self.settings.artificial_delay.unwrap() );
+                        }
+                    }
+                }
+
+                execution_output.execute_units.push( ExecuteUnit { graph_id: frame.graph_id, instruction_address: pointer.next_address } );
                 pointer.next_address += 1;
             }
         }
@@ -283,6 +306,8 @@ impl Executor
                 },
             }
         }
+
+        execution_output
     }
 }
 
