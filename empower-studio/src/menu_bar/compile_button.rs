@@ -1,6 +1,6 @@
 use empower_engine::compiler::Instruction;
 
-use crate::studio_context::{StudioContext, UserState};
+use crate::studio_context::StudioContext;
 
 const REGISTER_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::BLUE;
 const INSTRUCTION_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::YELLOW;
@@ -21,9 +21,9 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         return;
     }
 
-    let mut potential_new_user_state = None;
+    let mut hovered_graph_and_node = None;
 
-    ui.menu_button("⚪", |ui|
+    let compile_menu_response = ui.menu_button("⚪", |ui|
     {
         let program = &compile_result.as_ref().unwrap().program;
         let meta = &compile_result.as_ref().unwrap().meta;
@@ -31,7 +31,6 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         ui.heading("Compiled graphs");
 
         ui.label(format!("entry graph: {}", program.entry_graph_id));
-
 
         egui::ScrollArea::vertical()
         .max_height(300.0)
@@ -89,7 +88,9 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                                 if instruction_layout_response.hovered()
                                 {
                                     let instruction_node = meta.as_ref().unwrap().trace.get(&instruction_address).expect("trace doesn't contain this node");
-                                    potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
+                                    // potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
+                                    hovered_graph_and_node = Some( ( 1, *instruction_node ) );
+                                    // studio_context.get_cache_mut().highlighted_nodes = vec![ *instruction_node ];
                                 }
 
                                 ui.end_row();
@@ -101,24 +102,19 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         });
     });
 
-    match studio_context.get_user_state() // @TODO, decide if this is a good approach
     {
-        UserState::HighlightingNode { graph_id: _, node_key: _ } =>
+        let cache = studio_context.get_cache_mut();
+
+        if hovered_graph_and_node.is_some()
         {
-            if potential_new_user_state.is_none()
-            {
-                studio_context.set_user_state( UserState::None );
-            }
-        },
-        _ => {},
+            cache.instruction_highlighted_nodes = Some( hovered_graph_and_node.unwrap().1 );
+        }
+
+        if compile_menu_response.inner.is_none()
+        {
+            studio_context.get_cache_mut().instruction_highlighted_nodes = None;
+        }
     }
-
-    if potential_new_user_state.is_some()
-    {
-        studio_context.set_user_state( potential_new_user_state.unwrap() );
-    }
-
-
 }
 
 fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob

@@ -117,7 +117,7 @@ impl NodeGraph {
                 let connection = self.connections_in.get(input_port_key).unwrap().clone();
                 let add_connection_result = self.add_connection(&connection, &new_copied_input_port_key);
 
-                if !add_connection_result
+                if add_connection_result.is_err()
                 {
                     println!("{:?}", "failed to transfer connection to new port");
                 }
@@ -310,16 +310,16 @@ impl NodeGraph {
         &mut self,
         from_port_key: &NodeGraphKey,
         to_port_key: &NodeGraphKey,
-    ) -> bool {
+    ) -> Result<(), &'static str> {
         if from_port_key == to_port_key {
-            return false;
+            return Err("cannot connect to self");
         }
 
         let from_port = self.ports.get(from_port_key).unwrap(); // This is slightly dangerous, but with the current editor implementation it should be safe (maybe revise in the future though)
         let to_port = self.ports.get(to_port_key).unwrap();
 
         if !from_port.compatible_with(to_port) {
-            return false;
+            return Err("ports not compatible");
         }
 
         self.connections_in.insert(*to_port_key, *from_port_key); // The ports are switched upon insert as output ports has an 1:N relation and inputs have a 1:1 relation to other ports, the order is then reversed during compilation.
@@ -328,7 +328,7 @@ impl NodeGraph {
             .or_default()
             .insert(*to_port_key);
 
-        true
+        Ok(())
     }
 
     pub fn remove_connection(&mut self, to_port_key: &NodeGraphKey) -> Option<NodeGraphKey> {

@@ -2,14 +2,25 @@ use std::{collections::VecDeque, path::PathBuf};
 
 use super::CONFIG_DIRECTORY;
 
+use empower_engine::node_graph::NodeGraphKey;
 use serde::{Deserialize, Serialize};
 
 const CONFIG_CACHE_FILE_NAME: &'static str = "cache.json";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Cache
 {
     pub previous_projects: VecDeque<PathBuf>,
+
+    #[serde(skip)]
+    pub instruction_highlighted_nodes: Option<NodeGraphKey>, // @TODO, add graph id to these two highlights 
+    
+    #[serde(skip)]
+    pub debug_highlighted_nodes: Vec<NodeGraphKey>,
+
+    #[serde(skip)]
+    pub outputs: Vec<String>,
+
 }
 
 impl Cache
@@ -19,6 +30,9 @@ impl Cache
         Self
         {
             previous_projects: VecDeque::new(),
+            instruction_highlighted_nodes: None,
+            debug_highlighted_nodes: Vec::new(),
+            outputs: Vec::new(),
         }
     }
 

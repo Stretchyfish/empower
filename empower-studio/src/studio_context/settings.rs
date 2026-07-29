@@ -2,6 +2,7 @@
 pub struct Settings
 {
     pub developer_mode: bool,
+    pub debug_mode: bool,
     
 }
 
@@ -12,6 +13,7 @@ impl Settings
         Self
         {
             developer_mode: false,
+            debug_mode: true,
             
         }
     }

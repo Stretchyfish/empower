@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use empower_engine::node_graph::NodeGraphKey;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AreaSelect
 {
     pub start_point: egui::Pos2,

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{studio_context::{StudioContext, UserState}, user_inputs::UserInputs};
+use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
 use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDirection}};
@@ -77,7 +77,7 @@ impl GraphViewport
 pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
 {
     let developer_mode = studio_context.get_settings().developer_mode;
-    let user_state = studio_context.get_user_state().clone();
+    let cache = studio_context.get_cache().clone(); // @TODO, look into this!
 
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
@@ -100,14 +100,19 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
     graph_viewport.apply_viewport_state_to_node_graph(node_graph);
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, &user_state, viewport_name, &node_graph_names, &image_names, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, &cache, viewport_name, &node_graph_names, &image_names, &developer_mode);
 
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
+
+    if developer_mode
+    {
+        show_graph_viewport_debug_info(graph_viewport, ui);
+    }
 }
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, user_state: &UserState, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, cache: &Cache, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -129,18 +134,16 @@ impl GraphViewport
                 connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
             }
 
-            match user_state
+            if cache.instruction_highlighted_nodes.is_some()
             {
-                UserState::HighlightingNode { graph_id, node_key } =>
-                {
-                    if self.graph_asset_id == *graph_id
-                    {
-                        node_widget::highlight(scene_ui, &node_key, node_graph, egui::Color32::BLUE);
-                    }
-                },
-                _ => {},
-            };
-            
+                node_widget::highlight(scene_ui, &cache.instruction_highlighted_nodes.unwrap(), node_graph, egui::Color32::BLUE);
+            }
+
+            for highlighed_node_key in &cache.debug_highlighted_nodes
+            {
+                node_widget::highlight(scene_ui, &highlighed_node_key, node_graph, egui::Color32::GREEN);
+            }
+
             let node_keys: Vec<NodeGraphKey> = node_graph.nodes.keys().cloned().collect();
             for node_key in node_keys
             {
@@ -302,14 +305,15 @@ impl GraphViewport
                                     }
                                 }
 
-                                match selected_port_direction
+                                let added_connection_result = match selected_port_direction
                                 {
-                                    PortDirection::Input => {
-                                        node_graph.add_connection(&port_key, &self.selected_port.unwrap());
-                                    },
-                                    PortDirection::Output => {
-                                        node_graph.add_connection(&self.selected_port.unwrap(), &port_key);
-                                    },
+                                    PortDirection::Input => node_graph.add_connection(&port_key, &self.selected_port.unwrap()),
+                                    PortDirection::Output => node_graph.add_connection(&self.selected_port.unwrap(), &port_key),
+                                };
+
+                                if let Err( error_text ) = added_connection_result
+                                {
+                                    studio_context.add_log( Log::info(error_text) );
                                 }
 
                                 self.selected_port = None;
@@ -440,4 +444,50 @@ enum GraphViewportAction
     NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
+}
+
+fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui)
+{
+    let debug_layer = egui::LayerId::new(
+        egui::Order::Foreground,
+        egui::Id::new("graph_viewport_debug_info"), // @TODO, this id needs to be unique to viewport
+    );
+
+    let viewport_rect = ui.max_rect();
+
+    let painter = ui.layer_painter(debug_layer)
+                    .with_clip_rect(viewport_rect);
+
+    let debug_info = format!(
+        "\
+        Graph Viewport
+        Graph id: {}
+        scene_rect: {:?}
+        mouse_position_last_frame: {:?}
+        mouse_position_delta_last_frame: {:?}
+        selected nodes: {:?}
+        selected_port: {:?}
+        area_select: {:?}
+        node_picker: {:?}
+        selected_nodes_quick_menu: {:?}
+        cached_node_position: {:?}"
+        , graph_viewport.graph_asset_id
+        , graph_viewport.scene_rect
+        , graph_viewport.mouse_scene_position_last_frame
+        , graph_viewport.mouse_scene_delta_last_frame
+        , graph_viewport.selected_nodes
+        , graph_viewport.selected_port
+        , graph_viewport.area_select
+        , graph_viewport.node_picker
+        , graph_viewport.selected_nodes_quick_menu
+        , graph_viewport.cached_port_positions
+    );
+
+    painter.text(
+        viewport_rect.left_top() + egui::vec2(10.0, 10.0),
+        egui::Align2::LEFT_TOP,
+        debug_info,
+        egui::FontId::monospace(14.0),
+        egui::Color32::RED,
+    );
 }

@@ -13,7 +13,7 @@ const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "show math graph",
 ];
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct NodePicker
 {
     pub show: bool,

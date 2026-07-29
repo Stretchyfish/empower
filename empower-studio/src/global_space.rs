@@ -9,8 +9,13 @@ pub use project_naming_window::ProjectNameWindow;
 mod export_panel;
 pub use export_panel::ExportPanel;
 
+mod logging_space;
+
+
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs)
 {
+    detect_global_hotkeys(studio_context, user_inputs);
+    
     let mut windows = studio_context.get_windows().clone(); // @TODO, this can be potentially expensive, think of a better way
     
     // Each window show function does itself keep track of it should have an open window or not!
@@ -20,4 +25,13 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: 
 
     studio_context.set_windows(windows);
 
+    logging_space::show(studio_context.get_logs(), ui);
+}
+
+fn detect_global_hotkeys(studio_context: &mut StudioContext, user_inputs: &UserInputs)
+{
+    if user_inputs.holding_alt && user_inputs.clicked_d
+    {
+        studio_context.get_settings_mut().developer_mode = !studio_context.get_settings_mut().developer_mode;
+    }
 }

@@ -4,7 +4,7 @@ use empower_engine::node_graph::NodeGraphKey;
 
 use super::GraphViewportAction;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct SelectedNodesQuickMenu
 {
     active: bool,

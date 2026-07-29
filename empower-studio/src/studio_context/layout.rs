@@ -127,8 +127,6 @@ impl Layout
             }
         }
 
-        println!("Got here");
-
         self.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new(graph_id) });
     }
 
