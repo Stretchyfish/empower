@@ -1,3 +1,5 @@
+use empower_engine::node_graph::NodeAddress;
+
 use crate::studio_context::StudioContext;
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
@@ -31,7 +33,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         else
         {
             let meta = studio_context.get_compile_result().as_ref().unwrap().meta.as_ref().unwrap();
-            output.instructions_executed.iter().for_each(|i| nodes.push( *meta.trace.get(i).unwrap() ));
+            output.execute_units.iter().for_each(|u| nodes.push( NodeAddress { graph_id: u.graph_id, node_key: *meta.trace.get(&u.graph_id).unwrap().get(&u.instruction_address).unwrap() } ));
 
             nodes
         }

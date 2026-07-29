@@ -3,8 +3,7 @@ use std::collections::VecDeque;
 
 use crate::assets::AssetId;
 use crate::assets::LoadedAssets;
-use crate::compiler::InstructionAddress;
-use crate::node_graph::NodeGraphKey;
+use crate::compiler::compile_meta::InstructionGraphTraces;
 
 use super::CompiledGraph;
 use super::CompileMeta;
@@ -48,14 +47,14 @@ impl CompilerContext
         self.compiled_graphs.insert(graph_id, graph);
     }
 
-    pub fn add_traced_data(&mut self, trace: HashMap<InstructionAddress, NodeGraphKey>)
+    pub fn add_traced_data(&mut self, graph_id: AssetId, trace: InstructionGraphTraces)
     {
         if self.meta.is_none()
         {
             return;
         }
         
-        self.meta.as_mut().unwrap().trace = trace;
+        self.meta.as_mut().unwrap().trace.insert(graph_id, trace);
     }
 
     pub fn get_program(&self, entry_graph: AssetId, assets: LoadedAssets) -> Program

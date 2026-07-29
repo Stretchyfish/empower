@@ -36,7 +36,7 @@ pub struct Program
 
 pub struct ProgramCompileMeta
 {
-    pub instruction_node_match: HashMap<InstructionAddress, NodeGraphKey>,
+    pub trace: HashMap<InstructionAddress, NodeGraphKey>,
 }
 
 impl Program
@@ -133,7 +133,7 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     let ( compiled_graph, trace ) = ( CompiledGraph::from(compiled_graph_context.register_size, compiled_graph_context.instructions), compiled_graph_context.trace );
 
-    ctx.add_traced_data( trace ); // @TODO, improve this
+    ctx.add_traced_data( graph_id, trace ); // @TODO, improve this
     ctx.add_compiled_graph(graph_id, compiled_graph);
 
     Ok(())

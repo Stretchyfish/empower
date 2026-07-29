@@ -1,9 +1,16 @@
-use crate::compiler::InstructionAddress;
+use crate::{assets::AssetId, compiler::InstructionAddress};
+
+#[derive(Clone)]
+pub struct ExecuteUnit
+{
+    pub graph_id: AssetId,
+    pub instruction_address: InstructionAddress,
+}
 
 #[derive(Clone)]
 pub struct ExecutorOutput
 {
-    pub instructions_executed: Vec<InstructionAddress>,
+    pub execute_units: Vec<ExecuteUnit>,
     pub outputs: Vec<String>,
 }
 
@@ -13,7 +20,7 @@ impl ExecutorOutput
     {
         Self
         {
-            instructions_executed: Vec::new(),
+            execute_units: Vec::new(),
             outputs: Vec::new(),
         }
     }

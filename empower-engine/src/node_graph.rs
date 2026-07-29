@@ -1,5 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
+pub mod node_address;
+pub use node_address::NodeAddress;
+
 pub mod node;
 pub use node::Node;
 pub use node::node_kind::NodeEdit;

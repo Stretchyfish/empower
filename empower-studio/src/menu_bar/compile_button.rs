@@ -1,4 +1,4 @@
-use empower_engine::compiler::Instruction;
+use empower_engine::{compiler::Instruction, node_graph::NodeAddress};
 
 use crate::studio_context::StudioContext;
 
@@ -87,9 +87,9 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
                                 if instruction_layout_response.hovered()
                                 {
-                                    let instruction_node = meta.as_ref().unwrap().trace.get(&instruction_address).expect("trace doesn't contain this node");
+                                    let instruction_node_address = meta.as_ref().unwrap().trace.get(graph_id).unwrap().get(&instruction_address).expect("trace doesn't contain this node");
                                     // potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
-                                    hovered_graph_and_node = Some( ( 1, *instruction_node ) );
+                                    hovered_graph_and_node = Some( NodeAddress { graph_id: *graph_id, node_key: *instruction_node_address } );
                                     // studio_context.get_cache_mut().highlighted_nodes = vec![ *instruction_node ];
                                 }
 
@@ -107,7 +107,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         if hovered_graph_and_node.is_some()
         {
-            cache.instruction_highlighted_nodes = Some( hovered_graph_and_node.unwrap().1 );
+            cache.instruction_highlighted_nodes = hovered_graph_and_node;
         }
 
         if compile_menu_response.inner.is_none()

@@ -136,12 +136,19 @@ impl GraphViewport
 
             if cache.instruction_highlighted_nodes.is_some()
             {
-                node_widget::highlight(scene_ui, &cache.instruction_highlighted_nodes.unwrap(), node_graph, egui::Color32::BLUE);
+                let node_address = cache.instruction_highlighted_nodes.as_ref().unwrap();
+                if node_address.graph_id == self.graph_asset_id
+                {
+                    node_widget::highlight(scene_ui, &node_address.node_key, node_graph, egui::Color32::BLUE);
+                }
             }
 
-            for highlighed_node_key in &cache.debug_highlighted_nodes
+            for highlighed_node_address in &cache.debug_highlighted_nodes
             {
-                node_widget::highlight(scene_ui, &highlighed_node_key, node_graph, egui::Color32::GREEN);
+                if highlighed_node_address.graph_id == self.graph_asset_id
+                {
+                    node_widget::highlight(scene_ui, &highlighed_node_address.node_key, node_graph, egui::Color32::GREEN);
+                }
             }
 
             let node_keys: Vec<NodeGraphKey> = node_graph.nodes.keys().cloned().collect();

@@ -8,6 +8,7 @@ pub use executor_settings::ExecutorSettings;
 
 mod executor_output;
 pub use executor_output::ExecutorOutput;
+pub use executor_output::ExecuteUnit;
 
 mod window_manager;
 use window_manager::WindowManager;
@@ -74,7 +75,11 @@ impl Executor
                     {
                         if time_now < *time_wake
                         {
-                            execution_output.instructions_executed.push( pointer.next_address - 1 ); // @TODo, look into if this can be done in another way
+                            execution_output.execute_units.push( ExecuteUnit {
+                                                                        graph_id: frame.graph_id,
+                                                                        instruction_address: pointer.next_address - 1
+                                                                        }
+                                                                    ); // @TODo, look into if this can be done in another way
                             continue;
                         }
 
@@ -261,7 +266,7 @@ impl Executor
                     }
                 }
 
-                execution_output.instructions_executed.push(pointer.next_address);
+                execution_output.execute_units.push( ExecuteUnit { graph_id: frame.graph_id, instruction_address: pointer.next_address } );
                 pointer.next_address += 1;
             }
         }
