@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{studio_context::{StudioContext, UserState}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
 use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDirection}};
@@ -77,6 +77,7 @@ impl GraphViewport
 pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
 {
     let developer_mode = studio_context.get_settings().developer_mode;
+    let user_state = studio_context.get_user_state().clone();
 
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
@@ -99,14 +100,14 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
     graph_viewport.apply_viewport_state_to_node_graph(node_graph);
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, viewport_name, &node_graph_names, &image_names, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, &user_state, viewport_name, &node_graph_names, &image_names, &developer_mode);
 
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
 }
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, user_state: &UserState, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -127,20 +128,32 @@ impl GraphViewport
             {
                 connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
             }
+
+            match user_state
+            {
+                UserState::HighlightingNode { graph_id, node_key } =>
+                {
+                    if self.graph_asset_id == *graph_id
+                    {
+                        node_widget::highlight(scene_ui, &node_key, node_graph, egui::Color32::BLUE);
+                    }
+                },
+                _ => {},
+            };
             
             let node_keys: Vec<NodeGraphKey> = node_graph.nodes.keys().cloned().collect();
             for node_key in node_keys
             {
                 if self.selected_nodes.contains(&node_key)
                 {
-                    node_widget::highlight(scene_ui, &node_key, node_graph);
+                    node_widget::highlight(scene_ui, &node_key, node_graph, egui::Color32::ORANGE);
                 }
 
                 if self.area_select.is_some()
                 {
                     if self.area_select.as_ref().unwrap().nodes_inside_rect.contains(&node_key)
                     {
-                        node_widget::highlight(scene_ui, &node_key, node_graph);
+                        node_widget::highlight(scene_ui, &node_key, node_graph, egui::Color32::ORANGE);
                     }
                 }
 

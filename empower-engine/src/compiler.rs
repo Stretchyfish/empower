@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::assets::AssetId;
 use crate::assets::LoadedAssets;
-use crate::compiler::instructions::InstructionAddress;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
@@ -12,12 +11,13 @@ use crate::node_graph::port::PortKind;
 use crate::project::Project;
 use crate::value::Value;
 
-mod debugger;
-use debugger::DebugSettings;
+mod compile_meta;
+pub use compile_meta::CompileMeta;
 
 mod instructions;
 pub use instructions::Instruction;
 pub use instructions::InstructionSet;
+pub use instructions::InstructionAddress;
 
 mod compiler_context;
 pub use compiler_context::CompilerContext;
@@ -34,6 +34,11 @@ pub struct Program
     pub loaded_assets: LoadedAssets,
 }
 
+pub struct ProgramCompileMeta
+{
+    pub instruction_node_match: HashMap<InstructionAddress, NodeGraphKey>,
+}
+
 impl Program
 {
     pub fn from_json(program_json: &String) -> Result<Program, serde_json::Error>
@@ -47,14 +52,31 @@ impl Program
     }
 }
 
-pub fn debug_compile(_: &Project, _: &DebugSettings)
+pub struct CompileSettings
 {
-    
+    traced: bool,
 }
 
-pub fn release_compile(project: &mut Project) -> Result<Program, String>
+impl CompileSettings
 {
-    let mut ctx = CompilerContext::new_with_graph_to_compile(project.entry_graph);
+    pub fn new_with_meta() -> Self
+    {
+        Self
+        {
+            traced: true
+        }
+    }
+}
+
+pub struct CompileResult
+{
+    pub program: Program,
+    pub meta: Option<CompileMeta>,
+}
+
+pub fn compile(project: &mut Project, settings: &CompileSettings) -> Result<CompileResult, String>
+{
+    let mut ctx = CompilerContext::new_with_graph_to_compile(project.entry_graph, settings.traced);
 
     loop
     {
@@ -78,7 +100,13 @@ pub fn release_compile(project: &mut Project) -> Result<Program, String>
 
     project.assets.load_assets(&project.location, ctx.get_assets_to_load() );
 
-    Ok( ctx.get_program(project.entry_graph, project.assets.loaded_assets.clone() ) )
+    Ok(
+        CompileResult
+        {
+            program: ctx.get_program(project.entry_graph, project.assets.loaded_assets.clone() ),
+            meta: ctx.get_meta(), // This will be a none if not defined
+        }
+    )
 }
 
 pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project) -> Result<(), String>
@@ -98,10 +126,15 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     compile_node_chain(&mut compiled_graph_context, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
 
-    compiled_graph_context.add_instruction( Instruction::Return );
+    compiled_graph_context.add_instruction( Instruction::Return ); 
+    compiled_graph_context.trace_instruction(&node_graph.start_node_key, &compiled_graph_context.get_latest_instruction_address());
 
     ctx.add_more_graphs_to_build(&compiled_graph_context.additional_graphs_to_compile);
-    ctx.add_compiled_graph(graph_id, CompiledGraph::from_compiled_graph_context(compiled_graph_context));
+
+    let ( compiled_graph, trace ) = ( CompiledGraph::from(compiled_graph_context.register_size, compiled_graph_context.instructions), compiled_graph_context.trace );
+
+    ctx.add_traced_data( trace ); // @TODO, improve this
+    ctx.add_compiled_graph(graph_id, compiled_graph);
 
     Ok(())
 }
@@ -130,7 +163,9 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         (node.output_port_keys.clone(), node.kind.control_flow())
     };
 
-    if output_port_keys.is_empty() // This is for nodes with no output ports
+    ctx.trace_instructions_from(node_key, &next_instruction_address);
+
+    if output_port_keys.is_empty() // This is for nodes with no output ports // @TODO, this probably should be removed
     {
         return;
     }
@@ -140,7 +175,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         ControlFlowKind::None => {},
         ControlFlowKind::Linear =>
         {
-            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
         },
         ControlFlowKind::Branch =>
         {
@@ -148,22 +183,25 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
             
             let jump_if_false_instruction_placeholder_address = ctx.get_latest_instruction_address(); // Since the branch needs access to input port keys, the actual jump_if_false instrcution is added in the branch node compile function
 
-            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
 
-            let jump_after_true_branch_placeholder_address = ctx.add_instruction_placeholder( Instruction::Jump(0) );
+            let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( Instruction::Jump(0) );
             ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
 
-            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[1]);
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[1], node_key);
 
-            ctx.patch_jump_instruction(&jump_after_true_branch_placeholder_address, &ctx.instructions.len());
+            ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
+
+            ctx.trace_instructions(node_key, &vec![jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
         },
         ControlFlowKind::Loop =>
         {
-            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0]);
+            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
 
             ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
+            ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
         },
-    };
+    }
 }
 
 fn check_node_graph_compile_integrity(node_graph: &NodeGraph) -> Result<(), String>
@@ -212,34 +250,35 @@ fn detect_assets_to_preload(node_graph: &NodeGraph) -> Vec<AssetId>
     asset_to_load
 }
 
-fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, port_key: &NodeGraphKey)
+fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, port_key: &NodeGraphKey, node_key: &NodeGraphKey)
 {
     let connected_nodes = get_nodes_connected_to_port(*port_key, node_graph);
 
     for (index, connected_node_key) in connected_nodes.iter().enumerate()
     {
-        println!("Crashed here? 1");
         if index == connected_nodes.len() - 1
         {
             compile_node_chain(ctx, node_graph, connected_node_key);
             continue;
         }
-        println!("Crashed here? 2");
 
-        ctx.add_instruction( Instruction::Fork( ctx.instructions.len() + 2 ));
+        let fork_instruction_address = ctx.add_instruction( Instruction::Fork( ctx.instructions.len() + 2 ));
         let jump_instruction_address = ctx.add_instruction_placeholder( Instruction::Jump( 0) );
 
         compile_node_chain(ctx, node_graph, connected_node_key);
 
-        ctx.add_instruction( Instruction::Return );
+        let return_instruction = ctx.add_instruction( Instruction::Return );
+        ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
 
         ctx.patch_jump_instruction(&jump_instruction_address, &ctx.instructions.len() );
         
+        ctx.trace_instructions(node_key, &vec![fork_instruction_address, jump_instruction_address, return_instruction]);
     }
 
     if connected_nodes.len() > 1
     {
-        ctx.add_instruction( Instruction::Join );
+        let join_instruction_address = ctx.add_instruction( Instruction::Join );
+        ctx.trace_instruction(node_key, &join_instruction_address);
     }
 }
 
@@ -365,6 +404,8 @@ pub struct CompiledGraphContext
     pub instructions: Vec<Instruction>,
 
     pub additional_graphs_to_compile: Vec<AssetId>,
+
+    pub trace: HashMap<InstructionAddress, NodeGraphKey>, // @TODO, decide if this should be optional, or not get added by default
 }
 
 impl CompiledGraphContext
@@ -380,12 +421,15 @@ impl CompiledGraphContext
             instructions: Vec::new(),
 
             additional_graphs_to_compile: Vec::new(),
+
+            trace: HashMap::new(),
         }
     }
 
-    pub fn add_instruction(&mut self, instruction: Instruction)
+    pub fn add_instruction(&mut self, instruction: Instruction) -> InstructionAddress
     {
         self.instructions.push(instruction);
+        self.instructions.len() - 1
     }
 
     pub fn add_instruction_placeholder(&mut self, instruction: Instruction) -> InstructionAddress
@@ -415,6 +459,32 @@ impl CompiledGraphContext
 
         self.instructions.len() - 1
     }
+
+    pub fn get_next_instruction_address(&self) -> InstructionAddress
+    {
+        self.instructions.len()
+    }
+
+    // @TODO, these trace functions might need to be optional somehow
+    pub fn trace_instructions_from(&mut self, node_key: &NodeGraphKey, start_instruction_address: &InstructionAddress)
+    {
+        let instructions_from_start_address: Vec<usize> = (*start_instruction_address..self.instructions.len()).collect(); // @TODO, this is a potentially dangerous line, look into later!
+
+        self.trace_instructions(node_key, &instructions_from_start_address);
+    }
+
+    pub fn trace_instructions(&mut self, node_key: &NodeGraphKey, instruction_addresseses: &Vec<InstructionAddress>)
+    {
+        for instruction_address in instruction_addresseses
+        {
+            self.trace_instruction(node_key, instruction_address);
+        }
+    }
+
+    pub fn trace_instruction(&mut self, node_key: &NodeGraphKey, instruction_address: &InstructionAddress)
+    {
+        self.trace.insert(*instruction_address, *node_key);
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -432,6 +502,15 @@ impl CompiledGraph
         {
             register_size: 0,
             instructions: Vec::new(),
+        }
+    }
+
+    pub fn from(register_size: i32, instructions: Vec<Instruction>) -> Self
+    {
+        Self
+        {
+            register_size,
+            instructions,
         }
     }
 

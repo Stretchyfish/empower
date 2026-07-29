@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::AssetId, compiler::{self, Program}, executor::{Executor, ExecutorSettings}, distribution, project::Project};
+use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::Project};
 use layout::Layout;
 
 mod request;
@@ -16,6 +16,9 @@ pub use settings::Settings;
 
 mod cache;
 pub use cache::Cache;
+
+mod user_state;
+pub use user_state::UserState;
 
 use crate::docking_space::Viewport;
 
@@ -33,9 +36,10 @@ pub struct StudioContext
     executor_settings: ExecutorSettings,
     executor: Option<Executor>,
 
-    program: Option<Program>,
+    compile_result: Option<CompileResult>,
 
     windows: Windows,
+    user_state: UserState,
 
     requests: VecDeque<Request>,
 
@@ -55,9 +59,10 @@ impl StudioContext
 
             executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
-            program: None,
+            compile_result: None,
 
             windows: Windows::new(),
+            user_state: UserState::None,
 
             requests: VecDeque::new(),
 
@@ -193,26 +198,26 @@ impl StudioContext
 
     fn compile(&mut self)
     {
-        let program = compiler::release_compile(&mut self.project);
+        let compile_result = compiler::compile(&mut self.project, &CompileSettings::new_with_meta() );
 
-        if let Err(e) = program 
+        if let Err(e) = compile_result
         {
             println!("Failed to compile: {}", e);
             self.executor_settings.outputs.as_mut().unwrap().push( e.to_string() ); // @TODO, find a proper way to do logging
             return;
         }
 
-        self.program = Some( program.unwrap() );
+        self.compile_result = Some( compile_result.unwrap() );
     }
 
-    pub fn get_program(&self) -> &Option<Program>
+    pub fn get_compile_result(&self) -> &Option<CompileResult>
     {
-        &self.program
+        &self.compile_result
     }
 
     fn start_execution(&mut self)
     {
-        if self.program.is_none()
+        if self.compile_result.is_none()
         {
             self.executor_settings.outputs.as_mut().unwrap().push( "Tried to start execution without a compiled program".to_string() ); // @TODO, find a proper solution for this
             // panic!("Tried to start execution without a compiled program");
@@ -221,7 +226,7 @@ impl StudioContext
 
         self.executor_settings.clear_cache();
 
-        self.executor = Some( Executor::new(self.program.as_ref().unwrap().clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
+        self.executor = Some( Executor::new(self.compile_result.as_ref().unwrap().program.clone(), self.executor_settings.clone()) ); // @TODO, decide if this is the desired behavior, or if it should ".take()" the program.
     }
 
     fn stop_execution(&mut self)
@@ -269,6 +274,16 @@ impl StudioContext
         self.requests.push_back( Request::LoadSpecificProject { project_path });
     }
 
+    pub fn set_user_state(&mut self, new_user_state: UserState) // @TODO, decide if this should be done with a request
+    {
+        self.user_state = new_user_state;
+    }
+
+    pub fn get_user_state(&self) -> &UserState
+    {
+        &self.user_state
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -302,12 +317,12 @@ impl StudioContext
                 let _ = self.project.save();
                 self.compile(); // @TODO, double check, this behavior might appear twice
 
-                if self.program.is_none()
+                if self.compile_result.is_none()
                 {
                     panic!("Cannot export project, as it is not build yet");
                 }
                 
-                let _ = distribution::export(self.program.as_ref().unwrap(), &config);
+                let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
             },
         }
     }

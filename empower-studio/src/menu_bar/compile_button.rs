@@ -1,6 +1,6 @@
 use empower_engine::compiler::Instruction;
 
-use crate::studio_context::StudioContext;
+use crate::studio_context::{StudioContext, UserState};
 
 const REGISTER_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::BLUE;
 const INSTRUCTION_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::YELLOW;
@@ -14,20 +14,24 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         studio_context.request_compile();
     }
 
-    let program = studio_context.get_program();
+    let compile_result = studio_context.get_compile_result();
 
-    if program.is_none()
+    if compile_result.is_none()
     {
         return;
     }
 
+    let mut potential_new_user_state = None;
+
     ui.menu_button("⚪", |ui|
     {
-        let program = program.as_ref().unwrap();
+        let program = &compile_result.as_ref().unwrap().program;
+        let meta = &compile_result.as_ref().unwrap().meta;
 
         ui.heading("Compiled graphs");
 
         ui.label(format!("entry graph: {}", program.entry_graph_id));
+
 
         egui::ScrollArea::vertical()
         .max_height(300.0)
@@ -80,7 +84,14 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
                             for ( instruction_address, instruction) in compiled_graph.instructions.iter().enumerate()
                             {
                                 ui.label(instruction_address.to_string());
-                                ui.label(instruction_as_layout_job(instruction));
+                                let instruction_layout_response =  ui.label(instruction_as_layout_job(instruction));
+
+                                if instruction_layout_response.hovered()
+                                {
+                                    let instruction_node = meta.as_ref().unwrap().trace.get(&instruction_address).expect("trace doesn't contain this node");
+                                    potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
+                                }
+
                                 ui.end_row();
                             }
                         });
@@ -89,6 +100,25 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             }
         });
     });
+
+    match studio_context.get_user_state() // @TODO, decide if this is a good approach
+    {
+        UserState::HighlightingNode { graph_id: _, node_key: _ } =>
+        {
+            if potential_new_user_state.is_none()
+            {
+                studio_context.set_user_state( UserState::None );
+            }
+        },
+        _ => {},
+    }
+
+    if potential_new_user_state.is_some()
+    {
+        studio_context.set_user_state( potential_new_user_state.unwrap() );
+    }
+
+
 }
 
 fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob
