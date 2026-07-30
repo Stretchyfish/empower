@@ -55,7 +55,7 @@ impl Executor
         
         if self.frames.is_empty()
         {
-            return execution_output ;
+            return execution_output;
         }
 
         let mut execution_actions = Vec::new();

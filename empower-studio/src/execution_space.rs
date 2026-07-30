@@ -39,15 +39,13 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         }
     };
 
-    let highlight_nodes = studio_context.get_executor_settings().artificial_delay.is_none();
+    let highlight_nodes = studio_context.get_executor_settings().artificial_delay.is_some();
+    let cache = studio_context.get_cache_mut();
 
     if highlight_nodes
     {
-        return;
+        cache.debug_highlighted_nodes = nodes_executed;
     }
 
-    let cache = studio_context.get_cache_mut();
-
-    cache.debug_highlighted_nodes = nodes_executed;
     cache.outputs.extend(output.outputs);
 }
