@@ -41,6 +41,15 @@ impl Value
         }
     }
 
+    pub fn as_i32(&self) -> i32
+    {
+        match self
+        {
+            Value::Integer( int ) => *int,
+            _ => panic!("tried to convert impossible value to f32"),
+        }
+    }
+
     pub fn as_f32(&self) -> f32
     {
         match self

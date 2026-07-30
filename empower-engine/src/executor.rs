@@ -250,6 +250,26 @@ impl Executor
                         let window_name = self.window_manager.add_new_window("show math graph".to_string());
                         pointer.state = InstructionPointerState::ShowMathGraph( window_name, graph );
                     }
+                    Instruction::Add( register_address_1, register_address_2, result_register_address ) =>
+                    {
+                        // @TODO, make this add work on multiple value types
+                        let added_result = frame.value_registers[register_address_1].as_i32() + frame.value_registers[register_address_2].as_i32();
+                        frame.value_registers.insert(*result_register_address, Value::Integer( added_result ));
+                        
+                    },
+                    Instruction::Compare( register_address_1, register_address_2, result_register_address ) =>
+                    {
+                        let compare_result = frame.value_registers[register_address_1] == frame.value_registers[register_address_2];
+                        frame.value_registers.insert(*result_register_address, Value::Bool(compare_result));
+                    },
+                    Instruction::JumpIfTrue( instruction_address, register_address ) =>
+                    {
+                        if frame.value_registers.get(register_address).unwrap().as_bool()
+                        {
+                            pointer.next_address = *instruction_address;
+                            continue; // To skip the pointer increment in the end
+                        }
+                    },
                 }
 
                 if self.settings.artificial_delay.is_some()

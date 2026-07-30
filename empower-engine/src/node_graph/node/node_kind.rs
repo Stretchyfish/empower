@@ -70,12 +70,18 @@ impl Clone for Box<dyn NodeKind>
     }
 }
 
+pub enum LoopSettings
+{
+    Forever,
+    Interval,
+}
+
 pub enum ControlFlowKind
 {
     None,
     Linear,
     Branch,
-    Loop,
+    Loop ( LoopSettings ),
 }
 
 #[derive(Clone, Serialize, Deserialize)]
