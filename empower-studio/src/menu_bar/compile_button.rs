@@ -265,6 +265,66 @@ fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob
             });
             job.append(" )", 0.0, egui::TextFormat::default() );
         }
+        Instruction::Add(register_address_1, register_address_2, result_register_address ) =>
+        {
+            job.append("Add( ", 0.0, egui::TextFormat::default() );
+            job.append(register_address_1.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(register_address_2.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(result_register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        },
+        Instruction::Compare(register_address_1, register_address_2, result_register_address) =>
+        {
+            job.append("Compare( ", 0.0, egui::TextFormat::default() );
+            job.append(register_address_1.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(register_address_2.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(result_register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        },
+        Instruction::JumpIfTrue( instruction_address, register_address) =>
+        {
+            job.append("JumpIfTrue( ", 0.0, egui::TextFormat::default() );
+            job.append(instruction_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: INSTRUCTION_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        },
     }
 
     job

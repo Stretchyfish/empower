@@ -6,6 +6,7 @@ use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
 use crate::node_graph::node::node_kind::ControlFlowKind;
+use crate::node_graph::node::node_kind::LoopSettings;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -141,7 +142,7 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
 fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, node_key: &NodeGraphKey)
 {
-    let next_instruction_address = ctx.instructions.len();
+    let next_instruction_address = ctx.instructions.len(); // @TODO, maybe find a better name, gets confusing in loop
     
     let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
     println!("compiling: {}, and need to also compile first: {:?}", node_key, other_node_to_compile_first);
@@ -194,12 +195,29 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
             ctx.trace_instructions(node_key, &vec![jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
         },
-        ControlFlowKind::Loop =>
+        ControlFlowKind::Loop( loop_settings ) =>
         {
-            compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
+            match loop_settings
+            {
+                LoopSettings::Forever =>
+                {
+                    compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
 
-            ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
-            ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+                    ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
+                    ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+                },
+                LoopSettings::Interval =>
+                {
+                    let jump_if_true_placeholder_address = ctx.get_latest_instruction_address() - 1; // Added in compilation
+
+                    compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
+
+                    ctx.add_instruction( Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
+                    ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+
+                    ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
+                },
+            }
         },
     }
 }
@@ -446,6 +464,7 @@ impl CompiledGraphContext
         {
             Instruction::Jump( instruction_address ) => { *instruction_address = *new_jump_address },
             Instruction::JumpIfFalse( instruction_address, _) => { *instruction_address = *new_jump_address },
+            Instruction::JumpIfTrue( instruction_address, _) => { *instruction_address = *new_jump_address },
             _ => todo!(),
         }
     }

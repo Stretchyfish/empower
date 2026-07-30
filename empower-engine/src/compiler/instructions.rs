@@ -11,9 +11,12 @@ pub enum Instruction
 {
     SetConst( RegisterAddress, Value ),
     Copy ( RegisterAddress, RegisterAddress),
+    Add ( RegisterAddress, RegisterAddress, RegisterAddress ),
+    Compare( RegisterAddress, RegisterAddress, RegisterAddress ),
     CreateList ( Vec<RegisterAddress>, RegisterAddress ), // @TODO, find a better name?
     Jump(InstructionAddress),
     JumpIfFalse(InstructionAddress, RegisterAddress),
+    JumpIfTrue(InstructionAddress, RegisterAddress),
     Print(RegisterAddress),
     Return,
     Wait(RegisterAddress),
@@ -43,6 +46,9 @@ impl Instruction
             Instruction::ShowMathGraph( register_address ) => format!("ShowMathGraph ( r_addr: {})", register_address),
             Instruction::Fork( instruction_address ) => format!("Fork( i_addr: {})", instruction_address),
             Instruction::Join => String::from("Join"),
+            Instruction::Add( result_register_address, register_address_1, register_address_2 ) => format!("Add ( r_addr: {}, r_addr: {}, r_addr: {})", result_register_address, register_address_1, register_address_2),
+            Instruction::Compare( result_register_address, register_address_1, register_address_2 ) => format!("Compare ( r_addr: {}, r_addr: {}, r_addr: {})", result_register_address, register_address_1, register_address_2),
+            Instruction::JumpIfTrue( instruction_address, register_address ) => format!("JumpIfTrue( i_addr: {}, i_addr: {})", instruction_address, register_address ),
         }
     }
 }
