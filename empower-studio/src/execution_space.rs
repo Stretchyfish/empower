@@ -44,8 +44,8 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
     if highlight_nodes
     {
-        cache.debug_highlighted_nodes = nodes_executed;
+        cache.session.debug_highlighted_nodes = nodes_executed;
     }
 
-    cache.outputs.extend(output.outputs);
+    cache.session.outputs.extend(output.outputs);
 }

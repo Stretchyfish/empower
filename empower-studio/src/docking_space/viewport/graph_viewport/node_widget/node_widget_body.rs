@@ -17,7 +17,7 @@ const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
 pub fn show(
             ui: &mut egui::Ui, 
             node_key: &NodeGraphKey,
-            node: &mut Node,
+            node: &Node,
             viewport_graph_id: &AssetId,
             graph_viewport_title: &String, 
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
@@ -142,39 +142,40 @@ pub fn show(
         egui::StrokeKind::Inside,
     );
 
-    let node_edits = node.kind.node_edits();
+    // let node_edits = node.kind.node_edits();
 
-    if node_edits.is_none()
-    {
-        return title_box_rect.size().y;
-    }
+    // if node_edits.is_none()
+    // {
+    //     return title_box_rect.size().y;
+    // }
 
-    let node_edits = node_edits.unwrap();
+    // let node_edits = node_edits.unwrap();
 
-    let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
+    // let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
 
-    for (index, edit) in node_edits.iter_mut().enumerate()
-    {
-        let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
+    // for (index, edit) in node_edits.iter_mut().enumerate()
+    // {
+    //     let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
         
-        let (changed, height) = match edit
-        {
-            NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
-            NodeEdit::CheckBox { toggle: _ } => todo!(),
-            NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions),
-            NodeEdit::AssetSelector { asset_id, kind } => draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, kind, node_graph_names, image_names),
-            NodeEdit::EnumBox { label, states, current_state } => draw_enum_box_edit(ui, &edit_position, label, &states, current_state)
-        };
+    //     let (changed, height) = match edit
+    //     {
+    //         NodeEdit::Text { label, text, parseble } => draw_text_node_edit(ui, &edit_position, label, text, *parseble),
+    //         NodeEdit::CheckBox { toggle: _ } => todo!(),
+    //         NodeEdit::GraphViewportOpener { graph_id } => draw_graph_viewport_opener(ui, &edit_position, graph_id, graph_viewport_actions),
+    //         NodeEdit::AssetSelector { asset_id, kind } => draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, kind, node_graph_names, image_names),
+    //         NodeEdit::EnumBox { label, states, current_state } => draw_enum_box_edit(ui, &edit_position, label, &states, current_state)
+    //     };
 
-        if changed
-        {
-            graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key, node_edit_index: index });
-        }
+    //     if changed
+    //     {
+    //         graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key, node_edit_index: index });
+    //     }
 
-        vertical_offset += height + NODE_EDIT_GAP;
-    }
+    //     vertical_offset += height + NODE_EDIT_GAP;
+    // }
 
-    vertical_offset
+    // vertical_offset
+    80.0 // @TODO, change this to use a variable for node height instead
 }
 
 fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: bool) -> (bool, f32)

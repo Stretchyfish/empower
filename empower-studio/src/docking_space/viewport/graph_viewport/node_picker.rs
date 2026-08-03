@@ -1,4 +1,6 @@
-use empower_engine::node_graph::NodeGraph;
+use std::collections::VecDeque;
+
+use super::GraphViewportAction;
 
 const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "number",
@@ -44,7 +46,7 @@ impl NodePicker
         self.search_text = String::new();
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph, mouse_position: &egui::Pos2)
+    pub fn show(&mut self, ui: &mut egui::Ui, graph_viewport_actions: &mut VecDeque<GraphViewportAction>, mouse_position: &egui::Pos2)
     {
         if !self.show
         {
@@ -164,7 +166,7 @@ impl NodePicker
 
         if node_to_add.is_some()
         {
-            node_graph.add_node(node_to_add.unwrap(), Some(*mouse_position));
+            graph_viewport_actions.push_back( GraphViewportAction::AddNodeToGraph { node_name: node_to_add.unwrap(), position: Some(*mouse_position) });
             self.show = false;
         }
     }

@@ -195,12 +195,12 @@ impl Assets
         id
     }
 
-    pub fn get_all_node_graph_names(&mut self) -> HashMap<AssetId, String> 
+    pub fn get_all_node_graph_names(&self) -> HashMap<AssetId, String> 
     {
         self.loaded_assets.loaded_node_graphs.iter().map(|(id, node_graph)| (id.clone(), node_graph.name.clone())).collect() // @TODO, maybe this should use asset meta instead
     }
 
-    pub fn get_all_image_names(&mut self) -> HashMap<AssetId, String>
+    pub fn get_all_image_names(&self) -> HashMap<AssetId, String>
     {
         let mut images = HashMap::new();
 
@@ -280,7 +280,7 @@ impl Assets
         Ok( node_graph_save_path.clone() )
     }
 
-    pub fn get_node_graph(&mut self, project_path: &PathBuf, id: &AssetId) -> Option<&NodeGraph>
+    pub fn load_node_graph(&mut self, project_path: &PathBuf, id: &AssetId) -> Option<&NodeGraph>
     {
         if !self.loaded_assets.loaded_node_graphs.contains_key(id)
         {

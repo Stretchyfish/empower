@@ -1,8 +1,7 @@
-use std::{collections::VecDeque, path::PathBuf};
+use std::path::PathBuf;
 
 use super::CONFIG_DIRECTORY;
 
-use empower_engine::node_graph::NodeAddress;
 use serde::{Deserialize, Serialize};
 
 mod persistent_cache;

@@ -42,12 +42,6 @@ pub struct GraphViewport
     #[serde(skip)]
     node_picker: NodePicker,
     
-    // #[serde(skip)]
-    // cached_node_sizes: HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back later
-
-    #[serde(skip)]
-    cached_port_positions: HashMap<NodeGraphKey, egui::Pos2>,
-
     #[serde(skip)]
     selected_nodes_quick_menu: SelectedNodesQuickMenu,
 }
@@ -68,7 +62,6 @@ impl GraphViewport
             selected_port: None,
             area_select: None,
             node_picker: NodePicker::new(),
-            cached_port_positions: HashMap::new(),
             selected_nodes_quick_menu: SelectedNodesQuickMenu::new(),
         }
     }
@@ -77,16 +70,16 @@ impl GraphViewport
 pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
 {
     let developer_mode = studio_context.get_settings().developer_mode;
-    let cache = studio_context.get_cache().clone(); // @TODO, look into this!
+
+    let (project, cache) = studio_context.get_project_and_cache_mut();
 
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
-    let project = studio_context.get_project_mut();
-
     let image_names = project.assets.get_all_image_names(); // @TODO, find a better way to get these asset values at runtime
     let node_graph_names = project.assets.get_all_node_graph_names(); // This is used later in the node widget drawing stage
 
-    let node_graph = project.assets.get_node_graph_mut(&graph_viewport.graph_asset_id); //.expect("graph editor tried to read a node graph but didn't get it from assets");
+    // @TODO, this is a very dangerous call, which needs a second look!
+    let node_graph = project.assets.get_node_graph_naive(&graph_viewport.graph_asset_id); //.expect("graph editor tried to read a node graph but didn't get it from assets");
 
     if node_graph.is_none()
     {
@@ -96,12 +89,12 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     let node_graph = node_graph.unwrap();
 
-    graph_viewport.node_picker.show(ui, node_graph, &graph_viewport.mouse_scene_position_last_frame);
+    graph_viewport.node_picker.show(ui, &mut graph_viewport_actions, &graph_viewport.mouse_scene_position_last_frame);
     graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
-    graph_viewport.apply_viewport_state_to_node_graph(node_graph);
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, &cache, viewport_name, &node_graph_names, &image_names, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, &node_graph_names, &image_names, &developer_mode);
 
+    graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
 
     if developer_mode
@@ -112,7 +105,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, cache: &Cache, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &NodeGraph, user_inputs: &UserInputs, cache: &mut Cache, viewport_name: &String, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -121,6 +114,8 @@ impl GraphViewport
         }
 
         let mouse_is_inside_viewport = ui.ui_contains_pointer();
+
+        let cached_port_positions = &mut cache.session.cached_port_positions;
 
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
         egui::Scene::new()
@@ -131,7 +126,7 @@ impl GraphViewport
         {
             for connection in &node_graph.connections_in
             {
-                connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
+                connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, cached_port_positions, developer_mode);
             }
 
             if cache.session.instruction_highlighted_nodes.is_some()
@@ -167,12 +162,12 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, &mut self.cached_port_positions, node_graph_names, image_names, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, node_graph_names, image_names, developer_mode);
             }
 
             if self.selected_port.is_some()
             {
-                connection_widget::search_show(scene_ui, self.selected_port.as_ref().unwrap(), node_graph, &self.mouse_scene_position_last_frame, &self.cached_port_positions);
+                connection_widget::search_show(scene_ui, self.selected_port.as_ref().unwrap(), node_graph, &self.mouse_scene_position_last_frame, cached_port_positions);
             }
 
             if self.area_select.is_some()
@@ -197,16 +192,18 @@ impl GraphViewport
         self.scene_rect = scene_rect;
     }
 
-    fn apply_viewport_state_to_node_graph(&mut self, node_graph: &mut NodeGraph)
+    fn apply_mouse_delta_to_selected_nodes(&self, studio_context: &mut StudioContext)
     {
         if self.selected_nodes_quick_menu.is_active()
         {
             return;
         }
-        
-        for node_key in &self.selected_nodes
+
+        let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+
+        for selected_node_key in &self.selected_nodes
         {
-            let node = node_graph.nodes.get_mut(node_key).unwrap();
+            let node = node_graph.nodes.get_mut(&selected_node_key ).unwrap();
             node.position += self.mouse_scene_delta_last_frame;
         }
     }
@@ -389,7 +386,7 @@ impl GraphViewport
                         NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
                         {
                             let project_path = &studio_context.get_project().location.clone();
-                            let sub_graph = studio_context.get_project_mut().assets.get_node_graph(project_path, &node_graph_id).unwrap();
+                            let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
 
                             let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
 
@@ -433,6 +430,12 @@ impl GraphViewport
 
                     self.selected_nodes.clear();
                 }
+
+                GraphViewportAction::AddNodeToGraph { node_name, position } =>
+                {
+                    let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                    node_graph.add_node(node_name, position);
+                }
             }
         }
     }
@@ -451,6 +454,7 @@ enum GraphViewportAction
     NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
+    AddNodeToGraph { node_name: &'static str, position: Option<egui::Pos2>},
 }
 
 fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui)
@@ -476,8 +480,7 @@ fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut e
         selected_port: {:?}
         area_select: {:?}
         node_picker: {:?}
-        selected_nodes_quick_menu: {:?}
-        cached_node_position: {:?}"
+        selected_nodes_quick_menu: {:?}"
         , graph_viewport.graph_asset_id
         , graph_viewport.scene_rect
         , graph_viewport.mouse_scene_position_last_frame
@@ -487,7 +490,6 @@ fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut e
         , graph_viewport.area_select
         , graph_viewport.node_picker
         , graph_viewport.selected_nodes_quick_menu
-        , graph_viewport.cached_port_positions
     );
 
     painter.text(

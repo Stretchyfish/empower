@@ -13,7 +13,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     let graph_names = project.assets.get_all_node_graph_names(); // @TODO, this is currently unsorted
     let sorted_names: BTreeMap<AssetId, String> = graph_names.into_iter().collect();
 
-    let selected_graph_name = match project.assets.get_node_graph(&project.location, &project.entry_graph )
+    let selected_graph_name = match project.assets.load_node_graph(&project.location, &project.entry_graph )
     {
         Some( node_graph ) => node_graph.name.clone(),
         None =>

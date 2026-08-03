@@ -32,7 +32,7 @@ pub fn show(ui: &mut egui::Ui, port_from: &NodeGraphKey, port_to: &NodeGraphKey,
     );
 }
 
-pub fn search_show(ui: &mut egui::Ui, selected_port: &NodeGraphKey, node_graph: &mut NodeGraph, mouse_scene_position: &egui::Pos2, cached_port_position: &HashMap<NodeGraphKey, egui::Pos2>)
+pub fn search_show(ui: &mut egui::Ui, selected_port: &NodeGraphKey, node_graph: &NodeGraph, mouse_scene_position: &egui::Pos2, cached_port_position: &HashMap<NodeGraphKey, egui::Pos2>)
 {
     if !cached_port_position.contains_key(selected_port)
     {

@@ -37,6 +37,28 @@ use show_image_node::ShowImageNode;
 mod show_math_graph;
 use show_math_graph::ShowMathGraph;
 
+#[derive(Clone, PartialEq, Eq)]
+pub enum NodeKind2
+{
+    Start,
+    List( ListState ),
+    Print,
+    Image( ImageState ),
+    ShowImage,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct ListState
+{
+    
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct ImageState
+{
+    
+}
+
 #[typetag::serde(tag="node_kind")]
 pub trait NodeKind
 {

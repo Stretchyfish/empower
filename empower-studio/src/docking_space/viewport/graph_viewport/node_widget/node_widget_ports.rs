@@ -17,7 +17,7 @@ pub fn show(
             ui: &mut egui::Ui, 
             node_position: &egui::Pos2,
             port_key: &NodeGraphKey,
-            port: &mut Port,
+            port: &Port,
             port_index: usize,
             port_has_connection: &bool,
             graph_viewport_title: &String, 
@@ -129,72 +129,72 @@ pub fn show(
     let port_edit_position = port_text_position + egui::Vec2 { x: painted_text_size.x + TEXT_AND_EDIT_HORIZONTAL_BUFFER, y: - painted_text_size.y / 2.0 };
 
     let text_edit_color = if port.value.is_some() { egui::Color32::WHITE } else { egui::Color32::RED };
-    let edit_was_changed = match &mut port.edit
-    {
-        PortEdit::None => false,
-        PortEdit::Text( text ) =>
-        {
-            let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
-            let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
+    // let edit_was_changed = match &mut port.edit
+    // {
+    //     PortEdit::None => false,
+    //     PortEdit::Text( text ) =>
+    //     {
+    //         let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
+    //         let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
 
-            let text_edit = egui::TextEdit::singleline(text)
-            // .char_limit(5)
-            .font(egui::FontId::proportional(35.0))
-            // .interactive(!port_has_connection)
-            .text_color(text_edit_color)
-            .background_color(egui::Color32::BLACK);
+    //         let text_edit = egui::TextEdit::singleline(text)
+    //         // .char_limit(5)
+    //         .font(egui::FontId::proportional(35.0))
+    //         // .interactive(!port_has_connection)
+    //         .text_color(text_edit_color)
+    //         .background_color(egui::Color32::BLACK);
 
-            let response = ui.put(input_port_value_box_rect, text_edit);
-            response.changed()
-        },
-        PortEdit::CheckBox( toggle ) =>
-        {
-            let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
-            let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
+    //         let response = ui.put(input_port_value_box_rect, text_edit);
+    //         response.changed()
+    //     },
+    //     PortEdit::CheckBox( toggle ) =>
+    //     {
+    //         let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
+    //         let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
 
-            // @TODO, improve this, and fix box size
-            let checkbox = egui::Checkbox::new(
-                                            toggle, 
-                                            egui::RichText::new("").font(egui::FontId::proportional(35.0))
-            );
+    //         // @TODO, improve this, and fix box size
+    //         let checkbox = egui::Checkbox::new(
+    //                                         toggle, 
+    //                                         egui::RichText::new("").font(egui::FontId::proportional(35.0))
+    //         );
 
-            ui.put(input_port_checkbox_rect, checkbox).changed()
-        }
-        PortEdit::TwoBox( text1, text2 ) =>
-        {
-            let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
+    //         ui.put(input_port_checkbox_rect, checkbox).changed()
+    //     }
+    //     PortEdit::TwoBox( text1, text2 ) =>
+    //     {
+    //         let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
 
-            let mut box_one_changed = false;
-            let mut box_two_changed = false;
-            ui.horizontal(|ui|
-            {
-                let text_edit = egui::TextEdit::singleline(text1).font(egui::FontId::proportional(35.0));
-                box_one_changed = ui.put(
-                    egui::Rect::from_min_size(port_edit_position, port_value_box_size),
-                    text_edit
-                ).changed();
+    //         let mut box_one_changed = false;
+    //         let mut box_two_changed = false;
+    //         ui.horizontal(|ui|
+    //         {
+    //             let text_edit = egui::TextEdit::singleline(text1).font(egui::FontId::proportional(35.0));
+    //             box_one_changed = ui.put(
+    //                 egui::Rect::from_min_size(port_edit_position, port_value_box_size),
+    //                 text_edit
+    //             ).changed();
 
-                let text_edit = egui::TextEdit::singleline(text2).font(egui::FontId::proportional(35.0));
-                box_two_changed = ui.put(
-                    egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 60.0, y: 0.0 }, port_value_box_size),
-                    text_edit
-                ).changed();
+    //             let text_edit = egui::TextEdit::singleline(text2).font(egui::FontId::proportional(35.0));
+    //             box_two_changed = ui.put(
+    //                 egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 60.0, y: 0.0 }, port_value_box_size),
+    //                 text_edit
+    //             ).changed();
 
-                // let text_edit = egui::TextEdit::singleline(to).font(egui::FontId::proportional(35.0));
-                // ui.put(
-                //     egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 120.0, y: 0.0 }, input_port_value_box_size),
-                //     text_edit);
-            });
+    //             // let text_edit = egui::TextEdit::singleline(to).font(egui::FontId::proportional(35.0));
+    //             // ui.put(
+    //             //     egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 120.0, y: 0.0 }, input_port_value_box_size),
+    //             //     text_edit);
+    //         });
 
 
-            box_one_changed || box_two_changed
-        }
-    };
+    //         box_one_changed || box_two_changed
+    //     }
+    // };
 
-    if edit_was_changed
-    {
-        graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
-    }
+    // if edit_was_changed
+    // {
+    //     graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
+    // }
 
     // let edit_width = match port.edit
     // {

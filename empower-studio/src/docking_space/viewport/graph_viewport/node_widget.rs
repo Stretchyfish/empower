@@ -15,7 +15,7 @@ pub fn show(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
     graph_id: &AssetId,
-    node_graph: &mut NodeGraph, 
+    node_graph: &NodeGraph, 
     graph_viewport_title: &String, 
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
@@ -25,23 +25,24 @@ pub fn show(
     developer_mode: &bool,
 )
 {
-    let node = node_graph.nodes.get_mut(node_key).unwrap();
+    let node = node_graph.nodes.get(node_key).unwrap();
 
     let node_size = node.kind.size();
 
+    // @TODO, remove this vertical gab, and find a better way of finding the size
     let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_id, graph_viewport_title, graph_viewport_actions, area_select, &node_size, node_graph_names, image_names, developer_mode);
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
         let port_has_connection = node_graph.connections_in.contains_key(input_port_key);
 
-        let input_port = node_graph.ports.get_mut(input_port_key).unwrap();
+        let input_port = node_graph.ports.get(input_port_key).unwrap();
         node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &port_has_connection, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
     }
 
     for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
     {
-        let output_port = node_graph.ports.get_mut(output_port_key).unwrap();
+        let output_port = node_graph.ports.get(output_port_key).unwrap();
         node_widget_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &false, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
     }
 }
@@ -49,7 +50,7 @@ pub fn show(
 pub fn highlight(
     ui: &mut egui::Ui, 
     node_key: &NodeGraphKey,
-    node_graph: &mut NodeGraph, 
+    node_graph: &NodeGraph, 
     color: egui::Color32,
     // cached_node_sizes: &mut HashMap<NodeGraphKey, egui::Vec2>, // @TODO, add this behavior back
 )

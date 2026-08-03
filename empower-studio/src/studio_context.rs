@@ -172,6 +172,11 @@ impl StudioContext
         self.windows = windows;
     }
 
+    pub fn get_project_and_cache_mut(&mut self) -> (&Project, &mut Cache)
+    {
+        (&self.project, &mut self.cache)
+    }
+
     pub fn request_compile(&mut self)
     {
         self.requests.push_back( Request::Compile );
