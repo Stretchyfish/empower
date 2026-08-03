@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::node_kind::{NodeState, NodeSyncResponse}, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::{NodeKind2, node_kind::{NodeState, NodeSyncResponse}}, port::PortDirection}};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -370,33 +370,33 @@ impl GraphViewport
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
                 {
-                    let sync_response = {
-                        let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                        graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index )
-                    };
+                    // let sync_response = {
+                    //     let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                    //     graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index )
+                    // };
 
-                    match sync_response
-                    {
-                        NodeSyncResponse::Nothing => {},
-                        NodeSyncResponse::NodesStructureChanged =>
-                        {
-                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                            graph.refresh_node(&node_key);
-                        },
-                        NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
-                        {
-                            let project_path = &studio_context.get_project().location.clone();
-                            let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
+                    // match sync_response
+                    // {
+                    //     NodeSyncResponse::Nothing => {},
+                    //     NodeSyncResponse::NodesStructureChanged =>
+                    //     {
+                    //         let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                    //         graph.refresh_node(&node_key);
+                    //     },
+                    //     NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
+                    //     {
+                    //         let project_path = &studio_context.get_project().location.clone();
+                    //         let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
 
-                            let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
+                    //         let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
 
-                            let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
+                    //         let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
                             
-                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                            graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
-                            graph.refresh_node(&node_key);
-                        },
-                    }
+                    //         let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                    //         graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
+                    //         graph.refresh_node(&node_key);
+                    //     },
+                    // }
                 },
 
                 GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
@@ -431,10 +431,10 @@ impl GraphViewport
                     self.selected_nodes.clear();
                 }
 
-                GraphViewportAction::AddNodeToGraph { node_name, position } =>
+                GraphViewportAction::AddNodeToGraph { node_kind, position } =>
                 {
                     let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    node_graph.add_node(node_name, position);
+                    node_graph.add_node(node_kind, position);
                 }
             }
         }
@@ -454,7 +454,7 @@ enum GraphViewportAction
     NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
-    AddNodeToGraph { node_name: &'static str, position: Option<egui::Pos2>},
+    AddNodeToGraph { node_kind: NodeKind2, position: Option<egui::Pos2>},
 }
 
 fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui)

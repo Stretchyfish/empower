@@ -11,7 +11,7 @@ pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
+use crate::node_graph::{node::{NodeKind2, node_kind::NODE_KIND_REGISTRY}, port::PortDefinition};
 
 pub type NodeGraphKey = i32;
 
@@ -42,7 +42,7 @@ impl NodeGraph {
             connections_in: HashMap::new(),
         };
 
-        let _ = node_graph.add_node("start", None);
+        let _ = node_graph.add_node(NodeKind2::Start, None);
 
         node_graph
     }
@@ -62,15 +62,9 @@ impl NodeGraph {
 
     pub fn add_node(
         &mut self,
-        node_name: &'static str,
+        node_kind: NodeKind2,
         position: Option<egui::Pos2>,
     ) -> NodeGraphKey {
-        let node_kind_constructor = match NODE_KIND_REGISTRY.get(node_name) {
-            Some(constructor) => constructor,
-            None => panic!("Requested a non-existing node name"),
-        };
-
-        let node_kind = node_kind_constructor();
 
         let input_port_definitions = node_kind.input_port_definitions();
         let output_port_definitions = node_kind.output_port_definitions();

@@ -159,9 +159,10 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         let input_slots = allocate_input_port_registers(ctx, &inputs, &node_graph.connections_in);
         let output_slots = allocate_output_port_registers(ctx, &outputs);
 
-        node.kind.compile(ctx, input_slots, output_slots);
+        // node.kind.compile(ctx, input_slots, output_slots);
 
-        (node.output_port_keys.clone(), node.kind.control_flow())
+        // (node.output_port_keys.clone(), node.kind.control_flow())
+        (Vec::new(), ControlFlowKind::Linear)
     };
 
     ctx.trace_instructions_from(node_key, &next_instruction_address);

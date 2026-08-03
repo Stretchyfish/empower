@@ -1,6 +1,27 @@
 use std::collections::VecDeque;
 
+use empower_engine::node_graph::node::NodeKind2;
+
 use super::GraphViewportAction;
+
+struct NodeType // @TODO, find a better name
+{
+    name: &'static str,
+    constructor: fn() -> NodeKind2,
+}
+
+static NODE_TYPES: &[NodeType] = &[
+    // NodeType // We don't need start
+    // {
+    //     name: "start",
+    //     constructor: || NodeKind2::Start,
+    // },
+    NodeType
+    {
+        name: "print",
+        constructor: || NodeKind2::Print,
+    },
+];
 
 const NODES_NAMES_AVAILABLE: &'static [&str] = &[
     "number",
@@ -96,12 +117,12 @@ impl NodePicker
             {
                 ui.group(|ui|
                 {
-                    
-                    for node_name in NODES_NAMES_AVAILABLE
+                    // @TODO, in the future this should get changed to only appear like this when searching, otherwise they should be sorted into categories
+                    for node_type in NODE_TYPES
                     {
                         if self.search_text.len() > 0
                         {
-                            if !(*node_name).contains( &self.search_text.to_lowercase() )
+                            if !(*node_type).name.contains( &self.search_text.to_lowercase() )
                             {
                                 continue;
                             }
@@ -116,7 +137,7 @@ impl NodePicker
                             }
                         }
 
-                        let button = egui::Button::new( *node_name )
+                        let button = egui::Button::new( node_type.name )
                         .min_size( egui::Vec2 {x: 190.0, y: 20.0} )
                         .fill(
 
@@ -132,14 +153,14 @@ impl NodePicker
                         
                         if ui.add(button).clicked() 
                         {
-                            node_to_add = Some( *node_name );
+                            node_to_add = Some( (node_type.constructor)() );
                         };
 
                         node_showed_number += 1;
 
                         if user_clicked_enter && current_node_is_selected
                         {
-                            node_to_add = Some( *node_name );
+                            node_to_add = Some( (node_type.constructor)() );
                         }
                     }
                 });
@@ -166,7 +187,7 @@ impl NodePicker
 
         if node_to_add.is_some()
         {
-            graph_viewport_actions.push_back( GraphViewportAction::AddNodeToGraph { node_name: node_to_add.unwrap(), position: Some(*mouse_position) });
+            graph_viewport_actions.push_back( GraphViewportAction::AddNodeToGraph { node_kind: node_to_add.unwrap(), position: Some(*mouse_position) });
             self.show = false;
         }
     }

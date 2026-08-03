@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}};
+use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}, value::Value};
 
 mod print_node;
 use print_node::PrintNode;
@@ -37,14 +37,53 @@ use show_image_node::ShowImageNode;
 mod show_math_graph;
 use show_math_graph::ShowMathGraph;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum NodeKind2
 {
     Start,
-    List( ListState ),
     Print,
-    Image( ImageState ),
-    ShowImage,
+}
+
+impl NodeKind2
+{
+    pub fn name(&self) -> &'static str
+    {
+        match self
+        {
+            NodeKind2::Start => "start",
+            NodeKind2::Print => "print",
+        }
+    }
+
+    pub fn size(&self) -> egui::Vec2
+    {
+        match self
+        {
+            NodeKind2::Start => egui::vec2(300.0, 220.0),
+            NodeKind2::Print => egui::vec2(300.0, 220.0),
+        }
+    }
+
+    pub fn input_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        match self
+        {
+            NodeKind2::Start => Vec::new(),
+            NodeKind2::Print => vec![
+                                        PortDefinition::new_input_execution_port(),
+                                        PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)]) ],
+        }
+    }
+
+    pub fn output_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        match self
+        {
+            NodeKind2::Start => vec![ PortDefinition::new_output_execution_port() ],
+            NodeKind2::Print => Vec::new(),
+        }
+    }
+
 }
 
 #[derive(Clone, PartialEq, Eq)]
