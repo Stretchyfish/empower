@@ -19,7 +19,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         ui.menu_button("Open Recent", |ui|
         {
-            for project in studio_context.get_cache().previous_projects.clone()
+            for project in studio_context.get_cache().persistent.previous_projects.clone()
             {
                 if ui.button(project.file_name().unwrap().to_string_lossy().to_string()).clicked()
                 {

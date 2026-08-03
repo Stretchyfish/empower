@@ -134,16 +134,16 @@ impl GraphViewport
                 connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, &self.cached_port_positions, developer_mode);
             }
 
-            if cache.instruction_highlighted_nodes.is_some()
+            if cache.session.instruction_highlighted_nodes.is_some()
             {
-                let node_address = cache.instruction_highlighted_nodes.as_ref().unwrap();
+                let node_address = cache.session.instruction_highlighted_nodes.as_ref().unwrap();
                 if node_address.graph_id == self.graph_asset_id
                 {
                     node_widget::highlight(scene_ui, &node_address.node_key, node_graph, egui::Color32::BLUE);
                 }
             }
 
-            for highlighed_node_address in &cache.debug_highlighted_nodes
+            for highlighed_node_address in &cache.session.debug_highlighted_nodes
             {
                 if highlighed_node_address.graph_id == self.graph_asset_id
                 {

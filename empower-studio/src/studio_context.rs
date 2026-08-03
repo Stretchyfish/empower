@@ -205,7 +205,7 @@ impl StudioContext
         if let Err(e) = compile_result
         {
             println!("Failed to compile: {}", e);
-            self.cache.outputs.push( e.to_string() ); // @TODO, find a proper way to do logging
+            self.cache.session.outputs.push( e.to_string() ); // @TODO, find a proper way to do logging
             return;
         }
 

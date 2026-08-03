@@ -107,12 +107,12 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
         if hovered_graph_and_node.is_some()
         {
-            cache.instruction_highlighted_nodes = hovered_graph_and_node;
+            cache.session.instruction_highlighted_nodes = hovered_graph_and_node;
         }
 
         if compile_menu_response.inner.is_none()
         {
-            studio_context.get_cache_mut().instruction_highlighted_nodes = None;
+            studio_context.get_cache_mut().session.instruction_highlighted_nodes = None;
         }
     }
 }
