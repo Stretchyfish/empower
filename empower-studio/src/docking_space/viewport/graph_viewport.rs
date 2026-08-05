@@ -3,10 +3,12 @@ use std::collections::VecDeque;
 use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, node::{NodeKind2, node_kind::{NodeState, NodeSyncResponse}}, port::PortDirection}};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind2, node_kind::{NodeState, NodeSyncResponse}}, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
+pub use node_widget::EditablePortValue;
+
 mod connection_widget;
 
 mod area_select;
@@ -116,6 +118,7 @@ impl GraphViewport
         let mouse_is_inside_viewport = ui.ui_contains_pointer();
 
         let cached_port_positions = &mut cache.session.cached_port_positions;
+        let cached_editable_port_values = &mut cache.session.cached_editable_port_value;
 
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
         egui::Scene::new()
@@ -162,7 +165,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, node_graph_names, image_names, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, node_graph_names, image_names, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -364,9 +367,13 @@ impl GraphViewport
 
                     self.selected_nodes_quick_menu.toggle_active( &user_inputs.mouse_position );
                 }
-                GraphViewportAction::PortEditWasChanged { port_key } =>
+                GraphViewportAction::PortEditWasChanged { port_key } => // @TODO, change to editable port value
                 {
-                    studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
+                    let editable_port_value = studio_context.get_cache().session.cached_editable_port_value.get(&port_key).unwrap().clone(); // Since this action doesn't happen so often, the clone here is not thaaat bad, but maybe find a way to simplify all of this in the future
+                    let port = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap();
+                    port.value = editable_port_value.attempt_to_convert_to_value(&port.compatability);
+
+                    // studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
                 {
@@ -499,4 +506,33 @@ fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut e
         egui::FontId::monospace(14.0),
         egui::Color32::RED,
     );
+}
+
+fn get_port_color(port: &Port) -> egui::Color32 // @TODO, move this into its own file
+{
+    match port.kind
+    {
+        PortKind::Execution => egui::Color32::WHITE,
+        PortKind::Data =>
+        {
+            let value = if port.value.is_some()
+            {
+                port.value.as_ref().unwrap()
+            }
+            else
+            {
+                &port.compatability[0] // This should never be false
+            };
+        
+            match value 
+            {
+                Value::Integer(_) => egui::Color32::YELLOW,
+                Value::Float(_) => egui::Color32::BLUE,
+                Value::Bool(_) => egui::Color32::PURPLE,
+                Value::Image(_) => egui::Color32::GREEN,
+                Value::Point2d(_, _) => egui::Color32::ORANGE,
+                Value::List(_) => egui::Color32::PURPLE,
+            }
+        }
+    }
 }

@@ -21,6 +21,21 @@ static NODE_TYPES: &[NodeType] = &[
         name: "print",
         constructor: || NodeKind2::Print,
     },
+    NodeType
+    {
+        name: "branch",
+        constructor: || NodeKind2::Branch,
+    },
+    NodeType
+    {
+        name: "loop",
+        constructor: || NodeKind2::Loop,
+    },
+    NodeType
+    {
+        name: "wait",
+        constructor: || NodeKind2::Wait,
+    },
 ];
 
 const NODES_NAMES_AVAILABLE: &'static [&str] = &[

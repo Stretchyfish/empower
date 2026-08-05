@@ -42,6 +42,10 @@ pub enum NodeKind2
 {
     Start,
     Print,
+    Branch,
+    Loop,
+    Wait,
+    List,
 }
 
 impl NodeKind2
@@ -52,6 +56,10 @@ impl NodeKind2
         {
             NodeKind2::Start => "start",
             NodeKind2::Print => "print",
+            NodeKind2::Branch => "branch",
+            NodeKind2::Loop => "loop",
+            NodeKind2::Wait => "wait",
+            NodeKind2::List => "list",
         }
     }
 
@@ -61,6 +69,10 @@ impl NodeKind2
         {
             NodeKind2::Start => egui::vec2(300.0, 220.0),
             NodeKind2::Print => egui::vec2(300.0, 220.0),
+            NodeKind2::Branch => egui::vec2(300.0, 220.0),
+            NodeKind2::Loop => egui::vec2(300.0, 220.0),
+            NodeKind2::Wait => egui::vec2(300.0, 220.0),
+            NodeKind2::List => egui::vec2(300.0, 220.0),
         }
     }
 
@@ -72,6 +84,14 @@ impl NodeKind2
             NodeKind2::Print => vec![
                                         PortDefinition::new_input_execution_port(),
                                         PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)]) ],
+            NodeKind2::Branch => vec![
+                                        PortDefinition::new_input_execution_port(),
+                                        PortDefinition::new_input_data_port("a".to_string(), vec![ Value::Bool(false) ]) ],
+            NodeKind2::Loop => vec![
+                                        PortDefinition::new_input_execution_port() ],
+            NodeKind2::Wait => vec![
+                                        PortDefinition::new_input_execution_port(),
+                                        PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]) ],
         }
     }
 
@@ -81,6 +101,13 @@ impl NodeKind2
         {
             NodeKind2::Start => vec![ PortDefinition::new_output_execution_port() ],
             NodeKind2::Print => Vec::new(),
+            NodeKind2::Branch => vec![
+                                        PortDefinition::new_output_execution_port(),
+                                        PortDefinition::new_output_execution_port() ],
+            NodeKind2::Loop => vec![
+                                        PortDefinition::new_output_execution_port() ],
+            NodeKind2::Wait => vec![
+                                        PortDefinition::new_output_execution_port() ],
         }
     }
 

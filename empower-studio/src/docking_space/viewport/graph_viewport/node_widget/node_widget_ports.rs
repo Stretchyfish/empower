@@ -1,9 +1,13 @@
 use std::collections::{HashMap, VecDeque};
 
+use empower_engine::node_graph::node::NodeKind2;
 use empower_engine::node_graph::port::{PortDirection, PortEdit, PortKind};
 use empower_engine::node_graph::{NodeGraphKey, Port};
+use empower_engine::value::Value;
 
 use super::GraphViewportAction;
+
+use super::super::get_port_color;
 
 use super::{PORT_SIZE, VERTICAL_PORT_GAB};
 
@@ -24,6 +28,7 @@ pub fn show(
             graph_viewport_action: &mut VecDeque<GraphViewportAction>,
             node_size: &egui::Vec2,
             cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+            cached_editable_port_value: &mut HashMap<NodeGraphKey, EditablePortValue>,
             vertical_offset_before_showing_ports: f32,
             developer_mode: &bool,
 )
@@ -78,7 +83,7 @@ pub fn show(
 
     port_response.on_hover_text( format!("{} : {:?}", type_text, compatible_type_text ));
 
-    let port_color = port.color();
+    let port_color = get_port_color(port);
 
     ui.painter().circle(
         port_position,
@@ -98,7 +103,12 @@ pub fn show(
         );
     }
 
-    cached_port_positions.insert(*port_key, port_position);
+    cached_port_positions.insert(*port_key, port_position); // @TODO, find a better way of handling these two caches
+
+    if !cached_editable_port_value.contains_key(&port_key)
+    {
+        cached_editable_port_value.insert(*port_key, EditablePortValue::from(port) );
+    }
 
     if port.kind == PortKind::Execution
     {
@@ -129,72 +139,75 @@ pub fn show(
     let port_edit_position = port_text_position + egui::Vec2 { x: painted_text_size.x + TEXT_AND_EDIT_HORIZONTAL_BUFFER, y: - painted_text_size.y / 2.0 };
 
     let text_edit_color = if port.value.is_some() { egui::Color32::WHITE } else { egui::Color32::RED };
-    // let edit_was_changed = match &mut port.edit
-    // {
-    //     PortEdit::None => false,
-    //     PortEdit::Text( text ) =>
-    //     {
-    //         let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
-    //         let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
 
-    //         let text_edit = egui::TextEdit::singleline(text)
-    //         // .char_limit(5)
-    //         .font(egui::FontId::proportional(35.0))
-    //         // .interactive(!port_has_connection)
-    //         .text_color(text_edit_color)
-    //         .background_color(egui::Color32::BLACK);
+    let editable_port_value = cached_editable_port_value.get_mut( port_key ).unwrap(); // Safe due to above checks
 
-    //         let response = ui.put(input_port_value_box_rect, text_edit);
-    //         response.changed()
-    //     },
-    //     PortEdit::CheckBox( toggle ) =>
-    //     {
-    //         let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
-    //         let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
+    let editable_value_was_changed = match editable_port_value
+    {
+        EditablePortValue::None => false,
+        EditablePortValue::TextBox( text ) =>
+        {
+            let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
+            let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
 
-    //         // @TODO, improve this, and fix box size
-    //         let checkbox = egui::Checkbox::new(
-    //                                         toggle, 
-    //                                         egui::RichText::new("").font(egui::FontId::proportional(35.0))
-    //         );
+            let text_edit = egui::TextEdit::singleline(text)
+            // .char_limit(5)
+            .font(egui::FontId::proportional(35.0))
+            // .interactive(!port_has_connection)
+            .text_color(text_edit_color)
+            .background_color(egui::Color32::BLACK);
 
-    //         ui.put(input_port_checkbox_rect, checkbox).changed()
-    //     }
-    //     PortEdit::TwoBox( text1, text2 ) =>
-    //     {
-    //         let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
+            let response = ui.put(input_port_value_box_rect, text_edit);
+            response.changed()
+        },
+        EditablePortValue::CheckBox( toggle ) =>
+        {
+            let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
+            let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
 
-    //         let mut box_one_changed = false;
-    //         let mut box_two_changed = false;
-    //         ui.horizontal(|ui|
-    //         {
-    //             let text_edit = egui::TextEdit::singleline(text1).font(egui::FontId::proportional(35.0));
-    //             box_one_changed = ui.put(
-    //                 egui::Rect::from_min_size(port_edit_position, port_value_box_size),
-    //                 text_edit
-    //             ).changed();
+            // @TODO, improve this, and fix box size
+            let checkbox = egui::Checkbox::new(
+                                            toggle, 
+                                            egui::RichText::new("").font(egui::FontId::proportional(35.0))
+            );
 
-    //             let text_edit = egui::TextEdit::singleline(text2).font(egui::FontId::proportional(35.0));
-    //             box_two_changed = ui.put(
-    //                 egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 60.0, y: 0.0 }, port_value_box_size),
-    //                 text_edit
-    //             ).changed();
+            ui.put(input_port_checkbox_rect, checkbox).changed()
+        },
+        EditablePortValue::TwoBox( text1, text2 ) =>
+        {
+            
+            let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
 
-    //             // let text_edit = egui::TextEdit::singleline(to).font(egui::FontId::proportional(35.0));
-    //             // ui.put(
-    //             //     egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 120.0, y: 0.0 }, input_port_value_box_size),
-    //             //     text_edit);
-    //         });
+            let mut box_one_changed = false;
+            let mut box_two_changed = false;
+            ui.horizontal(|ui|
+            {
+                let text_edit = egui::TextEdit::singleline(text1).font(egui::FontId::proportional(35.0));
+                box_one_changed = ui.put(
+                    egui::Rect::from_min_size(port_edit_position, port_value_box_size),
+                    text_edit
+                ).changed();
 
+                let text_edit = egui::TextEdit::singleline(text2).font(egui::FontId::proportional(35.0));
+                box_two_changed = ui.put(
+                    egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 60.0, y: 0.0 }, port_value_box_size),
+                    text_edit
+                ).changed();
 
-    //         box_one_changed || box_two_changed
-    //     }
-    // };
+                // let text_edit = egui::TextEdit::singleline(to).font(egui::FontId::proportional(35.0));
+                // ui.put(
+                //     egui::Rect::from_min_size(port_edit_position + egui::Vec2 { x: 120.0, y: 0.0 }, input_port_value_box_size),
+                //     text_edit);
+            });
 
-    // if edit_was_changed
-    // {
-    //     graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
-    // }
+            box_one_changed || box_two_changed
+        },
+    };
+
+    if editable_value_was_changed 
+    {
+        graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
+    }
 
     // let edit_width = match port.edit
     // {
@@ -204,3 +217,103 @@ pub fn show(
     // };
 }
 
+#[derive(Clone, Default)]
+pub enum EditablePortValue
+{
+    #[default] None,
+    TextBox(String),
+    CheckBox(bool),
+    TwoBox(String, String),
+}
+
+impl EditablePortValue
+{
+    pub fn from(port: &Port) -> Self
+    {
+        let value = if port.compatability.is_empty() { None } else { Some( port.compatability[0].clone() ) };
+
+        match &value
+        {
+            None => EditablePortValue::None,
+            Some( actual_value ) => match actual_value 
+            {
+                Value::Integer( int ) => EditablePortValue::TextBox( int.to_string() ),
+                Value::Float( int ) => EditablePortValue::TextBox( int.to_string() ),
+                Value::Bool( boolean ) => EditablePortValue::CheckBox( *boolean ),
+                Value::Point2d( float1, float2 ) => EditablePortValue::TwoBox( float1.to_string(), float2.to_string() ), 
+                _ => EditablePortValue::None,
+            },
+        }
+    }
+
+    pub fn attempt_to_convert_to_value(&self, compatabilities: &Vec<Value>) -> Option<Value>
+    {
+        match &self
+        {
+            EditablePortValue::None => None,
+            EditablePortValue::TextBox( text ) => attempt_to_parse_text(text, compatabilities),
+            EditablePortValue::CheckBox( toggle ) => Some( Value::Bool( *toggle ) ),
+            EditablePortValue::TwoBox( text1, text2 ) => attempt_to_parse_two_box(text1, text2),
+        }
+    }
+}
+
+fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<Value>
+{
+    for value in compatabilities
+    {
+        match value
+        {
+            Value::Integer(_) =>
+            {
+                let parsed = text.parse::<i32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Integer( parsed.unwrap() ) );
+            },
+            Value::Float(_) =>
+            {
+                let parsed = text.parse::<f32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Float( parsed.unwrap() ) );
+            },
+            _ => todo!(),
+        }
+    }
+
+    None
+}
+
+fn attempt_to_parse_two_box(text1: &String, text2: &String) -> Option<Value>
+{
+    let parsed1 = text1.parse::<f32>();
+
+    if parsed1.is_err()
+    {
+        return None;
+    }
+
+    let parsed2 = text2.parse::<f32>();
+
+    if parsed2.is_err()
+    {
+        return None;
+    }
+
+    return Some( Value::Point2d( parsed1.unwrap(), parsed2.unwrap() ) );
+}
+                // Value::Integer( int ) => PortEdit::Text( int.to_string() ),
+                // Value::Float( float ) => PortEdit::Text( float.to_string() ),
+                // Value::Bool( boolean ) => PortEdit::CheckBox( *boolean ),
+                // Value::Image( _ ) => PortEdit::None,
+                // Value::Point2d( x, y ) => PortEdit::TwoBox( x.to_string(), y.to_string() ),
+                // Value::List( _ ) => PortEdit::None,

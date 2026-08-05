@@ -7,6 +7,7 @@ use super::GraphViewportAction;
 
 mod node_widget_body;
 mod node_widget_ports;
+pub use node_widget_ports::EditablePortValue;
 
 const PORT_SIZE: egui::Vec2 = egui::Vec2 { x: 50.0, y: 50.0 };
 const VERTICAL_PORT_GAB: f32 = 60.0;
@@ -20,6 +21,7 @@ pub fn show(
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     area_select: &mut Option<AreaSelect>,
     cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+    cached_editable_port_values: &mut HashMap<NodeGraphKey, EditablePortValue>,
     node_graph_names: &HashMap<AssetId, String>,
     image_names: &HashMap<AssetId, String>,
     developer_mode: &bool,
@@ -37,13 +39,13 @@ pub fn show(
         let port_has_connection = node_graph.connections_in.contains_key(input_port_key);
 
         let input_port = node_graph.ports.get(input_port_key).unwrap();
-        node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &port_has_connection, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
+        node_widget_ports::show(ui, &node.position, input_port_key, input_port, input_port_index, &port_has_connection, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, cached_editable_port_values, vertical_offset_before_drawing_ports, developer_mode);
     }
 
     for (output_port_index, output_port_key) in node.output_port_keys.iter().enumerate()
     {
         let output_port = node_graph.ports.get(output_port_key).unwrap();
-        node_widget_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &false, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, vertical_offset_before_drawing_ports, developer_mode);
+        node_widget_ports::show(ui, &node.position, output_port_key, output_port, output_port_index, &false, &String::from(graph_viewport_title), graph_viewport_actions, &node_size, cached_port_positions, cached_editable_port_values, vertical_offset_before_drawing_ports, developer_mode);
     }
 }
 
