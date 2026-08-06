@@ -41,6 +41,20 @@ impl Value
         }
     }
 
+    pub fn from_type_string(type_string: &String) -> Option<Self>
+    {
+        match type_string.as_str()
+        {
+            "integer" => Some( Value::Integer(0) ),
+            "float" => Some( Value::Float(0.0) ),
+            "bool" => Some( Value::Bool(false) ),
+            "image" => Some( Value::Image( None ) ),
+            "point2d" => Some( Value::Point2d(0.0, 0.0) ),
+            "list" => Some( Value::List( Vec::new() ) ),
+            _ => None,
+        }
+    }
+
     pub fn as_i32(&self) -> i32
     {
         match self

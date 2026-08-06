@@ -158,7 +158,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
     let input_register_addresses = allocate_input_port_registers(ctx, &inputs, &node_graph.connections_in);
     let output_register_addresses = allocate_output_port_registers(ctx, &outputs);
 
-    match node.kind
+    match &node.kind
     {
         NodeKind2::Start =>
         {
@@ -198,6 +198,38 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
             ctx.trace_instructions_from(node_key, &next_instruction_address);
 
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+        },
+        NodeKind2::List(_) =>
+        {
+            ctx.add_instruction(
+                Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]),
+            );
+        },
+        NodeKind2::Image( state ) =>
+        {
+            ctx.add_instruction(
+                Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
+            );
+        },
+        NodeKind2::ShowImage =>
+        {
+            ctx.add_instruction( Instruction::ShowImage( input_register_addresses[0] ) );
+        },
+        NodeKind2::MathGraph =>
+        {
+            ctx.add_instruction( Instruction::ShowMathGraph( input_register_addresses[0] ) );
+        },
+        NodeKind2::SubGraph( state ) =>
+        {
+            if state.graph_asset_id.is_none() // @TODO, double check that this still works
+            {
+                return;
+            }
+
+            let graph_id = state.graph_asset_id.unwrap();
+
+            ctx.additional_graphs_to_compile.push(graph_id);
+            ctx.add_instruction( Instruction::CallGraph(graph_id));
         },
     }
     

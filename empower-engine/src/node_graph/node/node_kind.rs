@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::{ParseFloatError, ParseIntError}};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}, value::Value};
+use crate::{assets::{AssetId, AssetKind}, compiler::{CompiledGraphContext, RegisterAddress}, node_graph::{Port, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
 
 mod print_node;
 use print_node::PrintNode;
@@ -37,7 +37,7 @@ use show_image_node::ShowImageNode;
 mod show_math_graph;
 use show_math_graph::ShowMathGraph;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum NodeKind2
 {
     Start,
@@ -45,7 +45,11 @@ pub enum NodeKind2
     Branch,
     Loop,
     Wait,
-    List,
+    List( ListState ),
+    Image( ImageState ),
+    ShowImage,
+    MathGraph,
+    SubGraph ( SubGraphState ),
 }
 
 impl NodeKind2
@@ -59,7 +63,11 @@ impl NodeKind2
             NodeKind2::Branch => "branch",
             NodeKind2::Loop => "loop",
             NodeKind2::Wait => "wait",
-            NodeKind2::List => "list",
+            NodeKind2::List(_) => "list",
+            NodeKind2::Image(_) => "image",
+            NodeKind2::ShowImage => "show image",
+            NodeKind2::MathGraph => "math graph",
+            NodeKind2::SubGraph(_) => "math graph",
         }
     }
 
@@ -72,7 +80,11 @@ impl NodeKind2
             NodeKind2::Branch => egui::vec2(300.0, 220.0),
             NodeKind2::Loop => egui::vec2(300.0, 220.0),
             NodeKind2::Wait => egui::vec2(300.0, 220.0),
-            NodeKind2::List => egui::vec2(300.0, 220.0),
+            NodeKind2::List(_) => egui::vec2(300.0, 220.0),
+            NodeKind2::Image(_) => egui::vec2(300.0, 220.0),
+            NodeKind2::ShowImage => egui::vec2(300.0, 220.0),
+            NodeKind2::MathGraph => egui::vec2(300.0, 220.0),
+            NodeKind2::SubGraph(_) => egui::vec2(300.0, 220.0),
         }
     }
 
@@ -92,6 +104,17 @@ impl NodeKind2
             NodeKind2::Wait => vec![
                                         PortDefinition::new_input_execution_port(),
                                         PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]) ],
+            NodeKind2::List( state ) => state.get_input_port_definitions(),
+            NodeKind2::Image( _ ) => Vec::new(),
+            NodeKind2::ShowImage => vec![
+                                            PortDefinition::new_input_execution_port(),
+                                            PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image( None ) ])
+                                        ],
+            NodeKind2::MathGraph => vec![
+                                            PortDefinition::new_input_execution_port(),
+                                            PortDefinition::new_input_data_port("math graph".to_string(), vec![ Value::List( Vec::new() ) ])
+                                        ],
+            NodeKind2::SubGraph(_) => Vec::new(),
         }
     }
 
@@ -108,21 +131,102 @@ impl NodeKind2
                                         PortDefinition::new_output_execution_port() ],
             NodeKind2::Wait => vec![
                                         PortDefinition::new_output_execution_port() ],
+            NodeKind2::List( state ) => state.get_output_port_definitions(),
+            NodeKind2::Image( state ) => state.get_output_port_definitions(),
+            NodeKind2::ShowImage => Vec::new(),
+            NodeKind2::MathGraph => Vec::new(),
+            NodeKind2::SubGraph(_) => Vec::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct ListState
+{
+    pub value_type: Value,
+    pub size: usize,
+}
+
+impl ListState
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            value_type: Value::Integer(0),
+            size: 2,
         }
     }
 
+    pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        let mut inputs = Vec::with_capacity(self.size);
+
+        let base_value = &self.value_type;
+
+        let mut alphabet_counter = AlphabetCounter::new();
+
+        for _ in 0..self.size
+        {
+            let letter = alphabet_counter.next_letter().to_string();
+            inputs.push( PortDefinition::new_input_data_port(letter, vec![ base_value.clone() ]) );
+        }
+        
+        inputs
+    }
+
+    pub fn get_output_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        vec![
+            PortDefinition::new_output_data_port("".to_string(), vec![ Value::List( Vec::new() ) ])
+        ]
+    }
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct ListState
-{
-    
-}
-
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct ImageState
 {
-    
+    pub image_asset_id: Option<AssetId>,
+}
+
+impl ImageState
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            image_asset_id: None,
+        }
+    }
+
+    pub fn get_output_port_definitions(&self) -> Vec<PortDefinition>
+    {
+        if self.image_asset_id.is_none()
+        {
+            return Vec::new();
+        }
+
+        vec![
+            PortDefinition::new_output_data_port("image".to_string(), vec![ Value::Image( self.image_asset_id ) ])
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct SubGraphState
+{
+    pub graph_asset_id: Option<AssetId>,
+}
+
+impl SubGraphState
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            graph_asset_id: None,
+        }
+    }
 }
 
 #[typetag::serde(tag="node_kind")]

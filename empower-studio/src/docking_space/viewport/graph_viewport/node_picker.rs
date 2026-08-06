@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use empower_engine::node_graph::node::NodeKind2;
+use empower_engine::node_graph::node::{NodeKind2, node_kind::{ImageState, ListState, SubGraphState}};
 
 use super::GraphViewportAction;
 
@@ -35,6 +35,31 @@ static NODE_TYPES: &[NodeType] = &[
     {
         name: "wait",
         constructor: || NodeKind2::Wait,
+    },
+    NodeType
+    {
+        name: "list",
+        constructor: || NodeKind2::List( ListState::new() ),
+    },
+    NodeType
+    {
+        name: "image",
+        constructor: || NodeKind2::Image( ImageState::new() ),
+    },
+    NodeType
+    {
+        name: "show image",
+        constructor: || NodeKind2::ShowImage,
+    },
+    NodeType
+    {
+        name: "math graph",
+        constructor: || NodeKind2::MathGraph,
+    },
+    NodeType
+    {
+        name: "sub graph",
+        constructor: || NodeKind2::SubGraph( SubGraphState::new() ),
     },
 ];
 

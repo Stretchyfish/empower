@@ -147,6 +147,11 @@ impl StudioContext
         &mut self.project
     }
 
+    pub fn get_project_mut_and_cache(&mut self) -> (&mut Project, &Cache)
+    {
+        (&mut self.project, &self.cache)
+    }
+
     pub fn get_windows_mut(&mut self) -> &mut Windows
     {
         &mut self.windows

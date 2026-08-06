@@ -8,6 +8,7 @@ use serde::{Serialize, Deserialize};
 
 mod node_widget;
 pub use node_widget::EditablePortValue;
+pub use node_widget::EditableNodeState;
 
 mod connection_widget;
 
@@ -119,6 +120,7 @@ impl GraphViewport
 
         let cached_port_positions = &mut cache.session.cached_port_positions;
         let cached_editable_port_values = &mut cache.session.cached_editable_port_value;
+        let cached_editable_node_state = &mut cache.session.cached_edtable_node_state;
 
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
         egui::Scene::new()
@@ -165,7 +167,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, node_graph_names, image_names, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, cached_editable_node_state, node_graph_names, image_names, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -375,35 +377,36 @@ impl GraphViewport
 
                     // studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
-                GraphViewportAction::NodeEditWasChanged { node_key, node_edit_index } =>
+                GraphViewportAction::NodeEditWasChanged { node_key } =>
                 {
-                    // let sync_response = {
-                    //     let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    //     graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_edit( node_edit_index )
-                    // };
+                    let (project, cache) = studio_context.get_project_mut_and_cache();
+                    let editable_node_state = cache.session.cached_edtable_node_state.get(&node_key).unwrap(); 
+                    let node = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap().nodes.get_mut(&node_key).unwrap();
 
-                    // match sync_response
-                    // {
-                    //     NodeSyncResponse::Nothing => {},
-                    //     NodeSyncResponse::NodesStructureChanged =>
-                    //     {
-                    //         let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    //         graph.refresh_node(&node_key);
-                    //     },
-                    //     NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
-                    //     {
-                    //         let project_path = &studio_context.get_project().location.clone();
-                    //         let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
+                    let sync_response = editable_node_state.sync_with_node_state(&mut node.kind);
 
-                    //         let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
+                    match sync_response
+                    {
+                        NodeSyncResponse::Nothing => {},
+                        NodeSyncResponse::NodesStructureChanged =>
+                        {
+                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            graph.refresh_node(&node_key);
+                        },
+                        NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
+                        {
+                            let project_path = &studio_context.get_project().location.clone();
+                            let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
 
-                    //         let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
+                            let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
+
+                            let node_state = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
                             
-                    //         let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    //         graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
-                    //         graph.refresh_node(&node_key);
-                    //     },
-                    // }
+                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            // graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
+                            graph.refresh_node(&node_key);
+                        },
+                    }
                 },
 
                 GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
@@ -458,7 +461,7 @@ enum GraphViewportAction
     StoppedDragSelecting,
     PrimaryClickedBackground,
     SecondaryClickedBackground,
-    NodeEditWasChanged { node_key: NodeGraphKey, node_edit_index: usize },
+    NodeEditWasChanged { node_key: NodeGraphKey },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
     AddNodeToGraph { node_kind: NodeKind2, position: Option<egui::Pos2>},

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeEdit, NodeGraphKey}};
+use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeEdit, NodeGraphKey, node::{NodeKind2, node_kind::NodeSyncResponse}}, value::Value};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -23,11 +23,17 @@ pub fn show(
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
+            cached_editable_node_state: &mut HashMap<NodeGraphKey, EditableNodeState>, // @TODO, maybe handle selection of editable node state earlier?
             node_graph_names: &HashMap<AssetId, String>,
             image_names: &HashMap<AssetId, String>,
             developer_mode: &bool,
         ) -> f32
 {
+    if !cached_editable_node_state.contains_key(node_key)
+    {
+        cached_editable_node_state.insert(*node_key, EditableNodeState::from(&node.kind) );
+    }
+    
     let node_rect = egui::Rect::from_min_size(node.position, *node_size);
 
     if area_select.is_some()
@@ -142,6 +148,19 @@ pub fn show(
         egui::StrokeKind::Inside,
     );
 
+    let editable_node_state = cached_editable_node_state.get_mut(node_key).unwrap();
+
+    // let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
+    // let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
+    let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.max.y + NODE_EDIT_GAP);
+
+    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, node_graph_names, image_names, graph_viewport_actions );
+
+    if show_editable_state_result.changed
+    {
+        graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key } );
+    }
+
     // let node_edits = node.kind.node_edits();
 
     // if node_edits.is_none()
@@ -175,7 +194,151 @@ pub fn show(
     // }
 
     // vertical_offset
-    80.0 // @TODO, change this to use a variable for node height instead
+    //
+    node_rect_without_title_and_bottom.size().y + show_editable_state_result.size.y
+    // 80.0 // @TODO, change this to use a variable for node height instead
+}
+
+#[derive(Clone)]
+pub enum EditableNodeState
+{
+    None,
+    List( String, String ),
+    Image( Option<AssetId> ),
+    SubGraph( Option<AssetId> ),
+}
+
+impl EditableNodeState
+{
+    pub fn from(node_kind: &NodeKind2) -> Self
+    {
+        match node_kind
+        {
+            NodeKind2::List( state ) => EditableNodeState::List( state.size.to_string(), state.value_type.type_string() ),
+            NodeKind2::Image( state ) => EditableNodeState::Image( state.image_asset_id ),
+            NodeKind2::SubGraph( state ) => EditableNodeState::SubGraph( state.graph_asset_id ),
+            _ => EditableNodeState::None,
+        }
+    }
+
+    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> ShowEditableNodeStateResult 
+    {
+        match self
+        {
+            EditableNodeState::None => ShowEditableNodeStateResult { changed: false, size: egui::Vec2::ZERO },
+            EditableNodeState::List( text1, text2 ) =>
+            {
+                let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"test:".to_string(), text1, true);
+                let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), text2);
+                ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
+            },
+            EditableNodeState::Image( asset_id ) =>
+            {
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, node_graph_names, image_names);
+                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP ) }
+            },
+            EditableNodeState::SubGraph( asset_id ) =>
+            {
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Graph, node_graph_names, image_names);
+                let (_, height2) = draw_graph_viewport_opener(ui, &(edit_position + egui::vec2(0.0, height1 + NODE_EDIT_GAP)), asset_id, graph_viewport_actions);
+
+                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
+            },
+        }
+    }
+
+    pub fn sync_with_node_state(&self, node_kind: &mut NodeKind2) -> NodeSyncResponse
+    {
+        match self
+        {
+            EditableNodeState::None => NodeSyncResponse::Nothing,
+            EditableNodeState::List( number_of_input_ports_text, value_type_text ) =>
+            {
+                let list_state = match node_kind
+                {
+                    NodeKind2::List( list_state ) => list_state,
+                    _ => panic!("tries to parse incompatible state from editable state"),
+                };
+
+                let parsed = number_of_input_ports_text.parse::<usize>();
+
+                if parsed.is_err()
+                {
+                    return NodeSyncResponse::Nothing;
+                }
+
+                list_state.size = parsed.unwrap();
+
+                let value = Value::from_type_string(value_type_text);  
+
+                if value.is_none()
+                {
+                    return NodeSyncResponse::Nothing;
+                }
+
+                list_state.value_type = value.unwrap();
+
+                NodeSyncResponse::NodesStructureChanged
+            },
+            EditableNodeState::Image( image_asset_id ) =>
+            {
+                let image_state = match node_kind
+                {
+                    NodeKind2::Image( image_state ) => image_state,
+                    _ => panic!("tries to parse incompatible state from editable state"),
+                };
+
+                image_state.image_asset_id = *image_asset_id;
+
+                NodeSyncResponse::NodesStructureChanged
+            },
+            EditableNodeState::SubGraph( graph_asset_id ) =>
+            {
+                let sub_graph_state = match node_kind
+                {
+                    NodeKind2::SubGraph( sub_graph_state ) => sub_graph_state,
+                    _ => panic!("tries to parse incompatible state from editable state"),
+                };
+
+                sub_graph_state.graph_asset_id = *graph_asset_id;
+
+                NodeSyncResponse::NodesStructureChanged
+            },
+        }
+    }
+}
+
+fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_value_text: &mut String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        "value: ",
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+    
+    let state_before_change = current_value_text.clone();
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        egui::Vec2::INFINITY
+    );
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt("enum box selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    .selected_text( current_value_text.clone() ) // @TODO, figure out if this is needed
+    .show_ui(&mut child_ui, |ui|
+    {
+        // @TODO, probably is a way of automating this
+        ui.selectable_value( current_value_text, String::from("integer"), String::from("integer"));
+        ui.selectable_value( current_value_text, String::from("float"), String::from("float"));
+        ui.selectable_value( current_value_text, String::from("point2d"), String::from("point2d"));
+    });
+    
+    (state_before_change != *current_value_text, 40.0)
 }
 
 fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: bool) -> (bool, f32)
@@ -338,4 +501,10 @@ fn draw_enum_box_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &Str
     });
     
     (state_before_change != *selected_state, 40.0)
+}
+
+pub struct ShowEditableNodeStateResult
+{
+    changed: bool,
+    size: egui::Vec2,
 }
