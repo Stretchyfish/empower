@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
+use crate::{docking_space::viewport::graph_viewport::node_widget::NodeSyncResponse, studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind2, node_kind::{NodeState, NodeSyncResponse}}, port::{PortDirection, PortKind}}, value::Value};
+use empower_engine::{assets::AssetId, node_graph::{NodeGraph, NodeGraphKey, Port, node::NodeKind, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -400,7 +400,7 @@ impl GraphViewport
 
                             let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
 
-                            let _ = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
+                            // let _ = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
                             
                             let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
                             // graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
@@ -464,7 +464,7 @@ pub enum GraphViewportAction
     NodeEditWasChanged { node_key: NodeGraphKey },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
-    AddNodeToGraph { node_kind: NodeKind2, position: Option<egui::Pos2>},
+    AddNodeToGraph { node_kind: NodeKind, position: Option<egui::Pos2>},
 }
 
 fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui)

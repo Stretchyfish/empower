@@ -8,13 +8,12 @@ pub use node_handle::NodeHandle;
 
 pub mod node;
 pub use node::Node;
-pub use node::node_kind::NodeEdit;
 
 pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::node_graph::{node::NodeKind2, port::PortDefinition};
+use crate::node_graph::{node::NodeKind, port::PortDefinition};
 
 pub type NodeGraphKey = i32;
 
@@ -45,7 +44,7 @@ impl NodeGraph {
             connections_in: HashMap::new(),
         };
 
-        let _ = node_graph.add_node(NodeKind2::Start, None);
+        let _ = node_graph.add_node(NodeKind::Start, None);
 
         node_graph
     }
@@ -65,7 +64,7 @@ impl NodeGraph {
 
     pub fn add_node(
         &mut self,
-        node_kind: NodeKind2,
+        node_kind: NodeKind,
         position: Option<egui::Pos2>,
     ) -> NodeHandle {
 

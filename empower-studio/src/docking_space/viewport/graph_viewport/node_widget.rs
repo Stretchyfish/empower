@@ -9,6 +9,7 @@ mod node_widget_body;
 mod node_widget_ports;
 pub use node_widget_ports::EditablePortValue;
 pub use node_widget_body::EditableNodeState;
+pub use node_widget_body::NodeSyncResponse;
 
 const PORT_SIZE: egui::Vec2 = egui::Vec2 { x: 50.0, y: 50.0 };
 const VERTICAL_PORT_GAB: f32 = 60.0;

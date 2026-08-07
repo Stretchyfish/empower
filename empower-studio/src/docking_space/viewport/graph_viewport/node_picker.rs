@@ -1,60 +1,60 @@
 use std::collections::VecDeque;
 
-use empower_engine::node_graph::node::{NodeKind2, node_kind::{ImageState, ListState, SubGraphState}};
+use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, SubGraphState}};
 
 use super::GraphViewportAction;
 
 struct NodeType // @TODO, find a better name
 {
     name: &'static str,
-    constructor: fn() -> NodeKind2,
+    constructor: fn() -> NodeKind,
 }
 
 static NODE_TYPES: &[NodeType] = &[
     NodeType
     {
         name: "print",
-        constructor: || NodeKind2::Print,
+        constructor: || NodeKind::Print,
     },
     NodeType
     {
         name: "branch",
-        constructor: || NodeKind2::Branch,
+        constructor: || NodeKind::Branch,
     },
     NodeType
     {
         name: "loop",
-        constructor: || NodeKind2::Loop,
+        constructor: || NodeKind::Loop,
     },
     NodeType
     {
         name: "wait",
-        constructor: || NodeKind2::Wait,
+        constructor: || NodeKind::Wait,
     },
     NodeType
     {
         name: "list",
-        constructor: || NodeKind2::List( ListState::new() ),
+        constructor: || NodeKind::List( ListState::new() ),
     },
     NodeType
     {
         name: "image",
-        constructor: || NodeKind2::Image( ImageState::new() ),
+        constructor: || NodeKind::Image( ImageState::new() ),
     },
     NodeType
     {
         name: "show image",
-        constructor: || NodeKind2::ShowImage,
+        constructor: || NodeKind::ShowImage,
     },
     NodeType
     {
         name: "math graph",
-        constructor: || NodeKind2::MathGraph,
+        constructor: || NodeKind::MathGraph,
     },
     NodeType
     {
         name: "sub graph",
-        constructor: || NodeKind2::SubGraph( SubGraphState::new() ),
+        constructor: || NodeKind::SubGraph( SubGraphState::new() ),
     },
 ];
 

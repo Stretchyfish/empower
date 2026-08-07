@@ -8,7 +8,7 @@ pub static TEMP_PROJECT_LOCATION: Lazy<PathBuf> = Lazy::new(|| {
     std::env::temp_dir().join("empower_studio_temporary_project")
 });
 
-pub fn create_temporary_project_directory(project: &Project)
+pub fn create_temporary_project_directory(_project: &Project)
 {
 
 }

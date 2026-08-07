@@ -1,4 +1,4 @@
-use empower_engine::{self, compiler::{CompileSettings, Instruction, compile}, node_graph::node::NodeKind2, value::Value};
+use empower_engine::{self, compiler::{CompileSettings, Instruction, compile}, node_graph::node::NodeKind, value::Value};
 
 #[test]
 fn test_print_compile()
@@ -9,7 +9,7 @@ fn test_print_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let print_node_handle = entry_node_graph.add_node(NodeKind2::Print, None);
+        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
     }
@@ -33,7 +33,7 @@ fn test_branch_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let print_node_handle = entry_node_graph.add_node(NodeKind2::Branch, None);
+        let print_node_handle = entry_node_graph.add_node(NodeKind::Branch, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
     }

@@ -5,7 +5,7 @@ use crate::assets::LoadedAssets;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
-use crate::node_graph::node::NodeKind2;
+use crate::node_graph::node::NodeKind;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -166,17 +166,17 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
     match &node.kind
     {
-        NodeKind2::Start =>
+        NodeKind::Start =>
         {
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
         },
-        NodeKind2::Print =>
+        NodeKind::Print =>
         {
             ctx.add_instruction( Instruction::Print( input_register_addresses[0] ) );
 
             ctx.trace_instructions_from(node_key, &next_instruction_address); // Due to the potentially earlier added SetConst it needs to add like this
         },
-        NodeKind2::Branch =>
+        NodeKind::Branch =>
         {
             let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( Instruction::JumpIfFalse(0, input_register_addresses[0]));
             
@@ -191,41 +191,41 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
             ctx.trace_instructions(node_key, &vec![next_instruction_address, jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
         },
-        NodeKind2::Loop =>
+        NodeKind::Loop =>
         {
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
             ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
             ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
         },
-        NodeKind2::Wait =>
+        NodeKind::Wait =>
         {
             ctx.add_instruction( Instruction::Wait( input_register_addresses[0] ) );
             ctx.trace_instructions_from(node_key, &next_instruction_address);
 
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
         },
-        NodeKind2::List(_) =>
+        NodeKind::List(_) =>
         {
             ctx.add_instruction(
                 Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]),
             );
         },
-        NodeKind2::Image( state ) =>
+        NodeKind::Image( state ) =>
         {
             ctx.add_instruction(
                 Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
             );
         },
-        NodeKind2::ShowImage =>
+        NodeKind::ShowImage =>
         {
             ctx.add_instruction( Instruction::ShowImage( input_register_addresses[0] ) );
         },
-        NodeKind2::MathGraph =>
+        NodeKind::MathGraph =>
         {
             ctx.add_instruction( Instruction::ShowMathGraph( input_register_addresses[0] ) );
         },
-        NodeKind2::SubGraph( state ) =>
+        NodeKind::SubGraph( state ) =>
         {
             if state.graph_asset_id.is_none() // @TODO, double check that this still works
             {
@@ -314,15 +314,15 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
     // }
 }
 
-// fn compile_node(ctx: &mut CompiledGraphContext, node_kind: &NodeKind2, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>)
+// fn compile_node(ctx: &mut CompiledGraphContext, node_kind: &NodeKind, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>)
 // {
 //     match node_kind
 //     {
-//         NodeKind2::Start =>
+//         NodeKind::Start =>
 //         {
 //             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
 //         },
-//         NodeKind2::Print =>
+//         NodeKind::Print =>
 //         {
             
 //         },

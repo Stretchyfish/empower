@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeGraphKey, node::{NodeKind2, node_kind::NodeSyncResponse}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{Node, NodeGraphKey, node::NodeKind}, value::Value};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -13,6 +13,13 @@ const NODE_BODY_BUTTON_AREA_OVERLAP: f32 = 12.0;
 
 const NODE_EDIT_GAP: f32 = 10.0;
 const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
+
+pub enum NodeSyncResponse
+{
+    Nothing,
+    NodesStructureChanged,
+    LoadSubgraph( AssetId ),
+}
 
 pub fn show(
             ui: &mut egui::Ui, 
@@ -210,13 +217,13 @@ pub enum EditableNodeState
 
 impl EditableNodeState
 {
-    pub fn from(node_kind: &NodeKind2) -> Self
+    pub fn from(node_kind: &NodeKind) -> Self
     {
         match node_kind
         {
-            NodeKind2::List( state ) => EditableNodeState::List( state.size.to_string(), state.value_type.type_string() ),
-            NodeKind2::Image( state ) => EditableNodeState::Image( state.image_asset_id ),
-            NodeKind2::SubGraph( state ) => EditableNodeState::SubGraph( state.graph_asset_id ),
+            NodeKind::List( state ) => EditableNodeState::List( state.size.to_string(), state.value_type.type_string() ),
+            NodeKind::Image( state ) => EditableNodeState::Image( state.image_asset_id ),
+            NodeKind::SubGraph( state ) => EditableNodeState::SubGraph( state.graph_asset_id ),
             _ => EditableNodeState::None,
         }
     }
@@ -247,7 +254,7 @@ impl EditableNodeState
         }
     }
 
-    pub fn sync_with_node_state(&self, node_kind: &mut NodeKind2) -> NodeSyncResponse
+    pub fn sync_with_node_state(&self, node_kind: &mut NodeKind) -> NodeSyncResponse
     {
         match self
         {
@@ -256,7 +263,7 @@ impl EditableNodeState
             {
                 let list_state = match node_kind
                 {
-                    NodeKind2::List( list_state ) => list_state,
+                    NodeKind::List( list_state ) => list_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
@@ -284,7 +291,7 @@ impl EditableNodeState
             {
                 let image_state = match node_kind
                 {
-                    NodeKind2::Image( image_state ) => image_state,
+                    NodeKind::Image( image_state ) => image_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
@@ -296,7 +303,7 @@ impl EditableNodeState
             {
                 let sub_graph_state = match node_kind
                 {
-                    NodeKind2::SubGraph( sub_graph_state ) => sub_graph_state,
+                    NodeKind::SubGraph( sub_graph_state ) => sub_graph_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
