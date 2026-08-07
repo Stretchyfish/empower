@@ -1,7 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use empower_engine::node_graph::node::NodeKind2;
-use empower_engine::node_graph::port::{PortDirection, PortEdit, PortKind};
+use empower_engine::node_graph::port::{PortDirection, PortKind};
 use empower_engine::node_graph::{NodeGraphKey, Port};
 use empower_engine::value::Value;
 

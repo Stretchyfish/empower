@@ -3,6 +3,9 @@ use std::collections::{HashMap, HashSet};
 pub mod node_address;
 pub use node_address::NodeAddress;
 
+pub mod node_handle;
+pub use node_handle::NodeHandle;
+
 pub mod node;
 pub use node::Node;
 pub use node::node_kind::NodeEdit;
@@ -11,7 +14,7 @@ pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::node_graph::{node::{NodeKind2, node_kind::NODE_KIND_REGISTRY}, port::PortDefinition};
+use crate::node_graph::{node::NodeKind2, port::PortDefinition};
 
 pub type NodeGraphKey = i32;
 
@@ -64,7 +67,7 @@ impl NodeGraph {
         &mut self,
         node_kind: NodeKind2,
         position: Option<egui::Pos2>,
-    ) -> NodeGraphKey {
+    ) -> NodeHandle {
 
         let input_port_definitions = node_kind.input_port_definitions();
         let output_port_definitions = node_kind.output_port_definitions();
@@ -76,14 +79,31 @@ impl NodeGraph {
 
         let new_node = Node::new(
             position.unwrap_or(egui::Pos2::default()),
-            input_port_keys,
-            output_port_keys,
+            input_port_keys.clone(),
+            output_port_keys.clone(),
             node_kind,
         );
 
         self.nodes.insert(node_key, new_node);
 
-        node_key
+        NodeHandle
+        {
+            node_key,
+            input_port_keys,
+            output_port_keys,
+        }
+    }
+
+    pub fn get_node_handle(&self, node_key: NodeGraphKey) -> NodeHandle
+    {
+        let node = self.nodes.get(&node_key).unwrap(); // @TODO, add a propper check here
+
+        NodeHandle
+        {
+            node_key,
+            input_port_keys: node.input_port_keys.clone(),
+            output_port_keys: node.output_port_keys.clone()
+        }
     }
 
     pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeGraphKey

@@ -6,8 +6,6 @@ use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
 use crate::node_graph::node::NodeKind2;
-use crate::node_graph::node::node_kind::ControlFlowKind;
-use crate::node_graph::node::node_kind::LoopSettings;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -61,6 +59,14 @@ pub struct CompileSettings
 
 impl CompileSettings
 {
+    pub fn new() -> Self
+    {
+        Self
+        {
+            traced: false,
+        }
+    }
+    
     pub fn new_with_meta() -> Self
     {
         Self

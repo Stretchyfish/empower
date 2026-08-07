@@ -30,7 +30,7 @@ impl Project
 {
     pub fn new() -> Self
     {
-        let temp_directory_root = std::env::temp_dir()
+        let temp_directory_root = std::env::temp_dir() // @TODO, move this out of project
                                     .join("empower_studio_temporary_project");
 
         // In case there already is a temp directory

@@ -11,11 +11,6 @@ struct NodeType // @TODO, find a better name
 }
 
 static NODE_TYPES: &[NodeType] = &[
-    // NodeType // We don't need start
-    // {
-    //     name: "start",
-    //     constructor: || NodeKind2::Start,
-    // },
     NodeType
     {
         name: "print",
@@ -61,19 +56,6 @@ static NODE_TYPES: &[NodeType] = &[
         name: "sub graph",
         constructor: || NodeKind2::SubGraph( SubGraphState::new() ),
     },
-];
-
-const NODES_NAMES_AVAILABLE: &'static [&str] = &[
-    "number",
-    "print",
-    "branch",
-    "wait",
-    "list",
-    "loop",
-    "sub graph",
-    "image",
-    "show image",
-    "show math graph",
 ];
 
 #[derive(Clone, Default, Debug)]

@@ -6,7 +6,7 @@ pub type InstructionAddress = usize;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Instruction
 {
     SetConst( RegisterAddress, Value ),

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::assets::AssetId;
 
-#[derive(PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, PartialOrd, Debug, Clone, Serialize, Deserialize)]
 pub enum Value
 {
     Integer( i32 ),
