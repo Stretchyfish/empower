@@ -13,7 +13,7 @@ pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::node_graph::{node::NodeKind, port::PortDefinition};
+use crate::{node_graph::{node::NodeKind, port::PortDefinition}, value::Value};
 
 pub type NodeGraphKey = i32;
 
@@ -427,6 +427,24 @@ impl NodeGraph {
         }
 
         outputs
+    }
+
+    pub fn set_port_value(&mut self, port_key: NodeGraphKey, value: Value) -> Result<(), String>
+    {
+        let port = self.ports.get_mut(&port_key);
+
+        if port.is_none()
+        {
+            return Err( format!("node graph doesn't contain port {}, when setting port value", port_key));
+        }
+
+        let port = port.unwrap();
+
+        // @TODO, add a check if the values are also compatible?
+
+        port.value = Some( value );
+
+        Ok(())
     }
 
     pub fn get_connected_exec_nodes(&self, node_key: NodeGraphKey) -> Vec<NodeGraphKey> {

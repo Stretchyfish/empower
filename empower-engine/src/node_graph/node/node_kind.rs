@@ -11,13 +11,16 @@ pub use sub_graph_node_state::SubGraphState;
 mod list_node_state;
 pub use list_node_state::ListState;
 
+mod loop_node_state;
+pub use loop_node_state::LoopMode;
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum NodeKind
 {
     Start,
     Print,
     Branch,
-    Loop,
+    Loop( LoopMode ),
     Wait,
     List( ListState ),
     Image( ImageState ),
@@ -35,7 +38,7 @@ impl NodeKind
             NodeKind::Start => "start",
             NodeKind::Print => "print",
             NodeKind::Branch => "branch",
-            NodeKind::Loop => "loop",
+            NodeKind::Loop(_) => "loop",
             NodeKind::Wait => "wait",
             NodeKind::List(_) => "list",
             NodeKind::Image(_) => "image",
@@ -52,7 +55,7 @@ impl NodeKind
             NodeKind::Start => egui::vec2(300.0, 220.0),
             NodeKind::Print => egui::vec2(300.0, 220.0),
             NodeKind::Branch => egui::vec2(300.0, 220.0),
-            NodeKind::Loop => egui::vec2(300.0, 220.0),
+            NodeKind::Loop(_) => egui::vec2(300.0, 220.0),
             NodeKind::Wait => egui::vec2(300.0, 220.0),
             NodeKind::List(_) => egui::vec2(300.0, 220.0),
             NodeKind::Image(_) => egui::vec2(300.0, 220.0),
@@ -73,8 +76,7 @@ impl NodeKind
             NodeKind::Branch => vec![
                                         PortDefinition::new_input_execution_port(),
                                         PortDefinition::new_input_data_port("a".to_string(), vec![ Value::Bool(false) ]) ],
-            NodeKind::Loop => vec![
-                                        PortDefinition::new_input_execution_port() ],
+            NodeKind::Loop( state ) => state.get_input_port_definitions(),
             NodeKind::Wait => vec![
                                         PortDefinition::new_input_execution_port(),
                                         PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]) ],
@@ -101,8 +103,7 @@ impl NodeKind
             NodeKind::Branch => vec![
                                         PortDefinition::new_output_execution_port(),
                                         PortDefinition::new_output_execution_port() ],
-            NodeKind::Loop => vec![
-                                        PortDefinition::new_output_execution_port() ],
+            NodeKind::Loop( state ) => state.get_output_port_definitions(),
             NodeKind::Wait => vec![
                                         PortDefinition::new_output_execution_port() ],
             NodeKind::List( state ) => state.get_output_port_definitions(),

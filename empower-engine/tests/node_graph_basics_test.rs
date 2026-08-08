@@ -1,7 +1,7 @@
-use empower_engine::{self, node_graph::{node::NodeKind2}};
+use empower_engine::{self, node_graph::{node::NodeKind}};
 
 #[test]
-fn projet_creation()
+fn project_creation() // @TODO, move this into a different file
 {
     let _ = empower_engine::project::Project::new();
 }
@@ -20,7 +20,7 @@ fn add_connection_works()
     let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
     let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-    let print_node_handle = entry_node_graph.add_node(NodeKind2::Print, None);
+    let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
 
     let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
 }

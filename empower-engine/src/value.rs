@@ -20,7 +20,7 @@ impl Value
         match self
         {
             Value::Integer( integer ) => integer.to_string(),
-            Value::Float( float ) => float.to_string(),
+            Value::Float( float ) => format!("{:?}", float), // This is to use the Debug methods instead, an maintain decimal points for whole numbers
             Value::Bool( boolean ) => boolean.to_string(),
             Value::Image( asset_id ) => if asset_id.is_none() { "none".to_string() } else { asset_id.unwrap().to_string() },
             Value::Point2d( x, y) => format!("[{},{}]", x, y),

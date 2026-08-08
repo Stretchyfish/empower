@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, SubGraphState}};
+use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, SubGraphState}};
 
 use super::GraphViewportAction;
 
@@ -24,7 +24,7 @@ static NODE_TYPES: &[NodeType] = &[
     NodeType
     {
         name: "loop",
-        constructor: || NodeKind::Loop,
+        constructor: || NodeKind::Loop ( LoopMode::Forever ),
     },
     NodeType
     {

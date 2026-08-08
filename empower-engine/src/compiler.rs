@@ -6,6 +6,7 @@ use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
 use crate::node_graph::node::NodeKind;
+use crate::node_graph::node::node_kind::LoopMode;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -191,12 +192,33 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
             ctx.trace_instructions(node_key, &vec![next_instruction_address, jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
         },
-        NodeKind::Loop =>
+        NodeKind::Loop( mode ) =>
         {
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+            match mode
+            {
+                LoopMode::Forever =>
+                {
+                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-            ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
-            ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+                    ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
+                    ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+                },
+                LoopMode::Range =>
+                {
+                    ctx.add_instruction( Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
+                    ctx.add_instruction( Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
+                    let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( Instruction::JumpIfTrue(0, output_register_addresses [0]));
+                    ctx.trace_instructions_from(node_key, &next_instruction_address);
+
+                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+
+                    ctx.add_instruction( Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
+                    ctx.add_instruction( Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
+                    ctx.trace_instructions_from(node_key, &(ctx.get_latest_instruction_address() - 1));
+
+                    ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
+                },
+            }
         },
         NodeKind::Wait =>
         {
