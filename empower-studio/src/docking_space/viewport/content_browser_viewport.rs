@@ -1,14 +1,14 @@
-use std::{fs, path::PathBuf};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
 use crate::{docking_space::{Viewport, viewport::GraphViewport}, studio_context::StudioContext, user_inputs::UserInputs};
-use empower_engine::assets::AssetKind;
+use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, AssetMeta};
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ContentBrowserViewport
 {
-    #[serde(skip)]
-    current_directory: PathBuf,
+    #[serde(skip, default = "default_content_browser_directory")]
+    current_directory: AssetId,
 
     #[serde(skip)]
     selected_asset: Option<PathBuf>,
@@ -20,12 +20,17 @@ pub struct ContentBrowserViewport
     renaming_file: Option<ViewportRenameState>,
 }
 
+fn default_content_browser_directory() -> AssetId
+{
+    ASSET_FOLDER_ASSET_ID
+}
+
 impl ContentBrowserViewport
 {
     pub fn new() -> Self
     {
         Self {
-            current_directory: PathBuf::from("assets"), 
+            current_directory: default_content_browser_directory(), 
             selected_asset: None, 
             quick_menu: None,
 
@@ -40,148 +45,73 @@ pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui
 
     if ui.max_rect().contains(user_inputs.mouse_position)
     {
-        content_browser_viewport.process_user_inputs(user_inputs, studio_context);
+        // content_browser_viewport.process_user_inputs(user_inputs, studio_context);
     }
 
-    let project_directory = studio_context.get_project().location.clone();
-
-    let directory_read = fs::read_dir(&project_directory.join(&content_browser_viewport.current_directory));
-
-    if directory_read.is_err()
-    {
-        content_browser_viewport.current_directory = PathBuf::from("assets");
-        return;
-    }
-
-    // let directory_entries = match directory_entries // Previous error handling code, might be reusable
-    // {
-    //     Ok( entries ) => entries,
-    //     Err( error ) => 
-    //     {
-    //         match error.kind()
-    //         {
-    //             std::io::ErrorKind::NotFound => // This error is most likely to happen if the closed the application in a new folder in a temporary project
-    //             {
-    //                 self.current_directory = Some( self.known_project_directory.join("assets") );
-    //                 println!("Overwritting current directory in content browser due to impossible access when loading layout");
-    //                 return;
-    //             }, 
-    //             _ => { panic!("Error in moving file: {}", error.kind().to_string()); },
-    //         }
-    //     }
-    // };
+    let mut actions = VecDeque::new();
     
-    content_browser_viewport.show_asset_import_and_directory_navigation(ui, studio_context, &project_directory);
-    content_browser_viewport.show_breadcrum_path(ui, &project_directory);
+    content_browser_viewport.show_asset_import_and_directory_navigation(ui, studio_context);
+    content_browser_viewport.show_breadcrum_path(ui, studio_context, &mut actions);
     ui.separator();
 
-    content_browser_viewport.show_content_browser_elements_panel(ui, studio_context, user_inputs, &project_directory, directory_read.unwrap());
+    content_browser_viewport.show_content_browser_elements_panel(ui, studio_context, user_inputs, &mut actions);
 
     if developer_mode
     {
         show_content_browser_debug_info(content_browser_viewport, ui);
     }
+
+    content_browser_viewport.process_actions(actions);
 }
 
 impl ContentBrowserViewport
 {
-    pub fn show_asset_import_and_directory_navigation(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, project_directory: &PathBuf)
+    pub fn show_asset_import_and_directory_navigation(&self, ui: &mut egui::Ui, studio_context: &mut StudioContext)
     {
-        let full_directory_path = project_directory.join(&self.current_directory);
-
         ui.horizontal(|ui|
         {
             if ui.button("import asset").clicked()
             {
-                let file_path = rfd::FileDialog::new() // @TODO, consider if this should be in the project struct instead of the viewport?
-                                                    .set_title("Import asset") // @TODO, this should probably be in the action of import asset
-                                                    .pick_file();
 
-                // let file_path: Option<PathBuf> = None; // @TODO, fix this!
-
-                if file_path.is_some()
-                {
-                    let import_location = full_directory_path.join(file_path.as_ref().unwrap().file_name().unwrap());
-                    let file_copy_result = fs::copy(file_path.as_ref().unwrap(), &import_location);
-
-                    match file_copy_result
-                    {
-                        Ok(_) => {},
-                        Err( error ) => println!("Error when copying imported file: {}", error.kind().to_string()),
-                    }
-
-                    studio_context.get_project_mut().assets.import_asset(&import_location);
-                }
             }
 
             if ui.button("👈").clicked()
             {
-                // // @TODO, find a better approach
-                // if self.directory_distory.len() > 10
-                // {
-                //     self.directory_distory.pop_front();
-                // }
-                // self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
-
-                // // @TODO, this whole thing is very dangerous, find a better way
-                // self.current_directory.as_mut().unwrap().pop();
             }
 
             if ui.button("👉").clicked()
             {
-                // self.current_directory = self.directory_distory.pop_front();
             }
-            // if !self.directory_distory.is_empty()
-            // {
-            // }
         });
     }
 
-    pub fn show_breadcrum_path(&mut self, ui: &mut egui::Ui, project_directory: &PathBuf)
+    pub fn show_breadcrum_path(&self, ui: &mut egui::Ui, studio_context: &StudioContext, actions: &mut VecDeque<ContentBrowserViewportAction>)
     {
+        let meta = &studio_context.get_project().assets.meta;
+        
         ui.horizontal(|ui|
         {
-            // let project_path = project_directory.clone();
-
-
-
-            // let binding = self.current_directory.clone();
-            // let relative_path = match binding.strip_prefix(project_path)
-            // {
-            //     Ok( path ) => path,
-            //     Err( error ) => panic!("Unable to get a relative path to project, directories does not match, error: {}", error.to_string()),
-            // };
-            // 
-
-            // let mut poped_project_path = project_directory.clone();
-            // poped_project_path.pop();
-
             let mut clicked_breadcrum_path_button = None;
 
-            let project_name_breadcrum_button = egui::Button::new(project_directory.file_name().unwrap().to_string_lossy()).frame(false); // As the project name is not in the relative path, its added seperately
-            if ui.add(project_name_breadcrum_button).clicked()
+            let mut breadcrum_path_assets = VecDeque::new();
+
+            let mut next_meta_to_check = meta.get(&self.current_directory).expect("Tried to access current directory, but it doesn't exist");
+            while next_meta_to_check.parent.is_some()
             {
-                clicked_breadcrum_path_button = Some( PathBuf::new() );
+                breadcrum_path_assets.push_front(next_meta_to_check);
+                next_meta_to_check = meta.get(&next_meta_to_check.parent.unwrap()).unwrap();
             }
-            ui.label("/");
+            breadcrum_path_assets.push_front(next_meta_to_check);
 
-            let mut accumelating_path = PathBuf::new();
-
-            for path_component in self.current_directory.components().filter_map(|comp| match comp
-                {
-                    std::path::Component::Normal(n) => Some(n),
-                    _ => panic!("incompatible path"),
-                })
+            for folder_asset in breadcrum_path_assets 
             {
-                accumelating_path.push(path_component);
-
-                let breadcrum_path_button = egui::Button::new(path_component.to_string_lossy()).frame(false);
+                let breadcrum_path_button = egui::Button::new(folder_asset.name.clone()).frame(false);
 
                 let breadcrum_path_response = ui.add(breadcrum_path_button);
 
                 if breadcrum_path_response.clicked()
                 {
-                    clicked_breadcrum_path_button = Some( accumelating_path.clone() );
+                    clicked_breadcrum_path_button = Some( folder_asset.id );
                 }
 
                 ui.label("/");
@@ -189,28 +119,36 @@ impl ContentBrowserViewport
 
             if clicked_breadcrum_path_button.is_some()
             {
-                self.current_directory = clicked_breadcrum_path_button.as_ref().unwrap().clone();
+                actions.push_back( ContentBrowserViewportAction::ChangeDirectory( clicked_breadcrum_path_button.as_ref().unwrap().clone() ));
             }
         });
     }
 
-    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs, project_directory: &PathBuf, directory_entries: fs::ReadDir)
+    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs, actions: &mut VecDeque<ContentBrowserViewportAction>)
     {
+        let meta = &studio_context.get_project().assets.meta;
+
         egui::panel::CentralPanel::default().show_inside(ui, |ui|
         {
             if self.quick_menu.is_some()
             {
-                self.show_quick_feature_window(ui, studio_context, &self.quick_menu.unwrap());
+                self.show_quick_feature_window(ui, &self.quick_menu.unwrap());
             }
+
+
+            // @TODO, need too add a sorting based way of showing elements
             
             // self.hovering_asset = None; // This will get set back to the actually hovered asset if the user is still hovering in show_asset
             egui::ScrollArea::vertical().show(ui, |ui|
             {
                 ui.horizontal_wrapped(|ui|
                 {
-                    for entry in directory_entries.flatten()
+                    for asset_meta in meta.values()
                     {
-                        self.show_asset(ui, &entry.path(), studio_context, project_directory);
+                        if asset_meta.parent == Some( self.current_directory )
+                        {
+                            self.show_asset2(ui, asset_meta, actions);
+                        }
                     }
                 });
             });
@@ -220,6 +158,42 @@ impl ContentBrowserViewport
         {
             return;
         }
+    }
+
+    fn show_asset2(&self, ui: &mut egui::Ui, asset_meta: &AssetMeta, actions: &mut VecDeque<ContentBrowserViewportAction>)
+    {
+        ui.vertical(|ui|
+        {
+            ui.allocate_ui_with_layout(
+                                        egui::Vec2::new(70.0, 0.0), 
+                                        egui::Layout::top_down(egui::Align::Center),
+                                        |ui|
+            {
+                let asset_icon = match asset_meta.kind
+                {
+                    AssetKind::Folder => String::from("📁"),
+                    _ => String::from("📃"),
+                };
+
+                let selectable_label = egui::Button::selectable(false, egui::RichText::new(asset_icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
+                let selectable_asset_response = ui.add(selectable_label).on_hover_text(asset_meta.name.clone());
+
+                let potentially_shortened_asset_name = shorten_text(asset_meta.name.clone(), 11);
+                ui.label(potentially_shortened_asset_name);
+
+                if selectable_asset_response.double_clicked()
+                {
+                    match asset_meta.kind
+                    {
+                        AssetKind::Folder =>
+                        {
+                            actions.push_back( ContentBrowserViewportAction::ChangeDirectory( asset_meta.id ) );
+                        },
+                        _ => {},
+                    }
+                }
+            });
+        });
     }
 
     fn show_asset(&mut self, ui: &mut egui::Ui, asset_path: &PathBuf, studio_context: &mut StudioContext, project_path: &PathBuf)
@@ -291,7 +265,7 @@ impl ContentBrowserViewport
                         // }
                         // self.directory_distory.push_back(self.current_directory.as_ref().unwrap().clone());
 
-                        self.current_directory = asset_relative_path;
+                        // self.current_directory = asset_relative_path;
                         // self.selected_asset = None;
                         return;
                     }
@@ -305,11 +279,11 @@ impl ContentBrowserViewport
 
                     let asset_meta = studio_context.get_project().assets.meta.get(asset_id.unwrap()).unwrap();
 
-                    match asset_meta.kind
-                    {
-                        AssetKind::Graph => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::Graph { graph_viewport: GraphViewport::new(asset_meta.id) }) },
-                        AssetKind::Image => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::ImageViewer { image_asset_id: asset_meta.id }) },
-                    }
+                    // match asset_meta.kind
+                    // {
+                    //     AssetKind::NodeGraph => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::Graph { graph_viewport: GraphViewport::new(asset_meta.id) }) },
+                    //     AssetKind::Image => { studio_context.request_new_viewport_at_first_docking_leaf( Viewport::ImageViewer { image_asset_id: asset_meta.id }) },
+                    // }
 
                     return;
                 }
@@ -352,7 +326,7 @@ impl ContentBrowserViewport
             original_path_parrent_directory.pop(); 
             let new_path = original_path_parrent_directory.join(rename_file_state.potential_new_name.clone());
             
-            project.assets.rename_file(original_path, new_path);
+            // project.assets.rename_file(original_path, new_path);
 
             self.renaming_file = None;
             return;
@@ -378,13 +352,13 @@ impl ContentBrowserViewport
         
     }
 
-    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, mouse_position_when_activated: &egui::Pos2)
+    fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, mouse_position_when_activated: &egui::Pos2)
     {
-        let project = studio_context.get_project_mut();
+        // let project = studio_context.get_project_mut();
 
-        let project_directory = &project.location;
-        let full_directory_path = project_directory.join(&self.current_directory);
-        let assets = &mut project.assets;
+        // let project_directory = &project.location;
+        // let full_directory_path = project_directory.join(&self.current_directory);
+        // let assets = &mut project.assets;
         
         egui::Window::new("")
         .current_pos(egui::Pos2 {
@@ -407,21 +381,21 @@ impl ContentBrowserViewport
             
             if ui.add(egui::Button::new("create folder").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let new_asset_path = full_directory_path.join("unamed");
-                assets.create_folder(&new_asset_path);
+                // let new_asset_path = full_directory_path.join("unamed");
+                // assets.create_folder(&new_asset_path);
 
-                self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
+                // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) );
                 self.quick_menu = None;
             };
 
             if ui.add(egui::Button::new("create graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let asset_id = assets.create_asset(project_directory, &self.current_directory, AssetKind::Graph, None);
+                // let asset_id = assets.create_asset(project_directory, &self.current_directory, AssetKind::Graph, None);
 
-                if asset_id.is_some()
-                {
-                    // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) ); // @TODO, add this back, but it needs to use asset id instead of path
-                }
+                // if asset_id.is_some()
+                // {
+                //     // self.renaming_file = Some( ViewportRenameState::new( &new_asset_path ) ); // @TODO, add this back, but it needs to use asset id instead of path
+                // }
 
                 self.quick_menu = None;
             };
@@ -436,6 +410,21 @@ impl ContentBrowserViewport
                 };
             }
         });
+    }
+
+    pub fn process_actions(&mut self, actions: VecDeque<ContentBrowserViewportAction>)
+    {
+        for action in actions
+        {
+            match action
+            {
+                ContentBrowserViewportAction::ChangeDirectory( new_directory_asset_id ) =>
+                {
+                    self.current_directory = new_directory_asset_id;
+                },
+            }
+        }
+        
     }
 }
 
@@ -503,4 +492,10 @@ fn show_content_browser_debug_info(content_browser_viewport: &mut ContentBrowser
         egui::FontId::monospace(14.0),
         egui::Color32::RED,
     );
+}
+
+#[derive(Clone)]
+pub enum ContentBrowserViewportAction
+{
+    ChangeDirectory( AssetId ),
 }

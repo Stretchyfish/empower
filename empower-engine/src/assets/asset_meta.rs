@@ -1,7 +1,5 @@
 use super::AssetId;
 
-use std::path::PathBuf;
-
 use super::asset_kind::AssetKind;
 
 use serde::{Deserialize, Serialize};
@@ -10,7 +8,8 @@ use serde::{Deserialize, Serialize};
 pub struct AssetMeta
 {
     pub id: AssetId,
-    pub relative_path: PathBuf,
+    pub name: String,
+    pub parent: Option<AssetId>,
     pub kind: AssetKind,
 }
 
@@ -18,6 +17,6 @@ impl AssetMeta
 {
     pub fn to_string(&self) -> String
     {
-        format!("{}, {}, {}", self.id, self.relative_path.to_string_lossy(), self.kind.to_string())
+        format!("{}, {}, {:?}, {}", self.id, self.name, self.parent, self.kind.to_string())
     }
 }

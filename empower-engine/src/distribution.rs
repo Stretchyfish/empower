@@ -2,13 +2,13 @@ use std::{fs, path::PathBuf};
 
 use once_cell::sync::Lazy;
 
-use crate::{compiler::Program, project::Project};
+use crate::{assets::Assets, compiler::Program, project::Project};
 
 pub static TEMP_PROJECT_LOCATION: Lazy<PathBuf> = Lazy::new(|| {
     std::env::temp_dir().join("empower_studio_temporary_project")
 });
 
-pub fn create_temporary_project_directory(project: &Project) -> Result<(), String>
+pub fn create_temporary_project(project: &Project) -> Result<(), String>
 {
     let temp_directory_root = TEMP_PROJECT_LOCATION.to_path_buf();
 
@@ -56,6 +56,21 @@ pub fn create_temporary_project_directory(project: &Project) -> Result<(), Strin
     Ok(())
 }
 
+pub fn save_project(project: &Project)
+{
+    
+}
+
+pub fn save_assets(assets: &Assets)
+{
+    
+}
+
+pub fn load_project() -> Project
+{
+    Project::new()
+}
+ 
 #[derive(Clone)]
 pub struct ExportConfig
 {

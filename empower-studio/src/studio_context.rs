@@ -68,7 +68,6 @@ impl StudioContext
 
             cache: Cache::load(),
             requests: VecDeque::new(),
-
         }
     }
 
@@ -329,27 +328,31 @@ impl StudioContext
             Request::SaveStudio => { self.save_studio(); },
             Request::SaveProject =>
             {
-                let _ = self.project.save();
-                self.cache.add_previous_project(self.project.location.clone());
+                // let _ = self.project.save();
+                // self.cache.add_previous_project(self.project.location.clone());
             },
             Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
-            Request::LoadProject => {  self.project.load(); },
-            Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
+            Request::LoadProject => {
+                // self.project.load();
+            },
+            Request::LoadSpecificProject { project_path } => {
+                // self.project.load_specific_path(project_path);
+            },
             Request::LoadStudio => { self.load_studio(); },
             Request::Compile => { self.compile(); },
             Request::StartExecute => { let _ = self.start_execution(); },
             Request::StopExecute => { self.stop_execution(); },
             Request::ExportProject { config } => {
 
-                let _ = self.project.save();
-                self.compile(); // @TODO, double check, this behavior might appear twice
+                // let _ = self.project.save();
+                // self.compile(); // @TODO, double check, this behavior might appear twice
 
-                if self.compile_result.is_none()
-                {
-                    panic!("Cannot export project, as it is not build yet");
-                }
+                // if self.compile_result.is_none()
+                // {
+                //     panic!("Cannot export project, as it is not build yet");
+                // }
                 
-                let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
+                // let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
             },
         }
     }

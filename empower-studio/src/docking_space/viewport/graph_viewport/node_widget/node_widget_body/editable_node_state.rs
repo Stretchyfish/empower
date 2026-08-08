@@ -59,7 +59,7 @@ impl EditableNodeState
             },
             EditableNodeState::SubGraph( asset_id ) =>
             {
-                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Graph, node_graph_names, image_names);
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, node_graph_names, image_names);
                 let (_, height2) = draw_graph_viewport_opener(ui, &(edit_position + egui::vec2(0.0, height1 + NODE_EDIT_GAP)), asset_id, graph_viewport_actions);
 
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
@@ -238,8 +238,10 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
 
     let label = match asset_kind
     {
-        AssetKind::Graph => "graph",
+        AssetKind::NodeGraph => "graph",
         AssetKind::Image => "image",
+        AssetKind::Folder => todo!(),
+        AssetKind::Json => todo!(),
     };
 
     let painted_text = ui.painter().text(
@@ -254,8 +256,10 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
     {
         match asset_kind
         {
-            AssetKind::Graph => node_graph_names.get(&selected_asset.unwrap()).unwrap().clone(), // @TODO, take a second look at this, might be dangerous,
+            AssetKind::NodeGraph => node_graph_names.get(&selected_asset.unwrap()).unwrap().clone(), // @TODO, take a second look at this, might be dangerous,
             AssetKind::Image => image_names.get(&selected_asset.unwrap()).unwrap().clone(),
+            AssetKind::Folder => todo!(),
+            AssetKind::Json => todo!(),
         }
     }
     else
@@ -273,8 +277,10 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
 
     let sorted_names: BTreeMap<&AssetId, &String> = match asset_kind
     {
-        AssetKind::Graph => node_graph_names.into_iter().collect(),
+        AssetKind::NodeGraph => node_graph_names.into_iter().collect(),
         AssetKind::Image => image_names.into_iter().collect(),
+        AssetKind::Folder => todo!(),
+        AssetKind::Json => todo!(),
     };
 
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
