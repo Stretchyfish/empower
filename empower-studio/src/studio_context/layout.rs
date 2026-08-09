@@ -30,7 +30,7 @@ impl Layout
     {
         let mut new_default_layout = Self::new();
         
-        let graph_viewport_name = new_default_layout.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 1 ) } ); // entry graph should always have this id
+        let graph_viewport_name = new_default_layout.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 3 ) } ); // entry graph should always have this id
 
         let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::Terminal { terminal_viewport: TerminalViewport::new() } );
         let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() });

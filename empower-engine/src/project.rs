@@ -1,6 +1,5 @@
 use crate::{assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, Assets}, distribution::TEMP_PROJECT_LOCATION};
 use std::path::PathBuf;
-use std::fs;
 
 mod project_settings;
 use project_settings::ProjectSettings;
@@ -18,7 +17,6 @@ pub struct Project
 {
     pub name: String,
     pub state: ProjectState,
-    pub location: PathBuf,
 
     pub assets: Assets,
     pub settings: ProjectSettings,
@@ -38,7 +36,6 @@ impl Project
         {
             name: default_project_name,
             state: ProjectState::Temporary, 
-            location: TEMP_PROJECT_LOCATION.to_path_buf(),
             assets: assets,
             settings: ProjectSettings::new(),
             entry_graph: entry_graph_asset_id.expect("failed to create entry_graph"), // This should be safe in new projects

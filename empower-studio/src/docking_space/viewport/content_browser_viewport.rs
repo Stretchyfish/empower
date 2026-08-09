@@ -1,6 +1,6 @@
-use std::{collections::VecDeque, fs, path::PathBuf};
+use std::{collections::VecDeque, path::PathBuf};
 
-use crate::{docking_space::{Viewport, viewport::GraphViewport}, studio_context::StudioContext, user_inputs::UserInputs};
+use crate::{studio_context::StudioContext, user_inputs::UserInputs};
 use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, AssetMeta};
 use serde::{Serialize, Deserialize};
 
@@ -11,7 +11,10 @@ pub struct ContentBrowserViewport
     current_directory: AssetId,
 
     #[serde(skip)]
-    selected_asset: Option<PathBuf>,
+    hovered_asset: Option<AssetId>,
+
+    #[serde(skip)]
+    selected_asset: Option<AssetId>,
 
     #[serde(skip)]
     quick_menu: Option<egui::Pos2>,
@@ -31,6 +34,7 @@ impl ContentBrowserViewport
     {
         Self {
             current_directory: default_content_browser_directory(), 
+            hovered_asset: None,
             selected_asset: None, 
             quick_menu: None,
 
@@ -48,7 +52,7 @@ pub fn show(content_browser_viewport: &mut ContentBrowserViewport, ui: &mut egui
         // content_browser_viewport.process_user_inputs(user_inputs, studio_context);
     }
 
-    let mut actions = VecDeque::new();
+    let mut actions = Vec::new();
     
     content_browser_viewport.show_asset_import_and_directory_navigation(ui, studio_context);
     content_browser_viewport.show_breadcrum_path(ui, studio_context, &mut actions);
@@ -85,7 +89,7 @@ impl ContentBrowserViewport
         });
     }
 
-    pub fn show_breadcrum_path(&self, ui: &mut egui::Ui, studio_context: &StudioContext, actions: &mut VecDeque<ContentBrowserViewportAction>)
+    pub fn show_breadcrum_path(&self, ui: &mut egui::Ui, studio_context: &StudioContext, actions: &mut Vec<ContentBrowserViewportAction>)
     {
         let meta = &studio_context.get_project().assets.meta;
         
@@ -119,12 +123,12 @@ impl ContentBrowserViewport
 
             if clicked_breadcrum_path_button.is_some()
             {
-                actions.push_back( ContentBrowserViewportAction::ChangeDirectory( clicked_breadcrum_path_button.as_ref().unwrap().clone() ));
+                actions.push( ContentBrowserViewportAction::ChangeDirectory( clicked_breadcrum_path_button.as_ref().unwrap().clone() ));
             }
         });
     }
 
-    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs, actions: &mut VecDeque<ContentBrowserViewportAction>)
+    pub fn show_content_browser_elements_panel(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: &UserInputs, actions: &mut Vec<ContentBrowserViewportAction>)
     {
         let meta = &studio_context.get_project().assets.meta;
 
@@ -139,6 +143,7 @@ impl ContentBrowserViewport
             // @TODO, need too add a sorting based way of showing elements
             
             // self.hovering_asset = None; // This will get set back to the actually hovered asset if the user is still hovering in show_asset
+            let mut hovered_asset = false;
             egui::ScrollArea::vertical().show(ui, |ui|
             {
                 ui.horizontal_wrapped(|ui|
@@ -147,11 +152,16 @@ impl ContentBrowserViewport
                     {
                         if asset_meta.parent == Some( self.current_directory )
                         {
-                            self.show_asset2(ui, asset_meta, actions);
+                            self.show_asset2(ui, asset_meta, &mut hovered_asset, actions);
                         }
                     }
                 });
             });
+
+            if self.hovered_asset.is_some() && hovered_asset == false
+            {
+                actions.push( ContentBrowserViewportAction::NoLongerHoveringAssets );
+            }
         });
 
         if !ui.max_rect().contains(user_inputs.mouse_position)
@@ -160,7 +170,7 @@ impl ContentBrowserViewport
         }
     }
 
-    fn show_asset2(&self, ui: &mut egui::Ui, asset_meta: &AssetMeta, actions: &mut VecDeque<ContentBrowserViewportAction>)
+    fn show_asset2(&self, ui: &mut egui::Ui, asset_meta: &AssetMeta, hovered_asset: &mut bool, actions: &mut Vec<ContentBrowserViewportAction>)
     {
         ui.vertical(|ui|
         {
@@ -175,11 +185,24 @@ impl ContentBrowserViewport
                     _ => String::from("📃"),
                 };
 
-                let selectable_label = egui::Button::selectable(false, egui::RichText::new(asset_icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
+                let asset_is_selected_or_hovered = Some( asset_meta.id ) == self.selected_asset || Some( asset_meta.id ) == self.hovered_asset;
+
+                let selectable_label = egui::Button::selectable(asset_is_selected_or_hovered, egui::RichText::new(asset_icon.clone()).font(egui::FontId::proportional(70.0))).sense(egui::Sense::click_and_drag());
                 let selectable_asset_response = ui.add(selectable_label).on_hover_text(asset_meta.name.clone());
 
                 let potentially_shortened_asset_name = shorten_text(asset_meta.name.clone(), 11);
                 ui.label(potentially_shortened_asset_name);
+
+                if selectable_asset_response.hovered()
+                {
+                    actions.push( ContentBrowserViewportAction::HoveringAsset( asset_meta.id ));
+                    *hovered_asset = true;
+                }
+
+                if selectable_asset_response.clicked()
+                {
+                    actions.push( ContentBrowserViewportAction::SelectedAsset( asset_meta.id ) );
+                }
 
                 if selectable_asset_response.double_clicked()
                 {
@@ -187,7 +210,7 @@ impl ContentBrowserViewport
                     {
                         AssetKind::Folder =>
                         {
-                            actions.push_back( ContentBrowserViewportAction::ChangeDirectory( asset_meta.id ) );
+                            actions.push( ContentBrowserViewportAction::ChangeDirectory( asset_meta.id ) );
                         },
                         _ => {},
                     }
@@ -201,7 +224,7 @@ impl ContentBrowserViewport
         let mut is_asset_selected = false;
         if self.selected_asset.is_some()
         {
-            is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
+            // is_asset_selected = *self.selected_asset.as_ref().unwrap() == *asset_path;
         }
 
         let mut file_is_being_renamed = false;
@@ -250,7 +273,7 @@ impl ContentBrowserViewport
 
                 if selectable_asset_response.clicked()
                 {
-                    self.selected_asset = Some( asset_relative_path.clone() );
+                    // self.selected_asset = Some( asset_relative_path.clone() );
                 }
 
                 if selectable_asset_response.double_clicked()
@@ -270,14 +293,14 @@ impl ContentBrowserViewport
                         return;
                     }
 
-                    let asset_id = studio_context.get_project().assets.path_to_asset_id.get(&asset_relative_path);
+                    // let asset_id = studio_context.get_project().assets.path_to_asset_id.get(&asset_relative_path);
 
-                    if asset_id.is_none()
-                    {
-                        panic!("Content browser tried to access an id which is not in the asset"); // @TODO, find a proper way of handling this
-                    }
+                    // if asset_id.is_none()
+                    // {
+                    //     panic!("Content browser tried to access an id which is not in the asset"); // @TODO, find a proper way of handling this
+                    // }
 
-                    let asset_meta = studio_context.get_project().assets.meta.get(asset_id.unwrap()).unwrap();
+                    // let asset_meta = studio_context.get_project().assets.meta.get(asset_id.unwrap()).unwrap();
 
                     // match asset_meta.kind
                     // {
@@ -405,14 +428,14 @@ impl ContentBrowserViewport
                 if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
                 {
                     // @TODO, more dangerous unwraps without checks here
-                    self.renaming_file = Some( ViewportRenameState::new( self.selected_asset.as_ref().unwrap() ) );
+                    // self.renaming_file = Some( ViewportRenameState::new( self.selected_asset.as_ref().unwrap() ) );
                     self.quick_menu = None;
                 };
             }
         });
     }
 
-    pub fn process_actions(&mut self, actions: VecDeque<ContentBrowserViewportAction>)
+    pub fn process_actions(&mut self, actions: Vec<ContentBrowserViewportAction>)
     {
         for action in actions
         {
@@ -421,6 +444,18 @@ impl ContentBrowserViewport
                 ContentBrowserViewportAction::ChangeDirectory( new_directory_asset_id ) =>
                 {
                     self.current_directory = new_directory_asset_id;
+                },
+                ContentBrowserViewportAction::HoveringAsset( hovered_asset_id ) =>
+                {
+                    self.hovered_asset = Some( hovered_asset_id );
+                },
+                ContentBrowserViewportAction::NoLongerHoveringAssets =>
+                {
+                    self.hovered_asset = None;
+                },
+                ContentBrowserViewportAction::SelectedAsset( selected_asset_id ) =>
+                {
+                    self.selected_asset = Some(selected_asset_id);
                 },
             }
         }
@@ -498,4 +533,7 @@ fn show_content_browser_debug_info(content_browser_viewport: &mut ContentBrowser
 pub enum ContentBrowserViewportAction
 {
     ChangeDirectory( AssetId ),
+    HoveringAsset( AssetId ),
+    NoLongerHoveringAssets,
+    SelectedAsset ( AssetId ),
 }

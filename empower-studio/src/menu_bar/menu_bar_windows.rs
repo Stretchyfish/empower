@@ -12,7 +12,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         {
             if ui.button("Graph Viewport").clicked()
             {
-                studio_context.request_new_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 1 ) } ); // @TODO, find a better way to handle the graph asset id
+                studio_context.request_new_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 3 ) } ); // @TODO, find a better way to handle the graph asset id
             }
             if ui.button("Terminal Viewport").clicked()
             {

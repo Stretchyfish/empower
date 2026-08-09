@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetKind}, node_graph::node::{NodeKind, node_kind::LoopMode}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::node::{NodeKind, node_kind::LoopMode}, value::Value};
 
 use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
 
@@ -36,7 +36,7 @@ impl EditableNodeState
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> ShowEditableNodeStateResult 
+    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, meta: &HashMap<AssetId, AssetMeta>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> ShowEditableNodeStateResult 
     {
         match self
         {
@@ -54,12 +54,12 @@ impl EditableNodeState
             },
             EditableNodeState::Image( asset_id ) =>
             {
-                let (changed, _) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, node_graph_names, image_names);
+                let (changed, _) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, meta);
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP ) }
             },
             EditableNodeState::SubGraph( asset_id ) =>
             {
-                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, node_graph_names, image_names);
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, meta);
                 let (_, height2) = draw_graph_viewport_opener(ui, &(edit_position + egui::vec2(0.0, height1 + NODE_EDIT_GAP)), asset_id, graph_viewport_actions);
 
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
@@ -232,7 +232,7 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     (response.changed(), 40.0 )
 }
 
-fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, node_graph_names: &HashMap<AssetId, String>, image_names: &HashMap<AssetId, String>) -> (bool, f32)
+fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, meta: &HashMap<AssetId, AssetMeta>) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -252,15 +252,11 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         egui::Color32::WHITE,
     );
 
+    let sorted_alterntive_asset_names: BTreeMap<&AssetId, String> = meta.iter().filter(|(_, m)| m.kind == *asset_kind ).map(|(k, m)| (k, m.name.clone()) ).collect();
+
     let current_asset_name = if selected_asset.is_some()
     {
-        match asset_kind
-        {
-            AssetKind::NodeGraph => node_graph_names.get(&selected_asset.unwrap()).unwrap().clone(), // @TODO, take a second look at this, might be dangerous,
-            AssetKind::Image => image_names.get(&selected_asset.unwrap()).unwrap().clone(),
-            AssetKind::Folder => todo!(),
-            AssetKind::Json => todo!(),
-        }
+        sorted_alterntive_asset_names.get(&selected_asset.unwrap()).unwrap().clone()
     }
     else
     {
@@ -275,20 +271,12 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         egui::Vec2::INFINITY
     );
 
-    let sorted_names: BTreeMap<&AssetId, &String> = match asset_kind
-    {
-        AssetKind::NodeGraph => node_graph_names.into_iter().collect(),
-        AssetKind::Image => image_names.into_iter().collect(),
-        AssetKind::Folder => todo!(),
-        AssetKind::Json => todo!(),
-    };
-
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
     egui::ComboBox::from_id_salt("asset selector") // @TODO, make ids unique, otherwise it will have conflicts later
     .selected_text( current_asset_name )
     .show_ui(&mut child_ui, |ui|
     {
-        for (id, text) in sorted_names
+        for (id, text) in sorted_alterntive_asset_names
         {
             if id == viewport_graph_id
             {

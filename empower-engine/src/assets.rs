@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap};
 
 use crate::node_graph::NodeGraph;
 
@@ -25,7 +25,6 @@ pub struct Assets
     pub loaded_assets: LoadedAssets,
 
     pub meta: HashMap<AssetId, AssetMeta>,
-    pub path_to_asset_id: HashMap<PathBuf, AssetId>,
 }
 
 impl Assets
@@ -42,7 +41,6 @@ impl Assets
             loaded_assets: LoadedAssets::new(),
 
             meta,
-            path_to_asset_id: HashMap::new(),
         }
     }
 
@@ -110,7 +108,7 @@ impl Assets
         images
     }
 
-    pub fn get_node_graph_naive(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look
+    pub fn get_node_graph(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look
     {
         self.loaded_assets.loaded_node_graphs.get(id)
     }

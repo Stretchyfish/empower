@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, node_graph::port::PortDefinition, value::Value};
+use crate::{node_graph::port::PortDefinition, value::Value};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum LoopMode

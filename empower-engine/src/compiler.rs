@@ -120,7 +120,7 @@ pub fn compile(project: &mut Project, settings: &CompileSettings) -> Result<Comp
 
 pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project) -> Result<(), String>
 {
-    let node_graph = project.assets.get_node_graph_naive(&graph_id).unwrap();
+    let node_graph = project.assets.get_node_graph(&graph_id).unwrap();
 
     let integrity = check_node_graph_compile_integrity(node_graph);
 
