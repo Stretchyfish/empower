@@ -18,6 +18,14 @@ impl ImageState
         }
     }
 
+    pub fn from(image_asset_id: AssetId) -> Self
+    {
+        Self
+        {
+            image_asset_id: Some(image_asset_id),
+        }
+    }
+
     pub fn get_output_port_definitions(&self) -> Vec<PortDefinition>
     {
         if self.image_asset_id.is_none()

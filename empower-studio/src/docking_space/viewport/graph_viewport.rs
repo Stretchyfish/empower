@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{docking_space::viewport::graph_viewport::node_widget::NodeSyncResponse, studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::NodeKind, port::{PortDirection, PortKind}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
 mod node_widget;
@@ -99,8 +99,11 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &developer_mode);
 
+    graph_viewport.process_dragging_assets(user_inputs, studio_context, &mut graph_viewport_actions);
+
     graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
+
 
 }
 
@@ -243,6 +246,38 @@ impl GraphViewport
         if user_inputs.clicked_secondary_mouse_button
         {
             graph_viewport_actions.push_back( GraphViewportAction::SecondaryClickedBackground );
+        }
+    }
+
+    fn process_dragging_assets(&mut self, user_inputs: &UserInputs, studio_context: &mut StudioContext, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
+    {
+        let dragged_asset = studio_context.get_dragged_asset();
+
+        if user_inputs.released_primary_mouse_button && dragged_asset.is_some()
+        {
+            let asset_meta = studio_context.get_project().assets.meta.get(dragged_asset.as_ref().unwrap()).unwrap();
+
+            if asset_meta.id == self.graph_asset_id
+            {
+                studio_context.add_log( Log::info("cannot add own node graph to self"));
+                return;
+            }
+
+            let node_kind;
+            match asset_meta.kind
+            {
+                AssetKind::NodeGraph => { node_kind = NodeKind::SubGraph( SubGraphState::from( asset_meta.id ))},
+                AssetKind::Image => { node_kind = NodeKind::Image( ImageState::from(asset_meta.id))},
+                _ =>
+                {
+                    studio_context.add_log( Log::info("cannot add this asset type to node graph"));
+                    return;
+                }
+            }
+
+            graph_viewport_actions.push_back( GraphViewportAction::AddNodeToGraph { node_kind: node_kind, position: Some( self.mouse_scene_position_last_frame ) });
+
+            // @TODO, Stopping dragging is currently being handle in the content browser, is not a great long terms solution, but works for now.
         }
     }
 

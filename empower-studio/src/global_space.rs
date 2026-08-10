@@ -12,6 +12,8 @@ pub use export_panel::ExportPanel;
 mod asset_import_dialog;
 pub use asset_import_dialog::AssetImportDialog;
 
+mod dragged_asset;
+
 mod logging_space;
 
 
@@ -29,6 +31,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: 
 
     studio_context.set_windows(windows);
 
+    dragged_asset::show(ui, studio_context);
     logging_space::show(studio_context.get_logs(), ui);
 }
 

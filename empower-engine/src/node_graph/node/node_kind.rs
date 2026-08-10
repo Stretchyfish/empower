@@ -44,7 +44,7 @@ impl NodeKind
             NodeKind::Image(_) => "image",
             NodeKind::ShowImage => "show image",
             NodeKind::MathGraph => "math graph",
-            NodeKind::SubGraph(_) => "math graph",
+            NodeKind::SubGraph(_) => "sub graph",
         }
     }
 

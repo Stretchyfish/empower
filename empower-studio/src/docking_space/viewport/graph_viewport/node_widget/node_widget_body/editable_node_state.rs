@@ -50,19 +50,19 @@ impl EditableNodeState
             {
                 let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"test:".to_string(), text1, true);
                 let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), text2);
-                ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
+                ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) } // @TODO, this approach to size needs an overhaul
             },
             EditableNodeState::Image( asset_id ) =>
             {
-                let (changed, _) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, meta);
-                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP ) }
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, meta);
+                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 ) }
             },
             EditableNodeState::SubGraph( asset_id ) =>
             {
                 let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, meta);
                 let (_, height2) = draw_graph_viewport_opener(ui, &(edit_position + egui::vec2(0.0, height1 + NODE_EDIT_GAP)), asset_id, graph_viewport_actions);
 
-                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + height2 ) }
+                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) }
             },
         }
     }

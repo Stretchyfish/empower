@@ -41,6 +41,8 @@ pub struct StudioContext
 
     windows: Windows,
 
+    dragged_asset: Option<AssetId>,
+
     logs: VecDeque<Log>,
 
     cache: Cache,
@@ -63,6 +65,8 @@ impl StudioContext
             compile_result: None,
 
             windows: Windows::new(),
+
+            dragged_asset: None,
 
             logs: VecDeque::new(),
 
@@ -315,6 +319,21 @@ impl StudioContext
         self.requests.push_back( Request::ImportAsset );
     }
 
+    pub fn request_begin_dragging_asset(&mut self, asset_id: AssetId)
+    {
+        self.requests.push_back( Request::StartDraggingAsset { asset_id });
+    }
+
+    pub fn request_stop_dragging_asset(&mut self)
+    {
+        self.requests.push_back( Request::StopDraggingAsset );
+    }
+
+    pub fn get_dragged_asset(&self) -> &Option<AssetId>
+    {
+        &self.dragged_asset
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -360,6 +379,14 @@ impl StudioContext
                 // let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
             },
             Request::ImportAsset => { self.windows.asset_import_dialog.start_dialog(); },
+            Request::StartDraggingAsset { asset_id } =>
+            {
+                self.dragged_asset = Some( asset_id );
+            },
+            Request::StopDraggingAsset =>
+            {
+                self.dragged_asset = None;
+            },
         }
     }
 }

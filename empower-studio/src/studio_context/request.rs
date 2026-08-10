@@ -21,4 +21,6 @@ pub enum Request
     StopExecute,
     ExportProject { config: ExportConfig },
     ImportAsset,
+    StartDraggingAsset { asset_id: AssetId },
+    StopDraggingAsset,
 }

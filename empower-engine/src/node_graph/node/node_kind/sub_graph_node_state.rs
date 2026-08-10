@@ -17,5 +17,13 @@ impl SubGraphState
             graph_asset_id: None,
         }
     }
+
+    pub fn from(graph_asset_id: AssetId) -> Self
+    {
+        Self
+        {
+            graph_asset_id: Some(graph_asset_id),
+        }
+    }
 }
 

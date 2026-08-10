@@ -117,8 +117,14 @@ impl Layout
                 {
                     if graph_viewport.graph_asset_id == graph_id
                     {
-                        let graph_viewport_index = self.docking_state.find_tab(&viewport_name).expect("Unable to find graph viewport tab");
-                        self.docking_state.remove_tab( egui_dock::TabPath { surface: graph_viewport_index.surface, node: graph_viewport_index.node, tab: graph_viewport_index.tab });
+                        let graph_viewport_index = self.docking_state.find_tab(&viewport_name);
+
+                        if graph_viewport_index.is_none()
+                        {
+                            continue;
+                        }
+                        
+                        self.docking_state.remove_tab( egui_dock::TabPath { surface: graph_viewport_index.unwrap().surface, node: graph_viewport_index.unwrap().node, tab: graph_viewport_index.unwrap().tab });
                         self.docking_state.push_to_focused_leaf(viewport_name.clone());
                         return;
                     }

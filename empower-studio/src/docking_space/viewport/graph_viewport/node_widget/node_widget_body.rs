@@ -170,5 +170,5 @@ pub fn show(
         graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key } );
     }
 
-    node_rect_without_title_and_bottom.size().y + show_editable_state_result.size.y
+    title_box_rect.size().y + show_editable_state_result.size.y
 }
