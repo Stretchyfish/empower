@@ -135,8 +135,7 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     compile_node_chain(&mut compiled_graph_context, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
 
-    compiled_graph_context.add_instruction( Instruction::Return ); 
-    compiled_graph_context.trace_instruction(&node_graph.start_node_key, &compiled_graph_context.get_latest_instruction_address());
+    compiled_graph_context.add_instruction( &node_graph.start_node_key, Instruction::Return ); 
 
     ctx.add_more_graphs_to_build(&compiled_graph_context.additional_graphs_to_compile);
 
@@ -153,7 +152,6 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
     let next_instruction_address = ctx.instructions.len(); // @TODO, maybe find a better name, gets confusing in loop
     
     let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
-    println!("compiling: {}, and need to also compile first: {:?}", node_key, other_node_to_compile_first);
 
     if other_node_to_compile_first.is_some()
     {
@@ -162,7 +160,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
     let (node, inputs, outputs) = node_graph.get_node_input_output(*node_key).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
 
-    let input_register_addresses = allocate_input_port_registers(ctx, &inputs, &node_graph.connections_in);
+    let input_register_addresses = allocate_input_port_registers(ctx, node_key, &inputs, &node_graph.connections_in);
     let output_register_addresses = allocate_output_port_registers(ctx, &outputs);
 
     match &node.kind
@@ -173,24 +171,20 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         },
         NodeKind::Print =>
         {
-            ctx.add_instruction( Instruction::Print( input_register_addresses[0] ) );
-
-            ctx.trace_instructions_from(node_key, &next_instruction_address); // Due to the potentially earlier added SetConst it needs to add like this
+            ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
         },
         NodeKind::Branch =>
         {
-            let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( Instruction::JumpIfFalse(0, input_register_addresses[0]));
+            let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
             
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-            let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( Instruction::Jump(0) );
+            let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
             ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
 
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[1], node_key);
 
             ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
-
-            ctx.trace_instructions(node_key, &vec![next_instruction_address, jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
         },
         NodeKind::Loop( mode ) =>
         {
@@ -200,21 +194,18 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
                 {
                     compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-                    ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
-                    ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+                    ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
                 },
                 LoopMode::Range =>
                 {
-                    ctx.add_instruction( Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
-                    ctx.add_instruction( Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
-                    let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( Instruction::JumpIfTrue(0, output_register_addresses [0]));
-                    ctx.trace_instructions_from(node_key, &next_instruction_address);
+                    ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
+                    ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
+                    let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
 
                     compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-                    ctx.add_instruction( Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
-                    ctx.add_instruction( Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
-                    ctx.trace_instructions_from(node_key, &(ctx.get_latest_instruction_address() - 1));
+                    ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
+                    ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
 
                     ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
                 },
@@ -222,30 +213,26 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
         },
         NodeKind::Wait =>
         {
-            ctx.add_instruction( Instruction::Wait( input_register_addresses[0] ) );
-            ctx.trace_instructions_from(node_key, &next_instruction_address);
+            ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
 
             compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
         },
         NodeKind::List(_) =>
         {
-            ctx.add_instruction(
-                Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]),
-            );
+            ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
         },
         NodeKind::Image( state ) =>
         {
-            ctx.add_instruction(
-                Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
+            ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
             );
         },
         NodeKind::ShowImage =>
         {
-            ctx.add_instruction( Instruction::ShowImage( input_register_addresses[0] ) );
+            ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
         },
         NodeKind::MathGraph =>
         {
-            ctx.add_instruction( Instruction::ShowMathGraph( input_register_addresses[0] ) );
+            ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
         },
         NodeKind::SubGraph( state ) =>
         {
@@ -257,99 +244,10 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
             let graph_id = state.graph_asset_id.unwrap();
 
             ctx.additional_graphs_to_compile.push(graph_id);
-            ctx.add_instruction( Instruction::CallGraph(graph_id));
+            ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
         },
     }
-    
-    // ctx.trace_instructions_from(node_key, &next_instruction_address);
-
-    
-
-    // let (output_port_keys, control_flow) = 
-    // {
-    //     let (node, inputs, outputs) = node_graph.get_node_input_output(*node_key).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
-
-    //     let input_slots = allocate_input_port_registers(ctx, &inputs, &node_graph.connections_in);
-    //     let output_slots = allocate_output_port_registers(ctx, &outputs);
-
-    //     // node.kind.compile(ctx, input_slots, output_slots);
-
-    //     // (node.output_port_keys.clone(), node.kind.control_flow())
-    //     (Vec::new(), ControlFlowKind::Linear)
-    // };
-
-    // ctx.trace_instructions_from(node_key, &next_instruction_address);
-
-    // if output_port_keys.is_empty() // This is for nodes with no output ports // @TODO, this probably should be removed
-    // {
-    //     return;
-    // }
-
-    // match control_flow
-    // {
-    //     ControlFlowKind::None => {},
-    //     ControlFlowKind::Linear =>
-    //     {
-    //         compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
-    //     },
-    //     ControlFlowKind::Branch =>
-    //     {
-    //         // This implementation right now still adds a few instructions if no nodes at all are connected, could be optimized in the future
-            
-    //         let jump_if_false_instruction_placeholder_address = ctx.get_latest_instruction_address(); // Since the branch needs access to input port keys, the actual jump_if_false instrcution is added in the branch node compile function
-
-    //         compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
-
-    //         let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( Instruction::Jump(0) );
-    //         ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
-
-    //         compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[1], node_key);
-
-    //         ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
-
-    //         ctx.trace_instructions(node_key, &vec![jump_if_false_instruction_placeholder_address, jump_after_true_branch_instruction_placeholder_address ]);
-    //     },
-    //     ControlFlowKind::Loop( loop_settings ) =>
-    //     {
-    //         match loop_settings
-    //         {
-    //             LoopSettings::Forever =>
-    //             {
-    //                 compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
-
-    //                 ctx.add_instruction( Instruction::Jump( next_instruction_address ) );
-    //                 ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
-    //             },
-    //             LoopSettings::Interval =>
-    //             {
-    //                 let jump_if_true_placeholder_address = ctx.get_latest_instruction_address() - 1; // Added in compilation
-
-    //                 compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
-
-    //                 ctx.add_instruction( Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
-    //                 ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
-
-    //                 ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
-    //             },
-    //         }
-    //     },
-    // }
 }
-
-// fn compile_node(ctx: &mut CompiledGraphContext, node_kind: &NodeKind, input_registers_addresses: Vec<RegisterAddress>, output_register_addresses: Vec<RegisterAddress>)
-// {
-//     match node_kind
-//     {
-//         NodeKind::Start =>
-//         {
-//             compile_nodes_connected_to_port(ctx, node_graph, &output_port_keys[0], node_key);
-//         },
-//         NodeKind::Print =>
-//         {
-            
-//         },
-//     }
-// }
 
 fn check_node_graph_compile_integrity(node_graph: &NodeGraph) -> Result<(), String>
 {
@@ -409,23 +307,19 @@ fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &
             continue;
         }
 
-        let fork_instruction_address = ctx.add_instruction( Instruction::Fork( ctx.instructions.len() + 2 ));
-        let jump_instruction_address = ctx.add_instruction_placeholder( Instruction::Jump( 0) );
+        ctx.add_instruction( node_key, Instruction::Fork( ctx.instructions.len() + 2 ));
+        let jump_instruction_address = ctx.add_instruction_placeholder( node_key, Instruction::Jump( 0) );
 
         compile_node_chain(ctx, node_graph, connected_node_key);
 
-        let return_instruction = ctx.add_instruction( Instruction::Return );
-        ctx.trace_instruction(node_key, &ctx.get_latest_instruction_address());
+        ctx.add_instruction( node_key, Instruction::Return );
 
         ctx.patch_jump_instruction(&jump_instruction_address, &ctx.instructions.len() );
-        
-        ctx.trace_instructions(node_key, &vec![fork_instruction_address, jump_instruction_address, return_instruction]);
     }
 
     if connected_nodes.len() > 1
     {
-        let join_instruction_address = ctx.add_instruction( Instruction::Join );
-        ctx.trace_instruction(node_key, &join_instruction_address);
+        ctx.add_instruction( node_key, Instruction::Join );
     }
 }
 
@@ -482,7 +376,7 @@ fn check_if_node_needs_another_node_compiled_first(ctx: &mut CompiledGraphContex
     None
 }
 
-fn allocate_input_port_registers(ctx: &mut CompiledGraphContext, ports: &Vec<&Port>, connections_in: &HashMap<NodeGraphKey, NodeGraphKey>) -> Vec<RegisterAddress>
+fn allocate_input_port_registers(ctx: &mut CompiledGraphContext, node_key: &NodeGraphKey, ports: &Vec<&Port>, connections_in: &HashMap<NodeGraphKey, NodeGraphKey>) -> Vec<RegisterAddress>
 {
     let mut input_registers = Vec::with_capacity(ports.len());
 
@@ -498,7 +392,7 @@ fn allocate_input_port_registers(ctx: &mut CompiledGraphContext, ports: &Vec<&Po
         {
             // @TODO, need to add a warning here to stop compilation, since it might be the case that a port has no defined value yet
 
-            ctx.instructions.push( Instruction::SetConst(ctx.register_size, port.value.as_ref().unwrap().clone()));
+            ctx.add_instruction(node_key, Instruction::SetConst(ctx.register_size, port.value.as_ref().unwrap().clone()));
 
             ctx.allocated_ports.insert(port.key, ctx.register_size);
             input_registers.push(ctx.register_size);
@@ -573,16 +467,18 @@ impl CompiledGraphContext
         }
     }
 
-    pub fn add_instruction(&mut self, instruction: Instruction) -> InstructionAddress
+    pub fn add_instruction(&mut self, node_key: &NodeGraphKey, instruction: Instruction)
     {
         self.instructions.push(instruction);
-        self.instructions.len() - 1
-    }
+        self.trace.insert(self.instructions.len() - 1, *node_key);
+     }
 
-    pub fn add_instruction_placeholder(&mut self, instruction: Instruction) -> InstructionAddress
+    pub fn add_instruction_placeholder(&mut self, node_key: &NodeGraphKey, instruction: Instruction) -> InstructionAddress
     {
         let instruction_address = self.instructions.len();
         self.instructions.push(instruction);
+
+        self.trace.insert(instruction_address, *node_key);
 
         instruction_address
     }
@@ -611,27 +507,6 @@ impl CompiledGraphContext
     pub fn get_next_instruction_address(&self) -> InstructionAddress
     {
         self.instructions.len()
-    }
-
-    // @TODO, these trace functions might need to be optional somehow
-    pub fn trace_instructions_from(&mut self, node_key: &NodeGraphKey, start_instruction_address: &InstructionAddress)
-    {
-        let instructions_from_start_address: Vec<usize> = (*start_instruction_address..self.instructions.len()).collect(); // @TODO, this is a potentially dangerous line, look into later!
-
-        self.trace_instructions(node_key, &instructions_from_start_address);
-    }
-
-    pub fn trace_instructions(&mut self, node_key: &NodeGraphKey, instruction_addresseses: &Vec<InstructionAddress>)
-    {
-        for instruction_address in instruction_addresseses
-        {
-            self.trace_instruction(node_key, instruction_address);
-        }
-    }
-
-    pub fn trace_instruction(&mut self, node_key: &NodeGraphKey, instruction_address: &InstructionAddress)
-    {
-        self.trace.insert(*instruction_address, *node_key);
     }
 }
 

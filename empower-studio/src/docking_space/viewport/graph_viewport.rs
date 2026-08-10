@@ -377,7 +377,7 @@ impl GraphViewport
                 },
                 GraphViewportAction::NodeEditWasChanged { node_key } =>
                 {
-                    let (project, cache) = studio_context.get_project_mut_and_cache();
+                    let (project, cache) = studio_context.get_project_mut_and_cache_mut();
                     let editable_node_state = cache.session.cached_edtable_node_state.get(&node_key).unwrap(); 
                     let node = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap().nodes.get_mut(&node_key).unwrap();
 
@@ -388,7 +388,19 @@ impl GraphViewport
                         NodeSyncResponse::Nothing => {},
                         NodeSyncResponse::NodesStructureChanged =>
                         {
-                            let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                            let node_handle = graph.get_node_handle(node_key);
+
+                            for port in node_handle.input_port_keys // @TODO, this removal is done in case the port value type changes to one that uses a different editable_port, can probably be done better
+                            {
+                                cache.session.cached_editable_port_value.remove(&port);
+                            }
+
+                            for port in node_handle.output_port_keys
+                            {
+                                cache.session.cached_editable_port_value.remove(&port);
+                            }
+                            
                             graph.refresh_node(&node_key);
                         },
                         NodeSyncResponse::LoadSubgraph( node_graph_id ) =>

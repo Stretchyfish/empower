@@ -4,7 +4,7 @@ use egui::mutex::Mutex;
 use empower_engine::distribution;
 use rfd::FileDialog;
 
-use crate::studio_context::{self, Log, StudioContext};
+use crate::studio_context::{Log, StudioContext};
 
 #[derive(Clone)]
 pub struct AssetImportDialog

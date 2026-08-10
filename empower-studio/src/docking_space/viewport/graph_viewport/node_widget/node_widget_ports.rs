@@ -174,7 +174,6 @@ pub fn show(
         },
         EditablePortValue::TwoBox( text1, text2 ) =>
         {
-            
             let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
 
             let mut box_one_changed = false;

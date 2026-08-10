@@ -19,7 +19,7 @@ impl Log
         }
     }
 
-    pub fn warning(text: &'static str) -> Self
+    pub fn warning(text: &str) -> Self
     {
         Self
         {
