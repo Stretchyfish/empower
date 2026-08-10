@@ -90,7 +90,7 @@ impl NodeKind
                                             PortDefinition::new_input_execution_port(),
                                             PortDefinition::new_input_data_port("math graph".to_string(), vec![ Value::List( Vec::new() ) ])
                                         ],
-            NodeKind::SubGraph(_) => Vec::new(),
+            NodeKind::SubGraph( state ) => state.get_input_port_definitions(),
         }
     }
 
@@ -110,7 +110,7 @@ impl NodeKind
             NodeKind::Image( state ) => state.get_output_port_definitions(),
             NodeKind::ShowImage => Vec::new(),
             NodeKind::MathGraph => Vec::new(),
-            NodeKind::SubGraph(_) => Vec::new(),
+            NodeKind::SubGraph( state ) => state.get_output_port_definitions(),
         }
     }
 }

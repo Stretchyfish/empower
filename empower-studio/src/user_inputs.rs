@@ -13,11 +13,14 @@ pub struct UserInputs
     pub holding_ctrl: bool,
     pub holding_shift: bool,
     pub holding_alt: bool,
+    pub clicked_a: bool,
     pub clicked_s: bool,
     pub clicked_d: bool,
     pub clicked_enter: bool,
     pub clicked_up_arrow: bool,
     pub clicked_down_arrow: bool,
+    pub clicked_delete: bool,
+    pub clicked_backspace: bool,
 }
 
 pub fn get_user_inputs(ui: &egui::Ui) -> UserInputs
@@ -35,11 +38,14 @@ pub fn get_user_inputs(ui: &egui::Ui) -> UserInputs
     user_inputs.holding_ctrl = ui.input(|i| { i.modifiers.ctrl });
     user_inputs.holding_shift = ui.input(|i| { i.modifiers.shift });
     user_inputs.holding_alt = ui.input(|i| { i.modifiers.alt });
+    user_inputs.clicked_a = ui.input(|i| { i.key_pressed(egui::Key::A) });
     user_inputs.clicked_s = ui.input(|i| { i.key_pressed(egui::Key::S) });
     user_inputs.clicked_d = ui.input(|i| { i.key_pressed(egui::Key::D) });
     user_inputs.clicked_enter = ui.input(|i| { i.key_pressed(egui::Key::Enter) });
     user_inputs.clicked_up_arrow =  ui.input(|i| { i.key_pressed(egui::Key::ArrowUp) });
     user_inputs.clicked_down_arrow =  ui.input(|i| { i.key_pressed(egui::Key::ArrowDown) });
+    user_inputs.clicked_delete =  ui.input(|i| { i.key_pressed(egui::Key::Delete) });
+    user_inputs.clicked_backspace =  ui.input(|i| { i.key_pressed(egui::Key::Backspace) });
 
     user_inputs
 }

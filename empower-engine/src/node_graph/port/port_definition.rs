@@ -4,7 +4,7 @@ use super::PortDirection;
 use super::PortKind;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct PortDefinition
 {
     pub name: String, // @TODO, considering changing this to &'static str (blocked by alphabet counter)

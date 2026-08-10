@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::node::{NodeKind, node_kind::LoopMode}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, SubGraphState}}}, value::Value};
 
 use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
 
@@ -67,14 +67,16 @@ impl EditableNodeState
         }
     }
 
-    pub fn sync_with_node_state(&self, node_kind: &mut NodeKind) -> NodeSyncResponse
+    // pub fn sync_with_node_state(&self, node_kind: &mut NodeKind) -> NodeSyncResponse
+    pub fn sync_with_node_state(&self, graph_id: &AssetId, node_key: &NodeGraphKey, assets: &mut Assets) -> NodeSyncResponse
     {
         match self
         {
             EditableNodeState::None => NodeSyncResponse::Nothing,
             EditableNodeState::List( number_of_input_ports_text, value_type_text ) =>
             {
-                let list_state = match node_kind
+                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                let list_state = match &mut node.kind
                 {
                     NodeKind::List( list_state ) => list_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
@@ -102,7 +104,8 @@ impl EditableNodeState
             },
             EditableNodeState::Image( image_asset_id ) =>
             {
-                let image_state = match node_kind
+                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                let image_state = match &mut node.kind
                 {
                     NodeKind::Image( image_state ) => image_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
@@ -114,25 +117,34 @@ impl EditableNodeState
             },
             EditableNodeState::SubGraph( graph_asset_id ) =>
             {
-                let sub_graph_state = match node_kind
+                if graph_asset_id.is_none()
                 {
-                    NodeKind::SubGraph( sub_graph_state ) => sub_graph_state,
+                    return NodeSyncResponse::Nothing;
+                }
+                
+                let new_state = SubGraphState::from( graph_asset_id.unwrap(), &assets.get_node_graph(&graph_asset_id.unwrap()).unwrap() );
+
+                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                
+                match &mut node.kind
+                {
+                    NodeKind::SubGraph( sub_graph_state ) => *sub_graph_state = new_state,
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
-
-                sub_graph_state.graph_asset_id = *graph_asset_id;
 
                 NodeSyncResponse::NodesStructureChanged
             },
             EditableNodeState::Loop(mode) =>
             {
-                let loop_mode = match node_kind
+                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                // let loop_mode = match &mut node.kind
+                match &mut node.kind
                 {
-                    NodeKind::Loop( mode ) => mode,
+                    NodeKind::Loop( loop_mode ) => *loop_mode = mode.clone(),
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
-                *loop_mode = mode.clone(); // @TODO, look into if this clone can be removed
+                // loop_mode = mode.clone(); // @TODO, look into if this clone can be removed
 
                 NodeSyncResponse::NodesStructureChanged
             },

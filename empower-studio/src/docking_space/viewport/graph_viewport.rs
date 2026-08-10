@@ -99,7 +99,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &developer_mode);
 
-    graph_viewport.process_dragging_assets(user_inputs, studio_context, &mut graph_viewport_actions);
+    graph_viewport.process_effect_of_global_actions(user_inputs, studio_context, &mut graph_viewport_actions);
 
     graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
@@ -120,7 +120,6 @@ impl GraphViewport
         let mouse_is_inside_viewport = ui.ui_contains_pointer();
 
         let cached_port_positions = &mut cache.session.cached_port_positions;
-        let cached_port_sizes = &mut cache.session.cached_port_sizes;
         let cached_editable_port_values = &mut cache.session.cached_editable_port_value;
         let cached_editable_node_state = &mut cache.session.cached_edtable_node_state;
 
@@ -249,13 +248,28 @@ impl GraphViewport
         }
     }
 
-    fn process_dragging_assets(&mut self, user_inputs: &UserInputs, studio_context: &mut StudioContext, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
+    fn process_effect_of_global_actions(&mut self, user_inputs: &UserInputs, studio_context: &mut StudioContext, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
     {
+        if !self.node_picker.show && user_inputs.clicked_a
+        {
+            self.node_picker.toggle_show(&user_inputs.mouse_position);
+        }
+        
+        if self.node_picker.show && user_inputs.clicked_esp
+        {
+            self.node_picker.show = false; // @TODO, maybe add a helper
+        }
+        
+        if user_inputs.clicked_delete || user_inputs.clicked_backspace
+        {
+            graph_viewport_actions.push_back( GraphViewportAction::DeleteSelectedNodes );
+        }
+        
         let dragged_asset = studio_context.get_dragged_asset();
 
         if user_inputs.released_primary_mouse_button && dragged_asset.is_some()
         {
-            let asset_meta = studio_context.get_project().assets.meta.get(dragged_asset.as_ref().unwrap()).unwrap();
+            let asset_meta = studio_context.get_project().assets.meta.get(dragged_asset.as_ref().unwrap()).unwrap().clone();
 
             if asset_meta.id == self.graph_asset_id
             {
@@ -266,7 +280,7 @@ impl GraphViewport
             let node_kind;
             match asset_meta.kind
             {
-                AssetKind::NodeGraph => { node_kind = NodeKind::SubGraph( SubGraphState::from( asset_meta.id ))},
+                AssetKind::NodeGraph => { node_kind = NodeKind::SubGraph( SubGraphState::from( asset_meta.id,  &studio_context.get_project().assets.get_node_graph(&asset_meta.id).unwrap() ))},
                 AssetKind::Image => { node_kind = NodeKind::Image( ImageState::from(asset_meta.id))},
                 _ =>
                 {
@@ -414,9 +428,10 @@ impl GraphViewport
                 {
                     let (project, cache) = studio_context.get_project_mut_and_cache_mut();
                     let editable_node_state = cache.session.cached_edtable_node_state.get(&node_key).unwrap(); 
-                    let node = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap().nodes.get_mut(&node_key).unwrap();
+                    // let node = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap().nodes.get_mut(&node_key).unwrap();
 
-                    let sync_response = editable_node_state.sync_with_node_state(&mut node.kind);
+                    // let sync_response = editable_node_state.sync_with_node_state(&mut node.kind);
+                    let sync_response = editable_node_state.sync_with_node_state(&self.graph_asset_id, &node_key, &mut project.assets);
 
                     match sync_response
                     {
