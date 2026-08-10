@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use empower_engine::assets::AssetId;
+use empower_engine::assets::{AssetId, AssetKind};
 
 use crate::studio_context::StudioContext;
 
@@ -10,8 +10,7 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
     let project = studio_context.get_project_mut();
 
-    let graph_names = project.assets.get_all_node_graph_names(); // @TODO, this is currently unsorted
-    let sorted_names: BTreeMap<AssetId, String> = graph_names.into_iter().collect();
+    let sorted_names: BTreeMap<&AssetId, String> = project.assets.meta.iter().filter(|(_, m)| m.kind == AssetKind::NodeGraph ).map(|(k, m)| (k, m.name.clone()) ).collect();
 
     // let selected_graph_name = match project.assets.load_node_graph(&project.location, &project.entry_graph )
     // {

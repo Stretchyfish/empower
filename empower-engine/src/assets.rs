@@ -88,24 +88,20 @@ impl Assets
         Ok( asset_id )
     }
 
-    pub fn get_all_node_graph_names(&self) -> HashMap<AssetId, String> 
+    pub fn add_node_graph_asset(&mut self, name: String, parent: Option<AssetId>, node_graph: NodeGraph)
     {
-        self.loaded_assets.loaded_node_graphs.iter().map(|(id, node_graph)| (id.clone(), node_graph.name.clone())).collect() // @TODO, maybe this should use asset meta instead
+        let asset_id = self.get_asset_id();
+
+        self.loaded_assets.loaded_node_graphs.insert(asset_id, node_graph);
+        self.meta.insert(asset_id, AssetMeta { id: asset_id, name, parent: if parent.is_some() { parent } else { Some(ASSET_FOLDER_ASSET_ID) }, kind: AssetKind::NodeGraph });
     }
 
-    pub fn get_all_image_names(&self) -> HashMap<AssetId, String>
+    pub fn add_image_asset(&mut self, name: String, parent: Option<AssetId>, color_image: egui::ColorImage)
     {
-        let mut images = HashMap::new();
+        let asset_id = self.get_asset_id();
 
-        for (id, meta) in &self.meta
-        {
-            if meta.kind == AssetKind::Image
-            {
-                images.insert(*id, meta.name.clone());
-            }
-        }
-
-        images
+        self.loaded_assets.loaded_images.insert(asset_id, color_image);
+        self.meta.insert(asset_id, AssetMeta { id: asset_id, name, parent: if parent.is_some() { parent } else { Some(ASSET_FOLDER_ASSET_ID) }, kind: AssetKind::Image });
     }
 
     pub fn get_node_graph(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look

@@ -20,4 +20,5 @@ pub enum Request
     StartExecute,
     StopExecute,
     ExportProject { config: ExportConfig },
+    ImportAsset,
 }

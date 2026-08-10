@@ -9,7 +9,7 @@ pub struct Log
 
 impl Log
 {
-    pub fn info(text: &'static str) -> Self
+    pub fn info(text: &str) -> Self
     {
         Self
         {

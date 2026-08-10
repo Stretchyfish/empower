@@ -76,7 +76,7 @@ impl ContentBrowserViewport
         {
             if ui.button("import asset").clicked()
             {
-
+                studio_context.request_import_asset();
             }
 
             if ui.button("👈").clicked()

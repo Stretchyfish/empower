@@ -166,9 +166,9 @@ impl StudioContext
         &mut self.settings
     }
 
-    pub fn get_windows(&mut self) -> Windows
+    pub fn get_windows(&mut self) -> &Windows
     {
-        self.windows.clone()
+        &self.windows
     }
 
     pub fn set_windows(&mut self, windows: Windows)
@@ -310,6 +310,11 @@ impl StudioContext
         &self.logs
     }
 
+    pub fn request_import_asset(&mut self)
+    {
+        self.requests.push_back( Request::ImportAsset );
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -354,6 +359,7 @@ impl StudioContext
                 
                 // let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
             },
+            Request::ImportAsset => { self.windows.asset_import_dialog.start_dialog(); },
         }
     }
 }

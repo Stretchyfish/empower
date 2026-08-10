@@ -83,9 +83,6 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
-    let image_names = project.assets.get_all_image_names(); // @TODO, find a better way to get these asset values at runtime
-    let node_graph_names = project.assets.get_all_node_graph_names(); // This is used later in the node widget drawing stage
-
     let node_graph = project.assets.get_node_graph(&graph_viewport.graph_asset_id); 
 
     if node_graph.is_none()
