@@ -15,22 +15,22 @@ pub struct PortDefinition
 
 impl PortDefinition
 {
-    pub fn new_input_execution_port() -> Self
+    pub fn new_input_execution_port(name: &str) -> Self
     {
         Self
         {
-            name: "".to_string(),
+            name: name.to_string(),
             direction: PortDirection::Input,
             kind: PortKind::Execution,
             compatability: Vec::new(),
         }
     }
 
-    pub fn new_output_execution_port() -> Self
+    pub fn new_output_execution_port(name: &str) -> Self
     {
         Self
         {
-            name: "".to_string(),
+            name: name.to_string(),
             direction: PortDirection::Output,
             kind: PortKind::Execution,
             compatability: Vec::new(),

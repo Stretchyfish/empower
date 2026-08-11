@@ -44,6 +44,31 @@ impl Assets
         }
     }
 
+    pub fn rename_asset(&mut self, asset_id: &AssetId, new_name: &str) -> bool
+    {
+        if !self.meta.contains_key(&asset_id)
+        {
+            return false;
+        }
+
+        let asset_meta = self.meta.get_mut(&asset_id).unwrap();
+        asset_meta.name = new_name.to_string();
+
+        match asset_meta.kind
+        {
+            AssetKind::NodeGraph =>
+            {
+                self.loaded_assets.loaded_node_graphs.get_mut(&asset_id).unwrap().name = new_name.to_string();
+                
+            },
+            _ => {},
+        }
+
+        // @TODO, this approach doesn't rename the files, which can cause problem laters
+
+        true
+    }
+
     pub fn create_asset(&mut self, parent: Option<AssetId>, asset_kind: AssetKind, name: &'static str) -> Result<AssetId, String> // @TODO, not sure if the optional name is ever used in this case, but might be usefull in the future, so leaving it for now.
     {
         let asset_id = self.get_asset_id();

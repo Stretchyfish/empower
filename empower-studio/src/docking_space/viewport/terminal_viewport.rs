@@ -36,16 +36,6 @@ pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_
         {
             terminal_viewport.entries.clear();
         }
-
-        if ui.button("Add text").clicked()
-        {
-
-        }
-
-        if ui.button("Add line").clicked()
-        {
-
-        }
     });
 
     ui.separator();

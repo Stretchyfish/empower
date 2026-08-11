@@ -49,7 +49,7 @@ impl EditableNodeState
             EditableNodeState::List( text1, text2 ) =>
             {
                 let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"test:".to_string(), text1, true);
-                let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), text2);
+                let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), "value", text2);
                 ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) } // @TODO, this approach to size needs an overhaul
             },
             EditableNodeState::Image( asset_id ) =>
@@ -144,8 +144,6 @@ impl EditableNodeState
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
-                // loop_mode = mode.clone(); // @TODO, look into if this clone can be removed
-
                 NodeSyncResponse::NodesStructureChanged
             },
         }
@@ -159,7 +157,7 @@ fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, c
     let painted_text = ui.painter().text(
         label_position,
         egui::Align2::LEFT_TOP,
-        "value: ",
+        "mode: ",
         egui::FontId::proportional(35.0),
         egui::Color32::WHITE,
     );
@@ -183,14 +181,14 @@ fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, c
     (mode_before != *current_mode, 40.0)
 }
 
-fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_value_text: &mut String) -> (bool, f32)
+fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &str, current_value_text: &mut String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
     let painted_text = ui.painter().text(
         label_position,
         egui::Align2::LEFT_TOP,
-        "value: ",
+        label,
         egui::FontId::proportional(35.0),
         egui::Color32::WHITE,
     );

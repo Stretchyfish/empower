@@ -151,7 +151,7 @@ impl ContentBrowserViewport
                     {
                         if asset_meta.parent == Some( self.current_directory )
                         {
-                            self.show_asset2(ui, asset_meta, &mut hovered_asset, actions);
+                            self.show_asset(ui, asset_meta, &mut hovered_asset, actions);
                         }
                     }
                 });
@@ -169,7 +169,7 @@ impl ContentBrowserViewport
         }
     }
 
-    fn show_asset2(&mut self, ui: &mut egui::Ui, asset_meta: &AssetMeta, hovered_asset: &mut bool, actions: &mut Vec<ContentBrowserViewportAction>)
+    fn show_asset(&mut self, ui: &mut egui::Ui, asset_meta: &AssetMeta, hovered_asset: &mut bool, actions: &mut Vec<ContentBrowserViewportAction>)
     {
         ui.vertical(|ui|
         {
@@ -266,15 +266,13 @@ impl ContentBrowserViewport
         {
             let rename_file_state = self.renaming_file.as_ref().unwrap();
 
-            let mut asset_meta = studio_context.get_project_mut().assets.meta.get_mut(&rename_file_state.id);
+            let successfully_renamed_asset = studio_context.get_project_mut().assets.rename_asset(&rename_file_state.id, self.renaming_file.as_ref().unwrap().potential_new_name.as_str());
 
-            if asset_meta.is_none()
+            if !successfully_renamed_asset 
             {
-                studio_context.add_log( Log::warning("was unable to fetch asset_meta in renaming file"));
+                studio_context.add_log( Log::warning("was unable to rename asset"));
                 return;
             }
-
-            asset_meta.as_mut().unwrap().name = self.renaming_file.as_ref().unwrap().potential_new_name.clone(); // @TODO, this approach doesn't change the underlying files affected, change in the fututre
 
             self.renaming_file = None;
             return;
@@ -284,7 +282,6 @@ impl ContentBrowserViewport
 
         if ( user_inputs.clicked_esp || user_inputs.clicked_primary_mouse_button || user_inputs.clicked_secondary_mouse_button) && self.renaming_file.is_some()
         {
-            studio_context.add_log( Log::info("triggered this 1"));
             self.renaming_file = None;
             return;
         }
@@ -300,12 +297,6 @@ impl ContentBrowserViewport
 
     fn show_quick_feature_window(&mut self, ui: &mut egui::Ui, mouse_position_when_activated: &egui::Pos2, studio_context: &mut StudioContext, actions: &mut Vec<ContentBrowserViewportAction>)
     {
-        // let project = studio_context.get_project_mut();
-
-        // let project_directory = &project.location;
-        // let full_directory_path = project_directory.join(&self.current_directory);
-        // let assets = &mut project.assets;
-        
         egui::Window::new("")
         .current_pos(egui::Pos2 {
                                 x: mouse_position_when_activated.x - 100.0, 
@@ -323,8 +314,10 @@ impl ContentBrowserViewport
                 if created_folder_result.is_err()
                 {
                     studio_context.add_log( Log::info(created_folder_result.err().unwrap().as_str()) );
+                    return;
                 }
 
+                self.renaming_file = Some( ViewportRenameState::new(String::new(), created_folder_result.unwrap()));
                 self.quick_menu = None;
             };
 
@@ -335,8 +328,10 @@ impl ContentBrowserViewport
                 if created_node_graph_result.is_err()
                 {
                     studio_context.add_log( Log::info(created_node_graph_result.err().unwrap().as_str()) );
+                    return;
                 }
 
+                self.renaming_file = Some( ViewportRenameState::new(String::new(), created_node_graph_result.unwrap()));
                 self.quick_menu = None;
             };
 

@@ -60,6 +60,17 @@ impl SubGraphState
         }
     }
 
+    pub fn get_size(&self) -> egui::Vec2
+    {
+        if self.graph_asset_id.is_none()
+        {
+            return egui::vec2(300.0, 170.0);
+        }
+
+        let extra_vertical_offset = 40.0 * (std::cmp::max(self.graph_start_node_output_port_definitions.len(), self.graph_end_node_input_port_definitions.len()) as f32);
+        egui::vec2(300.0, 220.0 + extra_vertical_offset)
+    }
+
     pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
     {
         self.graph_start_node_output_port_definitions.clone()

@@ -53,12 +53,14 @@ impl StudioContext
 {
     pub fn new() -> Self
     {
+        let project = Project::new();
         StudioContext
         {
-            project: Project::new(),
-            
-            layout: Layout::load(),
+            layout: Layout::load(&project.assets),
+
+            project,
             settings: Settings::new(),
+            
 
             executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
@@ -126,7 +128,7 @@ impl StudioContext
 
     fn load_studio(&mut self)
     {
-        self.layout = Layout::load();
+        self.layout = Layout::load(&self.project.assets);
         self.cache = Cache::load();
     }
 
@@ -345,10 +347,10 @@ impl StudioContext
 
         match request_to_process
         {
-            Request::DefaultLayout => { self.layout = Layout::default_layout() },
-            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
-            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id); },
-            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
+            Request::DefaultLayout => { self.layout = Layout::default_layout(&self.project.assets) },
+            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport, &self.project.assets ); },
+            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id, &self.project.assets); },
+            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport, &self.project.assets ); },
             Request::SaveStudio => { self.save_studio(); },
             Request::SaveProject =>
             {

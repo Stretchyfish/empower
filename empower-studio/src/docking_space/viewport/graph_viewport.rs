@@ -453,19 +453,6 @@ impl GraphViewport
                             
                             graph.refresh_node(&node_key);
                         },
-                        NodeSyncResponse::LoadSubgraph( node_graph_id ) =>
-                        {
-                            // let project_path = &studio_context.get_project().location.clone();
-                            // let sub_graph = studio_context.get_project_mut().assets.load_node_graph(project_path, &node_graph_id).unwrap();
-
-                            // let start_node_input_ports = sub_graph.get_node_output_ports(sub_graph.start_node_key);
-
-                            // let _ = NodeState::GraphStartAndEndPorts { start_input_ports: start_node_input_ports, end_output_ports: Vec::new() };
-                            
-                            // let graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                            // graph.nodes.get_mut(&node_key).unwrap().kind.sync_node_state( node_state );
-                            // graph.refresh_node(&node_key);
-                        },
                     }
                 },
 

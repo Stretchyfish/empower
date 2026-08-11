@@ -41,7 +41,13 @@ pub fn show(
     let port_position  = *node_position + egui::Vec2 { x: horizontal_offset, y: vertical_offset_before_showing_ports + VERTICAL_PORT_GAB / 2.0 + port_index as f32 * VERTICAL_PORT_GAB};
     let port_rect = egui::Rect::from_center_size(port_position, PORT_SIZE);
 
-    let port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click());
+    let port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click_and_drag());
+
+    if port_response.drag_started()
+    {
+        graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
+    }
+
     if port_response.clicked()
     {
         graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
@@ -109,6 +115,16 @@ pub fn show(
         cached_editable_port_value.insert(*port_key, EditablePortValue::from(port) );
     }
 
+    let port_text_position = port_position + egui::Vec2 { x: if port.direction == PortDirection::Input { PORT_AND_TEXT_HORIZONTAL_BUFFER } else { -PORT_AND_TEXT_HORIZONTAL_BUFFER }, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        port_text_position,
+        if port.direction == PortDirection::Input { egui::Align2::LEFT_CENTER } else { egui::Align2::RIGHT_CENTER },
+        &port.name,
+        egui::FontId::proportional(PORT_TEXT_FONT_SIZE),
+        egui::Color32::WHITE,
+    );
+
     if port.kind == PortKind::Execution
     {
         return;
@@ -118,16 +134,6 @@ pub fn show(
     {
         return;
     }
-
-    let port_text_position = port_position + egui::Vec2 { x: PORT_AND_TEXT_HORIZONTAL_BUFFER, y: 0.0 };
-
-    let painted_text = ui.painter().text(
-        port_text_position,
-        egui::Align2::LEFT_CENTER,
-        &port.name,
-        egui::FontId::proportional(PORT_TEXT_FONT_SIZE),
-        egui::Color32::WHITE,
-    );
 
     if *port_has_connection // This only ever applies to the input ports
     {

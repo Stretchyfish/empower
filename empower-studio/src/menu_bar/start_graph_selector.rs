@@ -10,24 +10,31 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
     let project = studio_context.get_project_mut();
 
-    let sorted_names: BTreeMap<&AssetId, String> = project.assets.meta.iter().filter(|(_, m)| m.kind == AssetKind::NodeGraph ).map(|(k, m)| (k, m.name.clone()) ).collect();
+    let mut new_start_node_graph_id = None;
 
-    // let selected_graph_name = match project.assets.load_node_graph(&project.location, &project.entry_graph )
-    // {
-    //     Some( node_graph ) => node_graph.name.clone(),
-    //     None =>
-    //     {
-    //         println!("Menu bar was asked to get an graph asset id that doesn't exist in assets");
-    //         "unknown".to_string()   
-    //     },
-    // };
+    {
+        
+        let sorted_names: BTreeMap<&AssetId, String> = project.assets.meta.iter().filter(|(_, m)| m.kind == AssetKind::NodeGraph ).map(|(k, m)| (k, m.name.clone()) ).collect();
+        let current_start_graph_name = project.assets.meta.get(&project.entry_graph).unwrap().name.clone();
 
+        egui::ComboBox::from_id_salt("start graph selector") 
+        .selected_text( &current_start_graph_name )
+        .show_ui(ui, |ui|
+        {
+            for (id, text) in sorted_names 
+            {
+                if id == &project.entry_graph
+                {
+                    continue;
+                }
+        
+                ui.selectable_value( &mut new_start_node_graph_id, Some( *id ), text);
+            }
+        });
+    }
 
-    // ui.menu_button(selected_graph_name, |ui|
-    // {
-    //     for (_, text) in sorted_names
-    //     {
-    //         ui.label(text);
-    //     }
-    // });
+    if new_start_node_graph_id.is_some()
+    {
+        project.entry_graph = new_start_node_graph_id.unwrap();
+    }
 }

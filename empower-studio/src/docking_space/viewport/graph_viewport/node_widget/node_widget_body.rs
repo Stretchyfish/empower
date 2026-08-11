@@ -21,7 +21,6 @@ pub enum NodeSyncResponse
 {
     Nothing,
     NodesStructureChanged,
-    LoadSubgraph( AssetId ),
 }
 
 pub fn show(
