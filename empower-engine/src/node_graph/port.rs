@@ -14,7 +14,7 @@ pub use port_direction::PortDirection;
 mod port_edit;
 pub use port_edit::PortEdit;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct Port
 {
     pub key: NodeGraphKey,

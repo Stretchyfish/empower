@@ -17,7 +17,7 @@ use crate::{node_graph::{node::NodeKind, port::PortDefinition}, value::Value};
 
 pub type NodeGraphKey = i32;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct NodeGraph {
     pub name: String,
     pub start_node_key: NodeGraphKey, // @TODO, add a const for start node key?
@@ -31,7 +31,7 @@ pub struct NodeGraph {
 }
 
 impl NodeGraph {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: &str) -> Self {
         let mut node_graph = Self {
             name: name.to_string(),
             start_node_key: 1, // @TODO, make this some kind of const?

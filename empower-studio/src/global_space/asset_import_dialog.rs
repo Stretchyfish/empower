@@ -62,7 +62,7 @@ impl AssetImportDialog
                 {
                     Some( path ) =>
                     {
-                        let import_asset_result = distribution::import_asset(studio_context.get_project_mut(), &path);
+                        let import_asset_result = studio_context.get_project_mut().assets.import_asset(&path);
 
                         match import_asset_result
                         {

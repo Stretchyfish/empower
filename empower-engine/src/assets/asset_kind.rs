@@ -6,7 +6,7 @@ pub enum AssetKind
 {
     Folder,
     NodeGraph,
-    Image,
+    Image, // @TODO, this should probably be named Png, to seperate saving behavior between different image file types
     Json,
 }
 

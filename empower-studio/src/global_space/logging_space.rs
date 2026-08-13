@@ -28,6 +28,7 @@ pub fn show(logs: &VecDeque<Log>, ui: &mut egui::Ui)
         {
             LogLevel::Info => egui::Color32::YELLOW,
             LogLevel::Warning => egui::Color32::RED,
+            LogLevel::News => egui::Color32::GREEN,
         };
 
         painter.text(

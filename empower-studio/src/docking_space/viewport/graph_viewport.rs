@@ -99,6 +99,11 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &developer_mode);
 
+    if !ui.ui_contains_pointer()
+    {
+        return;
+    }
+
     graph_viewport.process_effect_of_global_actions(user_inputs, studio_context, &mut graph_viewport_actions);
 
     graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
@@ -298,103 +303,103 @@ impl GraphViewport
     fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, user_inputs: &UserInputs, graph_viewport_actions: VecDeque<GraphViewportAction>, _: &String)
     {
         for action in graph_viewport_actions
-        {
+        {   
             match action
             {
                 GraphViewportAction::ClickedNodeTitle { node_key } =>
-                            {
-                                if self.selected_nodes.len() == 1
-                                {
-                                    if self.selected_nodes.contains(&node_key)
-                                    {
-                                        self.selected_nodes.clear();
-                                    }
-                                    else
-                                    {
-                                        self.selected_nodes.clear();
-                                        self.selected_nodes.insert(node_key);
-                                    }
+                {
+                    if self.selected_nodes.len() == 1
+                    {
+                        if self.selected_nodes.contains(&node_key)
+                        {
+                            self.selected_nodes.clear();
+                        }
+                        else
+                        {
+                            self.selected_nodes.clear();
+                            self.selected_nodes.insert(node_key);
+                        }
 
-                                    break;
-                                }
+                        break;
+                    }
 
-                                self.selected_nodes.insert(node_key);
-                            },
+                    self.selected_nodes.insert(node_key);
+                },
                 GraphViewportAction::ClickedPort { port_key } =>
-                            {
-                                let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
+                {
+                    let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).expect("graph viewport tried and failed to fetch node graph from assets in process graph viewport actions");
 
-                                if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
-                                {
-                                    let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
+                    if node_graph.contains_connection(&port_key) // Since this should only ever be true for input ports, we do not need to check their direction
+                    {
+                        let connected_output_port = node_graph.remove_connection(&port_key).unwrap();
 
-                                    if self.selected_port.is_none()
-                                    {
-                                        self.selected_port = Some( connected_output_port );
-                                        break;
-                                    }
-                                }
+                        if self.selected_port.is_none()
+                        {
+                            self.selected_port = Some( connected_output_port );
+                            break;
+                        }
+                    }
 
-                                if self.selected_port.is_none()
-                                {
-                                    self.selected_port = Some( port_key );
-                                    break;
-                                }
-                        
-                                if self.selected_port.unwrap() == port_key
-                                {
-                                    self.selected_port = None;
-                                    break;
-                                }
+                    if self.selected_port.is_none()
+                    {
+                        self.selected_port = Some( port_key );
+                        break;
+                    }
+            
+                    if self.selected_port.unwrap() == port_key
+                    {
+                        self.selected_port = None;
+                        break;
+                    }
 
 
-                                let selected_port_direction;
+                    let selected_port_direction;
 
-                                {
-                                    selected_port_direction = node_graph.ports.get(&self.selected_port.unwrap()).unwrap().direction;
-                                    let clicked_port_direction = node_graph.ports.get(&port_key).unwrap().direction;
+                    {
+                        selected_port_direction = node_graph.ports.get(&self.selected_port.unwrap()).unwrap().direction;
+                        let clicked_port_direction = node_graph.ports.get(&port_key).unwrap().direction;
 
-                                    if selected_port_direction == clicked_port_direction // If they are the same port direction, then they can't connect.
-                                    {
-                                        self.selected_port = None;
-                                        break;
-                                    }
-                                }
+                        if selected_port_direction == clicked_port_direction // If they are the same port direction, then they can't connect.
+                        {
+                            self.selected_port = None;
+                            break;
+                        }
+                    }
 
-                                let added_connection_result = match selected_port_direction
-                                {
-                                    PortDirection::Input => node_graph.add_connection(&port_key, &self.selected_port.unwrap()),
-                                    PortDirection::Output => node_graph.add_connection(&self.selected_port.unwrap(), &port_key),
-                                };
+                    let added_connection_result = match selected_port_direction
+                    {
+                        PortDirection::Input => node_graph.add_connection(&port_key, &self.selected_port.unwrap()),
+                        PortDirection::Output => node_graph.add_connection(&self.selected_port.unwrap(), &port_key),
+                    };
 
-                                if let Err( error_text ) = added_connection_result
-                                {
-                                    studio_context.add_log( Log::info(error_text) );
-                                }
+                    if let Err( error_text ) = added_connection_result
+                    {
+                        studio_context.add_log( Log::info(error_text) );
+                    }
 
-                                self.selected_port = None;
-                            },
+                    self.selected_port = None;
+                },
                 GraphViewportAction::DragSelecting =>
-                            {
-                                if self.area_select.is_none()
-                                {
-                                    self.area_select = Some( AreaSelect::new(self.mouse_scene_position_last_frame) );
-                                    break;
-                                }
+                {
+                    if self.area_select.is_none()
+                    {
+                        self.area_select = Some( AreaSelect::new(self.mouse_scene_position_last_frame) );
+                        break;
+                    }
 
-                                let area_select = self.area_select.as_mut().unwrap();
+                    let area_select = self.area_select.as_mut().unwrap();
 
-                                area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
-                            },
+                    area_select.determine_area_select_rect(&self.mouse_scene_position_last_frame);
+                },
                 GraphViewportAction::StoppedDragSelecting =>
-                            {
-                                if self.area_select.is_some()
-                                {
-                                    self.selected_nodes = self.area_select.as_ref().unwrap().nodes_inside_rect.clone();
-                                }
-        
-                                self.area_select = None;
-                            },
+                {
+                    if self.area_select.is_some()
+                    {
+                        self.selected_nodes = self.area_select.as_ref().unwrap().nodes_inside_rect.clone();
+                    }
+
+                    self.area_select = None;
+                },
                 GraphViewportAction::PrimaryClickedBackground =>
                 {
                     self.selected_nodes.clear();

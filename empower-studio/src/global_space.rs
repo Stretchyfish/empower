@@ -37,6 +37,11 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext, user_inputs: 
 
 fn detect_global_hotkeys(studio_context: &mut StudioContext, user_inputs: &UserInputs)
 {
+    if user_inputs.holding_ctrl && user_inputs.clicked_s
+    {
+        studio_context.request_save_project(None);
+    }
+    
     if user_inputs.holding_alt && user_inputs.clicked_d
     {
         studio_context.get_settings_mut().developer_mode = !studio_context.get_settings_mut().developer_mode;

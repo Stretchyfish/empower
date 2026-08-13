@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::Project};
+use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::{Project, ProjectState}};
 use layout::Layout;
 
 mod request;
@@ -266,9 +266,9 @@ impl StudioContext
         &mut self.executor_settings
     }
 
-    pub fn request_save_project(&mut self)
+    pub fn request_save_project(&mut self, location: Option<PathBuf>)
     {
-        self.requests.push_back( Request::SaveProject );
+        self.requests.push_back( Request::SaveProject { path: location } );
     }
 
     pub fn request_save_project_as(&mut self)
@@ -352,10 +352,27 @@ impl StudioContext
             Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id, &self.project.assets); },
             Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport, &self.project.assets ); },
             Request::SaveStudio => { self.save_studio(); },
-            Request::SaveProject =>
+            Request::SaveProject { path } =>
             {
-                // let _ = self.project.save();
-                // self.cache.add_previous_project(self.project.location.clone());
+                if self.project.state == ProjectState::Temporary && path.is_none()
+                {
+                    self.windows.project_name_panel.activate_show(self.project.name.clone());
+                    return;
+                }
+                
+                let save_result = self.project.save(path);
+
+                match save_result
+                {
+                    Ok(_) =>
+                    {
+                        self.add_log( Log::news( "project saved" ) );
+                    },
+                    Err( error ) =>
+                    {
+                        self.add_log( Log::warning( error.as_str() ) );
+                    },
+                }
             },
             Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
             Request::LoadProject => {

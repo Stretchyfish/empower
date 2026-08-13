@@ -56,79 +56,11 @@ pub fn create_temporary_project(project: &Project) -> Result<(), String>
     Ok(())
 }
 
-pub fn save_project(project: &Project)
-{
-    
-}
-
-pub fn save_assets(assets: &Assets)
-{
-    
-}
-
 pub fn load_project() -> Project
 {
     Project::new()
 }
 
-pub fn import_asset(project: &mut Project, path: &PathBuf) -> Result<(), String>
-{
-    if !path.exists()
-    {
-        return Err( format!("Cannot import asset with path path {}, because it doesn't exist", path.to_string_lossy().to_string() ));
-    }
-
-    let file_name = path.file_name().unwrap().to_string_lossy().to_string(); // I believe this is safe, due to the exists check above
-
-    if file_name.contains(".graph")
-    {
-        let node_graph_file = std::fs::read_to_string(&path);
-
-        if node_graph_file.is_err()
-        {
-            return Err(node_graph_file.err().unwrap().to_string());
-        }
-
-        let node_graph_json = std::fs::read_to_string(&node_graph_file.unwrap());
-
-        if node_graph_json.is_err()
-        {
-            return Err("cannot convert node_graph_file to sting".to_string());
-        }
-
-        let node_graph = NodeGraph::from_json( &node_graph_json.unwrap() );
-
-        if node_graph.is_err()
-        {
-            return Err("cannot convert node_graph_json to node graph".to_string());
-        }
-
-        project.assets.add_node_graph_asset(file_name, None, node_graph.unwrap());
-
-        return Ok(());
-    }
-
-    if file_name.contains(".png")
-    {
-        let image = image::open(&path);
-
-        if image.is_err()
-        {
-            return Err( image.err().unwrap().to_string() );
-        }
-
-        let image = image.unwrap().to_rgba8();
-        let (image_width, image_height) = image.dimensions();
-
-        let color_image = egui::ColorImage::from_rgba_unmultiplied([image_width as usize, image_height as usize], image.as_raw());
-
-        project.assets.add_image_asset(file_name, None, color_image);
-
-        return Ok(());
-    }
-
-    Err("Cannot import, imcompatible file type.".to_string())
-}
  
 #[derive(Clone)]
 pub struct ExportConfig

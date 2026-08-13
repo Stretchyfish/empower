@@ -9,6 +9,17 @@ pub struct Log
 
 impl Log
 {
+    pub fn news(text: &str) -> Self
+    {
+        Self
+        {
+            text: String::from(text),
+            creation_time: Instant::now(),
+            level: LogLevel::News
+        }
+    }
+
+    
     pub fn info(text: &str) -> Self
     {
         Self
@@ -32,6 +43,7 @@ impl Log
 
 pub enum LogLevel
 {
+    News,
     Info,
     Warning,
 }

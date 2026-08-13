@@ -12,7 +12,7 @@ pub enum Request
     AddViewportAtFirstLeaf { viewport: Viewport }, // @TODO, look into a better way of doing this?
     SaveStudio,
     LoadStudio,
-    SaveProject,
+    SaveProject { path: Option<PathBuf> },
     SaveProjectAs,
     LoadProject,
     LoadSpecificProject { project_path: PathBuf },

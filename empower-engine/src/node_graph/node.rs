@@ -4,7 +4,7 @@ pub mod node_kind;
 pub use node_kind::NodeKind;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct Node
 {
     pub position: egui::Pos2,

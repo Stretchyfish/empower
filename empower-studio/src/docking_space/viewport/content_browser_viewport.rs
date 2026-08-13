@@ -323,7 +323,7 @@ impl ContentBrowserViewport
 
             if ui.add(egui::Button::new("create graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let created_node_graph_result = studio_context.get_project_mut().assets.create_asset( Some( self.current_directory ), AssetKind::NodeGraph, "unamed");
+                let created_node_graph_result = studio_context.get_project_mut().assets.create_asset( Some( self.current_directory ), AssetKind::NodeGraph, "unamed.json");
 
                 if created_node_graph_result.is_err()
                 {
@@ -331,7 +331,9 @@ impl ContentBrowserViewport
                     return;
                 }
 
-                self.renaming_file = Some( ViewportRenameState::new(String::new(), created_node_graph_result.unwrap()));
+                let asset_meta = studio_context.get_project().assets.meta.get(created_node_graph_result.as_ref().unwrap()).unwrap();
+
+                self.renaming_file = Some( ViewportRenameState::new(asset_meta.name.clone(), created_node_graph_result.unwrap()));
                 self.quick_menu = None;
             };
 
