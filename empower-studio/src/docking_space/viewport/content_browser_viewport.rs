@@ -323,7 +323,7 @@ impl ContentBrowserViewport
 
             if ui.add(egui::Button::new("create graph").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
             {
-                let created_node_graph_result = studio_context.get_project_mut().assets.create_asset( Some( self.current_directory ), AssetKind::NodeGraph, "unamed.json");
+                let created_node_graph_result = studio_context.get_project_mut().assets.create_asset( Some( self.current_directory ), AssetKind::NodeGraph, "unamed");
 
                 if created_node_graph_result.is_err()
                 {

@@ -31,7 +31,7 @@ impl Project
     {
         let default_project_name = "untitled".to_string();
         let mut assets = Assets::new(&default_project_name);
-        let entry_graph_asset_id = assets.create_asset(Some( ASSET_FOLDER_ASSET_ID ), AssetKind::NodeGraph, "entry_graph.json");
+        let entry_graph_asset_id = assets.create_asset(Some( ASSET_FOLDER_ASSET_ID ), AssetKind::NodeGraph, "entry_graph");
 
         Self
         {
@@ -177,10 +177,33 @@ impl Project
         Ok(())
     }
 
-    pub fn save_project_as(&mut self, location: PathBuf) -> Result<(), &'static str>
+    pub fn load(project_location: &PathBuf) -> Result<Self, String>
     {
+        if !project_location.is_dir()
+        {
+            return Err(format!("Cannot load project at path: {}, is not a directory", project_location.to_string_lossy()));
+        }
 
-        Ok(())
+        let project_config_location = project_location.join("project.json");
+
+        let project_config_read_result = std::fs::read_to_string(&project_config_location);
+
+        if project_config_read_result.is_err()
+        {
+            return Err(format!("Cannot load project at path: {}, project config file cannot be read because: {}", project_config_location.to_string_lossy(), project_config_read_result.err().unwrap().to_string()));
+        }
+
+        let mut project: Project = serde_json::from_str(&project_config_read_result.unwrap()).unwrap();
+
+        let loaded_all_asset_result = project.assets.load_all_assets(project_location);
+
+        if loaded_all_asset_result.is_err()
+        {
+            return Err(format!("Could not load all assets because: {}", loaded_all_asset_result.err().unwrap()));
+        }
+
+        Ok(project)
     }
+
 }
 

@@ -360,13 +360,18 @@ impl StudioContext
                     return;
                 }
                 
-                let save_result = self.project.save(path);
+                let save_result = self.project.save(path.clone()); // @TODO, this clone can be avoided with a bit of thinking
 
                 match save_result
                 {
                     Ok(_) =>
                     {
                         self.add_log( Log::news( "project saved" ) );
+
+                        if path.is_some()
+                        {
+                            self.cache.persistent.add_previous_project(path.unwrap().join(self.project.name.clone()));
+                        }
                     },
                     Err( error ) =>
                     {
@@ -376,10 +381,24 @@ impl StudioContext
             },
             Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
             Request::LoadProject => {
-                // self.project.load();
+                self.windows.project_load_dialog.start_dialog();
             },
             Request::LoadSpecificProject { project_path } => {
-                // self.project.load_specific_path(project_path);
+
+                let load_project_result = Project::load( &project_path );
+
+                match load_project_result
+                {
+                    Ok( project ) =>
+                    {
+                        self.project = project;
+                        self.cache.persistent.add_previous_project(project_path);
+                    },
+                    Err( error ) =>
+                    {
+                        self.add_log( Log::info( error.as_str() ) );
+                    },
+                }
             },
             Request::LoadStudio => { self.load_studio(); },
             Request::Compile => { self.compile(); },

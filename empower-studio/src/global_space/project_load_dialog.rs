@@ -6,13 +6,14 @@ use rfd::FileDialog;
 use crate::studio_context::{Log, StudioContext};
 
 #[derive(Clone)]
-pub struct AssetImportDialog
+pub struct ProjectLoadDialog
 {
     task: Arc<Mutex<Option<JoinHandle<Option<PathBuf>>>>> // @TODO, this gets so complicated because of the clone, think in the future of a way to improve
 }
 
-impl AssetImportDialog
+impl ProjectLoadDialog
 {
+    
     pub fn new() -> Self
     {
         Self
@@ -32,11 +33,11 @@ impl AssetImportDialog
 
         *task = Some( thread::spawn(move || {
             FileDialog::new()
-            .set_title("import asset")
-            .pick_file()
+            .set_title("load project")
+            .pick_folder()
         }));
     }
-
+    
     pub fn show(&mut self, studio_context: &mut StudioContext)
     {
         let mut task = self.task.lock();
@@ -61,16 +62,7 @@ impl AssetImportDialog
                 {
                     Some( path ) =>
                     {
-                        let import_asset_result = studio_context.get_project_mut().assets.import_asset(&path);
-
-                        match import_asset_result
-                        {
-                            Ok(_) => {},
-                            Err( error ) =>
-                            {
-                                studio_context.add_log( Log::info( error.as_str() ) );
-                            },
-                        }
+                        studio_context.request_load_specific_project( path );
                     },
                     None => {},
                 }
@@ -82,3 +74,4 @@ impl AssetImportDialog
         }
     }
 }
+

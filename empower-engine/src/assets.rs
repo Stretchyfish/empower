@@ -10,7 +10,7 @@ pub use asset_meta::AssetMeta;
 mod asset_kind;
 pub use asset_kind::AssetKind;
 
-use egui::{ahash::{HashSet, HashSetExt}};
+use egui::{TextBuffer, ahash::{HashSet, HashSetExt}};
 use image::{ImageBuffer, Rgba};
 use serde::{Deserialize, Serialize};
 
@@ -86,66 +86,43 @@ impl Assets
 
         let asset_creation_result = match asset_kind
         {
-            AssetKind::NodeGraph => self.create_node_graph(asset_id, name),
+            AssetKind::NodeGraph => self.create_node_graph(&parent, asset_id, name),
             AssetKind::Image => todo!(),
             AssetKind::Json => todo!(),
             AssetKind::Folder => self.create_folder(&parent, asset_id, name),
         };
 
-        if asset_creation_result.is_err()
-        {
-            return asset_creation_result;
-        }
+        let meta = asset_creation_result?;
 
-        self.meta.insert(asset_id, AssetMeta { id: asset_id, name: String::from(name), parent, kind: asset_kind });
-
+        self.meta.insert(asset_id, meta );
         self.modified_assets.insert(asset_id);
 
-        asset_creation_result
+        Ok( asset_id )
     }
 
-    fn create_node_graph(&mut self, asset_id: AssetId, name: &'static str) -> Result<AssetId, String>
+    fn create_node_graph(&mut self, parent: &Option<AssetId>, asset_id: AssetId, name: &'static str) -> Result<AssetMeta, String>
     {
-        let name = String::from(name) + ".json";
+        let name_with_affix = String::from(name) + ".graph";
         
         if self.meta.values().any(|m| m.kind == AssetKind::NodeGraph && m.name == name )
         {
             return Err(format!("Cannot create node graph with name ({}), because node graph with said name already exists", name));
         }
 
-        let node_graph = NodeGraph::new(name.as_str());
+        let node_graph = NodeGraph::new(name);
         self.loaded_assets.loaded_node_graphs.insert(asset_id, node_graph);
-        Ok(asset_id)
+
+        Ok( AssetMeta { id: asset_id, name: name_with_affix, parent: *parent, kind: AssetKind::NodeGraph })
     }
 
-    fn create_folder(&mut self, parent: &Option<AssetId>, asset_id: AssetId, name: &'static str) -> Result<AssetId, String> 
+    fn create_folder(&mut self, parent: &Option<AssetId>, asset_id: AssetId, name: &'static str) -> Result<AssetMeta, String> 
     {
         if self.meta.values().any(|m| m.kind == AssetKind::Folder && m.parent == *parent && m.name.as_str() == name )
         {
             return Err(format!("Cannot create folder with name ({}), because folder with said name already exists in current folder", name));
         }
 
-        Ok( asset_id )
-    }
-
-    pub fn add_node_graph_asset(&mut self, name: String, parent: Option<AssetId>, node_graph: NodeGraph) -> AssetId
-    {
-        let asset_id = self.get_asset_id();
-
-        self.loaded_assets.loaded_node_graphs.insert(asset_id, node_graph);
-        self.meta.insert(asset_id, AssetMeta { id: asset_id, name, parent: if parent.is_some() { parent } else { Some(ASSET_FOLDER_ASSET_ID) }, kind: AssetKind::NodeGraph });
-
-        asset_id
-    }
-
-    pub fn add_image_asset(&mut self, name: String, parent: Option<AssetId>, color_image: egui::ColorImage) -> AssetId
-    {
-        let asset_id = self.get_asset_id();
-
-        self.loaded_assets.loaded_images.insert(asset_id, color_image);
-        self.meta.insert(asset_id, AssetMeta { id: asset_id, name, parent: if parent.is_some() { parent } else { Some(ASSET_FOLDER_ASSET_ID) }, kind: AssetKind::Image });
-
-        asset_id
+        Ok( AssetMeta { id: asset_id, name: name.to_string(), parent: *parent, kind: AssetKind::Folder })
     }
 
     pub fn get_node_graph(&self, id: &AssetId) -> Option<&NodeGraph> // @TODO, this idea needs a second look
@@ -164,9 +141,9 @@ impl Assets
         self.meta.keys().max().unwrap_or(&0) + 1 
     }
 
-    pub fn save_assets(&mut self, location: &PathBuf) -> Result<(), String>
+    pub fn save_assets(&mut self, project_location: &PathBuf) -> Result<(), String>
     {
-        let location = location.join("assets");
+        let location = project_location.join("assets");
 
         let create_asset_directory_result = std::fs::create_dir( &location );
 
@@ -269,39 +246,67 @@ impl Assets
 
         let file_name = path.file_name().unwrap().to_string_lossy().to_string(); // I believe this is safe, due to the exists check above
 
+        let mut asset_kind = None;
         if file_name.contains(".graph")
         {
-            let node_graph_file = std::fs::read_to_string(&path);
+            asset_kind = Some( AssetKind::NodeGraph );
+        }
+
+        if file_name.contains(".png")
+        {
+            asset_kind = Some( AssetKind::Image );
+        }
+
+        if asset_kind.is_none()
+        {
+            return Err(format!("Cannot import asset with path {}, because it is not compatible", path.to_string_lossy().to_string()));
+        }
+        
+        let new_asset_id = self.get_asset_id();
+        self.meta.insert(new_asset_id, AssetMeta { id: new_asset_id, name: file_name, parent: Some( ASSET_FOLDER_ASSET_ID ), kind: asset_kind.unwrap() });
+
+        let loaded_asset_result = self.load_asset(&new_asset_id, path);
+
+        loaded_asset_result?;
+
+        self.modified_assets.insert(new_asset_id);
+
+        Ok(new_asset_id)
+    }
+
+    pub fn load_asset(&mut self, asset_id: &AssetId, asset_location: &PathBuf) -> Result<(), String>
+    {
+        if !asset_location.exists()
+        {
+            return Err( format!("Cannot load asset with path path {}, because it doesn't exist", asset_location.to_string_lossy().to_string() ));
+        }
+
+        let file_name = asset_location.file_name().unwrap().to_string_lossy().to_string(); // I believe this is safe, due to the exists check above
+
+        if file_name.contains(".graph")
+        {
+            let node_graph_file = std::fs::read_to_string(&asset_location);
 
             if node_graph_file.is_err()
             {
-                return Err(node_graph_file.err().unwrap().to_string());
+                return Err(format!("cannot convert node_graph at path ({}) to string, because: ({})", asset_location.to_string_lossy(), node_graph_file.err().unwrap()));
             }
 
-            let node_graph_json = std::fs::read_to_string(&node_graph_file.unwrap());
-
-            if node_graph_json.is_err()
-            {
-                return Err("cannot convert node_graph_file to sting".to_string());
-            }
-
-            let node_graph = NodeGraph::from_json( &node_graph_json.unwrap() );
+            let node_graph = NodeGraph::from_json( &node_graph_file.unwrap() );
 
             if node_graph.is_err()
             {
                 return Err("cannot convert node_graph_json to node graph".to_string());
             }
 
-            let asset_id = self.add_node_graph_asset(file_name, None, node_graph.unwrap());
+            self.loaded_assets.loaded_node_graphs.insert(*asset_id, node_graph.unwrap());
 
-            self.modified_assets.insert(asset_id);
-
-            return Ok(asset_id);
+            return Ok(());
         }
 
         if file_name.contains(".png")
         {
-            let image = image::open(&path);
+            let image = image::open(&asset_location);
 
             if image.is_err()
             {
@@ -313,16 +318,35 @@ impl Assets
 
             let color_image = egui::ColorImage::from_rgba_unmultiplied([image_width as usize, image_height as usize], image.as_raw());
 
-            let asset_id = self.add_image_asset(file_name, None, color_image);
+            self.loaded_assets.loaded_images.insert(*asset_id, color_image);
 
-            self.modified_assets.insert(asset_id); // @TODO, this line is repeated in each case, look into another way
-
-            return Ok(asset_id);
+            return Ok(());
         }
 
-        Err("Cannot import, imcompatible file type.".to_string())
+        Err(format!("Cannot import, asset at path ({}) imcompatible file type.", file_name))
     }
-    
+
+    pub fn load_all_assets(&mut self, project_location: &PathBuf) -> Result<(), String>
+    {
+        let asset_directory_location = project_location.join("assets");
+        let asset_metas = self.meta.clone();
+
+        for (_, meta) in asset_metas
+        {
+            match meta.kind
+            {
+                AssetKind::Folder => continue, // Special case currenly, might change in the future
+                _ => {},
+            }
+
+            let asset_location = asset_directory_location.join(meta.name.clone());
+            let load_asset_result = self.load_asset(&meta.id, &asset_location);
+
+            load_asset_result?
+        }
+
+        Ok(())
+    }
 }
 
 
