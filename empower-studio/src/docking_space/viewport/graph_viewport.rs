@@ -99,17 +99,13 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
     graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &developer_mode);
 
-    if !ui.ui_contains_pointer()
+    if ui.ui_contains_pointer()
     {
-        return;
+        graph_viewport.process_effect_of_global_actions(user_inputs, studio_context, &mut graph_viewport_actions);
+        graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
     }
 
-    graph_viewport.process_effect_of_global_actions(user_inputs, studio_context, &mut graph_viewport_actions);
-
-    graph_viewport.apply_mouse_delta_to_selected_nodes(studio_context);
     graph_viewport.process_graph_viewport_actions(studio_context, user_inputs, graph_viewport_actions, viewport_name);
-
-
 }
 
 impl GraphViewport
