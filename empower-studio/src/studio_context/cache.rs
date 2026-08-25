@@ -1,26 +1,23 @@
-use std::{collections::VecDeque, path::PathBuf};
-
 use super::CONFIG_DIRECTORY;
 
-use empower_engine::node_graph::NodeAddress;
 use serde::{Deserialize, Serialize};
+
+mod persistent_cache;
+pub use persistent_cache::PersistentCache;
+
+mod session_cache;
+pub use session_cache::SessionCache;
+
 
 const CONFIG_CACHE_FILE_NAME: &'static str = "cache.json";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Cache
 {
-    pub previous_projects: VecDeque<PathBuf>,
+    pub persistent: PersistentCache,
 
     #[serde(skip)]
-    pub instruction_highlighted_nodes: Option<NodeAddress>, 
-    
-    #[serde(skip)]
-    pub debug_highlighted_nodes: Vec<NodeAddress>,
-
-    #[serde(skip)]
-    pub outputs: Vec<String>,
-
+    pub session: SessionCache,
 }
 
 impl Cache
@@ -29,10 +26,8 @@ impl Cache
     {
         Self
         {
-            previous_projects: VecDeque::new(),
-            instruction_highlighted_nodes: None,
-            debug_highlighted_nodes: Vec::new(),
-            outputs: Vec::new(),
+            persistent: PersistentCache::new(),
+            session: SessionCache::new(),
         }
     }
 
@@ -89,29 +84,5 @@ impl Cache
         };
 
         Self::new()
-    }
-
-    pub fn add_previous_project(&mut self, project_path: PathBuf)
-    {
-        let mut project_index_to_remove = None;
-        for (index, previous_project) in self.previous_projects.iter().enumerate()
-        {
-            if previous_project.to_string_lossy().to_string() == project_path.to_string_lossy().to_string()
-            {
-                project_index_to_remove = Some( index );
-            }
-        }
-
-        if project_index_to_remove.is_some()
-        {
-            self.previous_projects.remove(project_index_to_remove.unwrap());
-        }
-        
-        if self.previous_projects.len() > 10
-        {
-            self.previous_projects.pop_front();
-        }
-
-        self.previous_projects.push_back(project_path);
     }
 }

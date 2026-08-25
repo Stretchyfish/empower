@@ -1,6 +1,6 @@
 use empower_engine::{compiler::Instruction, node_graph::NodeAddress};
 
-use crate::studio_context::StudioContext;
+use crate::studio_context::{Log, StudioContext};
 
 const REGISTER_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::BLUE;
 const INSTRUCTION_ADDRESS_TEXT_COLOR: egui::Color32 = egui::Color32::YELLOW;
@@ -22,6 +22,8 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
     }
 
     let mut hovered_graph_and_node = None;
+
+    let mut potential_log = None;
 
     let compile_menu_response = ui.menu_button("⚪", |ui|
     {
@@ -87,9 +89,22 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 
                                 if instruction_layout_response.hovered()
                                 {
-                                    let instruction_node_address = meta.as_ref().unwrap().trace.get(graph_id).unwrap().get(&instruction_address).expect("trace doesn't contain this node");
+                                    let graph_trace = meta.as_ref().unwrap().trace.get(graph_id).unwrap();
+                                    let traced_instruction_node_key = graph_trace.get(&instruction_address);
+
+                                    match traced_instruction_node_key
+                                    {
+                                        Some( node_key ) =>
+                                        {
+                                            hovered_graph_and_node = Some( NodeAddress { graph_id: *graph_id, node_key: *node_key} );
+                                        },
+                                        None =>
+                                        {
+                                            potential_log = Some( Log::warning(format!("Instruction {} doesn't contain trace", instruction_address).as_str())  );
+                                        },
+                                    }
+
                                     // potential_new_user_state = Some( UserState::HighlightingNode { graph_id: 1, node_key: *instruction_node } );
-                                    hovered_graph_and_node = Some( NodeAddress { graph_id: *graph_id, node_key: *instruction_node_address } );
                                     // studio_context.get_cache_mut().highlighted_nodes = vec![ *instruction_node ];
                                 }
 
@@ -102,17 +117,22 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
         });
     });
 
+    if potential_log.is_some()
+    {
+        studio_context.add_log( potential_log.unwrap() );
+    }
+
     {
         let cache = studio_context.get_cache_mut();
 
         if hovered_graph_and_node.is_some()
         {
-            cache.instruction_highlighted_nodes = hovered_graph_and_node;
+            cache.session.instruction_highlighted_nodes = hovered_graph_and_node;
         }
 
         if compile_menu_response.inner.is_none()
         {
-            studio_context.get_cache_mut().instruction_highlighted_nodes = None;
+            studio_context.get_cache_mut().session.instruction_highlighted_nodes = None;
         }
     }
 }

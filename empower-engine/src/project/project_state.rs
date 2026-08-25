@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq)]
 pub enum ProjectState
 {
     Temporary,
-    Saved
+    Saved(PathBuf)
 }
 
 impl ProjectState
@@ -14,7 +16,7 @@ impl ProjectState
         match self
         {
             ProjectState::Temporary => "Temporary".to_string(),
-            ProjectState::Saved => "Saved".to_string(),
+            ProjectState::Saved( path ) => format!("Saved ({})", path.to_string_lossy().to_string()),
         }
     }
 }

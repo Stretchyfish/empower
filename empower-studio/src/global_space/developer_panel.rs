@@ -85,14 +85,14 @@ impl DeveloperPanel
                         .num_columns(2)
                         .spacing([12.0, 4.0])
                         .striped(true)
-                        .show(ui, |ui|
+                        .show(ui, |_|
                         {
-                            for (path, asset_id) in &assets.path_to_asset_id
-                            {
-                                ui.label(path.to_string_lossy());
-                                ui.label(asset_id.to_string());
-                                ui.end_row();
-                            }
+                            // for (path, asset_id) in &assets.path_to_asset_id
+                            // {
+                            //     ui.label(path.to_string_lossy());
+                            //     ui.label(asset_id.to_string());
+                            //     ui.end_row();
+                            // }
                         });
                     });
 
@@ -156,7 +156,6 @@ fn show_project_developer_panel(ui: &mut egui::Ui, project: &Project)
     ui.collapsing("project", |ui|
     {
         ui.label(format!("name: {}", project.name));
-        ui.label(format!("location: {}", project.location.to_string_lossy()));
         ui.label(format!("state: {}", project.state.to_string()));
     });
 }

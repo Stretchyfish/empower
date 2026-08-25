@@ -1,16 +1,61 @@
-use empower_engine::node_graph::NodeGraph;
+use std::collections::VecDeque;
 
-const NODES_NAMES_AVAILABLE: &'static [&str] = &[
-    "number",
-    "print",
-    "branch",
-    "wait",
-    "list",
-    "loop",
-    "sub graph",
-    "image",
-    "show image",
-    "show math graph",
+use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, SubGraphState}};
+
+use super::GraphViewportAction;
+
+struct NodeType // @TODO, find a better name
+{
+    name: &'static str,
+    constructor: fn() -> NodeKind,
+}
+
+static NODE_TYPES: &[NodeType] = &[
+    NodeType
+    {
+        name: "print",
+        constructor: || NodeKind::Print,
+    },
+    NodeType
+    {
+        name: "branch",
+        constructor: || NodeKind::Branch,
+    },
+    NodeType
+    {
+        name: "loop",
+        constructor: || NodeKind::Loop ( LoopMode::Forever ),
+    },
+    NodeType
+    {
+        name: "wait",
+        constructor: || NodeKind::Wait,
+    },
+    NodeType
+    {
+        name: "list",
+        constructor: || NodeKind::List( ListState::new() ),
+    },
+    NodeType
+    {
+        name: "image",
+        constructor: || NodeKind::Image( ImageState::new() ),
+    },
+    NodeType
+    {
+        name: "show image",
+        constructor: || NodeKind::ShowImage,
+    },
+    NodeType
+    {
+        name: "math graph",
+        constructor: || NodeKind::MathGraph,
+    },
+    NodeType
+    {
+        name: "sub graph",
+        constructor: || NodeKind::SubGraph( SubGraphState::new() ),
+    },
 ];
 
 #[derive(Clone, Default, Debug)]
@@ -44,7 +89,7 @@ impl NodePicker
         self.search_text = String::new();
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, node_graph: &mut NodeGraph, mouse_position: &egui::Pos2)
+    pub fn show(&mut self, ui: &mut egui::Ui, graph_viewport_actions: &mut VecDeque<GraphViewportAction>, mouse_position: &egui::Pos2)
     {
         if !self.show
         {
@@ -94,12 +139,12 @@ impl NodePicker
             {
                 ui.group(|ui|
                 {
-                    
-                    for node_name in NODES_NAMES_AVAILABLE
+                    // @TODO, in the future this should get changed to only appear like this when searching, otherwise they should be sorted into categories
+                    for node_type in NODE_TYPES
                     {
                         if self.search_text.len() > 0
                         {
-                            if !(*node_name).contains( &self.search_text.to_lowercase() )
+                            if !(*node_type).name.contains( &self.search_text.to_lowercase() )
                             {
                                 continue;
                             }
@@ -114,7 +159,7 @@ impl NodePicker
                             }
                         }
 
-                        let button = egui::Button::new( *node_name )
+                        let button = egui::Button::new( node_type.name )
                         .min_size( egui::Vec2 {x: 190.0, y: 20.0} )
                         .fill(
 
@@ -130,14 +175,14 @@ impl NodePicker
                         
                         if ui.add(button).clicked() 
                         {
-                            node_to_add = Some( *node_name );
+                            node_to_add = Some( (node_type.constructor)() );
                         };
 
                         node_showed_number += 1;
 
                         if user_clicked_enter && current_node_is_selected
                         {
-                            node_to_add = Some( *node_name );
+                            node_to_add = Some( (node_type.constructor)() );
                         }
                     }
                 });
@@ -164,7 +209,7 @@ impl NodePicker
 
         if node_to_add.is_some()
         {
-            node_graph.add_node(node_to_add.unwrap(), Some(*mouse_position));
+            graph_viewport_actions.push_back( GraphViewportAction::AddNodeToGraph { node_kind: node_to_add.unwrap(), position: Some(*mouse_position) });
             self.show = false;
         }
     }

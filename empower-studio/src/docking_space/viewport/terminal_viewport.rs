@@ -36,16 +36,6 @@ pub fn show(terminal_viewport: &mut TerminalViewport, ui: &mut egui::Ui, studio_
         {
             terminal_viewport.entries.clear();
         }
-
-        if ui.button("Add text").clicked()
-        {
-
-        }
-
-        if ui.button("Add line").clicked()
-        {
-
-        }
     });
 
     ui.separator();
@@ -76,23 +66,23 @@ impl TerminalViewport
 
         if let Some( index_after_last_observed_output_value ) = self.index_after_last_observed_output_value // This is to handle edgecase when same setup is executed twice
         {
-            if cache.outputs.len() < index_after_last_observed_output_value
+            if cache.session.outputs.len() < index_after_last_observed_output_value
             {
                 self.index_after_last_observed_output_value = None;
             }
         }
 
-        if cache.outputs.is_empty()
+        if cache.session.outputs.is_empty()
         {
             return;
         }
 
         let index_after_last_observed_output_value = self.index_after_last_observed_output_value.unwrap_or(0);
 
-        let new_outputs = &cache.outputs[index_after_last_observed_output_value..];
+        let new_outputs = &cache.session.outputs[index_after_last_observed_output_value..];
         self.entries.extend_from_slice(new_outputs);
 
-        self.index_after_last_observed_output_value = Some( cache.outputs.len() );
+        self.index_after_last_observed_output_value = Some( cache.session.outputs.len() );
     }
 }
 

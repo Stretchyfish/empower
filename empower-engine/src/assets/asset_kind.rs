@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AssetKind
 {
-    Graph,
-    Image,
+    Folder,
+    NodeGraph,
+    Image, // @TODO, this should probably be named Png, to seperate saving behavior between different image file types
+    Json,
 }
 
 impl AssetKind
@@ -14,8 +16,10 @@ impl AssetKind
     {
         match self
         {
-            AssetKind::Graph => "graph".to_string(),
+            AssetKind::Folder => "folder".to_string(),
+            AssetKind::NodeGraph => "node_graph".to_string(),
             AssetKind::Image => "image".to_string(),
+            AssetKind::Json => "json".to_string(),
         }
     }
 }

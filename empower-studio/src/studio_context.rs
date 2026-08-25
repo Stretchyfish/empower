@@ -1,7 +1,7 @@
 mod layout;
 use std::{collections::VecDeque, path::PathBuf};
 
-use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::Project};
+use empower_engine::{assets::AssetId, compiler::{self, CompileResult, CompileSettings}, distribution, executor::{Executor, ExecutorSettings}, project::{Project, ProjectState}};
 use layout::Layout;
 
 mod request;
@@ -41,6 +41,8 @@ pub struct StudioContext
 
     windows: Windows,
 
+    dragged_asset: Option<AssetId>,
+
     logs: VecDeque<Log>,
 
     cache: Cache,
@@ -51,12 +53,14 @@ impl StudioContext
 {
     pub fn new() -> Self
     {
+        let project = Project::new();
         StudioContext
         {
-            project: Project::new(),
-            
-            layout: Layout::load(),
+            layout: Layout::load(&project.assets),
+
+            project,
             settings: Settings::new(),
+            
 
             executor_settings: ExecutorSettings::new_debug_mode(),
             executor: None,
@@ -64,11 +68,12 @@ impl StudioContext
 
             windows: Windows::new(),
 
+            dragged_asset: None,
+
             logs: VecDeque::new(),
 
             cache: Cache::load(),
             requests: VecDeque::new(),
-
         }
     }
 
@@ -123,7 +128,7 @@ impl StudioContext
 
     fn load_studio(&mut self)
     {
-        self.layout = Layout::load();
+        self.layout = Layout::load(&self.project.assets);
         self.cache = Cache::load();
     }
 
@@ -147,6 +152,11 @@ impl StudioContext
         &mut self.project
     }
 
+    pub fn get_project_mut_and_cache_mut(&mut self) -> (&mut Project, &mut Cache)
+    {
+        (&mut self.project, &mut self.cache)
+    }
+
     pub fn get_windows_mut(&mut self) -> &mut Windows
     {
         &mut self.windows
@@ -162,14 +172,19 @@ impl StudioContext
         &mut self.settings
     }
 
-    pub fn get_windows(&mut self) -> Windows
+    pub fn get_windows(&mut self) -> &Windows
     {
-        self.windows.clone()
+        &self.windows
     }
 
     pub fn set_windows(&mut self, windows: Windows)
     {
         self.windows = windows;
+    }
+
+    pub fn get_project_and_cache_mut(&mut self) -> (&Project, &mut Cache)
+    {
+        (&self.project, &mut self.cache)
     }
 
     pub fn request_compile(&mut self)
@@ -205,7 +220,7 @@ impl StudioContext
         if let Err(e) = compile_result
         {
             println!("Failed to compile: {}", e);
-            self.cache.outputs.push( e.to_string() ); // @TODO, find a proper way to do logging
+            self.cache.session.outputs.push( e.to_string() ); // @TODO, find a proper way to do logging
             return;
         }
 
@@ -251,9 +266,9 @@ impl StudioContext
         &mut self.executor_settings
     }
 
-    pub fn request_save_project(&mut self)
+    pub fn request_save_project(&mut self, location: Option<PathBuf>)
     {
-        self.requests.push_back( Request::SaveProject );
+        self.requests.push_back( Request::SaveProject { path: location } );
     }
 
     pub fn request_save_project_as(&mut self)
@@ -301,6 +316,26 @@ impl StudioContext
         &self.logs
     }
 
+    pub fn request_import_asset(&mut self)
+    {
+        self.requests.push_back( Request::ImportAsset );
+    }
+
+    pub fn request_begin_dragging_asset(&mut self, asset_id: AssetId)
+    {
+        self.requests.push_back( Request::StartDraggingAsset { asset_id });
+    }
+
+    pub fn request_stop_dragging_asset(&mut self)
+    {
+        self.requests.push_back( Request::StopDraggingAsset );
+    }
+
+    pub fn get_dragged_asset(&self) -> &Option<AssetId>
+    {
+        &self.dragged_asset
+    }
+
     pub fn process_requests(&mut self)
     {
         if self.requests.is_empty()
@@ -312,34 +347,110 @@ impl StudioContext
 
         match request_to_process
         {
-            Request::DefaultLayout => { self.layout = Layout::default_layout() },
-            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport ); },
-            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id); },
-            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport ); },
+            Request::DefaultLayout => { self.layout = Layout::default_layout(&self.project.assets) },
+            Request::AddViewport { viewport } => { self.layout.add_viewport( viewport, &self.project.assets ); },
+            Request::AddOrFocusGraphViewport { graph_id } => { self.layout.add_or_focus_graph_viewport(graph_id, &self.project.assets); },
+            Request::AddViewportAtFirstLeaf { viewport } => { self.layout.add_viewport_at_first_leaf( viewport, &self.project.assets ); },
             Request::SaveStudio => { self.save_studio(); },
-            Request::SaveProject =>
+            Request::SaveProject { path } =>
             {
-                let _ = self.project.save();
-                self.cache.add_previous_project(self.project.location.clone());
+                if self.project.state == ProjectState::Temporary && path.is_none()
+                {
+                    self.windows.project_name_panel.activate_show(self.project.name.clone());
+                    return;
+                }
+                
+                let save_result = self.project.save(path.clone()); // @TODO, this clone can be avoided with a bit of thinking
+
+                match save_result
+                {
+                    Ok(_) =>
+                    {
+                        self.add_log( Log::news( "project saved" ) );
+
+                        if path.is_some()
+                        {
+                            self.cache.persistent.add_previous_project(path.unwrap().join(self.project.name.clone()));
+                        }
+                    },
+                    Err( error ) =>
+                    {
+                        self.add_log( Log::warning( error.as_str() ) );
+                    },
+                }
             },
             Request::SaveProjectAs => { self.windows.project_name_panel.activate_show(self.project.name.clone()); }, // This window will have the user set the projects name before calling regular save again
-            Request::LoadProject => {  self.project.load(); },
-            Request::LoadSpecificProject { project_path } => { self.project.load_specific_path(project_path); },
+            Request::LoadProject => {
+                self.windows.project_load_dialog.start_dialog();
+            },
+            Request::LoadSpecificProject { project_path } => {
+
+                let load_project_result = Project::load( &project_path );
+
+                match load_project_result
+                {
+                    Ok( project ) =>
+                    {
+                        self.project = project;
+                        self.cache.persistent.add_previous_project(project_path);
+                    },
+                    Err( error ) =>
+                    {
+                        self.add_log( Log::info( error.as_str() ) );
+                    },
+                }
+            },
             Request::LoadStudio => { self.load_studio(); },
             Request::Compile => { self.compile(); },
             Request::StartExecute => { let _ = self.start_execution(); },
             Request::StopExecute => { self.stop_execution(); },
             Request::ExportProject { config } => {
 
-                let _ = self.project.save();
+                if self.project.state == ProjectState::Temporary
+                {
+                    self.add_log( Log::info("cannot export project because its not saved") ); 
+                    self.windows.project_name_panel.activate_show(self.project.name.clone());
+                    return;
+                }
+
+                let _ = self.project.save(None);
+
+                if !config.valid_to_export()
+                {
+                    self.add_log( Log::info("cannot export project due to invalid export configuration") ); 
+                    return;
+                }
+
                 self.compile(); // @TODO, double check, this behavior might appear twice
 
                 if self.compile_result.is_none()
                 {
-                    panic!("Cannot export project, as it is not build yet");
+                    self.add_log( Log::warning("Cannot export project, as it cannot compile") );
+                    return;
                 }
                 
-                let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
+                let export_result = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
+
+                match export_result
+                {
+                    Ok(_) =>
+                    {
+                        self.add_log( Log::news("successfully exported project") );
+                    },
+                    Err( error_text ) =>
+                    {
+                        self.add_log( Log::info( error_text ) );
+                    },
+                }
+            },
+            Request::ImportAsset => { self.windows.asset_import_dialog.start_dialog(); },
+            Request::StartDraggingAsset { asset_id } =>
+            {
+                self.dragged_asset = Some( asset_id );
+            },
+            Request::StopDraggingAsset =>
+            {
+                self.dragged_asset = None;
             },
         }
     }

@@ -3,19 +3,21 @@ use std::collections::{HashMap, HashSet};
 pub mod node_address;
 pub use node_address::NodeAddress;
 
+pub mod node_handle;
+pub use node_handle::NodeHandle;
+
 pub mod node;
 pub use node::Node;
-pub use node::node_kind::NodeEdit;
 
 pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::node_graph::{node::node_kind::NODE_KIND_REGISTRY, port::PortDefinition};
+use crate::{node_graph::{node::NodeKind, port::PortDefinition}, value::Value};
 
 pub type NodeGraphKey = i32;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct NodeGraph {
     pub name: String,
     pub start_node_key: NodeGraphKey, // @TODO, add a const for start node key?
@@ -29,7 +31,7 @@ pub struct NodeGraph {
 }
 
 impl NodeGraph {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: &str) -> Self {
         let mut node_graph = Self {
             name: name.to_string(),
             start_node_key: 1, // @TODO, make this some kind of const?
@@ -42,7 +44,7 @@ impl NodeGraph {
             connections_in: HashMap::new(),
         };
 
-        let _ = node_graph.add_node("start", None);
+        let _ = node_graph.add_node(NodeKind::Start, None);
 
         node_graph
     }
@@ -62,15 +64,9 @@ impl NodeGraph {
 
     pub fn add_node(
         &mut self,
-        node_name: &'static str,
+        node_kind: NodeKind,
         position: Option<egui::Pos2>,
-    ) -> NodeGraphKey {
-        let node_kind_constructor = match NODE_KIND_REGISTRY.get(node_name) {
-            Some(constructor) => constructor,
-            None => panic!("Requested a non-existing node name"),
-        };
-
-        let node_kind = node_kind_constructor();
+    ) -> NodeHandle {
 
         let input_port_definitions = node_kind.input_port_definitions();
         let output_port_definitions = node_kind.output_port_definitions();
@@ -82,14 +78,31 @@ impl NodeGraph {
 
         let new_node = Node::new(
             position.unwrap_or(egui::Pos2::default()),
-            input_port_keys,
-            output_port_keys,
+            input_port_keys.clone(),
+            output_port_keys.clone(),
             node_kind,
         );
 
         self.nodes.insert(node_key, new_node);
 
-        node_key
+        NodeHandle
+        {
+            node_key,
+            input_port_keys,
+            output_port_keys,
+        }
+    }
+
+    pub fn get_node_handle(&self, node_key: NodeGraphKey) -> NodeHandle
+    {
+        let node = self.nodes.get(&node_key).unwrap(); // @TODO, add a propper check here
+
+        NodeHandle
+        {
+            node_key,
+            input_port_keys: node.input_port_keys.clone(),
+            output_port_keys: node.output_port_keys.clone()
+        }
     }
 
     pub fn create_node_copy(&mut self, node_key: &NodeGraphKey) -> NodeGraphKey
@@ -414,6 +427,24 @@ impl NodeGraph {
         }
 
         outputs
+    }
+
+    pub fn set_port_value(&mut self, port_key: NodeGraphKey, value: Value) -> Result<(), String>
+    {
+        let port = self.ports.get_mut(&port_key);
+
+        if port.is_none()
+        {
+            return Err( format!("node graph doesn't contain port {}, when setting port value", port_key));
+        }
+
+        let port = port.unwrap();
+
+        // @TODO, add a check if the values are also compatible?
+
+        port.value = Some( value );
+
+        Ok(())
     }
 
     pub fn get_connected_exec_nodes(&self, node_key: NodeGraphKey) -> Vec<NodeGraphKey> {

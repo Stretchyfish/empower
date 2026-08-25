@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use empower_engine::assets::AssetId;
+use empower_engine::assets::{AssetId, Assets};
 use serde::{Serialize, Deserialize};
 
 use crate::docking_space::{Viewport, viewport::{ContentBrowserViewport, GraphViewport, TerminalViewport}};
@@ -26,14 +26,14 @@ impl Layout
         }
     }
 
-    pub fn default_layout() -> Self
+    pub fn default_layout(assets: &Assets) -> Self
     {
         let mut new_default_layout = Self::new();
         
-        let graph_viewport_name = new_default_layout.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 1 ) } ); // entry graph should always have this id
+        let graph_viewport_name = new_default_layout.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new( 3 ) }, assets ); // entry graph should always have this id
 
-        let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::Terminal { terminal_viewport: TerminalViewport::new() } );
-        let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() });
+        let terminal_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::Terminal { terminal_viewport: TerminalViewport::new() }, assets);
+        let content_browser_viewport_name = new_default_layout.add_viewport_without_docking_state( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() }, assets);
 
         // This is all to place the initial docking configuration
         let graph_viewport_index = new_default_layout.docking_state.find_tab(&graph_viewport_name).expect("Unable to find initial graph viewport tab");
@@ -46,20 +46,30 @@ impl Layout
         new_default_layout
     }
 
-    fn get_viewport_name(&self, new_viewport: &Viewport) -> String
+    fn get_viewport_name(&self, new_viewport: &Viewport, assets: &Assets) -> String
     {
         let name = match new_viewport // @TODO, combine this with the adjust_viewport_name, to just get_viewport_name
         {
-            Viewport::Graph { graph_viewport: _ } => "graph viewport",
-            Viewport::Terminal { terminal_viewport: _ } => "terminal viewport",
-            Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport",
-            Viewport::Empty { empty_viewport: _ } => "empty viewport",
-            Viewport::ImageViewer { image_asset_id: _ } => "image viewer viewport",
+            Viewport::Graph { graph_viewport } =>
+            {
+                let node_graph_name = if assets.meta.get(&graph_viewport.graph_asset_id).is_some()
+                {
+                    assets.meta.get(&graph_viewport.graph_asset_id).unwrap().name.clone()
+                }
+                else
+                {
+                    String::from("graph_viewport")
+                };
+
+                node_graph_name
+            },
+            Viewport::Terminal { terminal_viewport: _ } => "terminal viewport".to_string(),
+            Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport".to_string(),
+            Viewport::Empty { empty_viewport: _ } => "empty viewport".to_string(),
+            Viewport::ImageViewer { image_asset_id: _ } => "image viewer viewport".to_string(),
         };
 
-        // @TODO, consider using the asset name aswell for grpah viewport, so example "graph viewport (entry graph)" and "graph viewport (entry graph) (1)
-        
-        let number_of_viewports_containing_the_name = self.viewports.iter().filter(|(viewport_name, _)| viewport_name.contains(name) ).count();
+        let number_of_viewports_containing_the_name = self.viewports.iter().filter(|(viewport_name, _)| viewport_name.contains(name.as_str()) ).count();
 
         if number_of_viewports_containing_the_name == 0
         {
@@ -69,9 +79,9 @@ impl Layout
         format!("{} ({})", name, number_of_viewports_containing_the_name)
     }
 
-    pub fn add_viewport(&mut self, new_viewport: Viewport) -> String // @TODO, look into if this function can be written with a template instead?
+    pub fn add_viewport(&mut self, new_viewport: Viewport, assets: &Assets) -> String // @TODO, look into if this function can be written with a template instead?
     {
-        let viewport_name = self.get_viewport_name(&new_viewport);
+        let viewport_name = self.get_viewport_name(&new_viewport, assets);
         
         self.viewports.insert(viewport_name .clone(), new_viewport);
         self.docking_state.push_to_focused_leaf(viewport_name .clone());
@@ -87,9 +97,9 @@ impl Layout
         name 
     }
 
-    pub fn add_viewport_at_first_leaf(&mut self, new_viewport: Viewport) -> String // @TODO, look into if this function can be written with a template instead?
+    pub fn add_viewport_at_first_leaf(&mut self, new_viewport: Viewport, assets: &Assets) -> String // @TODO, look into if this function can be written with a template instead?
     {
-        let viewport_name = self.get_viewport_name(&new_viewport);
+        let viewport_name = self.get_viewport_name(&new_viewport, assets);
         
         self.viewports.insert(viewport_name .clone(), new_viewport);
         self.docking_state.push_to_first_leaf(viewport_name .clone());
@@ -98,16 +108,16 @@ impl Layout
     }
 
     // @TODO, this function only has a very specific usecase, consider if it should be a bool in the add_viewport function instead
-    pub fn add_viewport_without_docking_state(&mut self, new_viewport: Viewport) -> String
+    pub fn add_viewport_without_docking_state(&mut self, new_viewport: Viewport, assets: &Assets) -> String
     {
-        let viewport_name = self.get_viewport_name(&new_viewport);
+        let viewport_name = self.get_viewport_name(&new_viewport, assets);
         
         self.viewports.insert(viewport_name .clone(), new_viewport);
 
         viewport_name 
     }
 
-    pub fn add_or_focus_graph_viewport(&mut self, graph_id: AssetId )
+    pub fn add_or_focus_graph_viewport(&mut self, graph_id: AssetId, assets: &Assets)
     {
         for (viewport_name, viewport) in &self.viewports
         {
@@ -117,8 +127,14 @@ impl Layout
                 {
                     if graph_viewport.graph_asset_id == graph_id
                     {
-                        let graph_viewport_index = self.docking_state.find_tab(&viewport_name).expect("Unable to find graph viewport tab");
-                        self.docking_state.remove_tab( egui_dock::TabPath { surface: graph_viewport_index.surface, node: graph_viewport_index.node, tab: graph_viewport_index.tab });
+                        let graph_viewport_index = self.docking_state.find_tab(&viewport_name);
+
+                        if graph_viewport_index.is_none()
+                        {
+                            continue;
+                        }
+                        
+                        self.docking_state.remove_tab( egui_dock::TabPath { surface: graph_viewport_index.unwrap().surface, node: graph_viewport_index.unwrap().node, tab: graph_viewport_index.unwrap().tab });
                         self.docking_state.push_to_focused_leaf(viewport_name.clone());
                         return;
                     }
@@ -127,7 +143,7 @@ impl Layout
             }
         }
 
-        self.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new(graph_id) });
+        self.add_viewport( Viewport::Graph { graph_viewport: GraphViewport::new(graph_id) }, assets );
     }
 
     pub fn save(&self)
@@ -148,7 +164,7 @@ impl Layout
         }
     }
 
-    pub fn load() -> Self
+    pub fn load(assets: &Assets) -> Self
     {
         let editor_state_path = CONFIG_DIRECTORY.config_dir().join(CONFIG_LAYOUT_FILE_NAME);
 
@@ -169,6 +185,6 @@ impl Layout
             Err( error ) => { println!("Error when reading stored layout, using default instead, error: {}", error.to_string()); },
         };
 
-        Self::default_layout()
+        Self::default_layout(assets)
     }
 }

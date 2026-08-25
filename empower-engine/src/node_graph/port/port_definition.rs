@@ -4,7 +4,7 @@ use super::PortDirection;
 use super::PortKind;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct PortDefinition
 {
     pub name: String, // @TODO, considering changing this to &'static str (blocked by alphabet counter)
@@ -15,22 +15,22 @@ pub struct PortDefinition
 
 impl PortDefinition
 {
-    pub fn new_input_execution_port() -> Self
+    pub fn new_input_execution_port(name: &str) -> Self
     {
         Self
         {
-            name: "".to_string(),
+            name: name.to_string(),
             direction: PortDirection::Input,
             kind: PortKind::Execution,
             compatability: Vec::new(),
         }
     }
 
-    pub fn new_output_execution_port() -> Self
+    pub fn new_output_execution_port(name: &str) -> Self
     {
         Self
         {
-            name: "".to_string(),
+            name: name.to_string(),
             direction: PortDirection::Output,
             kind: PortKind::Execution,
             compatability: Vec::new(),

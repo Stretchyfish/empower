@@ -1,9 +1,12 @@
 use std::collections::{HashMap, VecDeque};
 
-use empower_engine::node_graph::port::{PortDirection, PortEdit, PortKind};
+use empower_engine::node_graph::port::{PortDirection, PortKind};
 use empower_engine::node_graph::{NodeGraphKey, Port};
+use empower_engine::value::Value;
 
 use super::GraphViewportAction;
+
+use super::super::get_port_color;
 
 use super::{PORT_SIZE, VERTICAL_PORT_GAB};
 
@@ -17,13 +20,14 @@ pub fn show(
             ui: &mut egui::Ui, 
             node_position: &egui::Pos2,
             port_key: &NodeGraphKey,
-            port: &mut Port,
+            port: &Port,
             port_index: usize,
             port_has_connection: &bool,
             graph_viewport_title: &String, 
             graph_viewport_action: &mut VecDeque<GraphViewportAction>,
             node_size: &egui::Vec2,
             cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
+            cached_editable_port_value: &mut HashMap<NodeGraphKey, EditablePortValue>,
             vertical_offset_before_showing_ports: f32,
             developer_mode: &bool,
 )
@@ -37,7 +41,13 @@ pub fn show(
     let port_position  = *node_position + egui::Vec2 { x: horizontal_offset, y: vertical_offset_before_showing_ports + VERTICAL_PORT_GAB / 2.0 + port_index as f32 * VERTICAL_PORT_GAB};
     let port_rect = egui::Rect::from_center_size(port_position, PORT_SIZE);
 
-    let port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click());
+    let port_response = ui.interact(port_rect, egui::Id::from( graph_viewport_title.to_owned() + "_port_" + port_key.to_string().as_str()), egui::Sense::click_and_drag());
+
+    if port_response.drag_started()
+    {
+        graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
+    }
+
     if port_response.clicked()
     {
         graph_viewport_action.push_back( GraphViewportAction::ClickedPort { port_key: *port_key });
@@ -78,7 +88,7 @@ pub fn show(
 
     port_response.on_hover_text( format!("{} : {:?}", type_text, compatible_type_text ));
 
-    let port_color = port.color();
+    let port_color = get_port_color(port);
 
     ui.painter().circle(
         port_position,
@@ -98,7 +108,22 @@ pub fn show(
         );
     }
 
-    cached_port_positions.insert(*port_key, port_position);
+    cached_port_positions.insert(*port_key, port_position); // @TODO, find a better way of handling these two caches
+
+    if !cached_editable_port_value.contains_key(&port_key)
+    {
+        cached_editable_port_value.insert(*port_key, EditablePortValue::from(port) );
+    }
+
+    let port_text_position = port_position + egui::Vec2 { x: if port.direction == PortDirection::Input { PORT_AND_TEXT_HORIZONTAL_BUFFER } else { -PORT_AND_TEXT_HORIZONTAL_BUFFER }, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        port_text_position,
+        if port.direction == PortDirection::Input { egui::Align2::LEFT_CENTER } else { egui::Align2::RIGHT_CENTER },
+        &port.name,
+        egui::FontId::proportional(PORT_TEXT_FONT_SIZE),
+        egui::Color32::WHITE,
+    );
 
     if port.kind == PortKind::Execution
     {
@@ -110,16 +135,6 @@ pub fn show(
         return;
     }
 
-    let port_text_position = port_position + egui::Vec2 { x: PORT_AND_TEXT_HORIZONTAL_BUFFER, y: 0.0 };
-
-    let painted_text = ui.painter().text(
-        port_text_position,
-        egui::Align2::LEFT_CENTER,
-        &port.name,
-        egui::FontId::proportional(PORT_TEXT_FONT_SIZE),
-        egui::Color32::WHITE,
-    );
-
     if *port_has_connection // This only ever applies to the input ports
     {
         return;
@@ -129,10 +144,13 @@ pub fn show(
     let port_edit_position = port_text_position + egui::Vec2 { x: painted_text_size.x + TEXT_AND_EDIT_HORIZONTAL_BUFFER, y: - painted_text_size.y / 2.0 };
 
     let text_edit_color = if port.value.is_some() { egui::Color32::WHITE } else { egui::Color32::RED };
-    let edit_was_changed = match &mut port.edit
+
+    let editable_port_value = cached_editable_port_value.get_mut( port_key ).unwrap(); // Safe due to above checks
+
+    let editable_value_was_changed = match editable_port_value
     {
-        PortEdit::None => false,
-        PortEdit::Text( text ) =>
+        EditablePortValue::None => false,
+        EditablePortValue::TextBox( text ) =>
         {
             let port_edit_box_size = egui::Vec2{ x: INTEGER_EDIT_BOX_LENGTH, y: painted_text_size.y };
             let input_port_value_box_rect = egui::Rect::from_min_size(port_edit_position, port_edit_box_size);
@@ -147,7 +165,7 @@ pub fn show(
             let response = ui.put(input_port_value_box_rect, text_edit);
             response.changed()
         },
-        PortEdit::CheckBox( toggle ) =>
+        EditablePortValue::CheckBox( toggle ) =>
         {
             let input_port_checkbox_size = egui::Vec2{ x: 120.0, y: 0.0 };
             let input_port_checkbox_rect = egui::Rect::from_min_size(port_edit_position, input_port_checkbox_size);
@@ -159,8 +177,8 @@ pub fn show(
             );
 
             ui.put(input_port_checkbox_rect, checkbox).changed()
-        }
-        PortEdit::TwoBox( text1, text2 ) =>
+        },
+        EditablePortValue::TwoBox( text1, text2 ) =>
         {
             let port_value_box_size = egui::Vec2{ x: 50.0, y: painted_text_size.y };
 
@@ -186,12 +204,11 @@ pub fn show(
                 //     text_edit);
             });
 
-
             box_one_changed || box_two_changed
-        }
+        },
     };
 
-    if edit_was_changed
+    if editable_value_was_changed 
     {
         graph_viewport_action.push_back( GraphViewportAction::PortEditWasChanged { port_key: *port_key } );
     }
@@ -204,3 +221,103 @@ pub fn show(
     // };
 }
 
+#[derive(Clone, Default)]
+pub enum EditablePortValue
+{
+    #[default] None,
+    TextBox(String),
+    CheckBox(bool),
+    TwoBox(String, String),
+}
+
+impl EditablePortValue
+{
+    pub fn from(port: &Port) -> Self
+    {
+        let value = if port.compatability.is_empty() { None } else { Some( port.compatability[0].clone() ) };
+
+        match &value
+        {
+            None => EditablePortValue::None,
+            Some( actual_value ) => match actual_value 
+            {
+                Value::Integer( int ) => EditablePortValue::TextBox( int.to_string() ),
+                Value::Float( int ) => EditablePortValue::TextBox( int.to_string() ),
+                Value::Bool( boolean ) => EditablePortValue::CheckBox( *boolean ),
+                Value::Point2d( float1, float2 ) => EditablePortValue::TwoBox( float1.to_string(), float2.to_string() ), 
+                _ => EditablePortValue::None,
+            },
+        }
+    }
+
+    pub fn attempt_to_convert_to_value(&self, compatabilities: &Vec<Value>) -> Option<Value>
+    {
+        match &self
+        {
+            EditablePortValue::None => None,
+            EditablePortValue::TextBox( text ) => attempt_to_parse_text(text, compatabilities),
+            EditablePortValue::CheckBox( toggle ) => Some( Value::Bool( *toggle ) ),
+            EditablePortValue::TwoBox( text1, text2 ) => attempt_to_parse_two_box(text1, text2),
+        }
+    }
+}
+
+fn attempt_to_parse_text(text: &String, compatabilities: &Vec<Value>) -> Option<Value>
+{
+    for value in compatabilities
+    {
+        match value
+        {
+            Value::Integer(_) =>
+            {
+                let parsed = text.parse::<i32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Integer( parsed.unwrap() ) );
+            },
+            Value::Float(_) =>
+            {
+                let parsed = text.parse::<f32>();
+
+                if parsed.is_err()
+                {
+                    continue;
+                }
+
+                return Some( Value::Float( parsed.unwrap() ) );
+            },
+            _ => todo!(),
+        }
+    }
+
+    None
+}
+
+fn attempt_to_parse_two_box(text1: &String, text2: &String) -> Option<Value>
+{
+    let parsed1 = text1.parse::<f32>();
+
+    if parsed1.is_err()
+    {
+        return None;
+    }
+
+    let parsed2 = text2.parse::<f32>();
+
+    if parsed2.is_err()
+    {
+        return None;
+    }
+
+    return Some( Value::Point2d( parsed1.unwrap(), parsed2.unwrap() ) );
+}
+                // Value::Integer( int ) => PortEdit::Text( int.to_string() ),
+                // Value::Float( float ) => PortEdit::Text( float.to_string() ),
+                // Value::Bool( boolean ) => PortEdit::CheckBox( *boolean ),
+                // Value::Image( _ ) => PortEdit::None,
+                // Value::Point2d( x, y ) => PortEdit::TwoBox( x.to_string(), y.to_string() ),
+                // Value::List( _ ) => PortEdit::None,

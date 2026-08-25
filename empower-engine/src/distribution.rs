@@ -1,6 +1,12 @@
 use std::{fs, path::PathBuf};
 
+use once_cell::sync::Lazy;
+
 use crate::compiler::Program;
+
+pub static TEMP_PROJECT_LOCATION: Lazy<PathBuf> = Lazy::new(|| {
+    std::env::temp_dir().join("empower_studio_temporary_project")
+});
 
 #[derive(Clone)]
 pub struct ExportConfig
