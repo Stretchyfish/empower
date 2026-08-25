@@ -157,7 +157,7 @@ impl ProjectNameWindow
 
         *task = Some( thread::spawn(move || {
             FileDialog::new()
-            .set_title("import asset")
+            .set_title("project location")
             .pick_folder()
         }));
     }
@@ -191,7 +191,7 @@ impl ProjectNameWindow
                     },
                     None =>
                     {
-                        panic!("Unable to handle process correctly");
+                        studio_context.add_log( Log::info("Saving project cancelled") );
                     },
                 }
             },
