@@ -1,8 +1,7 @@
-use crate::{assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, Assets}, distribution::TEMP_PROJECT_LOCATION};
+use crate::assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, Assets};
 use std::{fs, path::PathBuf};
 
 mod project_settings;
-use egui::ahash::HashSet;
 use project_settings::ProjectSettings;
 
 mod project_state;
@@ -100,7 +99,7 @@ impl Project
 
         // @TODO, The seperation is here a bit unclear, as the asset_meta now is saved by the project, so think of a better way
         
-        self.assets.save_assets(location);
+        let _ = self.assets.save_assets(location);
 
         Ok(())
     }

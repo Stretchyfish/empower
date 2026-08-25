@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use super::CONFIG_DIRECTORY;
 
 use serde::{Deserialize, Serialize};
@@ -86,29 +84,5 @@ impl Cache
         };
 
         Self::new()
-    }
-
-    pub fn add_previous_project(&mut self, project_path: PathBuf)
-    {
-        let mut project_index_to_remove = None;
-        for (index, previous_project) in self.persistent.previous_projects.iter().enumerate()
-        {
-            if previous_project.to_string_lossy().to_string() == project_path.to_string_lossy().to_string()
-            {
-                project_index_to_remove = Some( index );
-            }
-        }
-
-        if project_index_to_remove.is_some()
-        {
-            self.persistent.previous_projects.remove(project_index_to_remove.unwrap());
-        }
-        
-        if self.persistent.previous_projects.len() > 10
-        {
-            self.persistent.previous_projects.pop_front();
-        }
-
-        self.persistent.previous_projects.push_back(project_path);
     }
 }

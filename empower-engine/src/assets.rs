@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::{HashMap, HashSet}, path::PathBuf};
 
 use crate::node_graph::NodeGraph;
 
@@ -10,7 +10,6 @@ pub use asset_meta::AssetMeta;
 mod asset_kind;
 pub use asset_kind::AssetKind;
 
-use egui::{TextBuffer, ahash::{HashSet, HashSetExt}};
 use image::{ImageBuffer, Rgba};
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +47,6 @@ impl Assets
         Self
         {
             loaded_assets: LoadedAssets::new(),
-            // modified_assets: HashSet::from([ROOT_FOLDER_ASSET_ID, ASSET_FOLDER_ASSET_ID]),
             modified_assets,
 
             meta,

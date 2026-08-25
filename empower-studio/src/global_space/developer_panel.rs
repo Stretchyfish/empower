@@ -85,7 +85,7 @@ impl DeveloperPanel
                         .num_columns(2)
                         .spacing([12.0, 4.0])
                         .striped(true)
-                        .show(ui, |ui|
+                        .show(ui, |_|
                         {
                             // for (path, asset_id) in &assets.path_to_asset_id
                             // {

@@ -1,6 +1,6 @@
 use empower_engine::executor::{Executor, ExecutorSettings};
 use empower_engine::node_graph::node::node_kind::LoopMode;
-use empower_engine::{self, compiler::{CompileSettings, Instruction, compile}, node_graph::node::NodeKind, value::Value};
+use empower_engine::{self, compiler::{CompileSettings, compile}, node_graph::node::NodeKind, value::Value};
 
 #[test]
 fn print_executed_test()
@@ -59,7 +59,7 @@ fn true_branch_executed_test()
     let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
     let program = compile_result.program;
 
-    let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
+    let _ = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
     let mut executor = Executor::new(program, ExecutorSettings::new());
 
@@ -100,7 +100,7 @@ fn false_branch_executed_test()
     let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
     let program = compile_result.program;
 
-    let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
+    let _ = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
     let mut executor = Executor::new(program, ExecutorSettings::new());
 
@@ -134,7 +134,7 @@ fn forever_loop_execution_test()
     let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
     let program = compile_result.program;
 
-    let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
+    let _ = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
     let mut executor = Executor::new(program, ExecutorSettings::new());
 
@@ -178,7 +178,7 @@ fn ranged_loop_execution_test()
     let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
     let program = compile_result.program;
 
-    let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
+    let _ = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
     let mut executor = Executor::new(program, ExecutorSettings::new());
 

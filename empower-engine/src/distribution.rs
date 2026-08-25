@@ -2,66 +2,12 @@ use std::{fs, path::PathBuf};
 
 use once_cell::sync::Lazy;
 
-use crate::{assets::Assets, compiler::Program, node_graph::NodeGraph, project::Project};
+use crate::compiler::Program;
 
 pub static TEMP_PROJECT_LOCATION: Lazy<PathBuf> = Lazy::new(|| {
     std::env::temp_dir().join("empower_studio_temporary_project")
 });
 
-pub fn create_temporary_project(project: &Project) -> Result<(), String>
-{
-    let temp_directory_root = TEMP_PROJECT_LOCATION.to_path_buf();
-
-    // In case there already is a temp directory
-    let remove_dir_result = fs::remove_dir_all( temp_directory_root.clone() );
-                                    
-    match remove_dir_result
-    {
-        Ok(_) => {},
-        Err( error ) => 
-        {
-            match error.kind()
-            {
-                std::io::ErrorKind::NotFound => {},
-                _ =>
-                {
-                    return Err(format!("Error when removing temp directory ({})", error.to_string()));
-                }
-            }
-        }
-    }
-
-    let create_temp_project_directory_result = fs::create_dir(temp_directory_root.clone() );
-
-    match create_temp_project_directory_result
-    {
-        Ok(_) => {},
-        Err( error ) =>
-        {
-            return Err(format!("Error when creating temp directory ({})", error.to_string()));
-        },
-    }
-
-    let create_temp_assets_directory_result = fs::create_dir(temp_directory_root.join("assets").clone());
-
-    match create_temp_assets_directory_result
-    {
-        Ok(_) => {},
-        Err( error ) =>
-        {
-            return Err(format!("Error when creating temp assets directory ({})", error.to_string()));
-        },
-    }
-
-    Ok(())
-}
-
-pub fn load_project() -> Project
-{
-    Project::new()
-}
-
- 
 #[derive(Clone)]
 pub struct ExportConfig
 {

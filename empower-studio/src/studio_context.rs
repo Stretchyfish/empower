@@ -406,15 +406,42 @@ impl StudioContext
             Request::StopExecute => { self.stop_execution(); },
             Request::ExportProject { config } => {
 
-                // let _ = self.project.save();
-                // self.compile(); // @TODO, double check, this behavior might appear twice
+                if self.project.state == ProjectState::Temporary
+                {
+                    self.add_log( Log::info("cannot export project because its not saved") ); 
+                    self.windows.project_name_panel.activate_show(self.project.name.clone());
+                    return;
+                }
 
-                // if self.compile_result.is_none()
-                // {
-                //     panic!("Cannot export project, as it is not build yet");
-                // }
+                let _ = self.project.save(None);
+
+                if !config.valid_to_export()
+                {
+                    self.add_log( Log::info("cannot export project due to invalid export configuration") ); 
+                    return;
+                }
+
+                self.compile(); // @TODO, double check, this behavior might appear twice
+
+                if self.compile_result.is_none()
+                {
+                    self.add_log( Log::warning("Cannot export project, as it cannot compile") );
+                    return;
+                }
                 
-                // let _ = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
+                let export_result = distribution::export(&self.compile_result.as_ref().unwrap().program, &config);
+
+                match export_result
+                {
+                    Ok(_) =>
+                    {
+                        self.add_log( Log::news("successfully exported project") );
+                    },
+                    Err( error_text ) =>
+                    {
+                        self.add_log( Log::info( error_text ) );
+                    },
+                }
             },
             Request::ImportAsset => { self.windows.asset_import_dialog.start_dialog(); },
             Request::StartDraggingAsset { asset_id } =>
