@@ -54,7 +54,9 @@ impl Layout
             {
                 let node_graph_name = if assets.meta.get(&graph_viewport.graph_asset_id).is_some()
                 {
-                    assets.meta.get(&graph_viewport.graph_asset_id).unwrap().name.clone()
+                    let name = assets.meta.get(&graph_viewport.graph_asset_id).unwrap().name.clone();
+
+                    String::from(name.rsplit_once(".").unwrap().0)
                 }
                 else
                 {
