@@ -1,5 +1,6 @@
+use empower_engine::assets::AssetKind;
 use empower_engine::executor::{Executor, ExecutorSettings};
-use empower_engine::node_graph::node::node_kind::LoopMode;
+use empower_engine::node_graph::node::node_kind::{LoopMode, SubGraphState};
 use empower_engine::{self, compiler::{CompileSettings, compile}, node_graph::node::NodeKind, value::Value};
 
 #[test]
@@ -199,4 +200,50 @@ fn ranged_loop_execution_test()
     assert_eq!(output[7], 7.to_string()); 
     assert_eq!(output[8], 8.to_string()); 
     assert_eq!(output[9], 9.to_string()); 
+}
+
+#[test]
+fn sub_graph_execution_test()
+{
+    let mut project = empower_engine::project::Project::new();
+
+    {
+        let function_asset_creation_result = project.assets.create_asset(None, AssetKind::NodeGraph, "function");
+        let function_graph_id = function_asset_creation_result.unwrap();
+
+        let subgraph_node = 
+        {
+            let function_graph = project.assets.get_node_graph_mut(&function_graph_id).unwrap();
+            let print_node_handle = function_graph.add_node(NodeKind::Print, None);
+
+            let start_node_handle = function_graph.get_node_handle(function_graph.start_node_key);
+            let _ = function_graph .add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
+
+            NodeKind::SubGraph( SubGraphState::from( function_graph_id, function_graph ) )             
+        };
+
+        let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+
+        let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
+        let subgraph_node_handle = entry_node_graph.add_node( subgraph_node, None);
+
+        // @TODO, check the results 
+        let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &subgraph_node_handle.input_port_keys[0] );
+    }
+
+    let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
+    let program = compile_result.program;
+
+    let _ = program.compiled_graphs.get(&project.entry_graph).unwrap();
+
+    let mut executor = Executor::new(program, ExecutorSettings::new());
+
+    let mut output = Vec::new();
+    while executor.is_running()
+    {
+        let executor_outputs = executor.run(None);
+        output.extend(executor_outputs.outputs);
+    }
+
+    assert_eq!(output[0], 0.to_string()); 
 }
