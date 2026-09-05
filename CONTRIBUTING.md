@@ -8,7 +8,7 @@ If you have an interest in contributing to Empower, then feel free to create an 
 
 ## General considerations
 
-Before sending a PR, please ensure that "cargo test" passes.
+Before sending a PR, please ensure that "cargo test" passes and that there are no "compiler hints".
 (Feel free to add additional tests if relevant for your feature)
 
 ## AI & Agents
