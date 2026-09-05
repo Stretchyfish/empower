@@ -1,15 +1,9 @@
-# 🔥 EMPOWER - An easy to use engine for visual no code programming
+![empower_logo](media/empower_logo.png)
 
 [![GitHub](https://img.shields.io/badge/GitHub-stretchyfish/empower-blue?logo=github)](https://github.com/stretchyfish/empower)
 
-![empower_logo](media/empower_logo.png)
 
-## Introduction
-
-Empower is a general purpose, node graph based, game-engine inspired visual programming system.
-
-## Examples
-
+# An easy to use engine for visual no code programming
 
 ![empower_example](media/empower_usecase_example.png)
 
