@@ -1,6 +1,7 @@
 ![empower_logo](media/empower_logo.png)
 
 [![GitHub](https://img.shields.io/badge/GitHub-stretchyfish/empower-blue?logo=github)](https://github.com/stretchyfish/empower)
+[![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/stretchyfish/empower/blob/main/LICENSE-APACHE)
 
 
 # An easy to use engine for visual no code programming
