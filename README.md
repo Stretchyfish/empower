@@ -7,7 +7,7 @@
 
 ## An easy to use engine for visual no code programming
 
-![empower_example](media/empower_usecase_example.png)
+![empower_example](media/empower_demonstration.gif)
 
 ## Introduction
 
