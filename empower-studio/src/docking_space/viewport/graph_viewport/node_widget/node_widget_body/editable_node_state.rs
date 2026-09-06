@@ -48,7 +48,7 @@ impl EditableNodeState
             },
             EditableNodeState::List( text1, text2 ) =>
             {
-                let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"test:".to_string(), text1, true);
+                let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"size:".to_string(), text1, true);
                 let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), "value", text2);
                 ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) } // @TODO, this approach to size needs an overhaul
             },

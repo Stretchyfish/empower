@@ -20,6 +20,12 @@ impl ListState
         }
     }
 
+    pub fn get_size(&self) -> egui::Vec2
+    {
+        let extra_vertical_gap = 60.0 * self.size as f32;
+        egui::vec2(300.0, 220.0 + extra_vertical_gap)
+    }
+
     pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
     {
         let mut inputs = Vec::with_capacity(self.size);

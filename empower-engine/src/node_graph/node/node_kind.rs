@@ -57,7 +57,7 @@ impl NodeKind
             NodeKind::Branch => egui::vec2(330.0, 220.0),
             NodeKind::Loop( mode ) => mode.get_size(),
             NodeKind::Wait => egui::vec2(300.0, 220.0),
-            NodeKind::List(_) => egui::vec2(300.0, 220.0),
+            NodeKind::List( state ) => state.get_size(),
             NodeKind::Image(_) => egui::vec2(300.0, 220.0),
             NodeKind::ShowImage => egui::vec2(300.0, 220.0),
             NodeKind::MathGraph => egui::vec2(300.0, 220.0),

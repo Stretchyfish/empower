@@ -28,7 +28,12 @@ impl Project
 {
     pub fn new() -> Self
     {
-        let default_project_name = "untitled".to_string();
+        Project::with_name("untitled")
+    }
+
+    pub fn with_name(name: &str) -> Self
+    {
+        let default_project_name = name.to_string();
         let mut assets = Assets::new(&default_project_name);
         let entry_graph_asset_id = assets.create_asset(Some( ASSET_FOLDER_ASSET_ID ), AssetKind::NodeGraph, "entry_graph");
 
@@ -42,7 +47,9 @@ impl Project
         }
     }
 
-    pub fn save(&mut self, location: Option<PathBuf>) -> Result<(), String> // @TODO, find a way to make the modified assets optional
+    
+
+    pub fn save(&mut self, location: Option<PathBuf>) -> Result<PathBuf, String> // @TODO, find a way to make the modified assets optional
     {
         match &mut self.state
         {
@@ -92,16 +99,13 @@ impl Project
 
         let save_config_result = self.save_project_config_file(location);
 
-        if save_config_result.is_err()
-        {
-            return save_config_result;
-        }
+        save_config_result?;
 
         // @TODO, The seperation is here a bit unclear, as the asset_meta now is saved by the project, so think of a better way
         
         let _ = self.assets.save_assets(location);
 
-        Ok(())
+        Ok(location.clone())
     }
 
     fn create_project_directory(&self, location: &PathBuf) -> Result<PathBuf, String>
