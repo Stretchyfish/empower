@@ -1,6 +1,7 @@
 ![empower_logo](media/empower_logo.png)
 
 [![GitHub](https://img.shields.io/badge/GitHub-stretchyfish/empower-blue?logo=github)](https://github.com/stretchyfish/empower)
+[![GitHub Release](https://img.shields.io/github/v/release/stretchyfish/empower)](https://github.com/stretchyfish/empower/releases/latest)
 [![Build Status](https://github.com/stretchyfish/empower/workflows/Rust/badge.svg)](https://github.com/stretchyfish/empower/actions/workflows/rust.yml)
 [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/stretchyfish/empower/blob/main/LICENSE-APACHE)
 
