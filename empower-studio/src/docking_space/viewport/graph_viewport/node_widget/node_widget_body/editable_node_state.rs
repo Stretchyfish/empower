@@ -36,30 +36,30 @@ impl EditableNodeState
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, meta: &HashMap<AssetId, AssetMeta>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> ShowEditableNodeStateResult 
+    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, meta: &HashMap<AssetId, AssetMeta>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_key: &NodeGraphKey, viewport_name: &String) -> ShowEditableNodeStateResult 
     {
         match self
         {
             EditableNodeState::None => ShowEditableNodeStateResult { changed: false, size: egui::Vec2::ZERO },
             EditableNodeState::Loop( mode ) =>
             {
-                let (changed1, height1) = draw_loop_mode_type_selector(ui, &edit_position, mode);
+                let (changed1, height1) = draw_loop_mode_type_selector(ui, &edit_position, mode, node_key, viewport_name);
                 ShowEditableNodeStateResult { changed: changed1, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 ) }
             },
             EditableNodeState::List( text1, text2 ) =>
             {
                 let (changed1, height1) = draw_text_node_edit(ui, &edit_position, &"size:".to_string(), text1, true);
-                let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), "value", text2);
+                let (changed2, height2) = draw_value_type_selector(ui, &(edit_position + egui::vec2( 0.0, height1 + NODE_EDIT_GAP )), "value", text2,node_key, viewport_name);
                 ShowEditableNodeStateResult { changed: (changed1 || changed2), size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) } // @TODO, this approach to size needs an overhaul
             },
             EditableNodeState::Image( asset_id ) =>
             {
-                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, meta);
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::Image, meta,node_key, viewport_name);
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 ) }
             },
             EditableNodeState::SubGraph( asset_id ) =>
             {
-                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, meta);
+                let (changed, height1) = draw_asset_selector_edit(ui, &edit_position, asset_id, viewport_graph_id, &AssetKind::NodeGraph, meta, node_key, viewport_name);
                 let (_, height2) = draw_graph_viewport_opener(ui, &(edit_position + egui::vec2(0.0, height1 + NODE_EDIT_GAP)), asset_id, graph_viewport_actions);
 
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) }
@@ -150,7 +150,7 @@ impl EditableNodeState
     }
 }
 
-fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_mode: &mut LoopMode) -> (bool, f32)
+fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_mode: &mut LoopMode, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -170,7 +170,7 @@ fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, c
     );
 
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt("enum box selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    egui::ComboBox::from_id_salt(format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name) )
     .selected_text( mode_before.to_string() ) // @TODO, figure out if this is needed
     .show_ui(&mut child_ui, |ui|
     {
@@ -181,7 +181,7 @@ fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, c
     (mode_before != *current_mode, 40.0)
 }
 
-fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &str, current_value_text: &mut String) -> (bool, f32)
+fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &str, current_value_text: &mut String, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -201,7 +201,7 @@ fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label
     );
 
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt("enum box selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    egui::ComboBox::from_id_salt(format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name))
     .selected_text( current_value_text.clone() ) // @TODO, figure out if this is needed
     .show_ui(&mut child_ui, |ui|
     {
@@ -242,7 +242,7 @@ fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &St
     (response.changed(), 40.0 )
 }
 
-fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, meta: &HashMap<AssetId, AssetMeta>) -> (bool, f32)
+fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kind: &AssetKind, meta: &HashMap<AssetId, AssetMeta>, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -282,7 +282,7 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
     );
 
     let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt("asset selector") // @TODO, make ids unique, otherwise it will have conflicts later
+    egui::ComboBox::from_id_salt(format!("asset_selector_{}_{}", node_key.to_string(), viewport_name)) 
     .selected_text( current_asset_name )
     .show_ui(&mut child_ui, |ui|
     {
