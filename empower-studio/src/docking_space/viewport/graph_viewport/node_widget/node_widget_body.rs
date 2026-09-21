@@ -162,7 +162,7 @@ pub fn show(
     // let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
     let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.max.y + NODE_EDIT_GAP);
 
-    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, meta, graph_viewport_actions );
+    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, meta, graph_viewport_actions, node_key, graph_viewport_title );
 
     if show_editable_state_result.changed
     {
