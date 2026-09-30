@@ -14,6 +14,9 @@ pub use list_node_state::ListState;
 mod loop_node_state;
 pub use loop_node_state::LoopMode;
 
+mod read_file_state;
+pub use read_file_state::ReadFileState;
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum NodeKind
 {
@@ -27,6 +30,7 @@ pub enum NodeKind
     ShowImage,
     MathGraph,
     SubGraph ( SubGraphState ),
+    ReadFile ( ReadFileState ),
 }
 
 impl NodeKind
@@ -45,6 +49,7 @@ impl NodeKind
             NodeKind::ShowImage => "show image",
             NodeKind::MathGraph => "math graph",
             NodeKind::SubGraph(_) => "sub graph",
+            NodeKind::ReadFile(_) => "read file",
         }
     }
 
@@ -61,6 +66,7 @@ impl NodeKind
             NodeKind::Image(_) => egui::vec2(300.0, 220.0),
             NodeKind::ShowImage => egui::vec2(300.0, 220.0),
             NodeKind::MathGraph => egui::vec2(300.0, 220.0),
+            NodeKind::ReadFile(_) => egui::vec2(300.0, 220.0),
             NodeKind::SubGraph( state ) => state.get_size(),
         }
     }
@@ -71,26 +77,27 @@ impl NodeKind
         {
             NodeKind::Start => Vec::new(),
             NodeKind::Print => vec![
-                                        PortDefinition::new_input_execution_port(""),
-                                        PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)]) ],
+                                                PortDefinition::new_input_execution_port(""),
+                                                PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)]) ],
             NodeKind::Branch => vec![
-                                        PortDefinition::new_input_execution_port(""),
-                                        PortDefinition::new_input_data_port("condition".to_string(), vec![ Value::Bool(false) ]) ],
+                                                PortDefinition::new_input_execution_port(""),
+                                                PortDefinition::new_input_data_port("condition".to_string(), vec![ Value::Bool(false) ]) ],
             NodeKind::Loop( state ) => state.get_input_port_definitions(),
             NodeKind::Wait => vec![
-                                        PortDefinition::new_input_execution_port(""),
-                                        PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]) ],
+                                                PortDefinition::new_input_execution_port(""),
+                                                PortDefinition::new_input_data_port("seconds".to_string(), vec![Value::Float(1.0)]) ],
             NodeKind::List( state ) => state.get_input_port_definitions(),
             NodeKind::Image( _ ) => Vec::new(),
             NodeKind::ShowImage => vec![
-                                            PortDefinition::new_input_execution_port(""),
-                                            PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image( None ) ])
-                                        ],
+                                                    PortDefinition::new_input_execution_port(""),
+                                                    PortDefinition::new_input_data_port("image".to_string(), vec![ Value::Image( None ) ])
+                                                ],
             NodeKind::MathGraph => vec![
-                                            PortDefinition::new_input_execution_port(""),
-                                            PortDefinition::new_input_data_port("math graph".to_string(), vec![ Value::List( Vec::new() ) ])
-                                        ],
+                                                    PortDefinition::new_input_execution_port(""),
+                                                    PortDefinition::new_input_data_port("math graph".to_string(), vec![ Value::List( Vec::new() ) ])
+                                                ],
             NodeKind::SubGraph( state ) => state.get_input_port_definitions(),
+            NodeKind::ReadFile( state ) => state.get_input_port_definitions(),
         }
     }
 
@@ -101,16 +108,17 @@ impl NodeKind
             NodeKind::Start => vec![ PortDefinition::new_output_execution_port("") ],
             NodeKind::Print => Vec::new(),
             NodeKind::Branch => vec![
-                                        PortDefinition::new_output_execution_port("true"),
-                                        PortDefinition::new_output_execution_port("false") ],
+                                                PortDefinition::new_output_execution_port("true"),
+                                                PortDefinition::new_output_execution_port("false") ],
             NodeKind::Loop( state ) => state.get_output_port_definitions(),
             NodeKind::Wait => vec![
-                                        PortDefinition::new_output_execution_port("") ],
+                                                PortDefinition::new_output_execution_port("") ],
             NodeKind::List( state ) => state.get_output_port_definitions(),
             NodeKind::Image( state ) => state.get_output_port_definitions(),
             NodeKind::ShowImage => Vec::new(),
             NodeKind::MathGraph => Vec::new(),
             NodeKind::SubGraph( state ) => state.get_output_port_definitions(),
+            NodeKind::ReadFile(_) => Vec::new(),
         }
     }
 }

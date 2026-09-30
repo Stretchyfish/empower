@@ -166,86 +166,87 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
     match &node.kind
     {
         NodeKind::Start =>
-        {
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
-        },
+            {
+                compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+            },
         NodeKind::Print =>
-        {
-            ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
-        },
+            {
+                ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
+            },
         NodeKind::Branch =>
-        {
-            let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
+            {
+                let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
             
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-            let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
-            ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
+                let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
+                ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
 
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[1], node_key);
+                compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[1], node_key);
 
-            ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
-        },
+                ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
+            },
         NodeKind::Loop( mode ) =>
-        {
-            match mode
             {
-                LoopMode::Forever =>
+                match mode
                 {
-                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                    LoopMode::Forever =>
+                    {
+                        compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-                    ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
-                },
-                LoopMode::Range =>
-                {
-                    ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
-                    ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
-                    let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
+                        ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
+                    },
+                    LoopMode::Range =>
+                    {
+                        ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
+                        ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
+                        let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
 
-                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                        compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
 
-                    ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
-                    ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
+                        ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
+                        ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
 
-                    ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
-                },
-            }
-        },
+                        ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
+                    },
+                }
+            },
         NodeKind::Wait =>
-        {
-            ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
-
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
-        },
-        NodeKind::List(_) =>
-        {
-            ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
-        },
-        NodeKind::Image( state ) =>
-        {
-            ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
-            );
-        },
-        NodeKind::ShowImage =>
-        {
-            ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
-        },
-        NodeKind::MathGraph =>
-        {
-            ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
-        },
-        NodeKind::SubGraph( state ) =>
-        {
-            if state.graph_asset_id.is_none() // @TODO, double check that this still works
             {
-                return;
-            }
+                ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
 
-            let graph_id = state.graph_asset_id.unwrap();
+                compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+            },
+        NodeKind::List(_) =>
+            {
+                ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
+            },
+        NodeKind::Image( state ) =>
+            {
+                ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
+                );
+            },
+        NodeKind::ShowImage =>
+            {
+                ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
+            },
+        NodeKind::MathGraph =>
+            {
+                ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
+            },
+        NodeKind::SubGraph( state ) =>
+            {
+                if state.graph_asset_id.is_none() // @TODO, double check that this still works
+                {
+                    return;
+                }
 
-            ctx.additional_graphs_to_compile.push(graph_id);
-            ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
-        },
+                let graph_id = state.graph_asset_id.unwrap();
+
+                ctx.additional_graphs_to_compile.push(graph_id);
+                ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
+            },
+        NodeKind::ReadFile(_) => todo!(),
     }
 }
 

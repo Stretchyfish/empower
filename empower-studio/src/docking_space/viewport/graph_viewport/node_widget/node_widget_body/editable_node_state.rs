@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, SubGraphState}}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}}, value::Value};
 
 use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
 
@@ -20,6 +20,7 @@ pub enum EditableNodeState
     List( String, String ),
     Image( Option<AssetId> ),
     SubGraph( Option<AssetId> ),
+    ReadFile( ReadFileState ),
 }
 
 impl EditableNodeState
@@ -32,6 +33,7 @@ impl EditableNodeState
             NodeKind::List( state ) => EditableNodeState::List( state.size.to_string(), state.value_type.type_string() ),
             NodeKind::Image( state ) => EditableNodeState::Image( state.image_asset_id ),
             NodeKind::SubGraph( state ) => EditableNodeState::SubGraph( state.graph_asset_id ),
+            NodeKind::ReadFile( state ) => EditableNodeState::ReadFile( state.clone() ),
             _ => EditableNodeState::None,
         }
     }
@@ -64,6 +66,42 @@ impl EditableNodeState
 
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) }
             },
+            EditableNodeState::ReadFile(state) =>
+            {
+                let mut changed = false;
+                let mut total_height_offset = 0.0;
+
+                let (changed1, height1) = draw_read_file_type_selector(ui, &edit_position, state, node_key, viewport_name);
+
+                total_height_offset += height1;
+                if changed1 // This is not a good approach, need to find a better way
+                {
+                    changed = true;
+                }
+
+                match state
+                {
+                    ReadFileState::Asset( asset_id ) =>
+                    {
+                        let (changed2, height2) = draw_asset_selector_edit(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), asset_id, viewport_graph_id, &AssetKind::Json, meta,node_key, viewport_name);
+
+                        total_height_offset += height2;
+                        if changed2
+                        {
+                            changed = true;
+                        }
+                    },
+                    ReadFileState::GlobalPath(_) =>
+                    {
+                        
+                    },
+                    ReadFileState::RelativePath(_) =>
+                    {
+                        
+                    },
+                }
+                ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + total_height_offset ) }
+            }
         }
     }
 
@@ -74,77 +112,88 @@ impl EditableNodeState
         {
             EditableNodeState::None => NodeSyncResponse::Nothing,
             EditableNodeState::List( number_of_input_ports_text, value_type_text ) =>
-            {
-                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
-                let list_state = match &mut node.kind
-                {
-                    NodeKind::List( list_state ) => list_state,
-                    _ => panic!("tries to parse incompatible state from editable state"),
-                };
+                    {
+                        let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                        let list_state = match &mut node.kind
+                        {
+                            NodeKind::List( list_state ) => list_state,
+                            _ => panic!("tries to parse incompatible state from editable state"),
+                        };
 
-                let parsed = number_of_input_ports_text.parse::<usize>();
+                        let parsed = number_of_input_ports_text.parse::<usize>();
 
-                if parsed.is_err()
-                {
-                    return NodeSyncResponse::Nothing;
-                }
+                        if parsed.is_err()
+                        {
+                            return NodeSyncResponse::Nothing;
+                        }
 
-                list_state.size = parsed.unwrap();
+                        list_state.size = parsed.unwrap();
 
-                let value = Value::from_type_string(value_type_text);  
+                        let value = Value::from_type_string(value_type_text);  
 
-                if value.is_none()
-                {
-                    return NodeSyncResponse::Nothing;
-                }
+                        if value.is_none()
+                        {
+                            return NodeSyncResponse::Nothing;
+                        }
 
-                list_state.value_type = value.unwrap();
+                        list_state.value_type = value.unwrap();
 
-                NodeSyncResponse::NodesStructureChanged
-            },
+                        NodeSyncResponse::NodesStructureChanged
+                    },
             EditableNodeState::Image( image_asset_id ) =>
-            {
-                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
-                let image_state = match &mut node.kind
-                {
-                    NodeKind::Image( image_state ) => image_state,
-                    _ => panic!("tries to parse incompatible state from editable state"),
-                };
+                    {
+                        let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                        let image_state = match &mut node.kind
+                        {
+                            NodeKind::Image( image_state ) => image_state,
+                            _ => panic!("tries to parse incompatible state from editable state"),
+                        };
 
-                image_state.image_asset_id = *image_asset_id;
+                        image_state.image_asset_id = *image_asset_id;
 
-                NodeSyncResponse::NodesStructureChanged
-            },
+                        NodeSyncResponse::NodesStructureChanged
+                    },
             EditableNodeState::SubGraph( graph_asset_id ) =>
-            {
-                if graph_asset_id.is_none()
-                {
-                    return NodeSyncResponse::Nothing;
-                }
+                    {
+                        if graph_asset_id.is_none()
+                        {
+                            return NodeSyncResponse::Nothing;
+                        }
                 
-                let new_state = SubGraphState::from( graph_asset_id.unwrap(), &assets.get_node_graph(&graph_asset_id.unwrap()).unwrap() );
+                        let new_state = SubGraphState::from( graph_asset_id.unwrap(), &assets.get_node_graph(&graph_asset_id.unwrap()).unwrap() );
 
-                let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                        let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
                 
-                match &mut node.kind
-                {
-                    NodeKind::SubGraph( sub_graph_state ) => *sub_graph_state = new_state,
-                    _ => panic!("tries to parse incompatible state from editable state"),
-                };
+                        match &mut node.kind
+                        {
+                            NodeKind::SubGraph( sub_graph_state ) => *sub_graph_state = new_state,
+                            _ => panic!("tries to parse incompatible state from editable state"),
+                        };
 
-                NodeSyncResponse::NodesStructureChanged
-            },
+                        NodeSyncResponse::NodesStructureChanged
+                    },
             EditableNodeState::Loop(mode) =>
+                    {
+                        let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
+                        // let loop_mode = match &mut node.kind
+                        match &mut node.kind
+                        {
+                            NodeKind::Loop( loop_mode ) => *loop_mode = mode.clone(),
+                            _ => panic!("tries to parse incompatible state from editable state"),
+                        };
+
+                        NodeSyncResponse::NodesStructureChanged
+                    },
+            EditableNodeState::ReadFile(read_file_state) =>
             {
                 let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
-                // let loop_mode = match &mut node.kind
                 match &mut node.kind
                 {
-                    NodeKind::Loop( loop_mode ) => *loop_mode = mode.clone(),
+                    NodeKind::ReadFile( state ) => *state= read_file_state.clone(),
                     _ => panic!("tries to parse incompatible state from editable state"),
                 };
 
-                NodeSyncResponse::NodesStructureChanged
+                NodeSyncResponse::Nothing
             },
         }
     }
@@ -251,7 +300,7 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         AssetKind::NodeGraph => "graph",
         AssetKind::Image => "image",
         AssetKind::Folder => todo!(),
-        AssetKind::Json => todo!(),
+        AssetKind::Json => "json",
     };
 
     let painted_text = ui.painter().text(
@@ -330,5 +379,38 @@ fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, gra
     }
     
     (false, 40.0)
+}
+
+fn draw_read_file_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_mode: &mut ReadFileState, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        "location: ",
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+    
+    let mode_before = current_mode.clone();
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        egui::Vec2::INFINITY
+    );
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt(format!("read_file_selector_{}_{}", node_key.to_string(), viewport_name) )
+    .selected_text( mode_before.to_string() ) // @TODO, figure out if this is needed
+    .show_ui(&mut child_ui, |ui|
+    {
+        ui.selectable_value( current_mode, ReadFileState::Asset( None ), String::from("asset"));
+        ui.selectable_value( current_mode, ReadFileState::GlobalPath( None ), String::from("global_path"));
+        ui.selectable_value( current_mode, ReadFileState::RelativePath( None ), String::from("relative"));
+    });
+    
+    (mode_before != *current_mode, 40.0)
+    
 }
 
