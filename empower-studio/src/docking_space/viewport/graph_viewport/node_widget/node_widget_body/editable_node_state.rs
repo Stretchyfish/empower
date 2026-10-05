@@ -1,6 +1,7 @@
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::{collections::{BTreeMap, HashMap, VecDeque}, path::PathBuf, str::FromStr};
 
 use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}}, value::Value};
+use rfd::FileDialog;
 
 use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
 
@@ -20,7 +21,7 @@ pub enum EditableNodeState
     List( String, String ),
     Image( Option<AssetId> ),
     SubGraph( Option<AssetId> ),
-    ReadFile( ReadFileState ),
+    ReadFile( ReadFileState, bool ),
 }
 
 impl EditableNodeState
@@ -33,7 +34,7 @@ impl EditableNodeState
             NodeKind::List( state ) => EditableNodeState::List( state.size.to_string(), state.value_type.type_string() ),
             NodeKind::Image( state ) => EditableNodeState::Image( state.image_asset_id ),
             NodeKind::SubGraph( state ) => EditableNodeState::SubGraph( state.graph_asset_id ),
-            NodeKind::ReadFile( state ) => EditableNodeState::ReadFile( state.clone() ),
+            NodeKind::ReadFile( state ) => EditableNodeState::ReadFile( state.clone(), true ),
             _ => EditableNodeState::None,
         }
     }
@@ -66,7 +67,7 @@ impl EditableNodeState
 
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + height2 ) }
             },
-            EditableNodeState::ReadFile(state) =>
+            EditableNodeState::ReadFile(state, parsable ) =>
             {
                 let mut changed = false;
                 let mut total_height_offset = 0.0;
@@ -83,7 +84,9 @@ impl EditableNodeState
                 {
                     ReadFileState::Asset( asset_id ) =>
                     {
-                        let (changed2, height2) = draw_asset_selector_edit(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), asset_id, viewport_graph_id, &AssetKind::Json, meta,node_key, viewport_name);
+                        *parsable = true;
+
+                        let (changed2, height2) = draw_multi_asset_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), asset_id, viewport_graph_id, &vec![AssetKind::Json, AssetKind::Image, AssetKind::NodeGraph], meta,node_key, viewport_name);
 
                         total_height_offset += height2;
                         if changed2
@@ -91,13 +94,26 @@ impl EditableNodeState
                             changed = true;
                         }
                     },
-                    ReadFileState::GlobalPath(_) =>
+                    ReadFileState::GlobalPath( path ) =>
                     {
+                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Global);
+
+                        total_height_offset += height2;
+                        if changed2
+                        {
+                            changed = true;
+                        }
                         
                     },
-                    ReadFileState::RelativePath(_) =>
+                    ReadFileState::RelativePath( path ) =>
                     {
-                        
+                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Relative);
+
+                        total_height_offset += height2;
+                        if changed2
+                        {
+                            changed = true;
+                        }
                     },
                 }
                 ShowEditableNodeStateResult { changed, size: egui::vec2(0.0, NODE_EDIT_GAP + height1 + NODE_EDIT_GAP + total_height_offset ) }
@@ -184,7 +200,7 @@ impl EditableNodeState
 
                         NodeSyncResponse::NodesStructureChanged
                     },
-            EditableNodeState::ReadFile(read_file_state) =>
+            EditableNodeState::ReadFile(read_file_state, _) =>
             {
                 let node = assets.get_node_graph_mut(graph_id).unwrap().nodes.get_mut(node_key).unwrap();
                 match &mut node.kind
@@ -355,6 +371,64 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
     (id_before_change != *selected_asset, 40.0)
 }
 
+fn draw_multi_asset_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kinds: &Vec<AssetKind>, meta: &HashMap<AssetId, AssetMeta>, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let label = "asset";
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
+    let sorted_alterntive_asset_names: BTreeMap<&AssetId, String> = meta.iter().filter(|(_, m)| asset_kinds.iter().any(|asset_kind| *asset_kind == m.kind ) ).map(|(k, m)| (k, m.name.clone()) ).collect();
+
+    let current_asset_name = if selected_asset.is_some()
+    {
+        sorted_alterntive_asset_names.get(&selected_asset.unwrap()).unwrap().clone()
+    }
+    else
+    {
+        "unknown".to_string()
+    };
+    
+    let id_before_change = *selected_asset;
+
+    let combo_rect = egui::Rect::from_min_size(
+        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
+        // egui::vec2(200.0, painted_text.size().y * 2.0)
+        egui::Vec2::INFINITY
+    );
+
+    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
+    egui::ComboBox::from_id_salt(format!("asset_selector_{}_{}", node_key.to_string(), viewport_name)) 
+    .selected_text( current_asset_name )
+    .show_ui(&mut child_ui, |ui|
+    {
+        for (id, text) in sorted_alterntive_asset_names
+        {
+            if id == viewport_graph_id
+            {
+                continue;
+            }
+            
+            ui.selectable_value( selected_asset, Some( *id ), text);
+        }
+    });
+    // egui::Area::new("graph selector".into())
+    // .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
+    // .show(&mut child_ui.ctx(), |ui|
+    // {
+
+    // });
+    
+    (id_before_change != *selected_asset, 40.0)
+}
+
 fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, graph_id: &Option<AssetId>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> (bool, f32)
 {
     if graph_id.is_none()
@@ -406,11 +480,95 @@ fn draw_read_file_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, c
     .show_ui(&mut child_ui, |ui|
     {
         ui.selectable_value( current_mode, ReadFileState::Asset( None ), String::from("asset"));
-        ui.selectable_value( current_mode, ReadFileState::GlobalPath( None ), String::from("global_path"));
-        ui.selectable_value( current_mode, ReadFileState::RelativePath( None ), String::from("relative"));
+        ui.selectable_value( current_mode, ReadFileState::GlobalPath( String::new() ), String::from("global_path"));
+        ui.selectable_value( current_mode, ReadFileState::RelativePath( String::new() ), String::from("relative"));
     });
     
     (mode_before != *current_mode, 40.0)
-    
+}
+
+enum PathSelectorType
+{
+    Global,
+    Relative
+}
+
+fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: &mut bool, path_selector_type: PathSelectorType) -> (bool, f32)
+{
+    let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
+
+    let painted_text = ui.painter().text(
+        label_position,
+        egui::Align2::LEFT_TOP,
+        label,
+        egui::FontId::proportional(35.0),
+        egui::Color32::WHITE,
+    );
+
+    let text_box_rect = egui::Rect::from_min_size(
+                                egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y),
+                                egui::vec2( 100.0, painted_text.size().y ));
+
+    let text_edit_color = if *parseble { egui::Color32::WHITE } else { egui::Color32::RED };
+
+    let text_edit = egui::TextEdit::singleline(text)
+    .font(egui::FontId::proportional(20.0))
+    .text_color(text_edit_color)
+    .background_color(egui::Color32::BLACK);
+
+    let response = ui.put(text_box_rect , text_edit);
+
+    let path_parsed = PathBuf::from_str(text);
+
+    *parseble = false;
+    if path_parsed.is_ok()
+    {
+        if path_parsed.unwrap().exists()
+        {
+            *parseble = true;
+        }
+    }
+
+    let button_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER * 2.0 + 170.0, y: 0.0 }; // Figure out a better way to handle this offset
+
+    let button_rect = egui::Rect::from_min_size(
+        button_position,
+        egui::vec2(80.0, 40.0)
+    );
+
+    let button = egui::Button::new("select");
+
+    let response2 = ui.put(button_rect, button);
+
+    if response2.clicked()
+    {
+        match path_selector_type
+        {
+            PathSelectorType::Global =>
+            {
+                let file_path = FileDialog::new()
+                    .set_title("select file")
+                    .pick_file();
+        
+                if file_path.is_some()
+                {
+                    *text = file_path.unwrap().to_string_lossy().to_string();
+                }
+            },
+            PathSelectorType::Relative =>
+            {
+                let file_path = FileDialog::new()
+                    .set_title("select file")
+                    .pick_file();
+        
+                if file_path.is_some()
+                {
+                    *text = file_path.unwrap().to_string_lossy().to_string(); // @TODO, make it actually work with relative paths
+                }
+            },
+        }
+    }
+
+    (response.changed(), 40.0 )
 }
 

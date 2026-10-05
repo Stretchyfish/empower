@@ -7,6 +7,7 @@ use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
 use crate::node_graph::node::NodeKind;
 use crate::node_graph::node::node_kind::LoopMode;
+use crate::node_graph::node::node_kind::ReadFileState;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -246,7 +247,21 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
                 ctx.additional_graphs_to_compile.push(graph_id);
                 ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
             },
-        NodeKind::ReadFile(_) => todo!(),
+        NodeKind::ReadFile( state ) =>
+        {
+            let path = match state
+            {
+                ReadFileState::Asset( asset_id ) =>
+                {
+                    ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text( "test".to_string() )));
+                },
+                ReadFileState::GlobalPath(_) =>
+                {
+                    
+                },
+                ReadFileState::RelativePath(_) => todo!(),
+            };
+        },
     }
 }
 

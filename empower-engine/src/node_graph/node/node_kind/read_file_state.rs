@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{assets::AssetId, node_graph::port::PortDefinition};
@@ -8,8 +6,8 @@ use crate::{assets::AssetId, node_graph::port::PortDefinition};
 pub enum ReadFileState
 {
     Asset( Option<AssetId> ),
-    GlobalPath ( Option<PathBuf> ),
-    RelativePath( Option<PathBuf> )
+    GlobalPath ( String ),
+    RelativePath( String )
 }
 
 impl ReadFileState
@@ -19,8 +17,8 @@ impl ReadFileState
         match self
         {
             ReadFileState::Asset(_) => String::from("asset"),
-            ReadFileState::GlobalPath(_) => String::from("global path"),
-            ReadFileState::RelativePath(_) => String::from("relative path path"),
+            ReadFileState::GlobalPath(_) => String::from("global"),
+            ReadFileState::RelativePath(_) => String::from("relative"),
         }
     }
 

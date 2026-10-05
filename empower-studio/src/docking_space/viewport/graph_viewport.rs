@@ -251,7 +251,7 @@ impl GraphViewport
 
     fn process_effect_of_global_actions(&mut self, user_inputs: &UserInputs, studio_context: &mut StudioContext, graph_viewport_actions: &mut VecDeque<GraphViewportAction>)
     {
-        if !self.node_picker.show && user_inputs.clicked_a
+        if !self.node_picker.show && user_inputs.holding_ctrl && user_inputs.clicked_a
         {
             self.node_picker.toggle_show(&user_inputs.mouse_position);
         }
@@ -583,6 +583,7 @@ fn get_port_color(port: &Port) -> egui::Color32 // @TODO, move this into its own
                 Value::Image(_) => egui::Color32::GREEN,
                 Value::Point2d(_, _) => egui::Color32::ORANGE,
                 Value::List(_) => egui::Color32::PURPLE,
+                Value::Text(_) => egui::Color32::LIGHT_GREEN,
             }
         }
     }

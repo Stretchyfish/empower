@@ -66,7 +66,7 @@ impl NodeKind
             NodeKind::Image(_) => egui::vec2(300.0, 220.0),
             NodeKind::ShowImage => egui::vec2(300.0, 220.0),
             NodeKind::MathGraph => egui::vec2(300.0, 220.0),
-            NodeKind::ReadFile(_) => egui::vec2(300.0, 220.0),
+            NodeKind::ReadFile(_) => egui::vec2(300.0, 360.0),
             NodeKind::SubGraph( state ) => state.get_size(),
         }
     }
@@ -118,7 +118,10 @@ impl NodeKind
             NodeKind::ShowImage => Vec::new(),
             NodeKind::MathGraph => Vec::new(),
             NodeKind::SubGraph( state ) => state.get_output_port_definitions(),
-            NodeKind::ReadFile(_) => Vec::new(),
+            NodeKind::ReadFile(_) => vec![
+                                                PortDefinition::new_output_execution_port(""),
+                                                PortDefinition::new_output_data_port("text".to_string(), vec![Value::Text(String::new())]),
+            ],
         }
     }
 }

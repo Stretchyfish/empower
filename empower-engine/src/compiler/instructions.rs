@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{assets::AssetId, compiler::RegisterAddress, value::Value};
 
 pub type InstructionSet = Vec<Instruction>;
@@ -23,6 +25,7 @@ pub enum Instruction
     CallGraph ( AssetId ),
     ShowImage ( RegisterAddress ),
     ShowMathGraph ( RegisterAddress ),
+    ReadFile( RegisterAddress, Value ),
     Fork( InstructionAddress ),
     Join,
 }
@@ -49,6 +52,7 @@ impl Instruction
             Instruction::Add( result_register_address, register_address_1, register_address_2 ) => format!("Add ( r_addr: {}, r_addr: {}, r_addr: {})", result_register_address, register_address_1, register_address_2),
             Instruction::Compare( result_register_address, register_address_1, register_address_2 ) => format!("Compare ( r_addr: {}, r_addr: {}, r_addr: {})", result_register_address, register_address_1, register_address_2),
             Instruction::JumpIfTrue( instruction_address, register_address ) => format!("JumpIfTrue( i_addr: {}, i_addr: {})", instruction_address, register_address ),
+            Instruction::ReadFile( register_address, value ) => format!("ReadFile( r_addr: {}, value: {})", register_address, value.to_string() ),
         }
     }
 }

@@ -8,6 +8,7 @@ pub enum Value
     Integer( i32 ),
     Float( f32 ),
     Bool( bool ),
+    Text( String ),
     Image( Option<AssetId> ),
     Point2d ( f32, f32),
     List ( Vec<Value> ),
@@ -25,6 +26,7 @@ impl Value
             Value::Image( asset_id ) => if asset_id.is_none() { "none".to_string() } else { asset_id.unwrap().to_string() },
             Value::Point2d( x, y) => format!("[{},{}]", x, y),
             Value::List( _ ) => "list".to_string(),
+            Value::Text( text ) => text.clone(),
         }
     }
 
@@ -38,6 +40,7 @@ impl Value
             Value::Image( _ ) => "image".to_string(),
             Value::Point2d( _, _) => "point2d".to_string(),
             Value::List( _ ) => "list".to_string(),
+            Value::Text(_) => "text".to_string(),
         }
     }
 
@@ -96,6 +99,15 @@ impl Value
         match self
         {
             Value::List( list ) => list.clone(), // @TODO, this is potentially very expensive, consider a better way
+            _ => panic!("tried to convert impossible value to list"),
+        }
+    }
+
+    pub fn as_text(&self) -> String
+    {
+        match self
+        {
+            Value::Text( text ) => text.clone(), 
             _ => panic!("tried to convert impossible value to list"),
         }
     }

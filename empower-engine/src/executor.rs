@@ -270,6 +270,10 @@ impl Executor
                             continue; // To skip the pointer increment in the end
                         }
                     },
+                    Instruction::ReadFile( register_address, value ) =>
+                    {
+                    
+                    }
                 }
 
                 if self.settings.artificial_delay.is_some()

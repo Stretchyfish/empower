@@ -1,4 +1,4 @@
-use empower_engine::{self, assets::AssetKind, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{LoopMode, SubGraphState}}, value::Value};
+use empower_engine::{self, assets::AssetKind, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}, value::Value};
 
 #[test]
 fn test_print_compile()
@@ -181,6 +181,30 @@ fn test_math_graph_compile()
         let math_graph_handle = entry_node_graph.add_node(NodeKind::MathGraph, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &math_graph_handle.input_port_keys[0] );
+    }
+
+    let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
+    let program = compile_result.program;
+
+    let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
+
+    assert_eq!(compiled_graph.instructions[0], Instruction::SetConst(0, Value::List(Vec::new())));
+    assert_eq!(compiled_graph.instructions[1], Instruction::ShowMathGraph(0));
+    assert_eq!(compiled_graph.instructions[2], Instruction::Return );
+}
+
+#[test]
+fn test_read_file_compile()
+{
+    let mut project = empower_engine::project::Project::new();
+
+    {
+        let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+
+        let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
+        let read_file_handle = entry_node_graph.add_node(NodeKind::ReadFile( ReadFileState::Asset( None )), None );
+
+        let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &read_file_handle .input_port_keys[0] );
     }
 
     let compile_result = compile( &mut project, &CompileSettings::new() ).unwrap();
