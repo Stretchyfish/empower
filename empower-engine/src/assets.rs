@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, path::PathBuf};
+use std::{collections::{HashMap, HashSet}, path::PathBuf, str::FromStr};
 
 use crate::node_graph::NodeGraph;
 
@@ -68,7 +68,6 @@ impl Assets
             AssetKind::NodeGraph =>
             {
                 self.loaded_assets.loaded_node_graphs.get_mut(&asset_id).unwrap().name = new_name.to_string();
-                
             },
             _ => {},
         }
@@ -86,7 +85,7 @@ impl Assets
         {
             AssetKind::NodeGraph => self.create_node_graph(&parent, asset_id, name),
             AssetKind::Image => todo!(),
-            AssetKind::Json => todo!(),
+            AssetKind::Json => self.create_json(&parent, asset_id, name),
             AssetKind::Folder => self.create_folder(&parent, asset_id, name),
         };
 
@@ -111,6 +110,21 @@ impl Assets
         self.loaded_assets.loaded_node_graphs.insert(asset_id, node_graph);
 
         Ok( AssetMeta { id: asset_id, name: name_with_affix, parent: *parent, kind: AssetKind::NodeGraph })
+    }
+
+
+    fn create_json(&mut self, parent: &Option<AssetId>, asset_id: AssetId, name: &'static str) -> Result<AssetMeta, String>
+    {
+        let name_with_affix = String::from(name) + ".json";
+        
+        if self.meta.values().any(|m| m.kind == AssetKind::Json && m.name == name )
+        {
+            return Err(format!("Cannot create json with name ({}), because json with said name already exists", name));
+        }
+
+        self.loaded_assets.loaded_json.insert(asset_id, String::new());
+
+        Ok( AssetMeta { id: asset_id, name: name_with_affix, parent: *parent, kind: AssetKind::Json })
     }
 
     fn create_folder(&mut self, parent: &Option<AssetId>, asset_id: AssetId, name: &'static str) -> Result<AssetMeta, String> 
@@ -344,6 +358,41 @@ impl Assets
         }
 
         Ok(())
+    }
+
+    pub fn get_asset_global_path(&self, asset_id: &AssetId, project_location: &PathBuf) -> Result<PathBuf, &'static str>
+    {
+        let mut global_path = project_location.clone(); 
+        let relative_path = self.get_asset_relative_path(asset_id)?;
+        global_path.push( relative_path );
+
+        Ok( global_path )
+    }
+
+    pub fn get_asset_relative_path(&self, asset_id: &AssetId) -> Result<PathBuf, &'static str>
+    {
+        if *asset_id == ROOT_FOLDER_ASSET_ID
+        {
+            return Ok( PathBuf::new() );
+        }
+
+        let mut asset_relative_path = PathBuf::new();
+
+        let mut next_asset_id = asset_id.clone();
+        while next_asset_id != ROOT_FOLDER_ASSET_ID
+        {
+            let asset_meta = self.meta.get(&next_asset_id);
+
+            let Some(asset_meta) = asset_meta else { return Err( "Unable to retrieve asset meta of asset id" ) };
+            let Ok(mut relative_path_to_parrent) = PathBuf::from_str(&asset_meta.name) else { return Err( "Unable to convert asset meta name: {}, to path when finding relative path" ) };
+
+            relative_path_to_parrent.push(asset_relative_path);
+            asset_relative_path = relative_path_to_parrent; // This is a bit of a hack to get around reversing the paths
+
+            next_asset_id = asset_meta.parent.unwrap(); // This should be safe, as only the root is ever none
+        }
+
+        Ok(asset_relative_path)
     }
 }
 

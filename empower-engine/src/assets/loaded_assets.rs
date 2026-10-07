@@ -9,6 +9,7 @@ pub struct LoadedAssets
 {
     pub loaded_node_graphs: HashMap<AssetId, NodeGraph>,
     pub loaded_images: HashMap<AssetId, egui::ColorImage>,
+    pub loaded_json: HashMap<AssetId, String>,
 }
 
 impl LoadedAssets
@@ -19,6 +20,7 @@ impl LoadedAssets
         {
             loaded_node_graphs: HashMap::new(),
             loaded_images: HashMap::new(),
+            loaded_json: HashMap::new(),
         }
     }
 }

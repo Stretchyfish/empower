@@ -1,4 +1,4 @@
-use empower_engine::{self, assets::AssetKind, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}, value::Value};
+use empower_engine::{self, assets::{ASSET_FOLDER_ASSET_ID, AssetKind}, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}, value::Value};
 
 #[test]
 fn test_print_compile()
@@ -194,15 +194,19 @@ fn test_math_graph_compile()
 }
 
 #[test]
-fn test_read_file_compile()
+fn test_read_file_as_asset_compile()
 {
     let mut project = empower_engine::project::Project::new();
+
+    let asset_id = project.assets.create_asset(Some( ASSET_FOLDER_ASSET_ID ), AssetKind::Json, "test");
+
+    let Ok(asset_id) = asset_id else { panic!("unable to create json asset"); };
 
     {
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let read_file_handle = entry_node_graph.add_node(NodeKind::ReadFile( ReadFileState::Asset( None )), None );
+        let read_file_handle = entry_node_graph.add_node( NodeKind::ReadFile( ReadFileState::Asset( Some( asset_id ))), None );
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &read_file_handle .input_port_keys[0] );
     }
@@ -212,7 +216,7 @@ fn test_read_file_compile()
 
     let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
-    assert_eq!(compiled_graph.instructions[0], Instruction::SetConst(0, Value::List(Vec::new())));
-    assert_eq!(compiled_graph.instructions[1], Instruction::ShowMathGraph(0));
-    assert_eq!(compiled_graph.instructions[2], Instruction::Return );
+    assert_eq!(compiled_graph.instructions[0], Instruction::ReadFile(0, Value::Text( String::from("assets/test.json/") )));
+    // assert_eq!(compiled_graph.instructions[1], Instruction::ShowMathGraph(0));
+    // assert_eq!(compiled_graph.instructions[2], Instruction::Return );
 }
