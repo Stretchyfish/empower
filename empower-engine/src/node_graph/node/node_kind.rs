@@ -78,7 +78,7 @@ impl NodeKind
             NodeKind::Start => Vec::new(),
             NodeKind::Print => vec![
                                                 PortDefinition::new_input_execution_port(""),
-                                                PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0)]) ],
+                                                PortDefinition::new_input_data_port("value".to_string(), vec![ Value::Integer(0), Value::Float(0.0), Value::Text(String::new())]) ],
             NodeKind::Branch => vec![
                                                 PortDefinition::new_input_execution_port(""),
                                                 PortDefinition::new_input_data_port("condition".to_string(), vec![ Value::Bool(false) ]) ],

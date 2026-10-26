@@ -272,6 +272,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
             };
 
             ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text( path.to_string_lossy().to_string() )));
+            compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
         },
     };
 

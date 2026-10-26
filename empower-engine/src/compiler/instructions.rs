@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::{assets::AssetId, compiler::RegisterAddress, value::Value};
 
 pub type InstructionSet = Vec<Instruction>;

@@ -384,7 +384,7 @@ impl Assets
             let asset_meta = self.meta.get(&next_asset_id);
 
             let Some(asset_meta) = asset_meta else { return Err( "Unable to retrieve asset meta of asset id" ) };
-            let Ok(mut relative_path_to_parrent) = PathBuf::from_str(&asset_meta.name) else { return Err( "Unable to convert asset meta name: {}, to path when finding relative path" ) };
+            let Ok(mut relative_path_to_parrent) = PathBuf::from_str(&asset_meta.name);
 
             relative_path_to_parrent.push(asset_relative_path);
             asset_relative_path = relative_path_to_parrent; // This is a bit of a hack to get around reversing the paths
