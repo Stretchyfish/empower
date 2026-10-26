@@ -103,7 +103,7 @@ impl Value
         }
     }
 
-    pub fn as_text(&self) -> String
+    pub fn as_string(&self) -> String
     {
         match self
         {

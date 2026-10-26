@@ -216,7 +216,6 @@ fn test_read_file_as_asset_compile()
 
     let compiled_graph = program.compiled_graphs.get(&project.entry_graph).unwrap();
 
-    assert_eq!(compiled_graph.instructions[0], Instruction::ReadFile(0, Value::Text( String::from("assets/test.json/") )));
-    // assert_eq!(compiled_graph.instructions[1], Instruction::ShowMathGraph(0));
-    // assert_eq!(compiled_graph.instructions[2], Instruction::Return );
+    assert_eq!(compiled_graph.instructions[0], Instruction::ReadFile(0, Value::Text( String::from("assets/test.json") )));
+    assert_eq!(compiled_graph.instructions[1], Instruction::Return );
 }

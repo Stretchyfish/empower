@@ -136,7 +136,12 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
 
-    compile_node_chain(&mut compiled_graph_context, assets, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
+    let compile_chain_result = compile_node_chain(&mut compiled_graph_context, assets, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
+
+    if compile_chain_result.is_err()
+    {
+        return Err(compile_chain_result.unwrap_err());
+    }
 
     compiled_graph_context.add_instruction( &node_graph.start_node_key, Instruction::Return ); 
 
@@ -150,7 +155,7 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
     Ok(())
 }
 
-fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, node_key: &NodeGraphKey) -> Result<(), &'static str>
+fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, node_key: &NodeGraphKey) -> Result<(), String>
 {
     let next_instruction_address = ctx.instructions.len(); // @TODO, maybe find a better name, gets confusing in loop
     
@@ -180,7 +185,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
             {
                 let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
             
-                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key);
+                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
 
                 let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
                 ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
@@ -255,7 +260,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
             {
                 ReadFileState::Asset( asset_id ) =>
                 {
-                    let Some(asset_id) = asset_id else { return Err("ReadFile has no valid asset id during compilation") };
+                    let Some(asset_id) = asset_id else { return Err("ReadFile has no valid asset id during compilation".to_string()) };
                     assets.get_asset_relative_path(asset_id)?
                     // let Some(relative_asset_path) = assets.meta.get(asset_id) else { return Err("ReadFile asset_id is not present in assets meta data") };
                 },
@@ -319,7 +324,7 @@ fn detect_assets_to_preload(node_graph: &NodeGraph) -> Vec<AssetId>
     asset_to_load
 }
 
-fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, port_key: &NodeGraphKey, node_key: &NodeGraphKey) -> Result<(), &'static str>
+fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, port_key: &NodeGraphKey, node_key: &NodeGraphKey) -> Result<(), String>
 {
     let connected_nodes = get_nodes_connected_to_port(*port_key, node_graph);
 

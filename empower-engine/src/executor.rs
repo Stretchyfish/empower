@@ -1,5 +1,5 @@
 use egui_plot::{Legend, Line, Plot, PlotPoints};
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
 use crate::{assets::AssetId, compiler::{Instruction, Program}, value::Value};
 
@@ -270,9 +270,14 @@ impl Executor
                             continue; // To skip the pointer increment in the end
                         }
                     },
-                    Instruction::ReadFile( register_address, value ) =>
+                    Instruction::ReadFile( output_register_address, value ) =>
                     {
-                    
+                        let path_string = value.as_string();
+                        let path = PathBuf::from_str(&path_string).unwrap(); // This might be bad
+
+                        let file_string = std::fs::read_to_string(path).unwrap();
+
+                        println!("{}", file_string);
                     }
                 }
 
