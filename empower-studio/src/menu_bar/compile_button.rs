@@ -345,6 +345,22 @@ fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob
             });
             job.append(" )", 0.0, egui::TextFormat::default() );
         },
+        Instruction::ReadFile( register_address, value ) =>
+        {
+            job.append("ReadFile( ", 0.0, egui::TextFormat::default() );
+            job.append(register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(value.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: VALUE_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
+        }
     }
 
     job

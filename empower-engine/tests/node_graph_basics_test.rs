@@ -1,4 +1,4 @@
-use empower_engine::{self, node_graph::{node::NodeKind}};
+use empower_engine::{self, node_graph::node::NodeKind};
 
 #[test]
 fn project_creation() // @TODO, move this into a different file

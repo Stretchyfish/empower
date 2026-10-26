@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, SubGraphState}};
+use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, ReadFileState, SubGraphState}};
 
 use super::GraphViewportAction;
 
@@ -55,6 +55,11 @@ static NODE_TYPES: &[NodeType] = &[
     {
         name: "sub graph",
         constructor: || NodeKind::SubGraph( SubGraphState::new() ),
+    },
+    NodeType
+    {
+        name: "read file",
+        constructor: || NodeKind::ReadFile( ReadFileState::Asset( None ) ),
     },
 ];
 

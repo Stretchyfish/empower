@@ -337,6 +337,23 @@ impl ContentBrowserViewport
                 self.quick_menu = None;
             };
 
+            if ui.add(egui::Button::new("create json").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
+            {
+                let created_json_result = studio_context.get_project_mut().assets.create_asset( Some( self.current_directory ), AssetKind::Json, "text");
+
+                let Ok(json_asset_id) = created_json_result
+                else
+                {
+                    studio_context.add_log( Log::info( created_json_result.err().unwrap().as_str()) );
+                    return;
+                };
+
+                let asset_meta = studio_context.get_project().assets.meta.get(&json_asset_id).unwrap();
+
+                self.renaming_file = Some( ViewportRenameState::new(asset_meta.name.clone(), json_asset_id));
+                self.quick_menu = None;
+            };
+
             if self.selected_asset.is_some()
             {
                 if ui.add(egui::Button::new("rename file").min_size(egui::Vec2 {x: 190.0, y: 20.0})).clicked() 
