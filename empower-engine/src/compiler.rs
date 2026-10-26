@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
 use crate::assets::AssetId;
+use crate::assets::Assets;
 use crate::assets::LoadedAssets;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
 use crate::node_graph::node::NodeKind;
 use crate::node_graph::node::node_kind::LoopMode;
+use crate::node_graph::node::node_kind::ReadFileState;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::Project;
@@ -121,6 +123,7 @@ pub fn compile(project: &mut Project, settings: &CompileSettings) -> Result<Comp
 pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Project) -> Result<(), String>
 {
     let node_graph = project.assets.get_node_graph(&graph_id).unwrap();
+    let assets = &project.assets;
 
     let integrity = check_node_graph_compile_integrity(node_graph);
 
@@ -133,7 +136,12 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
     let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
 
-    compile_node_chain(&mut compiled_graph_context, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
+    let compile_chain_result = compile_node_chain(&mut compiled_graph_context, assets, node_graph, &node_graph.start_node_key); // This initiates the recursive process to compile the entire graph
+
+    if compile_chain_result.is_err()
+    {
+        return Err(compile_chain_result.unwrap_err());
+    }
 
     compiled_graph_context.add_instruction( &node_graph.start_node_key, Instruction::Return ); 
 
@@ -147,7 +155,7 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
     Ok(())
 }
 
-fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, node_key: &NodeGraphKey)
+fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, node_key: &NodeGraphKey) -> Result<(), String>
 {
     let next_instruction_address = ctx.instructions.len(); // @TODO, maybe find a better name, gets confusing in loop
     
@@ -155,7 +163,7 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
 
     if other_node_to_compile_first.is_some()
     {
-        compile_node_chain(ctx, node_graph, &other_node_to_compile_first.unwrap());
+        compile_node_chain(ctx, assets, node_graph, &other_node_to_compile_first.unwrap())?;
     }
 
     let (node, inputs, outputs) = node_graph.get_node_input_output(*node_key).expect("unable to compile node as something is wrong in node");  // @TODO, take a second look at this function
@@ -166,87 +174,109 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, no
     match &node.kind
     {
         NodeKind::Start =>
-        {
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
-        },
+            {
+                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
+            },
         NodeKind::Print =>
-        {
-            ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
-        },
+            {
+                ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
+            },
         NodeKind::Branch =>
-        {
-            let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
+            {
+                let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
             
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
 
-            let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
-            ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
+                let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
+                ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
 
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[1], node_key);
+                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[1], node_key)?;
 
-            ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
-        },
+                ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
+            },
         NodeKind::Loop( mode ) =>
-        {
-            match mode
             {
-                LoopMode::Forever =>
+                match mode
                 {
-                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                    LoopMode::Forever =>
+                    {
+                        compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
 
-                    ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
-                },
-                LoopMode::Range =>
-                {
-                    ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
-                    ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
-                    let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
+                        ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
+                    },
+                    LoopMode::Range =>
+                    {
+                        ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
+                        ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
+                        let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
 
-                    compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
+                        compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
 
-                    ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
-                    ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
+                        ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
+                        ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
 
-                    ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
-                },
-            }
-        },
+                        ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
+                    },
+                }
+            },
         NodeKind::Wait =>
-        {
-            ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
-
-            compile_nodes_connected_to_port(ctx, node_graph, &node.output_port_keys[0], node_key);
-        },
-        NodeKind::List(_) =>
-        {
-            ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
-        },
-        NodeKind::Image( state ) =>
-        {
-            ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
-            );
-        },
-        NodeKind::ShowImage =>
-        {
-            ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
-        },
-        NodeKind::MathGraph =>
-        {
-            ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
-        },
-        NodeKind::SubGraph( state ) =>
-        {
-            if state.graph_asset_id.is_none() // @TODO, double check that this still works
             {
-                return;
-            }
+                ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
 
-            let graph_id = state.graph_asset_id.unwrap();
+                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
+            },
+        NodeKind::List(_) =>
+            {
+                ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
+            },
+        NodeKind::Image( state ) =>
+            {
+                ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
+                );
+            },
+        NodeKind::ShowImage =>
+            {
+                ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
+            },
+        NodeKind::MathGraph =>
+            {
+                ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
+            },
+        NodeKind::SubGraph( state ) =>
+            {
+                if state.graph_asset_id.is_none() // @TODO, double check that this still works
+                {
+                    return Ok(());
+                }
 
-            ctx.additional_graphs_to_compile.push(graph_id);
-            ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
+                let graph_id = state.graph_asset_id.unwrap();
+
+                ctx.additional_graphs_to_compile.push(graph_id);
+                ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
+            },
+        NodeKind::ReadFile( state ) =>
+        {
+            let path = match &state
+            {
+                ReadFileState::Asset( asset_id ) =>
+                {
+                    let Some(asset_id) = asset_id else { return Err("ReadFile has no valid asset id during compilation".to_string()) };
+                    assets.get_asset_relative_path(asset_id)?
+                    // let Some(relative_asset_path) = assets.meta.get(asset_id) else { return Err("ReadFile asset_id is not present in assets meta data") };
+                },
+                ReadFileState::GlobalPath(_) =>
+                {
+                    todo!()
+                },
+                ReadFileState::RelativePath(_) => todo!(),
+            };
+
+            ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text( path.to_string_lossy().to_string() )));
+            compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
         },
-    }
+    };
+
+    Ok(())
 }
 
 fn check_node_graph_compile_integrity(node_graph: &NodeGraph) -> Result<(), String>
@@ -295,7 +325,7 @@ fn detect_assets_to_preload(node_graph: &NodeGraph) -> Vec<AssetId>
     asset_to_load
 }
 
-fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &NodeGraph, port_key: &NodeGraphKey, node_key: &NodeGraphKey)
+fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, port_key: &NodeGraphKey, node_key: &NodeGraphKey) -> Result<(), String>
 {
     let connected_nodes = get_nodes_connected_to_port(*port_key, node_graph);
 
@@ -303,14 +333,14 @@ fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &
     {
         if index == connected_nodes.len() - 1
         {
-            compile_node_chain(ctx, node_graph, connected_node_key);
+            compile_node_chain(ctx, assets, node_graph, connected_node_key)?;
             continue;
         }
 
         ctx.add_instruction( node_key, Instruction::Fork( ctx.instructions.len() + 2 ));
         let jump_instruction_address = ctx.add_instruction_placeholder( node_key, Instruction::Jump( 0) );
 
-        compile_node_chain(ctx, node_graph, connected_node_key);
+        compile_node_chain(ctx, assets, node_graph, connected_node_key)?;
 
         ctx.add_instruction( node_key, Instruction::Return );
 
@@ -321,6 +351,8 @@ fn compile_nodes_connected_to_port(ctx: &mut CompiledGraphContext, node_graph: &
     {
         ctx.add_instruction( node_key, Instruction::Join );
     }
+
+    Ok(())
 }
 
 fn get_nodes_connected_to_port(port_key: NodeGraphKey, node_graph: &NodeGraph) -> Vec<NodeGraphKey>

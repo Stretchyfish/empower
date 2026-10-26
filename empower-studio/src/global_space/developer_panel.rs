@@ -123,6 +123,16 @@ impl DeveloperPanel
                                     ui.end_row();
                                 }
                             });
+
+                            ui.collapsing("json", |ui|
+                            {
+                                for (asset_id, json) in &assets.loaded_assets.loaded_json
+                                {
+                                    ui.label(asset_id.to_string());
+                                    ui.label(format!("text: {}", json));
+                                    ui.end_row();
+                                }
+                            });
                         });
                     });
                 });
