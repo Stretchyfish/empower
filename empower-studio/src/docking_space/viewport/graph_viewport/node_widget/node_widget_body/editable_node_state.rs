@@ -7,6 +7,9 @@ use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
 
 use super::{NODE_EDIT_GAP, NODE_EDIT_AND_LABEL_BUFFER, NodeSyncResponse};
 
+const NODE_EDIT_FONT_SIZE: f32 = 35.0;
+const NODE_COMBO_ROW_HEIGHT: f32 = 50.0;
+
 pub struct ShowEditableNodeStateResult
 {
     pub changed: bool,
@@ -218,65 +221,43 @@ impl EditableNodeState
 fn draw_loop_mode_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_mode: &mut LoopMode, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
-
-    let painted_text = ui.painter().text(
-        label_position,
-        egui::Align2::LEFT_TOP,
-        "mode: ",
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
-    
     let mode_before = current_mode.clone();
-
-    let combo_rect = egui::Rect::from_min_size(
-        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
-        egui::Vec2::INFINITY
+    show_labeled_combo(
+        ui,
+        label_position,
+        "mode: ",
+        format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name),
+        mode_before.to_string(),
+        |ui|
+        {
+            ui.selectable_value( current_mode, LoopMode::Forever, String::from("forever"));
+            ui.selectable_value( current_mode, LoopMode::Range, String::from("ranged"));
+        },
     );
-
-    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt(format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name) )
-    .selected_text( mode_before.to_string() ) // @TODO, figure out if this is needed
-    .show_ui(&mut child_ui, |ui|
-    {
-        ui.selectable_value( current_mode, LoopMode::Forever, String::from("forever"));
-        ui.selectable_value( current_mode, LoopMode::Range, String::from("ranged"));
-    });
     
-    (mode_before != *current_mode, 40.0)
+    (mode_before != *current_mode, NODE_COMBO_ROW_HEIGHT)
 }
 
 fn draw_value_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &str, current_value_text: &mut String, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
-
-    let painted_text = ui.painter().text(
-        label_position,
-        egui::Align2::LEFT_TOP,
-        label,
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
-    
     let state_before_change = current_value_text.clone();
-
-    let combo_rect = egui::Rect::from_min_size(
-        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
-        egui::Vec2::INFINITY
+    show_labeled_combo(
+        ui,
+        label_position,
+        label,
+        format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name),
+        current_value_text.clone(),
+        |ui|
+        {
+            // @TODO, probably is a way of automating this
+            ui.selectable_value( current_value_text, String::from("integer"), String::from("integer"));
+            ui.selectable_value( current_value_text, String::from("float"), String::from("float"));
+            ui.selectable_value( current_value_text, String::from("point2d"), String::from("point2d"));
+        },
     );
-
-    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt(format!("enum_box_selector_{}_{}", node_key.to_string(), viewport_name))
-    .selected_text( current_value_text.clone() ) // @TODO, figure out if this is needed
-    .show_ui(&mut child_ui, |ui|
-    {
-        // @TODO, probably is a way of automating this
-        ui.selectable_value( current_value_text, String::from("integer"), String::from("integer"));
-        ui.selectable_value( current_value_text, String::from("float"), String::from("float"));
-        ui.selectable_value( current_value_text, String::from("point2d"), String::from("point2d"));
-    });
     
-    (state_before_change != *current_value_text, 40.0)
+    (state_before_change != *current_value_text, NODE_COMBO_ROW_HEIGHT)
 }
 
 fn draw_text_node_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: bool) -> (bool, f32)
@@ -319,14 +300,6 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
         AssetKind::Json => "json",
     };
 
-    let painted_text = ui.painter().text(
-        label_position,
-        egui::Align2::LEFT_TOP,
-        label,
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
-
     let sorted_alterntive_asset_names: BTreeMap<&AssetId, String> = meta.iter().filter(|(_, m)| m.kind == *asset_kind ).map(|(k, m)| (k, m.name.clone()) ).collect();
 
     let current_asset_name = if selected_asset.is_some()
@@ -340,35 +313,26 @@ fn draw_asset_selector_edit(ui: &mut egui::Ui, edit_position: &egui::Pos2, selec
     
     let id_before_change = *selected_asset;
 
-    let combo_rect = egui::Rect::from_min_size(
-        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
-        // egui::vec2(200.0, painted_text.size().y * 2.0)
-        egui::Vec2::INFINITY
-    );
-
-    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt(format!("asset_selector_{}_{}", node_key.to_string(), viewport_name)) 
-    .selected_text( current_asset_name )
-    .show_ui(&mut child_ui, |ui|
-    {
-        for (id, text) in sorted_alterntive_asset_names
+    show_labeled_combo(
+        ui,
+        label_position,
+        label,
+        format!("asset_selector_{}_{}", node_key.to_string(), viewport_name),
+        current_asset_name,
+        |ui|
         {
-            if id == viewport_graph_id
+            for (id, text) in sorted_alterntive_asset_names
             {
-                continue;
-            }
-            
-            ui.selectable_value( selected_asset, Some( *id ), text);
-        }
-    });
-    // egui::Area::new("graph selector".into())
-    // .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
-    // .show(&mut child_ui.ctx(), |ui|
-    // {
+                if id == viewport_graph_id
+                {
+                    continue;
+                }
 
-    // });
-    
-    (id_before_change != *selected_asset, 40.0)
+                ui.selectable_value( selected_asset, Some( *id ), text);
+            }
+        },
+    );
+    (id_before_change != *selected_asset, NODE_COMBO_ROW_HEIGHT)
 }
 
 fn draw_multi_asset_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, selected_asset: &mut Option<AssetId>, viewport_graph_id: &AssetId, asset_kinds: &Vec<AssetKind>, meta: &HashMap<AssetId, AssetMeta>, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
@@ -376,14 +340,6 @@ fn draw_multi_asset_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, sele
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
     let label = "asset";
-
-    let painted_text = ui.painter().text(
-        label_position,
-        egui::Align2::LEFT_TOP,
-        label,
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
 
     let sorted_alterntive_asset_names: BTreeMap<&AssetId, String> = meta.iter().filter(|(_, m)| asset_kinds.iter().any(|asset_kind| *asset_kind == m.kind ) ).map(|(k, m)| (k, m.name.clone()) ).collect();
 
@@ -398,35 +354,26 @@ fn draw_multi_asset_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, sele
     
     let id_before_change = *selected_asset;
 
-    let combo_rect = egui::Rect::from_min_size(
-        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
-        // egui::vec2(200.0, painted_text.size().y * 2.0)
-        egui::Vec2::INFINITY
-    );
-
-    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt(format!("asset_selector_{}_{}", node_key.to_string(), viewport_name)) 
-    .selected_text( current_asset_name )
-    .show_ui(&mut child_ui, |ui|
-    {
-        for (id, text) in sorted_alterntive_asset_names
+    show_labeled_combo(
+        ui,
+        label_position,
+        label,
+        format!("asset_selector_{}_{}", node_key.to_string(), viewport_name),
+        current_asset_name,
+        |ui|
         {
-            if id == viewport_graph_id
+            for (id, text) in sorted_alterntive_asset_names
             {
-                continue;
-            }
-            
-            ui.selectable_value( selected_asset, Some( *id ), text);
-        }
-    });
-    // egui::Area::new("graph selector".into())
-    // .fixed_pos( egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP, label_position.y) )
-    // .show(&mut child_ui.ctx(), |ui|
-    // {
+                if id == viewport_graph_id
+                {
+                    continue;
+                }
 
-    // });
-    
-    (id_before_change != *selected_asset, 40.0)
+                ui.selectable_value( selected_asset, Some( *id ), text);
+            }
+        },
+    );
+    (id_before_change != *selected_asset, NODE_COMBO_ROW_HEIGHT)
 }
 
 fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, graph_id: &Option<AssetId>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>) -> (bool, f32)
@@ -458,33 +405,59 @@ fn draw_graph_viewport_opener(ui: &mut egui::Ui, edit_position: &egui::Pos2, gra
 fn draw_read_file_type_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, current_mode: &mut ReadFileState, node_key: &NodeGraphKey, viewport_name: &String) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
-
-    let painted_text = ui.painter().text(
-        label_position,
-        egui::Align2::LEFT_TOP,
-        "location: ",
-        egui::FontId::proportional(35.0),
-        egui::Color32::WHITE,
-    );
-    
     let mode_before = current_mode.clone();
+    show_labeled_combo(
+        ui,
+        label_position,
+        "location: ",
+        format!("read_file_selector_{}_{}", node_key.to_string(), viewport_name),
+        mode_before.to_string(),
+        |ui|
+        {
+            ui.selectable_value( current_mode, ReadFileState::Asset( None ), String::from("asset"));
+            ui.selectable_value( current_mode, ReadFileState::GlobalPath( String::new() ), String::from("global_path"));
+            ui.selectable_value( current_mode, ReadFileState::RelativePath( String::new() ), String::from("relative"));
+        },
+    );
+    
+    (mode_before != *current_mode, NODE_COMBO_ROW_HEIGHT)
+}
 
-    let combo_rect = egui::Rect::from_min_size(
-        egui::pos2( label_position.x + painted_text.size().x + NODE_EDIT_GAP * 2.0, label_position.y + painted_text.size().y / 2.0),
-        egui::Vec2::INFINITY
+fn show_labeled_combo(
+    ui: &mut egui::Ui,
+    label_position: egui::Pos2,
+    label: &str,
+    combo_id: String,
+    selected_text: String,
+    show_options: impl FnOnce(&mut egui::Ui),
+)
+{
+    let row_width = (ui.clip_rect().right() - label_position.x).max(0.0);
+    let row_rect = egui::Rect::from_min_size(label_position, egui::vec2(row_width, NODE_COMBO_ROW_HEIGHT));
+    let mut row_ui = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(row_rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Min)),
     );
 
-    let mut child_ui = ui.new_child(egui::UiBuilder::new().max_rect(combo_rect));
-    egui::ComboBox::from_id_salt(format!("read_file_selector_{}_{}", node_key.to_string(), viewport_name) )
-    .selected_text( mode_before.to_string() ) // @TODO, figure out if this is needed
-    .show_ui(&mut child_ui, |ui|
-    {
-        ui.selectable_value( current_mode, ReadFileState::Asset( None ), String::from("asset"));
-        ui.selectable_value( current_mode, ReadFileState::GlobalPath( String::new() ), String::from("global_path"));
-        ui.selectable_value( current_mode, ReadFileState::RelativePath( String::new() ), String::from("relative"));
-    });
-    
-    (mode_before != *current_mode, 40.0)
+    // Overwritting style affecting the ComBox to make it allign with the label.
+    let style = row_ui.style_mut();
+    style.text_styles.insert(
+        egui::TextStyle::Button,
+        egui::FontId::proportional(NODE_EDIT_FONT_SIZE),
+    );
+    style.visuals.override_text_color = Some(egui::Color32::WHITE);
+    style.spacing.button_padding.y = 0.0;
+
+    row_ui.label(
+        egui::RichText::new(label)
+            .font(egui::FontId::proportional(NODE_EDIT_FONT_SIZE))
+            .color(egui::Color32::WHITE),
+    );
+    row_ui.add_space(NODE_EDIT_GAP * 2.0);
+    egui::ComboBox::from_id_salt(combo_id)
+        .selected_text(selected_text)
+        .show_ui(&mut row_ui, show_options);
 }
 
 enum PathSelectorType
