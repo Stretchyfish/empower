@@ -6,6 +6,11 @@ use std::collections::{HashMap, HashSet};
 use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
+const GRID_SPACING: f32 = 40.0;
+const GRID_DOT_COLOR: egui::Color32 = egui::Color32::from_gray(50);
+const GRID_DOT_RADIUS: f32 = 1.5;
+const MIN_GRID_SPACING_SCREEN: f32 = 8.0;
+
 mod node_widget;
 pub use node_widget::EditablePortValue;
 pub use node_widget::EditableNodeState;
@@ -70,6 +75,41 @@ impl GraphViewport
     }
 }
 
+fn show_scene_grid(scene_ui: &egui::Ui)
+{
+    let visible_scene_rect = scene_ui.clip_rect();
+    let scene_to_screen = scene_ui
+        .ctx()
+        .layer_transform_from_global(scene_ui.painter().layer_id())
+        .map(|global_to_scene| 1.0 / global_to_scene.scaling)
+        .unwrap_or(1.0);
+
+    // Do not render grid if the camera is too far zoomed out and there will be too many dots 
+    if GRID_SPACING * scene_to_screen < MIN_GRID_SPACING_SCREEN
+    {
+        return;
+    }
+
+    let painter = scene_ui.painter();
+
+    let first_x = (visible_scene_rect.left() / GRID_SPACING).floor() as i32;
+    let last_x = (visible_scene_rect.right() / GRID_SPACING).ceil() as i32;
+    let first_y = (visible_scene_rect.top() / GRID_SPACING).floor() as i32;
+    let last_y = (visible_scene_rect.bottom() / GRID_SPACING).ceil() as i32;
+
+    for x_index in first_x..=last_x
+    {
+        for y_index in first_y..=last_y
+        {
+            painter.circle_filled(
+                egui::pos2(x_index as f32 * GRID_SPACING, y_index as f32 * GRID_SPACING),
+                GRID_DOT_RADIUS,
+                GRID_DOT_COLOR,
+            );
+        }
+    }
+}
+
 pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_name: &String, user_inputs: &UserInputs)
 {
     let developer_mode = studio_context.get_settings().developer_mode;
@@ -130,6 +170,8 @@ impl GraphViewport
         .drag_pan_buttons(drag_pan_button)
         .show(ui, &mut scene_rect, |scene_ui|
         {
+            show_scene_grid(scene_ui);
+
             for connection in &node_graph.connections_in
             {
                 connection_widget::show(scene_ui, connection.1, connection.0, &node_graph, cached_port_positions, developer_mode);
