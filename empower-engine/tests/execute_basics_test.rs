@@ -1,6 +1,7 @@
 use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetKind};
 use empower_engine::executor::{Executor, ExecutorSettings};
 use empower_engine::node_graph::node::node_kind::{LoopMode, ReadFileState, SubGraphState};
+use empower_engine::project::ProjectState;
 use empower_engine::{self, compiler::{CompileSettings, compile}, node_graph::node::NodeKind, value::Value};
 
 #[test]
@@ -91,6 +92,51 @@ fn read_global_file_and_print_text()
     }
 
     assert_eq!(output, vec![include_str!("fixtures/read_file.txt")]);
+}
+
+#[test]
+fn read_relative_file_and_print_text()
+{
+    let mut project = empower_engine::project::Project::new();
+    // Point the test project at the existing fixture directory without writing a project to disk.
+    project.state = ProjectState::Saved(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::RelativePath("tests/fixtures/read_file.txt".to_string())), None);
+        let print = graph.add_node(NodeKind::Print, None);
+
+        graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[1], &print.input_port_keys[1]).unwrap();
+    }
+
+    let program = compile(&mut project, &CompileSettings::new()).unwrap().program;
+    let mut executor = Executor::new(program, ExecutorSettings::new());
+
+    let mut output = Vec::new();
+    while executor.is_running()
+    {
+        output.extend(executor.run(None).outputs);
+    }
+
+    assert_eq!(output, vec!["hello world\n"]);
+}
+
+#[test]
+fn relative_file_requires_saved_project()
+{
+    let mut project = empower_engine::project::Project::new();
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::RelativePath("tests/fixtures/read_file.txt".to_string())), None);
+        graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
+    }
+
+    let result = compile(&mut project, &CompileSettings::new());
+    assert_eq!(result.err().unwrap(), "Save the project before reading a relative path");
 }
 
 #[test]

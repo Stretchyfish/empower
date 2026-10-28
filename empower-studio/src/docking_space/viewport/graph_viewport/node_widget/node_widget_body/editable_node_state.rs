@@ -1,6 +1,6 @@
-use std::{collections::{BTreeMap, HashMap, VecDeque}, path::PathBuf, str::FromStr};
+use std::{collections::{BTreeMap, HashMap, VecDeque}, path::Path};
 
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta, Assets}, node_graph::{NodeGraphKey, node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}}, project::ProjectState, value::Value};
 use rfd::FileDialog;
 
 use crate::docking_space::viewport::graph_viewport::GraphViewportAction;
@@ -42,7 +42,7 @@ impl EditableNodeState
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, meta: &HashMap<AssetId, AssetMeta>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_key: &NodeGraphKey, viewport_name: &String) -> ShowEditableNodeStateResult 
+    pub fn show(&mut self, ui: &mut egui::Ui, edit_position: egui::Pos2, viewport_graph_id: &AssetId, meta: &HashMap<AssetId, AssetMeta>, graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_key: &NodeGraphKey, viewport_name: &String, project_state: &ProjectState) -> ShowEditableNodeStateResult
     {
         match self
         {
@@ -99,7 +99,7 @@ impl EditableNodeState
                     },
                     ReadFileState::GlobalPath( path ) =>
                     {
-                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Global);
+                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Global, project_state);
 
                         total_height_offset += height2;
                         if changed2
@@ -110,12 +110,24 @@ impl EditableNodeState
                     },
                     ReadFileState::RelativePath( path ) =>
                     {
-                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Relative);
+                        let (changed2, height2) = draw_path_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), &String::from("path"), path, parsable, PathSelectorType::Relative, project_state);
 
                         total_height_offset += height2;
                         if changed2
                         {
                             changed = true;
+                        }
+
+                        if *project_state == ProjectState::Temporary
+                        {
+                            ui.painter().text(
+                                edit_position + egui::vec2(NODE_EDIT_AND_LABEL_BUFFER, total_height_offset + NODE_EDIT_GAP),
+                                egui::Align2::LEFT_TOP,
+                                "Save project for relative paths",
+                                egui::FontId::proportional(18.0),
+                                egui::Color32::YELLOW,
+                            );
+                            total_height_offset += 30.0;
                         }
                     },
                 }
@@ -460,13 +472,14 @@ fn show_labeled_combo(
         .show_ui(&mut row_ui, show_options);
 }
 
+#[derive(Clone, Copy)]
 enum PathSelectorType
 {
     Global,
     Relative
 }
 
-fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: &mut bool, path_selector_type: PathSelectorType) -> (bool, f32)
+fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &String, text: &mut String, parseble: &mut bool, path_selector_type: PathSelectorType, project_state: &ProjectState) -> (bool, f32)
 {
     let label_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER, y: 0.0 };
 
@@ -492,56 +505,27 @@ fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &Str
     let response = ui.put(text_box_rect , text_edit);
     let mut changed = response.changed();
 
-    let path_parsed = PathBuf::from_str(text);
-
-    *parseble = false;
-    if path_parsed.is_ok()
+    let path = Path::new(text);
+    *parseble = match (path_selector_type, project_state)
     {
-        if path_parsed.unwrap().exists()
-        {
-            *parseble = true;
-        }
-    }
+        (PathSelectorType::Global, _) => path.is_absolute() && path.is_file(),
+        (PathSelectorType::Relative, ProjectState::Saved(project_directory)) => !text.is_empty() && path.is_relative() && project_directory.join(path).is_file(),
+        (PathSelectorType::Relative, ProjectState::Temporary) => false,
+    };
 
-    let button_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER * 2.0 + 170.0, y: 0.0 }; // Figure out a better way to handle this offset
-
-    let button_rect = egui::Rect::from_min_size(
-        button_position,
-        egui::vec2(80.0, 40.0)
-    );
-
-    let button = egui::Button::new("select");
-
-    let response2 = ui.put(button_rect, button);
-
-    if response2.clicked()
+    if matches!(path_selector_type, PathSelectorType::Global)
     {
-        match path_selector_type
+        let button_position = *edit_position + egui::Vec2 { x: NODE_EDIT_AND_LABEL_BUFFER * 2.0 + 170.0, y: 0.0 }; // Figure out a better way to handle this offset
+        let button_rect = egui::Rect::from_min_size(button_position, egui::vec2(80.0, 40.0));
+        let response = ui.put(button_rect, egui::Button::new("select"));
+
+        if response.clicked()
         {
-            PathSelectorType::Global =>
+            if let Some(file_path) = FileDialog::new().set_title("select file").pick_file()
             {
-                let file_path = FileDialog::new()
-                    .set_title("select file")
-                    .pick_file();
-        
-                if file_path.is_some()
-                {
-                    *text = file_path.unwrap().to_string_lossy().to_string();
-                    changed = true;
-                }
-            },
-            PathSelectorType::Relative =>
-            {
-                let file_path = FileDialog::new()
-                    .set_title("select file")
-                    .pick_file();
-        
-                if file_path.is_some()
-                {
-                    *text = file_path.unwrap().to_string_lossy().to_string(); // @TODO, make it actually work with relative paths
-                    changed = true;
-                }
-            },
+                *text = file_path.to_string_lossy().to_string();
+                changed = true;
+            }
         }
     }
 

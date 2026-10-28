@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{docking_space::viewport::graph_viewport::node_widget::NodeSyncResponse, studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, project::ProjectState, value::Value};
 use serde::{Serialize, Deserialize};
 
 const GRID_SPACING: f32 = 40.0;
@@ -137,7 +137,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     graph_viewport.node_picker.show(ui, &mut graph_viewport_actions, &graph_viewport.mouse_scene_position_last_frame);
     graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &project.state, &developer_mode);
 
     if ui.ui_contains_pointer()
     {
@@ -150,7 +150,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &NodeGraph, user_inputs: &UserInputs, cache: &mut Cache, viewport_name: &String, meta: &HashMap<AssetId, AssetMeta>, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &NodeGraph, user_inputs: &UserInputs, cache: &mut Cache, viewport_name: &String, meta: &HashMap<AssetId, AssetMeta>, project_state: &ProjectState, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -210,7 +210,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, cached_editable_node_state, meta, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, cached_editable_node_state, meta, project_state, developer_mode);
             }
 
             if self.selected_port.is_some()

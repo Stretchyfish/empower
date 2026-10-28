@@ -205,6 +205,8 @@ impl Project
             return Err(format!("Could not load all assets because: {}", loaded_all_asset_result.err().unwrap()));
         }
 
+        project.state = ProjectState::Saved(project_location.clone());
+
         Ok(project)
     }
 
