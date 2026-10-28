@@ -1,4 +1,4 @@
-use crate::{docking_space::{Viewport, viewport::{ContentBrowserViewport, EmptyViewport, GraphViewport, TerminalViewport}}, studio_context::StudioContext};
+use crate::{docking_space::{Viewport, viewport::{ContentBrowserViewport, EmptyViewport, GraphViewport, TerminalViewport, TextEditorViewport}}, studio_context::StudioContext};
 
 pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
 {
@@ -21,6 +21,10 @@ pub fn show(ui: &mut egui::Ui, studio_context: &mut StudioContext)
             if ui.button("Content Browser Viewport").clicked()
             {
                 studio_context.request_new_viewport( Viewport::ContentBrowser { content_browser_viewport: ContentBrowserViewport::new() } );
+            }
+            if ui.button("Text Editor Viewport").clicked()
+            {
+                studio_context.request_new_viewport( Viewport::TextEditor { text_editor_viewport: TextEditorViewport::new() } );
             }
             if ui.button("Empty Viewport").clicked()
             {

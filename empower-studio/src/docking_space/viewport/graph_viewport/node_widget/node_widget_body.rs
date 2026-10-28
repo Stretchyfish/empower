@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{Node, NodeGraphKey}};
+use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{Node, NodeGraphKey}, project::ProjectState};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -34,6 +34,7 @@ pub fn show(
             node_size: &egui::Vec2,
             cached_editable_node_state: &mut HashMap<NodeGraphKey, EditableNodeState>, // @TODO, maybe handle selection of editable node state earlier?
             meta: &HashMap<AssetId, AssetMeta>,
+            project_state: &ProjectState,
             developer_mode: &bool,
         ) -> f32
 {
@@ -162,7 +163,7 @@ pub fn show(
     // let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
     let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.max.y + NODE_EDIT_GAP);
 
-    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, meta, graph_viewport_actions, node_key, graph_viewport_title );
+    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, meta, graph_viewport_actions, node_key, graph_viewport_title, project_state );
 
     if show_editable_state_result.changed
     {

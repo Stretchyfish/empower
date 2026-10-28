@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{docking_space::{Viewport, viewport::GraphViewport}, studio_context::{Log, StudioContext}, user_inputs::UserInputs};
+use crate::{docking_space::{Viewport, viewport::{GraphViewport, TextEditorViewport}}, studio_context::{Log, StudioContext}, user_inputs::UserInputs};
 use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetId, AssetKind, AssetMeta};
 use serde::{Serialize, Deserialize};
 
@@ -241,8 +241,11 @@ impl ContentBrowserViewport
                         AssetKind::Image =>
                         {
                             actions.push( ContentBrowserViewportAction::RequestStudioToOpenViewport( Viewport::ImageViewer { image_asset_id: asset_meta.id }) );
-                        }
-                        _ => {},
+                        },
+                        AssetKind::Json =>
+                        {
+                            actions.push( ContentBrowserViewportAction::RequestStudioToOpenViewport( Viewport::TextEditor { text_editor_viewport: TextEditorViewport::with_asset(asset_meta.id) }) );
+                        },
                     }
                 }
             });

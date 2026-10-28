@@ -215,6 +215,7 @@ impl StudioContext
 
     fn compile(&mut self)
     {
+        self.compile_result = None;
         let compile_result = compiler::compile(&mut self.project, &CompileSettings::new_with_meta() );
 
         if let Err(e) = compile_result
