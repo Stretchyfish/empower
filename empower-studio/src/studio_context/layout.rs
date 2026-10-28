@@ -69,6 +69,7 @@ impl Layout
             Viewport::ContentBrowser { content_browser_viewport: _ } => "content browser viewport".to_string(),
             Viewport::Empty { empty_viewport: _ } => "empty viewport".to_string(),
             Viewport::ImageViewer { image_asset_id: _ } => "image viewer viewport".to_string(),
+            Viewport::TextEditor { text_editor_viewport: _ } => "text editor viewport".to_string(),
         };
 
         let number_of_viewports_containing_the_name = self.viewports.iter().filter(|(viewport_name, _)| viewport_name.contains(name.as_str()) ).count();
