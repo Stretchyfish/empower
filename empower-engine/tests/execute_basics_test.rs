@@ -1,6 +1,6 @@
-use empower_engine::assets::AssetKind;
+use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetKind};
 use empower_engine::executor::{Executor, ExecutorSettings};
-use empower_engine::node_graph::node::node_kind::{LoopMode, SubGraphState};
+use empower_engine::node_graph::node::node_kind::{LoopMode, ReadFileState, SubGraphState};
 use empower_engine::{self, compiler::{CompileSettings, compile}, node_graph::node::NodeKind, value::Value};
 
 #[test]
@@ -32,6 +32,36 @@ fn print_executed_test()
     }
 
     assert_eq!(outputs[0], 0.to_string());
+}
+
+#[test]
+fn read_json_asset_and_print_unsaved_text()
+{
+    let mut project = empower_engine::project::Project::new();
+    let asset_id = project.assets.create_asset(Some(ASSET_FOLDER_ASSET_ID), AssetKind::Json, "test").unwrap();
+    project.assets.loaded_assets.loaded_json.insert(asset_id, "hello world".to_string());
+
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::Asset(Some(asset_id))), None);
+        let print = graph.add_node(NodeKind::Print, None);
+
+        graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[1], &print.input_port_keys[1]).unwrap();
+    }
+
+    let program = compile(&mut project, &CompileSettings::new()).unwrap().program;
+    let mut executor = Executor::new(program, ExecutorSettings::new());
+
+    let mut output = Vec::new();
+    while executor.is_running()
+    {
+        output.extend(executor.run(None).outputs);
+    }
+
+    assert_eq!(output, vec!["hello world"]);
 }
 
 #[test]

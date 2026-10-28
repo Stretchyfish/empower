@@ -89,7 +89,7 @@ impl EditableNodeState
                     {
                         *parsable = true;
 
-                        let (changed2, height2) = draw_multi_asset_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), asset_id, viewport_graph_id, &vec![AssetKind::Json, AssetKind::Image, AssetKind::NodeGraph], meta,node_key, viewport_name);
+                        let (changed2, height2) = draw_multi_asset_selector(ui, &(edit_position + egui::vec2(0.0, total_height_offset)), asset_id, viewport_graph_id, &vec![AssetKind::Json], meta,node_key, viewport_name);
 
                         total_height_offset += height2;
                         if changed2
@@ -343,7 +343,7 @@ fn draw_multi_asset_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, sele
 
     let sorted_alterntive_asset_names: BTreeMap<&AssetId, String> = meta.iter().filter(|(_, m)| asset_kinds.iter().any(|asset_kind| *asset_kind == m.kind ) ).map(|(k, m)| (k, m.name.clone()) ).collect();
 
-    let current_asset_name = if selected_asset.is_some()
+    let current_asset_name = if selected_asset.is_some() && sorted_alterntive_asset_names.contains_key(&selected_asset.unwrap())
     {
         sorted_alterntive_asset_names.get(&selected_asset.unwrap()).unwrap().clone()
     }

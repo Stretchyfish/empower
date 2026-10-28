@@ -360,6 +360,22 @@ fn instruction_as_layout_job(instruction: &Instruction) -> egui::text::LayoutJob
                 ..Default::default()
             });
             job.append(" )", 0.0, egui::TextFormat::default() );
+        },
+        Instruction::ReadAsset( register_address, asset_id ) =>
+        {
+            job.append("ReadAsset( ", 0.0, egui::TextFormat::default() );
+            job.append(register_address.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: REGISTER_ADDRESS_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(", ", 0.0, egui::TextFormat::default() );
+            job.append(asset_id.to_string().as_str(), 0.0, egui::TextFormat
+            {
+                color: VALUE_TEXT_COLOR,
+                ..Default::default()
+            });
+            job.append(" )", 0.0, egui::TextFormat::default() );
         }
     }
 

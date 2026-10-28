@@ -277,6 +277,13 @@ impl Executor
 
                         let file_string = std::fs::read_to_string(path).unwrap_or(String::from("unable to parse"));
                         frame.value_registers.insert(*output_register_address, Value::Text(file_string));
+                    },
+                    Instruction::ReadAsset( output_register_address, asset_id ) =>
+                    {
+                        let text = self.program.loaded_assets.loaded_json.get(asset_id)
+                            .cloned()
+                            .unwrap_or_else(|| format!("unable to find JSON asset with id {}", asset_id));
+                        frame.value_registers.insert(*output_register_address, Value::Text(text));
                     }
                 }
 

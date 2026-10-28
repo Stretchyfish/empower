@@ -256,22 +256,25 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
             },
         NodeKind::ReadFile( state ) =>
         {
-            let path = match &state
+            match state
             {
                 ReadFileState::Asset( asset_id ) =>
                 {
                     let Some(asset_id) = asset_id else { return Err("ReadFile has no valid asset id during compilation".to_string()) };
-                    assets.get_asset_relative_path(asset_id)?
-                    // let Some(relative_asset_path) = assets.meta.get(asset_id) else { return Err("ReadFile asset_id is not present in assets meta data") };
+                    if !assets.loaded_assets.loaded_json.contains_key(asset_id)
+                    {
+                        return Err(format!("ReadFile JSON asset with id {} is not loaded", asset_id));
+                    }
+
+                    ctx.add_instruction( node_key, Instruction::ReadAsset( output_register_addresses[0], *asset_id ));
                 },
                 ReadFileState::GlobalPath(_) =>
                 {
                     todo!()
                 },
                 ReadFileState::RelativePath(_) => todo!(),
-            };
+            }
 
-            ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text( path.to_string_lossy().to_string() )));
             compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key)?;
         },
     };
