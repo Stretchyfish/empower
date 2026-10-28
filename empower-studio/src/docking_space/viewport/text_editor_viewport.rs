@@ -19,6 +19,14 @@ impl TextEditorViewport
         }
     }
 
+    pub fn with_asset(asset_id: AssetId) -> Self
+    {
+        Self
+        {
+            active_asset: Some(asset_id),
+        }
+    }
+
     pub fn show(&mut self, ui: &mut egui::Ui, studio_context: &mut StudioContext, viewport_title: &String)
     {
         egui::Panel::top(format!("hotbar_{}", viewport_title)).show_inside(ui, |ui|

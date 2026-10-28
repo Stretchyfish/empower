@@ -625,7 +625,7 @@ fn get_port_color(port: &Port) -> egui::Color32 // @TODO, move this into its own
                 Value::Image(_) => egui::Color32::GREEN,
                 Value::Point2d(_, _) => egui::Color32::ORANGE,
                 Value::List(_) => egui::Color32::PURPLE,
-                Value::Text(_) => egui::Color32::LIGHT_GREEN,
+                Value::Text(_) => egui::Color32::YELLOW,
             }
         }
     }
