@@ -490,6 +490,7 @@ fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &Str
     .background_color(egui::Color32::BLACK);
 
     let response = ui.put(text_box_rect , text_edit);
+    let mut changed = response.changed();
 
     let path_parsed = PathBuf::from_str(text);
 
@@ -526,6 +527,7 @@ fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &Str
                 if file_path.is_some()
                 {
                     *text = file_path.unwrap().to_string_lossy().to_string();
+                    changed = true;
                 }
             },
             PathSelectorType::Relative =>
@@ -537,11 +539,12 @@ fn draw_path_selector(ui: &mut egui::Ui, edit_position: &egui::Pos2, label: &Str
                 if file_path.is_some()
                 {
                     *text = file_path.unwrap().to_string_lossy().to_string(); // @TODO, make it actually work with relative paths
+                    changed = true;
                 }
             },
         }
     }
 
-    (response.changed(), 40.0 )
+    (changed, 40.0 )
 }
 

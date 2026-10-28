@@ -275,7 +275,8 @@ impl Executor
                         let path_string = value.as_string();
                         let path = PathBuf::from_str(&path_string).unwrap(); // This might be bad
 
-                        let file_string = std::fs::read_to_string(path).unwrap_or(String::from("unable to parse"));
+                        let file_string = std::fs::read_to_string(&path)
+                            .unwrap_or(format!("Unable to read file {}", path.display()));
                         frame.value_registers.insert(*output_register_address, Value::Text(file_string));
                     },
                     Instruction::ReadAsset( output_register_address, asset_id ) =>

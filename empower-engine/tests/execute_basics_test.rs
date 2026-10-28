@@ -65,6 +65,35 @@ fn read_json_asset_and_print_unsaved_text()
 }
 
 #[test]
+fn read_global_file_and_print_text()
+{
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/read_file.txt");
+
+    let mut project = empower_engine::project::Project::new();
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::GlobalPath(path.to_string_lossy().to_string())), None);
+        let print = graph.add_node(NodeKind::Print, None);
+
+        graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
+        graph.add_connection(&read.output_port_keys[1], &print.input_port_keys[1]).unwrap();
+    }
+
+    let program = compile(&mut project, &CompileSettings::new()).unwrap().program;
+    let mut executor = Executor::new(program, ExecutorSettings::new());
+
+    let mut output = Vec::new();
+    while executor.is_running()
+    {
+        output.extend(executor.run(None).outputs);
+    }
+
+    assert_eq!(output, vec![include_str!("fixtures/read_file.txt")]);
+}
+
+#[test]
 fn true_branch_executed_test()
 {
     let mut project = empower_engine::project::Project::new();

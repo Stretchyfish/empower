@@ -268,9 +268,14 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
 
                     ctx.add_instruction( node_key, Instruction::ReadAsset( output_register_addresses[0], *asset_id ));
                 },
-                ReadFileState::GlobalPath(_) =>
+                ReadFileState::GlobalPath(path) =>
                 {
-                    todo!()
+                    if !std::path::Path::new(path).is_absolute()
+                    {
+                        return Err(format!("ReadFile global path must be absolute: {}", path));
+                    }
+
+                    ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text(path.clone()) ));
                 },
                 ReadFileState::RelativePath(_) => todo!(),
             }
