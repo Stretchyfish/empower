@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::path::Path;
 
 use crate::assets::AssetId;
 use crate::assets::Assets;
@@ -7,9 +6,6 @@ use crate::assets::LoadedAssets;
 use crate::node_graph::NodeGraph;
 use crate::node_graph::NodeGraphKey;
 use crate::node_graph::Port;
-use crate::node_graph::node::NodeKind;
-use crate::node_graph::node::node_kind::LoopMode;
-use crate::node_graph::node::node_kind::ReadFileState;
 use crate::node_graph::port;
 use crate::node_graph::port::PortKind;
 use crate::project::{Project, ProjectState};
@@ -80,6 +76,22 @@ impl CompileSettings
     }
 }
 
+pub struct CompilePlan // Instructions on how to compile a single node
+{
+    pub steps: Vec<CompilePlanStep>,
+}
+
+pub enum CompilePlanStep
+{
+    Emit(Instruction), // Add an instruction to the compiled graph
+    CompileFromOutput(usize), // Compile nodes connected to the output port index
+    QueueGraph(AssetId), // Compile this graph as part of the program
+    Mark(&'static str), // Give the next instruction address a name
+    Jump(&'static str), // Jump to a named instruction address
+    JumpIfFalse(RegisterAddress, &'static str), // Jump to a named instruction address when the register is false
+    JumpIfTrue(RegisterAddress, &'static str), // Jump to a named position when the register is true
+}
+
 pub struct CompileResult
 {
     pub program: Program,
@@ -126,13 +138,8 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
     let node_graph = project.assets.get_node_graph(&graph_id).unwrap();
     let assets = &project.assets;
 
-    let integrity = check_node_graph_compile_integrity(node_graph);
+    check_node_graph_compile_integrity(node_graph)?;
 
-    if integrity.is_err()
-    {
-        return integrity;
-    }
-    
     ctx.add_assets_to_load( detect_assets_to_preload(node_graph) );
 
     let mut compiled_graph_context = CompiledGraphContext::new(graph_id);
@@ -158,8 +165,6 @@ pub fn compile_graph(ctx: &mut CompilerContext, graph_id: AssetId, project: &Pro
 
 fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_graph: &NodeGraph, node_key: &NodeGraphKey, project_state: &ProjectState) -> Result<(), String>
 {
-    let next_instruction_address = ctx.instructions.len(); // @TODO, maybe find a better name, gets confusing in loop
-    
     let other_node_to_compile_first = check_if_node_needs_another_node_compiled_first(ctx, node_key, &node_graph);
 
     if other_node_to_compile_first.is_some()
@@ -172,132 +177,80 @@ fn compile_node_chain(ctx: &mut CompiledGraphContext, assets: &Assets, node_grap
     let input_register_addresses = allocate_input_port_registers(ctx, node_key, &inputs, &node_graph.connections_in);
     let output_register_addresses = allocate_output_port_registers(ctx, &outputs);
 
-    match &node.kind
+    let node_compile_plan = node.kind.compile(&input_register_addresses, &output_register_addresses, assets, project_state)?;
+
+    let mut labels: HashMap<&'static str, InstructionAddress> = HashMap::new();
+    let mut pending_jumps: HashMap<&'static str, Vec<InstructionAddress>> = HashMap::new();
+
+    for step in node_compile_plan.steps
     {
-        NodeKind::Start =>
-            {
-                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-            },
-        NodeKind::Print =>
-            {
-                ctx.add_instruction( node_key, Instruction::Print( input_register_addresses[0] ) );
-            },
-        NodeKind::Branch =>
-            {
-                let jump_if_false_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfFalse(0, input_register_addresses[0]));
-            
-                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-
-                let jump_after_true_branch_instruction_placeholder_address = ctx.add_instruction_placeholder( node_key,  Instruction::Jump(0) );
-                ctx.patch_jump_instruction(&jump_if_false_instruction_placeholder_address, &ctx.instructions.len());
-
-                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[1], node_key, project_state)?;
-
-                ctx.patch_jump_instruction(&jump_after_true_branch_instruction_placeholder_address , &ctx.instructions.len());
-            },
-        NodeKind::Loop( mode ) =>
-            {
-                match mode
-                {
-                    LoopMode::Forever =>
-                    {
-                        compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-
-                        ctx.add_instruction( node_key, Instruction::Jump( next_instruction_address ) );
-                    },
-                    LoopMode::Range =>
-                    {
-                        ctx.add_instruction( node_key, Instruction::Copy(input_register_addresses [0], output_register_addresses [1]) );
-                        ctx.add_instruction( node_key, Instruction::Compare(input_register_addresses [2], output_register_addresses [1], output_register_addresses [0] ) );
-                        let jump_if_true_placeholder_address = ctx.add_instruction_placeholder( node_key, Instruction::JumpIfTrue(0, output_register_addresses [0]));
-
-                        compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-
-                        ctx.add_instruction( node_key, Instruction::Add(output_register_addresses [1], input_register_addresses [1], output_register_addresses [1]));
-                        ctx.add_instruction( node_key, Instruction::Jump( jump_if_true_placeholder_address - 1 ) );
-
-                        ctx.patch_jump_instruction(&jump_if_true_placeholder_address , &ctx.get_next_instruction_address());
-                    },
-                }
-            },
-        NodeKind::Wait =>
-            {
-                ctx.add_instruction( node_key, Instruction::Wait( input_register_addresses[0] ) );
-
-                compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-            },
-        NodeKind::List(_) =>
-            {
-                ctx.add_instruction( node_key, Instruction::CreateList( input_register_addresses.clone(), output_register_addresses[0]) );
-            },
-        NodeKind::Image( state ) =>
-            {
-                ctx.add_instruction( node_key, Instruction::SetConst(output_register_addresses[0], Value::Image( state.image_asset_id ))
-                );
-            },
-        NodeKind::ShowImage =>
-            {
-                ctx.add_instruction( node_key, Instruction::ShowImage( input_register_addresses[0] ) );
-            },
-        NodeKind::MathGraph =>
-            {
-                ctx.add_instruction( node_key, Instruction::ShowMathGraph( input_register_addresses[0] ) );
-            },
-        NodeKind::SubGraph( state ) =>
-            {
-                if state.graph_asset_id.is_none() // @TODO, double check that this still works
-                {
-                    return Ok(());
-                }
-
-                let graph_id = state.graph_asset_id.unwrap();
-
-                ctx.additional_graphs_to_compile.push(graph_id);
-                ctx.add_instruction( node_key, Instruction::CallGraph(graph_id));
-            },
-        NodeKind::ReadFile( state ) =>
+        match step
         {
-            match state
+            CompilePlanStep::Emit(instruction) => ctx.add_instruction(node_key, instruction),
+            CompilePlanStep::CompileFromOutput(port_index) => compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[port_index], node_key, project_state)?,
+            CompilePlanStep::QueueGraph(graph_id) => ctx.additional_graphs_to_compile.push(graph_id),
+            CompilePlanStep::Mark(label) =>
             {
-                ReadFileState::Asset( asset_id ) =>
+                if labels.contains_key(&label)
                 {
-                    let Some(asset_id) = asset_id else { return Err("ReadFile has no valid asset id during compilation".to_string()) };
-                    if !assets.loaded_assets.loaded_json.contains_key(asset_id)
-                    {
-                        return Err(format!("ReadFile JSON asset with id {} is not loaded", asset_id));
-                    }
+                    return Err(format!("Compile plan defines label '{}' twice", label));
+                }
 
-                    ctx.add_instruction( node_key, Instruction::ReadAsset( output_register_addresses[0], *asset_id ));
-                },
-                ReadFileState::GlobalPath(path) =>
+                let instruction_address = ctx.get_next_instruction_address();
+                labels.insert(label, instruction_address);
+
+                if let Some(jumps_waiting_for_label) = pending_jumps.remove(&label)
                 {
-                    if !std::path::Path::new(path).is_absolute()
+                    for jump_address in jumps_waiting_for_label
                     {
-                        return Err(format!("ReadFile global path must be absolute: {}", path));
+                        ctx.patch_jump_instruction(&jump_address, &instruction_address);
                     }
-
-                    ctx.add_instruction( node_key, Instruction::ReadFile( output_register_addresses[0], Value::Text(path.clone()) ));
-                },
-                ReadFileState::RelativePath(path) =>
+                }
+            },
+            CompilePlanStep::Jump(label) =>
+            {
+                if let Some(&destination_address) = labels.get(&label)
                 {
-                    let ProjectState::Saved(project_directory) = project_state else
-                    {
-                        return Err("Save the project before reading a relative path".to_string());
-                    };
+                    ctx.add_instruction(node_key, Instruction::Jump(destination_address));
+                }
+                else
+                {
+                    let placeholder_address = ctx.add_instruction_placeholder(node_key, Instruction::Jump(0));
+                    pending_jumps.entry(label).or_default().push(placeholder_address);
+                }
+            },
+            CompilePlanStep::JumpIfFalse(register, label) =>
+            {
+                if let Some(&destination_address) = labels.get(&label)
+                {
+                    ctx.add_instruction(node_key, Instruction::JumpIfFalse(destination_address, register));
+                }
+                else
+                {
+                    let placeholder_address = ctx.add_instruction_placeholder(node_key, Instruction::JumpIfFalse(0, register));
+                    pending_jumps.entry(label).or_default().push(placeholder_address);
+                }
+            },
+            CompilePlanStep::JumpIfTrue(register, label) =>
+            {
+                if let Some(&destination_address) = labels.get(&label)
+                {
+                    ctx.add_instruction(node_key, Instruction::JumpIfTrue(destination_address, register));
+                }
+                else
+                {
+                    let placeholder_address = ctx.add_instruction_placeholder(node_key, Instruction::JumpIfTrue(0, register));
+                    pending_jumps.entry(label).or_default().push(placeholder_address);
+                }
+            },
+        }
+    }
 
-                    if path.is_empty() || Path::new(path).is_absolute()
-                    {
-                        return Err(format!("ReadFile relative path must be a non-empty relative path: {}", path));
-                    }
+    if let Some(label) = pending_jumps.keys().next()
+    {
+        return Err(format!("Compile plan references undefined label '{}'", label));
+    }
 
-                    let full_path = project_directory.join(path);
-                    ctx.add_instruction(node_key, Instruction::ReadFile(output_register_addresses[0], Value::Text(full_path.to_string_lossy().to_string())));
-                },
-            }
-
-            compile_nodes_connected_to_port(ctx, assets, node_graph, &node.output_port_keys[0], node_key, project_state)?;
-        },
-    };
 
     Ok(())
 }

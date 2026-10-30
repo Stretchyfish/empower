@@ -1,4 +1,4 @@
-use empower_engine::{self, assets::{ASSET_FOLDER_ASSET_ID, AssetKind}, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{LoopMode, ReadFileState, SubGraphState}}, value::Value};
+use empower_engine::{self, assets::{ASSET_FOLDER_ASSET_ID, AssetKind}, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, ReadFileState, SubGraphState}}, value::Value};
 
 #[test]
 fn test_print_compile()
@@ -47,6 +47,30 @@ fn test_branch_compile()
     assert_eq!(compiled_graph.instructions[1], Instruction::JumpIfFalse(3, 0));
     assert_eq!(compiled_graph.instructions[2], Instruction::Jump(3));
     assert_eq!(compiled_graph.instructions[3], Instruction::Return);
+}
+
+#[test]
+fn test_nested_branch_compile()
+{
+    let mut project = empower_engine::project::Project::new();
+
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let outer = graph.add_node(NodeKind::Branch, None);
+        let inner = graph.add_node(NodeKind::Branch, None);
+
+        graph.add_connection(&start.output_port_keys[0], &outer.input_port_keys[0]).unwrap();
+        graph.add_connection(&outer.output_port_keys[0], &inner.input_port_keys[0]).unwrap();
+    }
+
+    let result = compile(&mut project, &CompileSettings::new()).unwrap();
+    let instructions = &result.program.compiled_graphs[&project.entry_graph].instructions;
+
+    assert_eq!(instructions[1], Instruction::JumpIfFalse(6, 0));
+    assert_eq!(instructions[3], Instruction::JumpIfFalse(5, 1));
+    assert_eq!(instructions[4], Instruction::Jump(5));
+    assert_eq!(instructions[5], Instruction::Jump(6));
 }
 
 #[test]
@@ -170,6 +194,30 @@ fn test_show_image_compile()
 }
 
 #[test]
+fn test_image_feeds_show_image_compile()
+{
+    let mut project = empower_engine::project::Project::new();
+    let image_asset_id = 42;
+
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let image = graph.add_node(NodeKind::Image(ImageState::from(image_asset_id)), None);
+        let show_image = graph.add_node(NodeKind::ShowImage, None);
+
+        graph.add_connection(&start.output_port_keys[0], &show_image.input_port_keys[0]).unwrap();
+        graph.add_connection(&image.output_port_keys[0], &show_image.input_port_keys[1]).unwrap();
+    }
+
+    let result = compile(&mut project, &CompileSettings::new()).unwrap();
+    let instructions = &result.program.compiled_graphs[&project.entry_graph].instructions;
+
+    assert_eq!(instructions[0], Instruction::SetConst(0, Value::Image(Some(image_asset_id))));
+    assert_eq!(instructions[1], Instruction::ShowImage(0));
+    assert_eq!(instructions[2], Instruction::Return);
+}
+
+#[test]
 fn test_math_graph_compile()
 {
     let mut project = empower_engine::project::Project::new();
@@ -191,6 +239,31 @@ fn test_math_graph_compile()
     assert_eq!(compiled_graph.instructions[0], Instruction::SetConst(0, Value::List(Vec::new())));
     assert_eq!(compiled_graph.instructions[1], Instruction::ShowMathGraph(0));
     assert_eq!(compiled_graph.instructions[2], Instruction::Return );
+}
+
+#[test]
+fn test_list_feeds_math_graph_compile()
+{
+    let mut project = empower_engine::project::Project::new();
+
+    {
+        let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
+        let start = graph.get_node_handle(graph.start_node_key);
+        let list = graph.add_node(NodeKind::List(ListState::new()), None);
+        let math_graph = graph.add_node(NodeKind::MathGraph, None);
+
+        graph.add_connection(&start.output_port_keys[0], &math_graph.input_port_keys[0]).unwrap();
+        graph.add_connection(&list.output_port_keys[0], &math_graph.input_port_keys[1]).unwrap();
+    }
+
+    let result = compile(&mut project, &CompileSettings::new()).unwrap();
+    let instructions = &result.program.compiled_graphs[&project.entry_graph].instructions;
+
+    assert_eq!(instructions[0], Instruction::SetConst(0, Value::Integer(0)));
+    assert_eq!(instructions[1], Instruction::SetConst(1, Value::Integer(0)));
+    assert_eq!(instructions[2], Instruction::CreateList(vec![0, 1], 2));
+    assert_eq!(instructions[3], Instruction::ShowMathGraph(2));
+    assert_eq!(instructions[4], Instruction::Return);
 }
 
 #[test]

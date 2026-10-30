@@ -1,6 +1,8 @@
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
-use crate::{node_graph::{port::PortDefinition}, value::Value};
+use crate::{assets::Assets, compiler::{CompilePlan, CompilePlanStep, Instruction, RegisterAddress}, node_graph::port::PortDefinition, project::ProjectState, value::Value};
 
 mod image_node_state;
 pub use image_node_state::ImageState;
@@ -123,6 +125,110 @@ impl NodeKind
                                                 PortDefinition::new_output_data_port("text".to_string(), vec![Value::Text(String::new())]),
             ],
         }
+    }
+
+    pub fn compile(&self, input_register_addresses: &Vec<RegisterAddress>, output_register_addresses: &Vec<RegisterAddress>, assets: &Assets, project_state: &ProjectState) -> Result<CompilePlan, String>
+    {
+        let plan = match self
+        {
+            NodeKind::Start => CompilePlan { steps: vec![ CompilePlanStep::CompileFromOutput(0) ] },
+            NodeKind::Print => CompilePlan { steps: vec![ CompilePlanStep::Emit( Instruction::Print( input_register_addresses[0] ) ) ] },
+            NodeKind::Branch => CompilePlan { steps: vec![
+                                                                CompilePlanStep::JumpIfFalse(input_register_addresses[0], "else"),
+                                                                CompilePlanStep::CompileFromOutput(0),
+                                                                CompilePlanStep::Jump("end"),
+                                                                CompilePlanStep::Mark("else"),
+                                                                CompilePlanStep::CompileFromOutput(1),
+                                                                CompilePlanStep::Mark("end"),
+                                                            ]},
+            NodeKind::Loop(LoopMode::Forever) => CompilePlan { steps: vec![
+                CompilePlanStep::Mark("entry"),
+                CompilePlanStep::CompileFromOutput(0),
+                CompilePlanStep::Jump("entry"),
+            ]},
+            NodeKind::Loop(LoopMode::Range) => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::Copy(input_register_addresses[0], output_register_addresses[1])),
+                CompilePlanStep::Mark("check"),
+                CompilePlanStep::Emit(Instruction::Compare(input_register_addresses[2], output_register_addresses[1], output_register_addresses[0])),
+                CompilePlanStep::JumpIfTrue(output_register_addresses[0], "end"),
+                CompilePlanStep::CompileFromOutput(0),
+                CompilePlanStep::Emit(Instruction::Add(output_register_addresses[1], input_register_addresses[1], output_register_addresses[1])),
+                CompilePlanStep::Jump("check"),
+                CompilePlanStep::Mark("end"),
+            ]},
+            NodeKind::Wait => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::Wait(input_register_addresses[0])),
+                CompilePlanStep::CompileFromOutput(0),
+            ]},
+            NodeKind::List(_) => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::CreateList(input_register_addresses.clone(), output_register_addresses[0])),
+            ]},
+            NodeKind::Image(state) => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::SetConst(output_register_addresses[0], Value::Image(state.image_asset_id))),
+            ]},
+            NodeKind::ShowImage => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::ShowImage(input_register_addresses[0])),
+            ]},
+            NodeKind::MathGraph => CompilePlan { steps: vec![
+                CompilePlanStep::Emit(Instruction::ShowMathGraph(input_register_addresses[0])),
+            ]},
+            NodeKind::SubGraph(state) =>
+            {
+                match state.graph_asset_id
+                {
+                    Some(graph_id) => CompilePlan { steps: vec![
+                        CompilePlanStep::QueueGraph(graph_id),
+                        CompilePlanStep::Emit(Instruction::CallGraph(graph_id)),
+                    ]},
+                    None => CompilePlan { steps: Vec::new() },
+                }
+            },
+            NodeKind::ReadFile(state) =>
+            {
+                let instruction = match state
+                {
+                    ReadFileState::Asset(asset_id) =>
+                    {
+                        let Some(asset_id) = asset_id else
+                        {
+                            return Err("ReadFile has no valid asset id during compilation".to_string());
+                        };
+                        if !assets.loaded_assets.loaded_json.contains_key(asset_id)
+                        {
+                            return Err(format!("ReadFile JSON asset with id {} is not loaded", asset_id));
+                        }
+                        Instruction::ReadAsset(output_register_addresses[0], *asset_id)
+                    },
+                    ReadFileState::GlobalPath(path) =>
+                    {
+                        if !Path::new(path).is_absolute()
+                        {
+                            return Err(format!("ReadFile global path must be absolute: {}", path));
+                        }
+                        Instruction::ReadFile(output_register_addresses[0], Value::Text(path.clone()))
+                    },
+                    ReadFileState::RelativePath(path) =>
+                    {
+                        let ProjectState::Saved(project_directory) = project_state else
+                        {
+                            return Err("Save the project before reading a relative path".to_string());
+                        };
+                        if path.is_empty() || Path::new(path).is_absolute()
+                        {
+                            return Err(format!("ReadFile relative path must be a non-empty relative path: {}", path));
+                        }
+                        let full_path = project_directory.join(path);
+                        Instruction::ReadFile(output_register_addresses[0], Value::Text(full_path.to_string_lossy().to_string()))
+                    },
+                };
+                CompilePlan { steps: vec![
+                    CompilePlanStep::Emit(instruction),
+                    CompilePlanStep::CompileFromOutput(0),
+                ]}
+            },
+        };
+
+        Ok(plan)
     }
 }
 
