@@ -1,6 +1,7 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::node_graph::{Node, NodeGraphKey, node::{NodeKind, SettingsKind}};
+use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{Node, NodeGraphKey, node::{NodeKind, SettingsKind}}};
+use rfd::FileDialog;
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
@@ -24,6 +25,7 @@ pub fn show(
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
+            asset_meta: &HashMap<AssetId, AssetMeta>,
             developer_mode: &bool,
         ) -> f32
 {
@@ -142,7 +144,7 @@ pub fn show(
     );
 
     let settings_rect = egui::Rect::from_min_max(egui::pos2(node_rect.min.x, title_box_rect.max.y), node_rect.max);
-    let settings_height = show_settings(ui, node_key, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect);
+    let settings_height = show_settings(ui, node_key, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect, asset_meta);
 
     title_box_rect.size().y + settings_height
 }
@@ -154,13 +156,14 @@ fn show_settings(
     graph_viewport_title: &String,
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     settings_rect: egui::Rect,
+    asset_meta: &HashMap<AssetId, AssetMeta>,
 ) -> f32
 {
     let mut settings_height = NODE_EDIT_GAP; // @TODO, update this in the future to depend on the Setting
     for (setting_index, setting) in node_kind.settings().into_iter().enumerate()
     {
         let row_position = egui::pos2(settings_rect.min.x + NODE_EDIT_AND_LABEL_BUFFER, settings_rect.min.y + settings_height);
-        let changed = show_setting(ui, setting, row_position, settings_rect.width(), graph_viewport_title, node_key, setting_index);
+        let changed = show_setting(ui, setting, row_position, settings_rect.width(), graph_viewport_title, node_key, setting_index, asset_meta);
 
         if changed
         {
@@ -181,6 +184,7 @@ fn show_setting(
     graph_viewport_title: &String,
     node_key: &NodeGraphKey,
     setting_index: usize,
+    asset_meta: &HashMap<AssetId, AssetMeta>,
 ) -> bool
 {
     match setting
@@ -192,6 +196,26 @@ fn show_setting(
             let width = row_ui.available_width();
             row_ui.add_sized([width, 40.0], egui::TextEdit::singleline(value).font(egui::FontId::proportional(30.0))).changed()
         },
+        SettingsKind::FilePath { label, value } =>
+        {
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            row_ui.label(egui::RichText::new(label).size(30.0));
+
+            let button_width = 80.0;
+            let text_width = (row_ui.available_width() - button_width - row_ui.spacing().item_spacing.x).max(40.0);
+            let mut changed = row_ui.add_sized([text_width, 40.0], egui::TextEdit::singleline(value).font(egui::FontId::proportional(20.0))).changed();
+
+            if row_ui.add_sized([button_width, 40.0], egui::Button::new("select")).clicked()
+            {
+                if let Some(path) = FileDialog::new().set_title("select file").pick_file()
+                {
+                    *value = path.to_string_lossy().to_string();
+                    changed = true;
+                }
+            }
+
+            changed
+        },
         SettingsKind::Slider { label, value, min, max } =>
         {
             let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
@@ -202,13 +226,7 @@ fn show_setting(
         {
             let row_width = (ui.clip_rect().right() - row_position.x).max(0.0);
             let mut row_ui = setting_row(ui, row_position, row_width, egui::Align::Min);
-            let style = row_ui.style_mut();
-            style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(35.0));
-            style.visuals.override_text_color = Some(egui::Color32::WHITE);
-            style.spacing.button_padding.y = 0.0;
-
-            row_ui.label(egui::RichText::new(label).font(egui::FontId::proportional(35.0)).color(egui::Color32::WHITE));
-            row_ui.add_space(NODE_EDIT_GAP * 2.0);
+            show_combo_label(&mut row_ui, label);
             let previous_value = value.clone();
             egui::ComboBox::from_id_salt((graph_viewport_title, node_key, setting_index))
                 .selected_text(value.clone())
@@ -221,7 +239,54 @@ fn show_setting(
                 });
             *value != previous_value
         },
+        SettingsKind::Asset { label, value, kind } =>
+        {
+            let row_width = (ui.clip_rect().right() - row_position.x).max(0.0);
+            let mut row_ui = setting_row(ui, row_position, row_width, egui::Align::Min);
+            show_combo_label(&mut row_ui, label);
+
+            let selected_name = if let Some(asset_id) = *value
+            {
+                match asset_meta.get(&asset_id)
+                {
+                    Some(meta) if meta.kind == kind => meta.name.as_str(),
+                    _ => "unknown",
+                }
+            }
+            else
+            {
+                "None"
+            };
+
+            let previous_value = *value;
+            egui::ComboBox::from_id_salt((graph_viewport_title, node_key, setting_index))
+                .selected_text(selected_name)
+                .show_ui(&mut row_ui, |ui|
+                {
+                    ui.selectable_value(value, None, "None");
+                    let options: BTreeMap<AssetId, &AssetMeta> = asset_meta.iter()
+                        .filter(|(_, meta)| meta.kind == kind)
+                        .map(|(id, meta)| (*id, meta))
+                        .collect();
+                    for (id, meta) in options
+                    {
+                        ui.selectable_value(value, Some(id), &meta.name);
+                    }
+                });
+            *value != previous_value
+        },
     }
+}
+
+fn show_combo_label(row_ui: &mut egui::Ui, label: &str)
+{
+    let style = row_ui.style_mut();
+    style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(35.0));
+    style.visuals.override_text_color = Some(egui::Color32::WHITE);
+    style.spacing.button_padding.y = 0.0;
+
+    row_ui.label(egui::RichText::new(label).font(egui::FontId::proportional(35.0)).color(egui::Color32::WHITE));
+    row_ui.add_space(NODE_EDIT_GAP * 2.0);
 }
 
 fn setting_row(ui: &mut egui::Ui, position: egui::Pos2, width: f32, alignment: egui::Align) -> egui::Ui

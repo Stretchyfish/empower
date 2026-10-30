@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, node_graph::{node::SettingsKind, port::PortDefinition}};
+use crate::{assets::{AssetId, AssetKind}, node_graph::{node::SettingsKind, port::PortDefinition}};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct ReadFileState
@@ -30,15 +30,28 @@ impl ReadFileState
     pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
     {
         let uses_path = self.read_mode == "global" || self.read_mode == "relative";
+        let uses_asset = self.read_mode == "asset";
+        let uses_file_picker = self.read_mode == "global";
         let mut settings = vec![SettingsKind::Choice {
             label: "read mode",
             value: &mut self.read_mode,
             options: vec!["asset", "global", "relative"],
         }];
 
-        if uses_path
+        if uses_asset
         {
-            settings.push(SettingsKind::Text { label: "path", value: &mut self.path });
+            settings.push(SettingsKind::Asset { label: "asset", value: &mut self.asset_id, kind: AssetKind::Json });
+        }
+        else if uses_path
+        {
+            if uses_file_picker
+            {
+                settings.push(SettingsKind::FilePath { label: "path", value: &mut self.path });
+            }
+            else
+            {
+                settings.push(SettingsKind::Text { label: "path", value: &mut self.path });
+            }
         }
 
         settings

@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, VecDeque}, f32};
 
-use empower_engine::node_graph::{NodeGraph, NodeGraphKey};
+use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey}};
 use crate::docking_space::viewport::graph_viewport::{area_select::AreaSelect};
 
 use super::GraphViewportAction;
@@ -21,6 +21,7 @@ pub fn show(
     area_select: &mut Option<AreaSelect>,
     cached_port_positions: &mut HashMap<NodeGraphKey, egui::Pos2>,
     cached_editable_port_values: &mut HashMap<NodeGraphKey, EditablePortValue>,
+    asset_meta: &HashMap<AssetId, AssetMeta>,
     developer_mode: &bool,
 )
 {
@@ -29,7 +30,7 @@ pub fn show(
     let node_size = node.kind.size();
 
     // @TODO, remove this vertical gab, and find a better way of finding the size
-    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, &node_size, developer_mode);
+    let vertical_offset_before_drawing_ports = node_widget_body::show(ui, node_key, node, graph_viewport_title, graph_viewport_actions, area_select, &node_size, asset_meta, developer_mode);
 
     for (input_port_index, input_port_key) in node.input_port_keys.iter().enumerate()
     {
