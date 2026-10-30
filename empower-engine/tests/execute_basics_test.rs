@@ -45,7 +45,7 @@ fn read_json_asset_and_print_unsaved_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::Asset(Some(asset_id))), None);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::asset(Some(asset_id))), None);
         let print = graph.add_node(NodeKind::Print, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
@@ -74,7 +74,7 @@ fn read_global_file_and_print_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::GlobalPath(path.to_string_lossy().to_string())), None);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::global_path(path.to_string_lossy().to_string())), None);
         let print = graph.add_node(NodeKind::Print, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
@@ -104,7 +104,7 @@ fn read_relative_file_and_print_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::RelativePath("tests/fixtures/read_file.txt".to_string())), None);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::relative_path("tests/fixtures/read_file.txt".to_string())), None);
         let print = graph.add_node(NodeKind::Print, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
@@ -131,7 +131,7 @@ fn relative_file_requires_saved_project()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::RelativePath("tests/fixtures/read_file.txt".to_string())), None);
+        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::relative_path("tests/fixtures/read_file.txt".to_string())), None);
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
     }
 

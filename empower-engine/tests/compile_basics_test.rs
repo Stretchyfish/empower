@@ -279,7 +279,7 @@ fn test_read_file_as_asset_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let read_file_handle = entry_node_graph.add_node( NodeKind::ReadFile( ReadFileState::Asset( Some( asset_id ))), None );
+        let read_file_handle = entry_node_graph.add_node(NodeKind::ReadFile(ReadFileState::asset(Some(asset_id))), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &read_file_handle .input_port_keys[0] );
     }

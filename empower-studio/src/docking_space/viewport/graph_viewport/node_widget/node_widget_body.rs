@@ -1,11 +1,10 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
-use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{Node, NodeGraphKey}, project::ProjectState};
+use empower_engine::node_graph::{Node, NodeGraphKey, node::{NodeKind, SettingsKind}};
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
-mod editable_node_state;
-pub use editable_node_state::EditableNodeState;
+// mod editable_node_state;
 
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 
@@ -17,32 +16,17 @@ const NODE_BODY_BUTTON_AREA_OVERLAP: f32 = 12.0;
 const NODE_EDIT_GAP: f32 = 10.0;
 const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
 
-pub enum NodeSyncResponse
-{
-    Nothing,
-    NodesStructureChanged,
-}
-
 pub fn show(
             ui: &mut egui::Ui, 
             node_key: &NodeGraphKey,
-            node: &Node,
-            viewport_graph_id: &AssetId,
+            node: &mut Node,
             graph_viewport_title: &String, 
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
             area_select: &mut Option<AreaSelect>,
             node_size: &egui::Vec2,
-            cached_editable_node_state: &mut HashMap<NodeGraphKey, EditableNodeState>, // @TODO, maybe handle selection of editable node state earlier?
-            meta: &HashMap<AssetId, AssetMeta>,
-            project_state: &ProjectState,
             developer_mode: &bool,
         ) -> f32
 {
-    if !cached_editable_node_state.contains_key(node_key)
-    {
-        cached_editable_node_state.insert(*node_key, EditableNodeState::from(&node.kind) );
-    }
-    
     let node_rect = egui::Rect::from_min_size(node.position, *node_size);
 
     if area_select.is_some()
@@ -157,18 +141,95 @@ pub fn show(
         egui::StrokeKind::Inside,
     );
 
-    let editable_node_state = cached_editable_node_state.get_mut(node_key).unwrap();
+    let settings_rect = egui::Rect::from_min_max(egui::pos2(node_rect.min.x, title_box_rect.max.y), node_rect.max);
+    let settings_height = show_settings(ui, node_key, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect);
 
-    // let mut vertical_offset = title_box_rect.size().y + NODE_EDIT_GAP;
-    // let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.min.y + vertical_offset);
-    let edit_position = egui::pos2(title_box_rect.min.x, title_box_rect.max.y + NODE_EDIT_GAP);
+    title_box_rect.size().y + settings_height
+}
 
-    let show_editable_state_result = editable_node_state.show(ui, edit_position, viewport_graph_id, meta, graph_viewport_actions, node_key, graph_viewport_title, project_state );
-
-    if show_editable_state_result.changed
+fn show_settings(
+    ui: &mut egui::Ui,
+    node_key: &NodeGraphKey,
+    node_kind: &mut NodeKind,
+    graph_viewport_title: &String,
+    graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
+    settings_rect: egui::Rect,
+) -> f32
+{
+    let mut settings_height = NODE_EDIT_GAP; // @TODO, update this in the future to depend on the Setting
+    for (setting_index, setting) in node_kind.settings().into_iter().enumerate()
     {
-        graph_viewport_actions.push_back( GraphViewportAction::NodeEditWasChanged { node_key: *node_key } );
+        let row_position = egui::pos2(settings_rect.min.x + NODE_EDIT_AND_LABEL_BUFFER, settings_rect.min.y + settings_height);
+        let changed = show_setting(ui, setting, row_position, settings_rect.width(), graph_viewport_title, node_key, setting_index);
+
+        if changed
+        {
+            graph_viewport_actions.push_back(GraphViewportAction::NodeSettingsChanged { node_key: *node_key });
+        }
+
+        settings_height += 50.0;
     }
 
-    title_box_rect.size().y + show_editable_state_result.size.y
+    settings_height
+}
+
+fn show_setting(
+    ui: &mut egui::Ui,
+    setting: SettingsKind<'_>,
+    row_position: egui::Pos2,
+    node_width: f32,
+    graph_viewport_title: &String,
+    node_key: &NodeGraphKey,
+    setting_index: usize,
+) -> bool
+{
+    match setting
+    {
+        SettingsKind::Text { label, value } =>
+        {
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            row_ui.label(egui::RichText::new(label).size(30.0));
+            let width = row_ui.available_width();
+            row_ui.add_sized([width, 40.0], egui::TextEdit::singleline(value).font(egui::FontId::proportional(30.0))).changed()
+        },
+        SettingsKind::Slider { label, value, min, max } =>
+        {
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            row_ui.label(egui::RichText::new(label).size(30.0));
+            row_ui.add(egui::Slider::new(value, min..=max)).changed()
+        },
+        SettingsKind::Choice { label, value, options } =>
+        {
+            let row_width = (ui.clip_rect().right() - row_position.x).max(0.0);
+            let mut row_ui = setting_row(ui, row_position, row_width, egui::Align::Min);
+            let style = row_ui.style_mut();
+            style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(35.0));
+            style.visuals.override_text_color = Some(egui::Color32::WHITE);
+            style.spacing.button_padding.y = 0.0;
+
+            row_ui.label(egui::RichText::new(label).font(egui::FontId::proportional(35.0)).color(egui::Color32::WHITE));
+            row_ui.add_space(NODE_EDIT_GAP * 2.0);
+            let previous_value = value.clone();
+            egui::ComboBox::from_id_salt((graph_viewport_title, node_key, setting_index))
+                .selected_text(value.clone())
+                .show_ui(&mut row_ui, |ui|
+                {
+                    for option in options
+                    {
+                        ui.selectable_value(value, option.to_string(), option);
+                    }
+                });
+            *value != previous_value
+        },
+    }
+}
+
+fn setting_row(ui: &mut egui::Ui, position: egui::Pos2, width: f32, alignment: egui::Align) -> egui::Ui
+{
+    let rect = egui::Rect::from_min_size(position, egui::vec2(width, 50.0));
+    ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect)
+            .layout(egui::Layout::left_to_right(alignment)),
+    )
 }

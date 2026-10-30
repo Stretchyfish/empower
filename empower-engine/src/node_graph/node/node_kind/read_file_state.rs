@@ -1,43 +1,51 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, node_graph::port::PortDefinition};
+use crate::{assets::AssetId, node_graph::{node::SettingsKind, port::PortDefinition}};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub enum ReadFileState
+pub struct ReadFileState
 {
-    Asset( Option<AssetId> ),
-    GlobalPath ( String ),
-    RelativePath( String )
+    pub read_mode: String,
+    pub asset_id: Option<AssetId>,
+    pub path: String,
 }
 
 impl ReadFileState
 {
-    pub fn to_string(&self) -> String
+    pub fn asset(asset_id: Option<AssetId>) -> Self
     {
-        match self
+        Self { read_mode: "asset".to_string(), asset_id, path: String::new() }
+    }
+
+    pub fn global_path(path: String) -> Self
+    {
+        Self { read_mode: "global".to_string(), asset_id: None, path }
+    }
+
+    pub fn relative_path(path: String) -> Self
+    {
+        Self { read_mode: "relative".to_string(), asset_id: None, path }
+    }
+
+    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    {
+        let uses_path = self.read_mode == "global" || self.read_mode == "relative";
+        let mut settings = vec![SettingsKind::Choice {
+            label: "read mode",
+            value: &mut self.read_mode,
+            options: vec!["asset", "global", "relative"],
+        }];
+
+        if uses_path
         {
-            ReadFileState::Asset(_) => String::from("asset"),
-            ReadFileState::GlobalPath(_) => String::from("global"),
-            ReadFileState::RelativePath(_) => String::from("relative"),
+            settings.push(SettingsKind::Text { label: "path", value: &mut self.path });
         }
+
+        settings
     }
 
     pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
     {
-        match self
-        {
-            ReadFileState::Asset(_) => vec![
-                PortDefinition::new_input_execution_port(""),
-                // Here the state should be able to select an asset
-            ],
-            ReadFileState::GlobalPath(_) => vec![
-                PortDefinition::new_input_execution_port(""),
-                
-            ],
-            ReadFileState::RelativePath(_) => vec![
-                PortDefinition::new_input_execution_port(""),
-                
-            ],
-        }
+        vec![PortDefinition::new_input_execution_port("")]
     }
 }

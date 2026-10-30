@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::{docking_space::viewport::graph_viewport::node_widget::NodeSyncResponse, studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
+use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
-use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, project::ProjectState, value::Value};
+use std::collections::HashSet;
+use empower_engine::{assets::{AssetId, AssetKind}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
 const GRID_SPACING: f32 = 40.0;
@@ -13,7 +13,6 @@ const MIN_GRID_SPACING_SCREEN: f32 = 8.0;
 
 mod node_widget;
 pub use node_widget::EditablePortValue;
-pub use node_widget::EditableNodeState;
 
 mod connection_widget;
 
@@ -119,11 +118,11 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
         show_graph_viewport_debug_info(graph_viewport, ui);
     }
 
-    let (project, cache) = studio_context.get_project_and_cache_mut();
+    let (project, cache) = studio_context.get_project_mut_and_cache_mut();
 
     let mut graph_viewport_actions = VecDeque::new(); // To simplify behavior, its beneficial to delay execution using actions
             
-    let node_graph = project.assets.get_node_graph(&graph_viewport.graph_asset_id); 
+    let node_graph = project.assets.loaded_assets.loaded_node_graphs.get_mut(&graph_viewport.graph_asset_id);
 
     if node_graph.is_none()
     {
@@ -132,12 +131,10 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
     }
 
     let node_graph = node_graph.unwrap();
-    let meta = &project.assets.meta;
-
     graph_viewport.node_picker.show(ui, &mut graph_viewport_actions, &graph_viewport.mouse_scene_position_last_frame);
     graph_viewport.selected_nodes_quick_menu.show(ui, &graph_viewport.selected_nodes, &mut graph_viewport_actions);
 
-    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, meta, &project.state, &developer_mode);
+    graph_viewport.show_canvas(ui, &mut graph_viewport_actions, node_graph, user_inputs, cache, viewport_name, &developer_mode);
 
     if ui.ui_contains_pointer()
     {
@@ -150,7 +147,7 @@ pub fn show(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui, studio_contex
 
 impl GraphViewport
 {
-    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &NodeGraph, user_inputs: &UserInputs, cache: &mut Cache, viewport_name: &String, meta: &HashMap<AssetId, AssetMeta>, project_state: &ProjectState, developer_mode: &bool)
+    fn show_canvas(&mut self, ui: &mut egui::Ui, mut graph_viewport_actions: &mut VecDeque<GraphViewportAction>, node_graph: &mut NodeGraph, user_inputs: &UserInputs, cache: &mut Cache, viewport_name: &String, developer_mode: &bool)
     {
         let mut drag_pan_button = egui::DragPanButtons::PRIMARY;
         if user_inputs.holding_shift // This is done to disable dragging of the scene during node area select
@@ -162,7 +159,6 @@ impl GraphViewport
 
         let cached_port_positions = &mut cache.session.cached_port_positions;
         let cached_editable_port_values = &mut cache.session.cached_editable_port_value;
-        let cached_editable_node_state = &mut cache.session.cached_edtable_node_state;
 
         let mut scene_rect = self.scene_rect.clone(); // This is needed to avoid borrow issues
         egui::Scene::new()
@@ -210,7 +206,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, cached_editable_node_state, meta, project_state, developer_mode);
+                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -467,38 +463,10 @@ impl GraphViewport
 
                     // studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
-                GraphViewportAction::NodeEditWasChanged { node_key } =>
+                GraphViewportAction::NodeSettingsChanged { .. } =>
                 {
-                    let (project, cache) = studio_context.get_project_mut_and_cache_mut();
-                    let editable_node_state = cache.session.cached_edtable_node_state.get(&node_key).unwrap(); 
-                    // let node = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap().nodes.get_mut(&node_key).unwrap();
-
-                    // let sync_response = editable_node_state.sync_with_node_state(&mut node.kind);
-                    let sync_response = editable_node_state.sync_with_node_state(&self.graph_asset_id, &node_key, &mut project.assets);
-
-                    match sync_response
-                    {
-                        NodeSyncResponse::Nothing => {},
-                        NodeSyncResponse::NodesStructureChanged =>
-                        {
-                            let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                            let node_handle = graph.get_node_handle(node_key);
-
-                            for port in node_handle.input_port_keys // @TODO, this removal is done in case the port value type changes to one that uses a different editable_port, can probably be done better
-                            {
-                                cache.session.cached_editable_port_value.remove(&port);
-                            }
-
-                            for port in node_handle.output_port_keys
-                            {
-                                cache.session.cached_editable_port_value.remove(&port);
-                            }
-                            
-                            graph.refresh_node(&node_key);
-                        },
-                    }
+                    studio_context.get_project_mut().assets.modified_assets.insert(self.graph_asset_id);
                 },
-
                 GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
                 {
                     studio_context.request_add_or_focus_graph_viewport( graph_id );
@@ -551,7 +519,7 @@ pub enum GraphViewportAction
     StoppedDragSelecting,
     PrimaryClickedBackground,
     SecondaryClickedBackground,
-    NodeEditWasChanged { node_key: NodeGraphKey },
+    NodeSettingsChanged { node_key: NodeGraphKey },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
     AddNodeToGraph { node_kind: NodeKind, position: Option<egui::Pos2>},

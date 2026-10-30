@@ -2,6 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use super::SettingsKind;
 use crate::{assets::Assets, compiler::{CompilePlan, CompilePlanStep, Instruction, RegisterAddress}, node_graph::port::PortDefinition, project::ProjectState, value::Value};
 
 mod image_node_state;
@@ -37,6 +38,15 @@ pub enum NodeKind
 
 impl NodeKind
 {
+    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    {
+        match self
+        {
+            NodeKind::ReadFile(state) => state.settings(),
+            _ => Vec::new(),
+        }
+    }
+
     pub fn name(&self) -> &'static str
     {
         match self
@@ -185,30 +195,32 @@ impl NodeKind
             },
             NodeKind::ReadFile(state) =>
             {
-                let instruction = match state
+                let instruction = match state.read_mode.as_str()
                 {
-                    ReadFileState::Asset(asset_id) =>
+                    "asset" =>
                     {
-                        let Some(asset_id) = asset_id else
+                        let Some(asset_id) = state.asset_id else
                         {
                             return Err("ReadFile has no valid asset id during compilation".to_string());
                         };
-                        if !assets.loaded_assets.loaded_json.contains_key(asset_id)
+                        if !assets.loaded_assets.loaded_json.contains_key(&asset_id)
                         {
                             return Err(format!("ReadFile JSON asset with id {} is not loaded", asset_id));
                         }
-                        Instruction::ReadAsset(output_register_addresses[0], *asset_id)
+                        Instruction::ReadAsset(output_register_addresses[0], asset_id)
                     },
-                    ReadFileState::GlobalPath(path) =>
+                    "global" =>
                     {
+                        let path = &state.path;
                         if !Path::new(path).is_absolute()
                         {
                             return Err(format!("ReadFile global path must be absolute: {}", path));
                         }
                         Instruction::ReadFile(output_register_addresses[0], Value::Text(path.clone()))
                     },
-                    ReadFileState::RelativePath(path) =>
+                    "relative" =>
                     {
+                        let path = &state.path;
                         let ProjectState::Saved(project_directory) = project_state else
                         {
                             return Err("Save the project before reading a relative path".to_string());
@@ -220,6 +232,7 @@ impl NodeKind
                         let full_path = project_directory.join(path);
                         Instruction::ReadFile(output_register_addresses[0], Value::Text(full_path.to_string_lossy().to_string()))
                     },
+                    _ => return Err(format!("ReadFile has unknown read mode: {}", state.read_mode)),
                 };
                 CompilePlan { steps: vec![
                     CompilePlanStep::Emit(instruction),

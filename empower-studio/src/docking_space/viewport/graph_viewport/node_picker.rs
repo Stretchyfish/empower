@@ -59,7 +59,7 @@ static NODE_TYPES: &[NodeType] = &[
     NodeType
     {
         name: "read file",
-        constructor: || NodeKind::ReadFile( ReadFileState::Asset( None ) ),
+        constructor: || NodeKind::ReadFile(ReadFileState::asset(None)),
     },
 ];
 

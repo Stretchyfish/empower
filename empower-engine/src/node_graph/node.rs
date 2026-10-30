@@ -2,6 +2,10 @@ use super::NodeGraphKey;
 
 pub mod node_kind;
 pub use node_kind::NodeKind;
+
+mod settings_kind;
+pub use settings_kind::SettingsKind;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
