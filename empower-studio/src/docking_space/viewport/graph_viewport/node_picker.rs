@@ -24,7 +24,7 @@ static NODE_TYPES: &[NodeType] = &[
     NodeType
     {
         name: "loop",
-        constructor: || NodeKind::Loop ( LoopMode::Forever ),
+        constructor: || NodeKind::Loop ( LoopMode::forever() ),
     },
     NodeType
     {

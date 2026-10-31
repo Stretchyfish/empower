@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{node_graph::port::PortDefinition, utility::alphabet_counter::AlphabetCounter, value::Value};
+use crate::{node_graph::{node::SettingsKind, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct ListState
 {
-    pub value_type: Value,
+    pub value_type: String,
     pub size: usize,
 }
 
@@ -15,7 +15,7 @@ impl ListState
     {
         Self
         {
-            value_type: Value::Integer(0),
+            value_type: "integer".to_string(),
             size: 2,
         }
     }
@@ -26,11 +26,23 @@ impl ListState
         egui::vec2(300.0, 220.0 + extra_vertical_gap)
     }
 
+    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    {
+        vec![
+            SettingsKind::Integer { label: "size", value: &mut self.size },
+            SettingsKind::Choice {
+                label: "value",
+                value: &mut self.value_type,
+                options: vec!["integer", "float", "point2d"],
+            },
+        ]
+    }
+
     pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
     {
         let mut inputs = Vec::with_capacity(self.size);
 
-        let base_value = &self.value_type;
+        let base_value = Value::from_type_string(&self.value_type).unwrap_or(Value::Integer(0));
 
         let mut alphabet_counter = AlphabetCounter::new();
 

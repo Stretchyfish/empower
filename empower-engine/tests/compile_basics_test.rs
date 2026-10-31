@@ -82,7 +82,7 @@ fn test_loop_forever_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::Forever), None);
+        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::forever()), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
     }
@@ -105,7 +105,7 @@ fn test_loop_ranged_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::Range), None);
+        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::ranged()), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
     }

@@ -206,7 +206,7 @@ impl GraphViewport
                     }
                 }
 
-                node_widget::show(scene_ui, &node_key, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, asset_meta, developer_mode);
+                node_widget::show(scene_ui, &node_key, &self.graph_asset_id, node_graph, &viewport_name, &mut graph_viewport_actions, &mut self.area_select, cached_port_positions, cached_editable_port_values, asset_meta, developer_mode);
             }
 
             if self.selected_port.is_some()
@@ -463,9 +463,66 @@ impl GraphViewport
 
                     // studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap().ports.get_mut(&port_key).unwrap().check_if_parseble(); // This has got to be the most questionable line of code I have ever written...
                 },
-                GraphViewportAction::NodeSettingsChanged { .. } =>
+                GraphViewportAction::NodeSettingsChanged { node_key } =>
                 {
-                    studio_context.get_project_mut().assets.modified_assets.insert(self.graph_asset_id);
+                    let (project, cache) = studio_context.get_project_mut_and_cache_mut();
+
+                    let selected_graph_id = {
+                        let graph = project.assets.get_node_graph(&self.graph_asset_id).unwrap();
+                        match &graph.nodes.get(&node_key).unwrap().kind
+                        {
+                            NodeKind::SubGraph(state) => Some(state.graph_asset_id),
+                            _ => None,
+                        }
+                    };
+
+                    if let Some(selected_graph_id) = selected_graph_id
+                    {
+                        let new_state = if let Some(graph_id) = selected_graph_id
+                        {
+                            SubGraphState::from(graph_id, project.assets.get_node_graph(&graph_id).unwrap())
+                        }
+                        else
+                        {
+                            SubGraphState::new()
+                        };
+
+                        let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+                        graph.nodes.get_mut(&node_key).unwrap().kind = NodeKind::SubGraph(new_state);
+                    }
+
+                    let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+
+                    let node = graph.nodes.get(&node_key).unwrap();
+                    let current_inputs: Vec<_> = node.input_port_keys.iter()
+                        .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
+                        .collect();
+                    let current_outputs: Vec<_> = node.output_port_keys.iter()
+                        .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
+                        .collect();
+
+                    if current_inputs != node.kind.input_port_definitions() || current_outputs != node.kind.output_port_definitions()
+                    {
+                        let mut old_port_keys = node.input_port_keys.clone();
+                        old_port_keys.extend(node.output_port_keys.iter().copied());
+                        graph.refresh_node(&node_key);
+
+                        for port_key in old_port_keys
+                        {
+                            cache.session.cached_port_positions.remove(&port_key);
+                            cache.session.cached_editable_port_value.remove(&port_key);
+                        }
+
+                        if let Some(port_key) = self.selected_port
+                        {
+                            if !graph.ports.contains_key(&port_key)
+                            {
+                                self.selected_port = None;
+                            }
+                        }
+                    }
+
+                    project.assets.modified_assets.insert(self.graph_asset_id);
                 },
                 GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
                 {

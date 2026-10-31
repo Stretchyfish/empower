@@ -42,7 +42,11 @@ impl NodeKind
     {
         match self
         {
+            NodeKind::Loop(mode) => mode.settings(),
+            NodeKind::List(state) => state.settings(),
+            NodeKind::Image(state) => state.settings(),
             NodeKind::ReadFile(state) => state.settings(),
+            NodeKind::SubGraph(state) => state.settings(),
             _ => Vec::new(),
         }
     }
@@ -151,28 +155,40 @@ impl NodeKind
                                                                 CompilePlanStep::CompileFromOutput(1),
                                                                 CompilePlanStep::Mark("end"),
                                                             ]},
-            NodeKind::Loop(LoopMode::Forever) => CompilePlan { steps: vec![
-                CompilePlanStep::Mark("entry"),
-                CompilePlanStep::CompileFromOutput(0),
-                CompilePlanStep::Jump("entry"),
-            ]},
-            NodeKind::Loop(LoopMode::Range) => CompilePlan { steps: vec![
-                CompilePlanStep::Emit(Instruction::Copy(input_register_addresses[0], output_register_addresses[1])),
-                CompilePlanStep::Mark("check"),
-                CompilePlanStep::Emit(Instruction::Compare(input_register_addresses[2], output_register_addresses[1], output_register_addresses[0])),
-                CompilePlanStep::JumpIfTrue(output_register_addresses[0], "end"),
-                CompilePlanStep::CompileFromOutput(0),
-                CompilePlanStep::Emit(Instruction::Add(output_register_addresses[1], input_register_addresses[1], output_register_addresses[1])),
-                CompilePlanStep::Jump("check"),
-                CompilePlanStep::Mark("end"),
-            ]},
+            NodeKind::Loop(mode) => match mode.mode.as_str()
+            {
+                "forever" => CompilePlan { steps: vec![
+                    CompilePlanStep::Mark("entry"),
+                    CompilePlanStep::CompileFromOutput(0),
+                    CompilePlanStep::Jump("entry"),
+                ]},
+                "ranged" => CompilePlan { steps: vec![
+                    CompilePlanStep::Emit(Instruction::Copy(input_register_addresses[0], output_register_addresses[1])),
+                    CompilePlanStep::Mark("check"),
+                    CompilePlanStep::Emit(Instruction::Compare(input_register_addresses[2], output_register_addresses[1], output_register_addresses[0])),
+                    CompilePlanStep::JumpIfTrue(output_register_addresses[0], "end"),
+                    CompilePlanStep::CompileFromOutput(0),
+                    CompilePlanStep::Emit(Instruction::Add(output_register_addresses[1], input_register_addresses[1], output_register_addresses[1])),
+                    CompilePlanStep::Jump("check"),
+                    CompilePlanStep::Mark("end"),
+                ]},
+                _ => return Err(format!("Unknown loop mode: {}", mode.mode)),
+            },
             NodeKind::Wait => CompilePlan { steps: vec![
                 CompilePlanStep::Emit(Instruction::Wait(input_register_addresses[0])),
                 CompilePlanStep::CompileFromOutput(0),
             ]},
-            NodeKind::List(_) => CompilePlan { steps: vec![
-                CompilePlanStep::Emit(Instruction::CreateList(input_register_addresses.clone(), output_register_addresses[0])),
-            ]},
+            NodeKind::List(state) =>
+            {
+                if Value::from_type_string(&state.value_type).is_none()
+                {
+                    return Err(format!("Unknown list value type: {}", state.value_type));
+                }
+
+                CompilePlan { steps: vec![
+                    CompilePlanStep::Emit(Instruction::CreateList(input_register_addresses.clone(), output_register_addresses[0])),
+                ]}
+            },
             NodeKind::Image(state) => CompilePlan { steps: vec![
                 CompilePlanStep::Emit(Instruction::SetConst(output_register_addresses[0], Value::Image(state.image_asset_id))),
             ]},

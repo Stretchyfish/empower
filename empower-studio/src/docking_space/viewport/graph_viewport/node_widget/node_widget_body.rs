@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use empower_engine::{assets::{AssetId, AssetMeta}, node_graph::{Node, NodeGraphKey, node::{NodeKind, SettingsKind}}};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{Node, NodeGraphKey, node::{NodeKind, SettingsKind}}};
 use rfd::FileDialog;
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
@@ -20,6 +20,7 @@ const NODE_EDIT_AND_LABEL_BUFFER: f32 = 20.0;
 pub fn show(
             ui: &mut egui::Ui, 
             node_key: &NodeGraphKey,
+            current_graph_id: &AssetId,
             node: &mut Node,
             graph_viewport_title: &String, 
             graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
@@ -144,7 +145,7 @@ pub fn show(
     );
 
     let settings_rect = egui::Rect::from_min_max(egui::pos2(node_rect.min.x, title_box_rect.max.y), node_rect.max);
-    let settings_height = show_settings(ui, node_key, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect, asset_meta);
+    let settings_height = show_settings(ui, node_key, current_graph_id, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect, asset_meta);
 
     title_box_rect.size().y + settings_height
 }
@@ -152,6 +153,7 @@ pub fn show(
 fn show_settings(
     ui: &mut egui::Ui,
     node_key: &NodeGraphKey,
+    current_graph_id: &AssetId,
     node_kind: &mut NodeKind,
     graph_viewport_title: &String,
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
@@ -159,18 +161,19 @@ fn show_settings(
     asset_meta: &HashMap<AssetId, AssetMeta>,
 ) -> f32
 {
-    let mut settings_height = NODE_EDIT_GAP; // @TODO, update this in the future to depend on the Setting
+    let mut settings_height = NODE_EDIT_GAP;
     for (setting_index, setting) in node_kind.settings().into_iter().enumerate()
     {
+        let row_height = setting.height();
         let row_position = egui::pos2(settings_rect.min.x + NODE_EDIT_AND_LABEL_BUFFER, settings_rect.min.y + settings_height);
-        let changed = show_setting(ui, setting, row_position, settings_rect.width(), graph_viewport_title, node_key, setting_index, asset_meta);
+        let changed = show_setting(ui, setting, row_position, settings_rect.width(), row_height, graph_viewport_title, node_key, current_graph_id, setting_index, graph_viewport_actions, asset_meta);
 
         if changed
         {
             graph_viewport_actions.push_back(GraphViewportAction::NodeSettingsChanged { node_key: *node_key });
         }
 
-        settings_height += 50.0;
+        settings_height += row_height;
     }
 
     settings_height
@@ -181,9 +184,12 @@ fn show_setting(
     setting: SettingsKind<'_>,
     row_position: egui::Pos2,
     node_width: f32,
+    row_height: f32,
     graph_viewport_title: &String,
     node_key: &NodeGraphKey,
+    current_graph_id: &AssetId,
     setting_index: usize,
+    graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     asset_meta: &HashMap<AssetId, AssetMeta>,
 ) -> bool
 {
@@ -191,14 +197,14 @@ fn show_setting(
     {
         SettingsKind::Text { label, value } =>
         {
-            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, row_height, egui::Align::Center);
             row_ui.label(egui::RichText::new(label).size(30.0));
             let width = row_ui.available_width();
             row_ui.add_sized([width, 40.0], egui::TextEdit::singleline(value).font(egui::FontId::proportional(30.0))).changed()
         },
         SettingsKind::FilePath { label, value } =>
         {
-            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, row_height, egui::Align::Center);
             row_ui.label(egui::RichText::new(label).size(30.0));
 
             let button_width = 80.0;
@@ -216,16 +222,26 @@ fn show_setting(
 
             changed
         },
+        SettingsKind::Integer { label, value } =>
+        {
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, row_height, egui::Align::Center);
+            row_ui.label(egui::RichText::new(label).size(35.0));
+            let style = row_ui.style_mut();
+            style.drag_value_text_style = egui::TextStyle::Button;
+            style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(35.0));
+            style.spacing.interact_size = egui::vec2(100.0, 40.0);
+            row_ui.add(egui::DragValue::new(value).speed(1)).changed()
+        },
         SettingsKind::Slider { label, value, min, max } =>
         {
-            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, egui::Align::Center);
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, row_height, egui::Align::Center);
             row_ui.label(egui::RichText::new(label).size(30.0));
             row_ui.add(egui::Slider::new(value, min..=max)).changed()
         },
         SettingsKind::Choice { label, value, options } =>
         {
             let row_width = (ui.clip_rect().right() - row_position.x).max(0.0);
-            let mut row_ui = setting_row(ui, row_position, row_width, egui::Align::Min);
+            let mut row_ui = setting_row(ui, row_position, row_width, row_height, egui::Align::Min);
             show_combo_label(&mut row_ui, label);
             let previous_value = value.clone();
             egui::ComboBox::from_id_salt((graph_viewport_title, node_key, setting_index))
@@ -242,7 +258,7 @@ fn show_setting(
         SettingsKind::Asset { label, value, kind } =>
         {
             let row_width = (ui.clip_rect().right() - row_position.x).max(0.0);
-            let mut row_ui = setting_row(ui, row_position, row_width, egui::Align::Min);
+            let mut row_ui = setting_row(ui, row_position, row_width, row_height, egui::Align::Min);
             show_combo_label(&mut row_ui, label);
 
             let selected_name = if let Some(asset_id) = *value
@@ -265,7 +281,7 @@ fn show_setting(
                 {
                     ui.selectable_value(value, None, "None");
                     let options: BTreeMap<AssetId, &AssetMeta> = asset_meta.iter()
-                        .filter(|(_, meta)| meta.kind == kind)
+                        .filter(|(id, meta)| meta.kind == kind && (kind != AssetKind::NodeGraph || *id != current_graph_id))
                         .map(|(id, meta)| (*id, meta))
                         .collect();
                     for (id, meta) in options
@@ -274,6 +290,15 @@ fn show_setting(
                     }
                 });
             *value != previous_value
+        },
+        SettingsKind::OpenGraph { graph_id } =>
+        {
+            let mut row_ui = setting_row(ui, row_position, node_width - NODE_EDIT_AND_LABEL_BUFFER * 2.0, row_height, egui::Align::Center);
+            if row_ui.add_sized([200.0, 40.0], egui::Button::new("open viewport")).clicked()
+            {
+                graph_viewport_actions.push_back(GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id });
+            }
+            false
         },
     }
 }
@@ -289,9 +314,9 @@ fn show_combo_label(row_ui: &mut egui::Ui, label: &str)
     row_ui.add_space(NODE_EDIT_GAP * 2.0);
 }
 
-fn setting_row(ui: &mut egui::Ui, position: egui::Pos2, width: f32, alignment: egui::Align) -> egui::Ui
+fn setting_row(ui: &mut egui::Ui, position: egui::Pos2, width: f32, height: f32, alignment: egui::Align) -> egui::Ui
 {
-    let rect = egui::Rect::from_min_size(position, egui::vec2(width, 50.0));
+    let rect = egui::Rect::from_min_size(position, egui::vec2(width, height));
     ui.new_child(
         egui::UiBuilder::new()
             .max_rect(rect)

@@ -262,7 +262,7 @@ impl NodeGraph {
         }
 
         for port_key in &output_ports_to_remove {
-            node.input_port_keys.retain(|e| e != port_key);
+            node.output_port_keys.retain(|e| e != port_key);
             self.ports.remove(&port_key);
         }
 
@@ -270,7 +270,13 @@ impl NodeGraph {
             self.remove_connection(&port_key);
         }
 
-        // @TODO, still need to add removal of output port connections
+        for port_key in output_ports_to_remove {
+            if let Some(input_port_keys) = self.connections_out.get(&port_key).cloned() {
+                for input_port_key in input_port_keys {
+                    self.remove_connection(&input_port_key);
+                }
+            }
+        }
     }
 
     pub fn remove_node(&mut self, node_key: &NodeGraphKey) -> bool

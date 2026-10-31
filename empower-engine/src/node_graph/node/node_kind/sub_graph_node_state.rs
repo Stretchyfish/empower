@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, node_graph::{NodeGraph, port::{PortDefinition, PortDirection}}};
+use crate::{assets::{AssetId, AssetKind}, node_graph::{NodeGraph, node::SettingsKind, port::{PortDefinition, PortDirection}}};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct SubGraphState
@@ -13,6 +13,23 @@ pub struct SubGraphState
 
 impl SubGraphState
 {
+    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    {
+        let graph_id = self.graph_asset_id;
+        let mut settings = vec![SettingsKind::Asset {
+            label: "graph",
+            value: &mut self.graph_asset_id,
+            kind: AssetKind::NodeGraph,
+        }];
+
+        if let Some(graph_id) = graph_id
+        {
+            settings.push(SettingsKind::OpenGraph { graph_id });
+        }
+
+        settings
+    }
+
     pub fn new() -> Self
     {
         Self

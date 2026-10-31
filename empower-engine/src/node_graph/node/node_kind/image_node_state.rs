@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::AssetId, node_graph::port::PortDefinition, value::Value};
+use crate::{assets::{AssetId, AssetKind}, node_graph::{node::SettingsKind, port::PortDefinition}, value::Value};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct ImageState
@@ -24,6 +24,11 @@ impl ImageState
         {
             image_asset_id: Some(image_asset_id),
         }
+    }
+
+    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    {
+        vec![SettingsKind::Asset { label: "image", value: &mut self.image_asset_id, kind: AssetKind::Image }]
     }
 
     pub fn get_output_port_definitions(&self) -> Vec<PortDefinition>
