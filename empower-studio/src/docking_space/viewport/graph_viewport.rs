@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{studio_context::{Cache, Log, StudioContext}, user_inputs::UserInputs};
 
 use std::collections::{HashMap, HashSet};
-use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageState, SubGraphState}}, port::{PortDirection, PortKind}}, value::Value};
+use empower_engine::{assets::{AssetId, AssetKind, AssetMeta}, node_graph::{NodeGraph, NodeGraphKey, Port, node::{NodeKind, node_kind::{ImageNode, SubGraphNode}}, port::{PortDirection, PortKind}}, value::Value};
 use serde::{Serialize, Deserialize};
 
 const GRID_SPACING: f32 = 40.0;
@@ -316,11 +316,11 @@ impl GraphViewport
                 return;
             }
 
-            let node_kind;
+            let node_kind: Box<dyn NodeKind>;
             match asset_meta.kind
             {
-                AssetKind::NodeGraph => { node_kind = NodeKind::SubGraph( SubGraphState::from( asset_meta.id,  &studio_context.get_project().assets.get_node_graph(&asset_meta.id).unwrap() ))},
-                AssetKind::Image => { node_kind = NodeKind::Image( ImageState::from(asset_meta.id))},
+                AssetKind::NodeGraph => { node_kind = Box::new(SubGraphNode::from( asset_meta.id,  &studio_context.get_project().assets.get_node_graph(&asset_meta.id).unwrap() ))},
+                AssetKind::Image => { node_kind = Box::new(ImageNode::from(asset_meta.id))},
                 _ =>
                 {
                     studio_context.add_log( Log::info("cannot add this asset type to node graph"));
@@ -332,6 +332,66 @@ impl GraphViewport
 
             // @TODO, Stopping dragging is currently being handle in the content browser, is not a great long terms solution, but works for now.
         }
+    }
+
+    fn apply_node_settings_change(&mut self, studio_context: &mut StudioContext, node_key: NodeGraphKey)
+    {
+        let (project, cache) = studio_context.get_project_mut_and_cache_mut();
+
+        let selected_graph_id = {
+            let graph = project.assets.get_node_graph(&self.graph_asset_id).unwrap();
+            graph.nodes.get(&node_key).unwrap().kind.as_ref().as_any()
+                .downcast_ref::<SubGraphNode>()
+                .map(|node| node.graph_asset_id)
+        };
+
+        if let Some(selected_graph_id) = selected_graph_id
+        {
+            let new_node = if let Some(graph_id) = selected_graph_id
+            {
+                SubGraphNode::from(graph_id, project.assets.get_node_graph(&graph_id).unwrap())
+            }
+            else
+            {
+                SubGraphNode::new()
+            };
+
+            let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+            *graph.nodes.get_mut(&node_key).unwrap().kind.as_mut().as_any_mut().downcast_mut::<SubGraphNode>().unwrap() = new_node;
+        }
+
+        let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
+
+        let node = graph.nodes.get(&node_key).unwrap();
+        let current_inputs: Vec<_> = node.input_port_keys.iter()
+            .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
+            .collect();
+        let current_outputs: Vec<_> = node.output_port_keys.iter()
+            .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
+            .collect();
+
+        if current_inputs != node.kind.input_port_definitions() || current_outputs != node.kind.output_port_definitions()
+        {
+            let mut old_port_keys = node.input_port_keys.clone();
+            old_port_keys.extend(node.output_port_keys.iter().copied());
+            graph.refresh_node(&node_key);
+
+            for port_key in old_port_keys
+            {
+                cache.session.cached_port_positions.remove(&port_key);
+                cache.session.cached_editable_port_value.remove(&port_key);
+            }
+
+            if let Some(port_key) = self.selected_port
+            {
+                if !graph.ports.contains_key(&port_key)
+                {
+                    self.selected_port = None;
+                }
+            }
+        }
+
+        project.assets.modified_assets.insert(self.graph_asset_id);
     }
 
     fn process_graph_viewport_actions(&mut self, studio_context: &mut StudioContext, user_inputs: &UserInputs, graph_viewport_actions: VecDeque<GraphViewportAction>, _: &String)
@@ -465,64 +525,7 @@ impl GraphViewport
                 },
                 GraphViewportAction::NodeSettingsChanged { node_key } =>
                 {
-                    let (project, cache) = studio_context.get_project_mut_and_cache_mut();
-
-                    let selected_graph_id = {
-                        let graph = project.assets.get_node_graph(&self.graph_asset_id).unwrap();
-                        match &graph.nodes.get(&node_key).unwrap().kind
-                        {
-                            NodeKind::SubGraph(state) => Some(state.graph_asset_id),
-                            _ => None,
-                        }
-                    };
-
-                    if let Some(selected_graph_id) = selected_graph_id
-                    {
-                        let new_state = if let Some(graph_id) = selected_graph_id
-                        {
-                            SubGraphState::from(graph_id, project.assets.get_node_graph(&graph_id).unwrap())
-                        }
-                        else
-                        {
-                            SubGraphState::new()
-                        };
-
-                        let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                        graph.nodes.get_mut(&node_key).unwrap().kind = NodeKind::SubGraph(new_state);
-                    }
-
-                    let graph = project.assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-
-                    let node = graph.nodes.get(&node_key).unwrap();
-                    let current_inputs: Vec<_> = node.input_port_keys.iter()
-                        .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
-                        .collect();
-                    let current_outputs: Vec<_> = node.output_port_keys.iter()
-                        .map(|port_key| graph.ports.get(port_key).unwrap().to_port_definitions())
-                        .collect();
-
-                    if current_inputs != node.kind.input_port_definitions() || current_outputs != node.kind.output_port_definitions()
-                    {
-                        let mut old_port_keys = node.input_port_keys.clone();
-                        old_port_keys.extend(node.output_port_keys.iter().copied());
-                        graph.refresh_node(&node_key);
-
-                        for port_key in old_port_keys
-                        {
-                            cache.session.cached_port_positions.remove(&port_key);
-                            cache.session.cached_editable_port_value.remove(&port_key);
-                        }
-
-                        if let Some(port_key) = self.selected_port
-                        {
-                            if !graph.ports.contains_key(&port_key)
-                            {
-                                self.selected_port = None;
-                            }
-                        }
-                    }
-
-                    project.assets.modified_assets.insert(self.graph_asset_id);
+                    self.apply_node_settings_change(studio_context, node_key);
                 },
                 GraphViewportAction::RequestNewGraphViewportOrFocus { graph_id } =>
                 {
@@ -559,7 +562,7 @@ impl GraphViewport
                 GraphViewportAction::AddNodeToGraph { node_kind, position } =>
                 {
                     let node_graph = studio_context.get_project_mut().assets.get_node_graph_mut(&self.graph_asset_id).unwrap();
-                    node_graph.add_node(node_kind, position);
+                    node_graph.add_boxed_node(node_kind, position);
                 }
             }
         }
@@ -579,7 +582,7 @@ pub enum GraphViewportAction
     NodeSettingsChanged { node_key: NodeGraphKey },
     PortEditWasChanged { port_key: NodeGraphKey },
     RequestNewGraphViewportOrFocus { graph_id: AssetId },
-    AddNodeToGraph { node_kind: NodeKind, position: Option<egui::Pos2>},
+    AddNodeToGraph { node_kind: Box<dyn NodeKind>, position: Option<egui::Pos2>},
 }
 
 fn show_graph_viewport_debug_info(graph_viewport: &mut GraphViewport, ui: &mut egui::Ui)

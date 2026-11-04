@@ -1,4 +1,4 @@
-use empower_engine::{self, assets::{ASSET_FOLDER_ASSET_ID, AssetKind}, compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, ReadFileState, SubGraphState}}, value::Value};
+use empower_engine::{self, assets::{ASSET_FOLDER_ASSET_ID, AssetKind}, compiler::{CompileSettings, Instruction, compile}, node_graph::node::node_kind::{BranchNode, ImageNode, ListNode, LoopNode, MathGraphNode, PrintNode, ReadFileNode, ShowImageNode, SubGraphNode}, value::Value};
 
 #[test]
 fn test_print_compile()
@@ -9,7 +9,7 @@ fn test_print_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let print_node_handle = entry_node_graph.add_node(PrintNode, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
     }
@@ -33,7 +33,7 @@ fn test_branch_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let branch_node_handle = entry_node_graph.add_node(NodeKind::Branch, None);
+        let branch_node_handle = entry_node_graph.add_node(BranchNode, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &branch_node_handle.input_port_keys[0] );
     }
@@ -57,8 +57,8 @@ fn test_nested_branch_compile()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let outer = graph.add_node(NodeKind::Branch, None);
-        let inner = graph.add_node(NodeKind::Branch, None);
+        let outer = graph.add_node(BranchNode, None);
+        let inner = graph.add_node(BranchNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &outer.input_port_keys[0]).unwrap();
         graph.add_connection(&outer.output_port_keys[0], &inner.input_port_keys[0]).unwrap();
@@ -82,7 +82,7 @@ fn test_loop_forever_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::forever()), None);
+        let loop_node_handle = entry_node_graph.add_node(LoopNode::forever(), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
     }
@@ -105,7 +105,7 @@ fn test_loop_ranged_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop(LoopMode::ranged()), None);
+        let loop_node_handle = entry_node_graph.add_node(LoopNode::ranged(), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
     }
@@ -138,12 +138,12 @@ fn test_subgraph_compile()
         let subgraph_node = 
         {
             let function_graph = project.assets.get_node_graph_mut(&function_graph_id).unwrap();
-            let print_node_handle = function_graph.add_node(NodeKind::Print, None);
+            let print_node_handle = function_graph.add_node(PrintNode, None);
 
             let start_node_handle = function_graph.get_node_handle(function_graph.start_node_key);
             let _ = function_graph .add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
 
-            NodeKind::SubGraph( SubGraphState::from( function_graph_id, function_graph ) )             
+            SubGraphNode::from( function_graph_id, function_graph )
         };
 
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
@@ -178,7 +178,7 @@ fn test_show_image_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let show_image_handle = entry_node_graph.add_node(NodeKind::ShowImage, None);
+        let show_image_handle = entry_node_graph.add_node(ShowImageNode, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &show_image_handle.input_port_keys[0] );
     }
@@ -202,8 +202,8 @@ fn test_image_feeds_show_image_compile()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let image = graph.add_node(NodeKind::Image(ImageState::from(image_asset_id)), None);
-        let show_image = graph.add_node(NodeKind::ShowImage, None);
+        let image = graph.add_node(ImageNode::from(image_asset_id), None);
+        let show_image = graph.add_node(ShowImageNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &show_image.input_port_keys[0]).unwrap();
         graph.add_connection(&image.output_port_keys[0], &show_image.input_port_keys[1]).unwrap();
@@ -226,7 +226,7 @@ fn test_math_graph_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let math_graph_handle = entry_node_graph.add_node(NodeKind::MathGraph, None);
+        let math_graph_handle = entry_node_graph.add_node(MathGraphNode, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &math_graph_handle.input_port_keys[0] );
     }
@@ -249,8 +249,8 @@ fn test_list_feeds_math_graph_compile()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let list = graph.add_node(NodeKind::List(ListState::new()), None);
-        let math_graph = graph.add_node(NodeKind::MathGraph, None);
+        let list = graph.add_node(ListNode::new(), None);
+        let math_graph = graph.add_node(MathGraphNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &math_graph.input_port_keys[0]).unwrap();
         graph.add_connection(&list.output_port_keys[0], &math_graph.input_port_keys[1]).unwrap();
@@ -279,7 +279,7 @@ fn test_read_file_as_asset_compile()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let read_file_handle = entry_node_graph.add_node(NodeKind::ReadFile(ReadFileState::asset(Some(asset_id))), None);
+        let read_file_handle = entry_node_graph.add_node(ReadFileNode::asset(Some(asset_id)), None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &read_file_handle .input_port_keys[0] );
     }

@@ -1,8 +1,8 @@
 use empower_engine::assets::{ASSET_FOLDER_ASSET_ID, AssetKind};
 use empower_engine::executor::{Executor, ExecutorSettings};
-use empower_engine::node_graph::node::node_kind::{LoopMode, ReadFileState, SubGraphState};
+use empower_engine::node_graph::node::node_kind::{BranchNode, LoopNode, PrintNode, ReadFileNode, SubGraphNode};
 use empower_engine::project::ProjectState;
-use empower_engine::{self, compiler::{CompileSettings, compile}, node_graph::node::NodeKind, value::Value};
+use empower_engine::{self, compiler::{CompileSettings, compile}, value::Value};
 
 #[test]
 fn print_executed_test()
@@ -13,7 +13,7 @@ fn print_executed_test()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let print_node_handle = entry_node_graph.add_node(PrintNode, None);
 
         // @TODO, check the results 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
@@ -45,8 +45,8 @@ fn read_json_asset_and_print_unsaved_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::asset(Some(asset_id))), None);
-        let print = graph.add_node(NodeKind::Print, None);
+        let read = graph.add_node(ReadFileNode::asset(Some(asset_id)), None);
+        let print = graph.add_node(PrintNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
         graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
@@ -74,8 +74,8 @@ fn read_global_file_and_print_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::global_path(path.to_string_lossy().to_string())), None);
-        let print = graph.add_node(NodeKind::Print, None);
+        let read = graph.add_node(ReadFileNode::global_path(path.to_string_lossy().to_string()), None);
+        let print = graph.add_node(PrintNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
         graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
@@ -104,8 +104,8 @@ fn read_relative_file_and_print_text()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::relative_path("tests/fixtures/read_file.txt".to_string())), None);
-        let print = graph.add_node(NodeKind::Print, None);
+        let read = graph.add_node(ReadFileNode::relative_path("tests/fixtures/read_file.txt".to_string()), None);
+        let print = graph.add_node(PrintNode, None);
 
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
         graph.add_connection(&read.output_port_keys[0], &print.input_port_keys[0]).unwrap();
@@ -131,7 +131,7 @@ fn relative_file_requires_saved_project()
     {
         let graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
         let start = graph.get_node_handle(graph.start_node_key);
-        let read = graph.add_node(NodeKind::ReadFile(ReadFileState::relative_path("tests/fixtures/read_file.txt".to_string())), None);
+        let read = graph.add_node(ReadFileNode::relative_path("tests/fixtures/read_file.txt".to_string()), None);
         graph.add_connection(&start.output_port_keys[0], &read.input_port_keys[0]).unwrap();
     }
 
@@ -148,9 +148,9 @@ fn true_branch_executed_test()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let branch_node_handle = entry_node_graph.add_node(NodeKind::Branch, None);
-        let print_node_1_handle = entry_node_graph.add_node(NodeKind::Print, None);
-        let print_node_2_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let branch_node_handle = entry_node_graph.add_node(BranchNode, None);
+        let print_node_1_handle = entry_node_graph.add_node(PrintNode, None);
+        let print_node_2_handle = entry_node_graph.add_node(PrintNode, None);
 
         // @TODO, check the results 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &branch_node_handle.input_port_keys[0] );
@@ -189,9 +189,9 @@ fn false_branch_executed_test()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let branch_node_handle = entry_node_graph.add_node(NodeKind::Branch, None);
-        let print_node_1_handle = entry_node_graph.add_node(NodeKind::Print, None);
-        let print_node_2_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let branch_node_handle = entry_node_graph.add_node(BranchNode, None);
+        let print_node_1_handle = entry_node_graph.add_node(PrintNode, None);
+        let print_node_2_handle = entry_node_graph.add_node(PrintNode, None);
 
         // @TODO, check the results 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &branch_node_handle.input_port_keys[0] );
@@ -229,8 +229,8 @@ fn forever_loop_execution_test()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop( LoopMode::forever() ), None);
-        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let loop_node_handle = entry_node_graph.add_node( LoopNode::forever() , None);
+        let print_node_handle = entry_node_graph.add_node(PrintNode, None);
 
         // @TODO, check the results 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
@@ -272,8 +272,8 @@ fn ranged_loop_execution_test()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop( LoopMode::ranged() ), None);
-        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let loop_node_handle = entry_node_graph.add_node( LoopNode::ranged() , None);
+        let print_node_handle = entry_node_graph.add_node(PrintNode, None);
 
         // @TODO, check the results 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
@@ -319,12 +319,12 @@ fn sub_graph_execution_test()
         let subgraph_node = 
         {
             let function_graph = project.assets.get_node_graph_mut(&function_graph_id).unwrap();
-            let print_node_handle = function_graph.add_node(NodeKind::Print, None);
+            let print_node_handle = function_graph.add_node(PrintNode, None);
 
             let start_node_handle = function_graph.get_node_handle(function_graph.start_node_key);
             let _ = function_graph .add_connection(&start_node_handle.output_port_keys[0], &print_node_handle.input_port_keys[0] );
 
-            NodeKind::SubGraph( SubGraphState::from( function_graph_id, function_graph ) )             
+            SubGraphNode::from( function_graph_id, function_graph )
         };
 
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();

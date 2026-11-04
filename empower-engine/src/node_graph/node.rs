@@ -8,18 +8,18 @@ pub use settings_kind::SettingsKind;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Node
 {
     pub position: egui::Pos2,
     pub input_port_keys: Vec<NodeGraphKey>,
     pub output_port_keys: Vec<NodeGraphKey>,
-    pub kind: NodeKind,
+    pub kind: Box<dyn NodeKind>,
 }
 
 impl Node
 {
-    pub fn new(position: egui::Pos2, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>, kind: NodeKind) -> Self
+    pub fn new(position: egui::Pos2, input_port_keys: Vec<NodeGraphKey>, output_port_keys: Vec<NodeGraphKey>, kind: Box<dyn NodeKind>) -> Self
     {
         Self
         {

@@ -1,65 +1,65 @@
 use std::collections::VecDeque;
 
-use empower_engine::node_graph::node::{NodeKind, node_kind::{ImageState, ListState, LoopMode, ReadFileState, SubGraphState}};
+use empower_engine::node_graph::node::{NodeKind, node_kind::{BranchNode, ImageNode, ListNode, LoopNode, MathGraphNode, PrintNode, ReadFileNode, ShowImageNode, SubGraphNode, WaitNode}};
 
 use super::GraphViewportAction;
 
 struct NodeType // @TODO, find a better name
 {
     name: &'static str,
-    constructor: fn() -> NodeKind,
+    constructor: fn() -> Box<dyn NodeKind>,
 }
 
 static NODE_TYPES: &[NodeType] = &[
     NodeType
     {
         name: "print",
-        constructor: || NodeKind::Print,
+        constructor: || Box::new(PrintNode),
     },
     NodeType
     {
         name: "branch",
-        constructor: || NodeKind::Branch,
+        constructor: || Box::new(BranchNode),
     },
     NodeType
     {
         name: "loop",
-        constructor: || NodeKind::Loop ( LoopMode::forever() ),
+        constructor: || Box::new(LoopNode::forever()),
     },
     NodeType
     {
         name: "wait",
-        constructor: || NodeKind::Wait,
+        constructor: || Box::new(WaitNode),
     },
     NodeType
     {
         name: "list",
-        constructor: || NodeKind::List( ListState::new() ),
+        constructor: || Box::new(ListNode::new()),
     },
     NodeType
     {
         name: "image",
-        constructor: || NodeKind::Image( ImageState::new() ),
+        constructor: || Box::new(ImageNode::new()),
     },
     NodeType
     {
         name: "show image",
-        constructor: || NodeKind::ShowImage,
+        constructor: || Box::new(ShowImageNode),
     },
     NodeType
     {
         name: "math graph",
-        constructor: || NodeKind::MathGraph,
+        constructor: || Box::new(MathGraphNode),
     },
     NodeType
     {
         name: "sub graph",
-        constructor: || NodeKind::SubGraph( SubGraphState::new() ),
+        constructor: || Box::new(SubGraphNode::new()),
     },
     NodeType
     {
         name: "read file",
-        constructor: || NodeKind::ReadFile(ReadFileState::asset(None)),
+        constructor: || Box::new(ReadFileNode::asset(None)),
     },
 ];
 

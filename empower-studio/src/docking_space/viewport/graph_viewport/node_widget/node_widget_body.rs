@@ -5,8 +5,6 @@ use rfd::FileDialog;
 
 use crate::docking_space::viewport::graph_viewport::{GraphViewportAction, area_select::AreaSelect};
 
-// mod editable_node_state;
-
 const NODE_BODY_COLOR: egui::Color32 = egui::Color32::from_rgb(63, 63, 63);
 
 const NODE_BOTTOM_RECT_HEIGHT: f32 = 20.0;
@@ -145,7 +143,7 @@ pub fn show(
     );
 
     let settings_rect = egui::Rect::from_min_max(egui::pos2(node_rect.min.x, title_box_rect.max.y), node_rect.max);
-    let settings_height = show_settings(ui, node_key, current_graph_id, &mut node.kind, graph_viewport_title, graph_viewport_actions, settings_rect, asset_meta);
+    let settings_height = show_settings(ui, node_key, current_graph_id, node.kind.as_mut(), graph_viewport_title, graph_viewport_actions, settings_rect, asset_meta);
 
     title_box_rect.size().y + settings_height
 }
@@ -154,7 +152,7 @@ fn show_settings(
     ui: &mut egui::Ui,
     node_key: &NodeGraphKey,
     current_graph_id: &AssetId,
-    node_kind: &mut NodeKind,
+    node_kind: &mut dyn NodeKind,
     graph_viewport_title: &String,
     graph_viewport_actions: &mut VecDeque<GraphViewportAction>,
     settings_rect: egui::Rect,

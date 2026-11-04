@@ -84,7 +84,7 @@ pub struct CompilePlan // Instructions on how to compile a single node
 pub enum CompilePlanStep
 {
     Emit(Instruction), // Add an instruction to the compiled graph
-    CompileFromOutput(usize), // Compile nodes connected to the output port index
+    CompileFromOutput(usize), // Compile nodes connected to the output port index // @TODO, maybe remove the index from the number, as it causes confusion in the compile code, if it has a CompileFromOutput, its obvious (maybe also find a better name)
     QueueGraph(AssetId), // Compile this graph as part of the program
     Mark(&'static str), // Give the next instruction address a name
     Jump(&'static str), // Jump to a named instruction address

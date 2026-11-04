@@ -13,11 +13,11 @@ pub mod port;
 pub use port::Port;
 use serde::{Deserialize, Serialize};
 
-use crate::{node_graph::{node::NodeKind, port::PortDefinition}, value::Value};
+use crate::{node_graph::{node::{node_kind::StartNode, NodeKind}, port::PortDefinition}, value::Value};
 
 pub type NodeGraphKey = i32;
 
-#[derive(Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NodeGraph {
     pub name: String,
     pub start_node_key: NodeGraphKey, // @TODO, add a const for start node key?
@@ -44,7 +44,7 @@ impl NodeGraph {
             connections_in: HashMap::new(),
         };
 
-        let _ = node_graph.add_node(NodeKind::Start, None);
+        let _ = node_graph.add_node(StartNode, None);
 
         node_graph
     }
@@ -62,9 +62,17 @@ impl NodeGraph {
         NodeGraph::new("entry_graph")
     }
 
-    pub fn add_node(
+    pub fn add_node<T: NodeKind + 'static>(
         &mut self,
-        node_kind: NodeKind,
+        node_kind: T,
+        position: Option<egui::Pos2>,
+    ) -> NodeHandle {
+        self.add_boxed_node(Box::new(node_kind), position)
+    }
+
+    pub fn add_boxed_node(
+        &mut self,
+        node_kind: Box<dyn NodeKind>,
         position: Option<egui::Pos2>,
     ) -> NodeHandle {
 

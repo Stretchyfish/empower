@@ -1,15 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{node_graph::{node::SettingsKind, port::PortDefinition}, utility::alphabet_counter::AlphabetCounter, value::Value};
+use super::NodeKind;
+use crate::{assets::Assets, compiler::{CompilePlan, CompilePlanStep, Instruction, RegisterAddress}, node_graph::{node::SettingsKind, port::PortDefinition}, project::ProjectState, utility::alphabet_counter::AlphabetCounter, value::Value};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct ListState
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ListNode
 {
     pub value_type: String,
     pub size: usize,
 }
 
-impl ListState
+impl ListNode
 {
     pub fn new() -> Self
     {
@@ -20,13 +21,19 @@ impl ListState
         }
     }
 
-    pub fn get_size(&self) -> egui::Vec2
+}
+
+#[typetag::serde]
+impl NodeKind for ListNode
+{
+    fn name(&self) -> &str { "list" }
+    fn size(&self) -> egui::Vec2
     {
         let extra_vertical_gap = 60.0 * self.size as f32;
         egui::vec2(300.0, 220.0 + extra_vertical_gap)
     }
 
-    pub fn settings(&mut self) -> Vec<SettingsKind<'_>>
+    fn settings(&mut self) -> Vec<SettingsKind<'_>>
     {
         vec![
             SettingsKind::Integer { label: "size", value: &mut self.size },
@@ -38,7 +45,7 @@ impl ListState
         ]
     }
 
-    pub fn get_input_port_definitions(&self) -> Vec<PortDefinition>
+    fn input_port_definitions(&self) -> Vec<PortDefinition>
     {
         let mut inputs = Vec::with_capacity(self.size);
 
@@ -55,11 +62,21 @@ impl ListState
         inputs
     }
 
-    pub fn get_output_port_definitions(&self) -> Vec<PortDefinition>
+    fn output_port_definitions(&self) -> Vec<PortDefinition>
     {
         vec![
             PortDefinition::new_output_data_port("".to_string(), vec![ Value::List( Vec::new() ) ])
         ]
+    }
+    fn compile(&self, input: &Vec<RegisterAddress>, output: &Vec<RegisterAddress>, _: &Assets, _: &ProjectState) -> Result<CompilePlan, String>
+    {
+        if Value::from_type_string(&self.value_type).is_none() // This should never happen
+        {
+            return Err(format!("Unknown list value type: {}", self.value_type));
+        }
+        Ok(CompilePlan { steps: vec![
+                                    CompilePlanStep::Emit(Instruction::CreateList(input.clone(), output[0]))] // @TODO, this clone is potentially expensive, as all ports before should remain constant, this can likely be optimized
+        })
     }
 }
 

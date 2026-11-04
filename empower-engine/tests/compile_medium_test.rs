@@ -1,4 +1,4 @@
-use empower_engine::{compiler::{CompileSettings, Instruction, compile}, node_graph::node::{NodeKind, node_kind::LoopMode}, project::Project, value::Value};
+use empower_engine::{compiler::{CompileSettings, Instruction, compile}, node_graph::node::node_kind::{LoopNode, PrintNode, WaitNode}, project::Project, value::Value};
 
 #[test]
 fn test_loop_wait_print_compilation()
@@ -9,9 +9,9 @@ fn test_loop_wait_print_compilation()
         let entry_node_graph = project.assets.get_node_graph_mut(&project.entry_graph).unwrap();
 
         let start_node_handle = entry_node_graph.get_node_handle(entry_node_graph.start_node_key);
-        let loop_node_handle = entry_node_graph.add_node(NodeKind::Loop( LoopMode::forever() ), None);
-        let wait_node_handle = entry_node_graph.add_node(NodeKind::Wait, None);
-        let print_node_handle = entry_node_graph.add_node(NodeKind::Print, None);
+        let loop_node_handle = entry_node_graph.add_node( LoopNode::forever() , None);
+        let wait_node_handle = entry_node_graph.add_node(WaitNode, None);
+        let print_node_handle = entry_node_graph.add_node(PrintNode, None);
 
         let _ = entry_node_graph.add_connection(&start_node_handle.output_port_keys[0], &loop_node_handle.input_port_keys[0] );
         let _ = entry_node_graph.add_connection(&loop_node_handle.output_port_keys[0], &wait_node_handle.input_port_keys[0] );
